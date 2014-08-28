@@ -1,3 +1,4 @@
+*.xccheckout
 *.xcuserstate
 attic
 concurrency.xcodeproj/xcuserdata

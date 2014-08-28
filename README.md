@@ -12,11 +12,11 @@ through constrained channels. This is also somewhat similar to the
 concurrency model of Labview, in that the program execution could be
 organized around the flow of data through channels.
 
-The main part of this is a channel (Chan<T>) class that models sending
+The main part of this is a channel (`Chan<T>`) class that models sending
 and receiving (strongly typed) messages on a bounded queue. Message
-sending is achieved with an infix '<-' operator (as in Go); this
+sending is achieved with an infix `<-` operator (as in Go); this
 operation will block whenever the channel is full. Message receiving is
-achieved with an unary prefix '<-' operator; this operation will block
+achieved with an unary prefix `<-` operator; this operation will block
 whenever the channel is empty.
 
 Channels can be used in buffered and unbuffered form. In an unbuffered
@@ -25,12 +25,14 @@ vice-versa). At the moment only the 1-element buffer works, though that
 appears to be an unintentional regression in the beta 6 compiler (longer
 buffers did work earlier.)
 
-Also included is an 'async' pseudo-keyword, as shortcut for the Grand
+Also included is an `async` pseudo-keyword, as shortcut for the Grand
 Central Dispatch method for launching a closure asynchronously in the
 background.
 
 Example:
-```
+```Swift
+import Darwin
+
 let ch = Chan<Int>.Make()
 
 async {
