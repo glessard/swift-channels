@@ -27,7 +27,7 @@ public class Chan<T>: ReadableChannel, WritableChannel
 
   public class func Make() -> Chan<T>
   {
-    return UnbufferedChan<T>()
+    return UnbufferedChan<T>(attributes: nil)
   }
 
   /**
@@ -43,12 +43,12 @@ public class Chan<T>: ReadableChannel, WritableChannel
     switch capacity
     {
       case let c where c < 1:
-        return UnbufferedChan<T>()
+        return UnbufferedChan<T>(attributes: nil)
       case 1:
-        return Buffered1Chan<T>(1)
+        return Buffered1Chan<T>(capacity, attributes: nil)
 
       default:
-        return Buffered1Chan<T>(capacity) // BufferedNChannel<T>(capacity)
+        return Buffered1Chan<T>(capacity, attributes: nil) // BufferedNChannel<T>(capacity)
     }
   }
 
@@ -215,6 +215,14 @@ extension Chan: SequenceType
   }
 }
 
+/**
+  Wrap an object that implements both ReadableChannel and WritableChannel (for element type T)
+  in something than will look like a Chan<T>.
+
+  Even though the object may not be a Chan<T>, this is accomplish in wrapping its entire interface
+  in a series of closures. It's probably memory-heavy, but it's pretty nice that it can be done...
+*/
+
 private class EnclosedChan<T>: Chan<T>
 {
   private init<C: protocol<ReadableChannel,WritableChannel> where C.ReadElement == T, C.ReadElement == C.WrittenElement>(_ c: C)
@@ -271,10 +279,15 @@ private class EnclosedChan<T>: Chan<T>
   }
 }
 
+/**
+  A wrapper for a an implementor of ReadableChannel or WritableChannel, but not both.
+  It wraps said implementor inside something that appears to implement protocols.
+
+  This way lies madness. Do not use this. Deadlocks will happen.
+*/
+
 private class EnclosedDirectionalChan<T>: EnclosedChan<T>
 {
-  // Bug-prone! Don't use this
-
   private override init<C: ReadableChannel where C.ReadElement == T>(_ c: C)
   {
     super.init()
@@ -289,8 +302,6 @@ private class EnclosedDirectionalChan<T>: EnclosedChan<T>
     enclosedGetEmpty =  { c.isEmpty }
     enclosedReadFunc =  { c.read() }
   }
-
-  // Bug-prone! Don't use this
 
   private override init<C: WritableChannel where C.WrittenElement == T>(_ c: C)
   {
@@ -309,7 +320,7 @@ private class EnclosedDirectionalChan<T>: EnclosedChan<T>
 }
 
 /**
-  The basis for our concrete channels
+  The basis for our real channels
 */
 
 private class ConcreteChan<T>: Chan<T>
@@ -324,10 +335,10 @@ private class ConcreteChan<T>: Chan<T>
 
   // Initialization and destruction
 
-  private override init()
+  private init(attributes: UnsafeMutablePointer<pthread_mutexattr_t> = nil)
   {
     channelMutex = UnsafeMutablePointer<pthread_mutex_t>.alloc(1)
-    pthread_mutex_init(channelMutex, nil)
+    pthread_mutex_init(channelMutex, attributes)
 
     writeCondition = UnsafeMutablePointer<pthread_cond_t>.alloc(1)
     pthread_cond_init(writeCondition, nil)
@@ -336,6 +347,13 @@ private class ConcreteChan<T>: Chan<T>
     pthread_cond_init(readCondition, nil)
 
     closed = false
+
+    super.init()
+  }
+
+  private override convenience init()
+  {
+    self.init(attributes: nil)
   }
 
   deinit
@@ -388,6 +406,9 @@ private class ConcreteChan<T>: Chan<T>
 
   private override func close()
   {
+    if closed { return }
+
+    // Only bother with the mutex if necessary
     pthread_mutex_lock(channelMutex)
 
     self.closed = true
@@ -434,19 +455,19 @@ private class ConcreteChan<T>: Chan<T>
 
 private class BufferedChan<T>: ConcreteChan<T>
 {
-  private let channelCapacity: Int = 0
+  private let channelCapacity: Int = 1
 
-  private init(var _ capacity: Int)
+  private init(var _ capacity: Int, attributes: UnsafeMutablePointer<pthread_mutexattr_t>)
   {
     if capacity < 1 { capacity = 1 }
 
     channelCapacity = capacity
-    super.init()
+    super.init(attributes: attributes)
   }
 
-  private convenience override init()
+  private convenience init()
   {
-    self.init(1)
+    self.init(1, attributes: nil)
   }
 
   private let logging = false
@@ -509,6 +530,11 @@ private class BufferedChan<T>: ConcreteChan<T>
 //    log("wrote to buffered channel")
   }
 
+  /**
+    Write an element to the channel buffer, specific implementation.
+    This is used within write(newElement: T).
+    By *definition*, this method is called while a mutex is locked.
+  */
   private func writeElement(newElement: T)
   {
     _ = newElement
@@ -546,6 +572,11 @@ private class BufferedChan<T>: ConcreteChan<T>
     return oldElement
   }
 
+  /**
+    Read an from the channel buffer, specific implementation.
+    This is used within read() ->T?
+    By *definition*, this method is called while a mutex is locked.
+  */
   private func readElement() ->T?
   {
     return nil
@@ -561,17 +592,17 @@ private class BufferedNChan<T>: BufferedChan<T>
 {
   private var q: Queue<T>
 
-  private override init(var _ capacity: Int)
+  private override init(var _ capacity: Int, attributes: UnsafeMutablePointer<pthread_mutexattr_t>)
   {
     if capacity < 1 { capacity = 1 }
 
     self.q = Queue<T>()
-    super.init(capacity)
+    super.init(capacity, attributes: attributes)
   }
 
   private convenience init()
   {
-    self.init(1)
+    self.init(1, attributes: nil)
   }
 
   private override var isEmpty: Bool { return q.isEmpty }
@@ -597,16 +628,16 @@ private class Buffered1Chan<T>: BufferedChan<T>
 {
   private var element: T? = nil
 
-  private override init(var _ capacity: Int)
+  private override init(var _ capacity: Int, attributes: UnsafeMutablePointer<pthread_mutexattr_t>)
   {
     capacity = 1
     element = nil
-    super.init(capacity)
+    super.init(capacity, attributes: attributes)
   }
 
   private convenience init()
   {
-    self.init(1)
+    self.init(1, attributes: nil)
   }
 
   private override var isEmpty: Bool { return (element == nil) }
@@ -627,6 +658,36 @@ private class Buffered1Chan<T>: BufferedChan<T>
 }
 
 /**
+  A one-element channel which will only ever transmit one message.
+  The first successful write operation also closes the channel.
+*/
+
+class SingletonChan<T>: Buffered1Chan<T>
+{
+  init()
+  {
+    // In order to call close() within the writeElement() method, the
+    // mutex we obtain must be recursive, which is not the default.
+
+    var mutexAttributes = UnsafeMutablePointer<pthread_mutexattr_t>.alloc(1)
+    pthread_mutexattr_init(mutexAttributes)
+    pthread_mutexattr_settype(mutexAttributes, PTHREAD_MUTEX_RECURSIVE)
+
+    super.init(1, attributes: mutexAttributes)
+
+    pthread_mutexattr_destroy(mutexAttributes)
+    mutexAttributes.dealloc(1)
+  }
+
+  private override func writeElement(newElement: T)
+  {
+    close()
+    super.writeElement(newElement)
+  }
+}
+
+
+/**
   A channel with no backing store. Write operations block until a receiver is ready, while
   conversely read operations block until a sender is ready.
 */
@@ -637,17 +698,17 @@ private class UnbufferedChan<T>: ConcreteChan<T>
   private var blockedReaders = 0
   private var blockedWriters = 0
 
-  private override init()
+  private convenience init()
+  {
+    self.init(attributes: nil)
+  }
+
+  private override init(attributes: UnsafeMutablePointer<pthread_mutexattr_t>)
   {
     element = nil
     blockedReaders = 0
     blockedWriters = 0
-    super.init()
-  }
-
-  private convenience init(capacity: Int)
-  {
-    self.init()
+    super.init(attributes: attributes)
   }
 
   private override var isEmpty: Bool { return (element == nil) }
