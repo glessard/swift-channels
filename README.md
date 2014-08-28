@@ -27,10 +27,11 @@ buffers did work earlier.)
 
 Also included is an `async` pseudo-keyword, as shortcut for the Grand
 Central Dispatch method for launching a closure asynchronously in the
-background.
+background. The requirement for a closure launched via `async` is that
+it have no parameters. A return value will be ignored if it exists.
 
 Example:
-```Swift
+```
 import Darwin
 
 let ch = Chan<Int>.Make()
@@ -50,10 +51,12 @@ while let m = <-ch
 }
 ```
 
-This will count up to 10 on a background task, while printing the
-results on the main thread. The while loop will then exit since the
-channel will have been closed. An empty, closed channel returns nil,
-thereby signaling to receivers that it has become closed.
+The `for` loop will count up to 10 on a background thread, sending
+results to the main thread, which prints them. The main thread pauses
+while waiting for results inside the `<-ch` channel read
+operation. The `while` loop will then exit when the channel becomes
+closed. An empty, closed channel returns nil, thereby signaling to
+receivers that it has become closed.
 
 Missing from this is anything like the Select keyword in Go, which is
 quite useful when dealing with multiple channels at once. I have
