@@ -33,22 +33,23 @@ async {
 
 forever: while true
 {
-  switch Select(a,b,c,d,e)
+  let (selected,p) = Select(a,b,c,d,e)
+  switch selected
   {
-  case let (z,p) where z === a:
+  case let z where z === a:
     if let p = a.extract(p) { syncprint(p) }
     break
-  case let (z,p) where z === b:
-    if let p = a.extract(p) { syncprint(p) }
+  case let z where z === b:
+    if let p = b.extract(p) { syncprint(p) }
     break
-  case let (z,p) where z === c:
-    if let p = a.extract(p) { syncprint(p) }
+  case let z where z === c:
+    if let p = c.extract(p) { syncprint(p) }
     break
-  case let (z,p) where z === d:
-    if let p = a.extract(p) { syncprint(p) }
+  case let z where z === d:
+    if let p = d.extract(p) { syncprint(p) }
     break
-  case let (z,p) where z === e:
-    if let p = a.extract(p) { syncprint(p) }
+  case let z where z === e:
+    if let p = e.extract(p) { syncprint(p) }
     break
   default:
     syncprint("every channel is closed and empty")

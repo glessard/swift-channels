@@ -86,12 +86,17 @@ public class SelectChan<T>: SingletonChan<T>
   }
 }
 
+/**
+  You can put anything in here. And it has a non-generic type.
+  It's like a Bag of Holding. For one thing at a time.
+*/
+
 public class SelectPayload<T>: Selectee
 {
-  var p: T?
+  var data: T?
 
   public init(payload: T?)
   {
-    p = payload
+    data = payload
   }
 }
