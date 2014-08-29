@@ -183,7 +183,7 @@ public class Chan<T>: ReadableChannel, WritableChannel, SelectableChannel
 
   public var invalidSelection: Bool { return isClosed && isEmpty }
 
-  public func selectRead(channel: SelectChan<Selectable>, message: Selectable)
+  public func selectRead(channel: SelectChan<Selectable>, message: Selectable) -> Signal
   {
     let nilT: T? = nil
 
@@ -194,6 +194,8 @@ public class Chan<T>: ReadableChannel, WritableChannel, SelectableChannel
         channel <- message
       }
     }
+
+    return Signal()
   }
 
   public func extract(payload: Selectee?) -> T?
@@ -591,24 +593,24 @@ public class BufferedChan<T>: ConcreteChan<T>
     return nil
   }
 
-  public override func selectRead(channel: SelectChan<Selectable>, message: Selectable)
+  public override func selectRead(channel: SelectChan<Selectable>, message: Selectable) -> Signal
   {
     async {
-      syncprint("selectRead: \(message)")
-
       pthread_mutex_lock(self.channelMutex)
-      while self.isEmpty && !self.closed
+      while self.isEmpty && !self.isClosed && !channel.isClosed
       {
         pthread_cond_wait(self.readCondition, self.channelMutex)
       }
+
+//      syncprint("attempting to read: \(self)")
 
       channel.mutexAction {
         if !channel.isClosed
         {
           let e = self.readElement()
+//          syncprint("mutexed: \(e)")
           channel.stash = SelectPayload(payload: e)
           channel <- message
-          syncprint("mutexed: \(e)")
         }
       }
 
@@ -618,8 +620,10 @@ public class BufferedChan<T>: ConcreteChan<T>
       if self.closed { pthread_cond_signal(self.readCondition) }
       pthread_mutex_unlock(self.channelMutex)
 
-      syncprint("escaped selectRead: \(message)")
+//      syncprint("escaped selectRead: \(self)")
     }
+
+    return pthreadSignal(cond: readCondition, mutex: channelMutex)
   }
 }
 

@@ -6,6 +6,8 @@
 //  Copyright (c) 2014 Guillaume Lessard. All rights reserved.
 //
 
+import Dispatch
+
 /**
   Merge the channels in the channels array into one.
   Every item from the input channels will be able to be received via the returned channel.
@@ -51,4 +53,3 @@ func RRMerge<T>(channels: [ReadChan<T>]) -> ReadChan<T>
 
   return ReadChan.Wrap(mergeChannel)
 }
-

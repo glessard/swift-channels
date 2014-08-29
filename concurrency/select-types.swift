@@ -26,48 +26,63 @@ public protocol Selectable: class
     :param: channel the channel to use for a return notification.
     :param: message an identifier to be sent as the return notification.
   */
-  func selectRead(channel: SelectChan<Selectable>, message: Selectable)
+  func selectRead(channel: SelectChan<Selectable>, message: Selectable) -> Signal
+
+  /**
+    If it makes no sense to launch the selectRead() method, return false to this.
+    If every Selectable in the list returns false, Select will assume that it should stop.
+  */
+
   var  invalidSelection: Bool { get }
 }
 
 /**
-  This is a particular kind of Anything.
+  A particular kind of Anything.
 */
 
 public protocol Selectee: class
 {
 }
 
+/**
+  A channel that is Selectable should know how to extract data from one of these.
+  After all, it should have created the object in its selectRead() method.
+*/
+
 public protocol SelectableChannel: Selectable, ReadableChannel
 {
   func extract(item: Selectee?) -> ReadElement?
 }
 
+/**
+  A special kind of SingletonChan for use by Select.
+  SelectChan provides a way for a receiving channel to "stash" its payload
+  for later recovery upon return to the body of the Select function.
+  This is a special case of cross-thread data sharing.
+*/
 
 public class SelectChan<T>: SingletonChan<T>
 {
   private let gcdq: dispatch_queue_t
-  private var payload: Selectee? = nil
+  private var payload: Selectee
 
   public override init()
   {
     gcdq = dispatch_queue_create("SelectChan", DISPATCH_QUEUE_SERIAL)
+    let nilT: T? = nil
+    payload = SelectPayload(payload: nilT)
     super.init()
   }
 
-  var stash: Selectee?
+  var stash: Selectee
   {
     get { return payload }
     set { payload = newValue }
   }
 
-  private var mutexActions = 0
   public func mutexAction(action: () -> ())
   {
     dispatch_sync(gcdq) { action() }
-
-    self.mutexActions += 1
-    syncprint("Attempted mutex action #\(mutexActions)")
   }
 }
 

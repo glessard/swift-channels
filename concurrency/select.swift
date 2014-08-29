@@ -7,11 +7,10 @@
 //
 
 /**
-  Select registers to be notified by the first of a list of Selectable items.
-  It
+  Select gets notified of events by the first of a list of Selectable items.
 */
 
-public func Select(options: Selectable...) -> (Selectable, Selectee?)
+public func Select(options: Selectable...) -> (Selectable, Selectee)
 {
   assert(options.count > 0, "Select requires at least one argument")
 
@@ -24,14 +23,17 @@ public func Select(options: Selectable...) -> (Selectable, Selectee?)
   //    option.selectRead(resultChan, message: option)
   //  }
 
+  var closedOptions = 0
+  var signals = [Signal]()
+
   // The visitation order is randomized, because otherwise
   // the first Selectable in the list would be unfairly favored.
-
+  // (imagine the case of multiple non-empty channels.)
   let shuffled = ShuffledSequence(options)
-  var closedOptions = 0
   for i in 0..<options.count
   {
     // Optional protocols-as-types have strange behaviour in beta6
+    // The Generator approach fails in a mysterious fashion.
     var opt = shuffled.next()
     if let option = opt
     {
@@ -41,9 +43,13 @@ public func Select(options: Selectable...) -> (Selectable, Selectee?)
         continue
       }
 
-      option.selectRead(resultChan, message: option)
+      let signal = option.selectRead(resultChan, message: option)
+      signals.append(signal)
     }
   }
+
+  // Unblock any remaining waiting threads upon function exit.
+  DeferredTaskList().defer { for signal in signals { signal.Raise() } }
 
   if closedOptions < options.count
   {
@@ -53,6 +59,7 @@ public func Select(options: Selectable...) -> (Selectable, Selectee?)
     }
   }
 
+  let nilS: Selectable? = nil
   resultChan.close()
-  return (resultChan, nil)
+  return (resultChan, SelectPayload(payload: nilS))
 }

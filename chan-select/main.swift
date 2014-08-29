@@ -11,29 +11,29 @@ import Darwin
 let a = Chan<Int>.Make(1)
 let b = Chan<Int>.Make(1)
 let c = Chan<Int>.Make(1)
-let d = SingletonChan<Int>()
-let e = SingletonChan<Int>()
+let d = Chan<Int>.Make(1)//SingletonChan<Int>()
+let e = Chan<Int>.Make(1)
 
-let chans = [a]//,b,c,d,e]
+let chans = [a,b,c,d,e]
 
 async {
-  for i in 1...10
+  for i in 1...1000
   {
     let index = Int(arc4random_uniform(UInt32(chans.count)))
     syncprint("Round \(i): sending on channel \(index)")
     chans[index] <- index
-    Time.Wait(100)
+    Time.Wait(10)
   }
 
-//  for chan in chans
-//  {
-//    chan.close()
-//  }
+  for chan in chans
+  {
+    chan.close()
+  }
 }
 
 forever: while true
 {
-  switch Select(a)//,b,c,d,e)
+  switch Select(a,b,c,d,e)
   {
   case let (z,p) where z === a:
     if let p = a.extract(p) { syncprint(p) }
@@ -51,10 +51,9 @@ forever: while true
     if let p = a.extract(p) { syncprint(p) }
     break
   default:
-    // every channel is closed and empty
+    syncprint("every channel is closed and empty")
     break forever
   }
 }
 
-sleep(1)
 syncprintwait()

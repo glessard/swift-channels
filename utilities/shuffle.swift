@@ -1,6 +1,5 @@
 //
 //  shuffle.swift
-//  concurrency
 //
 //  Created by Guillaume Lessard on 2014-08-28.
 //  Copyright (c) 2014 Guillaume Lessard. All rights reserved.

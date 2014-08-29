@@ -41,12 +41,12 @@ func syncprint<T>(object: T)
 
 func syncprintwait()
 {
-  // Wait at most 10ms for the last messages to print out.
-  let res = dispatch_group_wait(PrintGroup, dispatch_time(DISPATCH_TIME_NOW, 10_000_000))
+  // Wait at most 100ms for the last messages to print out.
+  let res = dispatch_group_wait(PrintGroup, dispatch_time(DISPATCH_TIME_NOW, 100_000_000))
   if res != 0
   {
     dispatch_suspend(PrintQueue)
-    Time.Wait(1)
+    Time.Wait(50)
     println("Giving up on waiting")
   }
 }
