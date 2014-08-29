@@ -17,7 +17,7 @@ import Dispatch
   of the factory function returns an unbuffered channel.
 */
 
-public class Chan<T>: ReadableChannel, WritableChannel
+public class Chan<T>: ReadableChannel, WritableChannel, SelectableChannel
 {
   /**
     Factory function to obtain a new, unbuffered Chan<T> object (channel capacity = 0).
@@ -180,6 +180,33 @@ public class Chan<T>: ReadableChannel, WritableChannel
   {
     return nil
   }
+
+  public var invalidSelection: Bool { return isClosed && isEmpty }
+
+  public func selectRead(channel: SelectChan<Selectable>, message: Selectable)
+  {
+    let nilT: T? = nil
+
+    channel.mutexAction {
+      if !channel.isClosed
+      {
+        channel.stash = SelectPayload(payload: nilT)
+        channel <- message
+      }
+    }
+  }
+
+  public func extract(payload: Selectee?) -> T?
+  {
+    if payload != nil
+    {
+      if let payload = payload as? SelectPayload<T>
+      {
+        return payload.p
+      }
+    }
+    return nil
+  }
 }
 
 extension Chan: GeneratorType
@@ -323,7 +350,7 @@ private class EnclosedDirectionalChan<T>: EnclosedChan<T>
   The basis for our real channels
 */
 
-private class ConcreteChan<T>: Chan<T>
+public class ConcreteChan<T>: Chan<T>
 {
   // Instance variables
 
@@ -374,7 +401,7 @@ private class ConcreteChan<T>: Chan<T>
     Determine whether the channel has been closed
   */
 
-  private override var isClosed: Bool { return closed }
+  public override var isClosed: Bool { return closed }
 
   /**
     Close the channel
@@ -386,7 +413,7 @@ private class ConcreteChan<T>: Chan<T>
     The actual reaction shall be implementation-dependent.
   */
 
-  private override func close()
+  public override func close()
   {
     if closed { return }
 
@@ -410,7 +437,7 @@ private class ConcreteChan<T>: Chan<T>
     :param: element the new element to be added to the channel.
   */
 
-  private override func write(newElement: T)
+  public override func write(newElement: T)
   {
     _ = newElement
   }
@@ -424,7 +451,7 @@ private class ConcreteChan<T>: Chan<T>
     :return: the oldest element from the channel.
   */
 
-  private override func read() -> T?
+  public override func read() -> T?
   { // If we return 'nil', we should set the channel state to 'closed'
     close()
     return nil
@@ -435,7 +462,7 @@ private class ConcreteChan<T>: Chan<T>
   A buffered channel.
 */
 
-private class BufferedChan<T>: ConcreteChan<T>
+public class BufferedChan<T>: ConcreteChan<T>
 {
   private let channelCapacity: Int = 1
 
@@ -458,7 +485,7 @@ private class BufferedChan<T>: ConcreteChan<T>
     if logging { syncprint(message) }
   }
 
-  private override var capacity: Int { return channelCapacity }
+  public override var capacity: Int { return channelCapacity }
 
   /**
     Close the channel
@@ -470,7 +497,7 @@ private class BufferedChan<T>: ConcreteChan<T>
     already been closed, but in fact nothing will happen if it were to occur.
   */
 
-  private override func close()
+  public override func close()
   {
     if closed { return }
 
@@ -487,7 +514,7 @@ private class BufferedChan<T>: ConcreteChan<T>
     :param: element the new element to be added to the channel.
   */
 
-  private override func write(newElement: T)
+  public override func write(newElement: T)
   {
     if self.closed { return }
 
@@ -531,7 +558,7 @@ private class BufferedChan<T>: ConcreteChan<T>
     :return: the oldest element from the channel.
   */
 
-  private override func read() -> T?
+  public override func read() -> T?
   {
     pthread_mutex_lock(channelMutex)
 
@@ -563,11 +590,41 @@ private class BufferedChan<T>: ConcreteChan<T>
   {
     return nil
   }
+
+  public override func selectRead(channel: SelectChan<Selectable>, message: Selectable)
+  {
+    async {
+      syncprint("selectRead: \(message)")
+
+      pthread_mutex_lock(self.channelMutex)
+      while self.isEmpty && !self.closed
+      {
+        pthread_cond_wait(self.readCondition, self.channelMutex)
+      }
+
+      channel.mutexAction {
+        if !channel.isClosed
+        {
+          let e = self.readElement()
+          channel.stash = SelectPayload(payload: e)
+          channel <- message
+          syncprint("mutexed: \(e)")
+        }
+      }
+
+      pthread_cond_signal(channel.readCondition)
+
+      pthread_cond_signal(self.writeCondition)
+      if self.closed { pthread_cond_signal(self.readCondition) }
+      pthread_mutex_unlock(self.channelMutex)
+
+      syncprint("escaped selectRead: \(message)")
+    }
+  }
 }
 
-
 /**
-  A buffered channel.
+  A buffered channel with an N>1 element buffer
 */
 
 private class BufferedNChan<T>: BufferedChan<T>
@@ -606,7 +663,7 @@ private class BufferedNChan<T>: BufferedChan<T>
   A buffered channel with a one-element backing store.
 */
 
-private class Buffered1Chan<T>: BufferedChan<T>
+public class Buffered1Chan<T>: BufferedChan<T>
 {
   private var element: T? = nil
 
@@ -622,9 +679,9 @@ private class Buffered1Chan<T>: BufferedChan<T>
     self.init(1, attributes: nil)
   }
 
-  private override var isEmpty: Bool { return (element == nil) }
+  public override var isEmpty: Bool { return (element == nil) }
 
-  private override var isFull: Bool  { return (element != nil) }
+  public override var isFull: Bool  { return (element != nil) }
 
   private override func writeElement(newElement: T)
   {
@@ -644,7 +701,7 @@ private class Buffered1Chan<T>: BufferedChan<T>
   The first successful write operation also closes the channel.
 */
 
-class SingletonChan<T>: Buffered1Chan<T>
+public class SingletonChan<T>: Buffered1Chan<T>
 {
   init()
   {
@@ -663,8 +720,17 @@ class SingletonChan<T>: Buffered1Chan<T>
 
   private override func writeElement(newElement: T)
   {
-    close()
     super.writeElement(newElement)
+    close()
+  }
+
+  /**
+    Reopen a SingletonChan; because recycling can be good.
+  */
+
+  func reopen()
+  {
+    closed = false
   }
 }
 
