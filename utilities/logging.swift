@@ -9,8 +9,10 @@
 import Dispatch
 import Foundation.NSThread
 
-private var PrintQueue: dispatch_queue_attr_t! = nil
-private var PrintGroup: dispatch_group_t! = nil
+private var PrintQueue: dispatch_queue_attr_t! =
+                        dispatch_queue_create("com.tffenterprises.printqueue", DISPATCH_QUEUE_SERIAL)
+
+private var PrintGroup: dispatch_group_t! = dispatch_group_create()
 
 /**
   A wrapper for println that runs all print requests on a serial queue
@@ -27,15 +29,9 @@ private var PrintGroup: dispatch_group_t! = nil
 
 func syncprint<T>(object: T)
 {
-  if PrintQueue == nil
-  {
-    PrintQueue = dispatch_queue_create("com.tffenterprises.printqueue", DISPATCH_QUEUE_SERIAL)
-    PrintGroup = dispatch_group_create()
-    assert(PrintQueue != nil && PrintGroup != nil)
-  }
-
   var message = NSThread.currentThread().isMainThread ? "[main] " : "[back] "
 
+  assert(PrintQueue != nil && PrintGroup != nil, "Init failure in logging.swift")
   dispatch_group_async(PrintGroup, PrintQueue) { println(object, &message); print(message) }
 }
 

@@ -16,7 +16,7 @@ func FilterWords(input: ReadChan<Array<Slice<UInt8>>>, output: Chan<Array<Slice<
   let tic = Time()
   var wordcount = 0
 
-  let offset: UInt8 = 97
+  let offset: UInt8 = "a".nulTerminatedUTF8[0]
   let masterCounts = Array<Int>(count: 26, repeatedValue: 0)
 
   while let slices = <-input

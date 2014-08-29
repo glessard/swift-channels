@@ -9,9 +9,10 @@
 
 /**
   Channel send operator, global definition
+  The precedence value chosen matches the assigment operators.
 */
 
-infix operator <- { associativity left }
+infix operator <- { associativity left precedence 90}
 
 /**
   Channel send operator: send a new element to the channel
