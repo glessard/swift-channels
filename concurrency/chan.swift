@@ -95,7 +95,7 @@ public class Chan<T>: ReadableChannel, WritableChannel
     :return: a newly-wrapped Chan<T> object
   */
 
-  internal class func Wrap<C: ReadableChannel where C.ReadElement == T>(c: C) -> Chan<T>
+  class func Wrap<C: ReadableChannel where C.ReadElement == T>(c: C) -> Chan<T>
   {
     return EnclosedDirectionalChan(c)
   }
@@ -110,7 +110,7 @@ public class Chan<T>: ReadableChannel, WritableChannel
     :return: a newly-wrapped Chan<T> object
   */
 
-  internal class func Wrap<C: WritableChannel where C.WrittenElement == T>(c: C) -> Chan<T>
+  class func Wrap<C: WritableChannel where C.WrittenElement == T>(c: C) -> Chan<T>
   {
     return EnclosedDirectionalChan(c)
   }
@@ -369,24 +369,6 @@ private class ConcreteChan<T>: Chan<T>
   }
 
   // Computed properties
-
-  /**
-    Determine whether the channel is empty (and therefore can't be read from)
-  */
-
-  private override var isEmpty: Bool { return false }
-
-  /**
-    Determine whether the channel is full (and can't be written to)
-  */
-
-  private override var isFull: Bool { return false }
-
-  /**
-    Report the channel capacity
-  */
-
-  private override var capacity: Int { return 0 }
 
   /**
     Determine whether the channel has been closed
