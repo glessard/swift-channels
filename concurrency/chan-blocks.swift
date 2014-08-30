@@ -24,14 +24,14 @@ private enum QueueAction
 A buffered channel.
 */
 
-class GCDChan<T>: Chan<T>
+class BufferedChan<T>: Chan<T>
 {
   private let channelCapacity: Int
   private var closed: Bool = false
 
-  private let mutexq: dispatch_queue_t
-  private let readrq: dispatch_queue_t
-  private let writrq: dispatch_queue_t
+  private let mutexq:  dispatch_queue_t
+  private let readerq: dispatch_queue_t
+  private let writerq: dispatch_queue_t
 
   private init(var _ capacity: Int)
   {
@@ -39,9 +39,9 @@ class GCDChan<T>: Chan<T>
 
     channelCapacity = capacity
 
-    mutexq = dispatch_queue_create("channelmutex", DISPATCH_QUEUE_SERIAL)
-    readrq = dispatch_queue_create("channelreadr", DISPATCH_QUEUE_SERIAL)
-    writrq = dispatch_queue_create("channelwritr", DISPATCH_QUEUE_SERIAL)
+    mutexq =  dispatch_queue_create("channelmutex", DISPATCH_QUEUE_SERIAL)
+    readerq = dispatch_queue_create("channelreadr", DISPATCH_QUEUE_SERIAL)
+    writerq = dispatch_queue_create("channelwritr", DISPATCH_QUEUE_SERIAL)
 
     super.init()
   }
@@ -50,17 +50,17 @@ class GCDChan<T>: Chan<T>
 
   private func channelMutex(action: () -> ())
   {
-    dispatch_sync(mutexq) { action() }
+    dispatch_sync(mutexq)  { action() }
   }
 
   private func readerMutex(action: () -> ())
   {
-    dispatch_sync(readrq) { action() }
+    dispatch_sync(readerq) { action() }
   }
 
   private func writerMutex(action: () -> ())
   {
-    dispatch_sync(writrq) { action() }
+    dispatch_sync(writerq) { action() }
   }
 
   private var readerState: QueueState = .Running
@@ -71,17 +71,17 @@ class GCDChan<T>: Chan<T>
     switch action
     {
     case .Suspend:
-      if self.readerState == .Running
+      if readerState == .Running
       {
-        dispatch_suspend(self.readrq)
-        self.readerState = .Suspended
+        dispatch_suspend(self.readerq)
+        readerState = .Suspended
       }
 
     case .Resume:
-      if self.readerState == .Suspended
+      if readerState == .Suspended
       {
-        dispatch_resume(self.readrq)
-        self.readerState = .Running
+        dispatch_resume(self.readerq)
+        readerState = .Running
       }
     }
   }
@@ -91,24 +91,24 @@ class GCDChan<T>: Chan<T>
     switch action
     {
     case .Suspend:
-      if self.writerState == .Running
+      if writerState == .Running
       {
-        dispatch_suspend(self.writrq)
-        self.writerState = .Suspended
+        dispatch_suspend(self.writerq)
+        writerState = .Suspended
       }
 
     case .Resume:
-      if self.writerState == .Suspended
+      if writerState == .Suspended
       {
-        dispatch_resume(self.writrq)
-        self.writerState = .Running
+        dispatch_resume(self.writerq)
+        writerState = .Running
       }
     }
   }
-  
+
   // Logging
 
-  private let logging = true
+  private let logging = false
   private func log(message: String) -> ()
   {
     if logging { syncprint(message) }
@@ -191,8 +191,8 @@ class GCDChan<T>: Chan<T>
       // Channel is not empty; signal this.
       self.reader(.Resume)
 
-      // Allow the next writer a writing attempt
-      self.writer(.Resume)
+      // Allow the next writer an attempt
+      if !self.isFull { self.writer(.Resume) }
 
       assert(!self.isEmpty)
     }
@@ -228,11 +228,8 @@ class GCDChan<T>: Chan<T>
     {
       // loop here while the channel is empty
       readerMutex {
-        assert(self.readerState == .Running)
-
         self.channelMutex {
           self.reader(.Suspend)
-
           blockReader = self.isEmpty && !self.closed
         }
       }
@@ -246,7 +243,7 @@ class GCDChan<T>: Chan<T>
       self.writer(.Resume)
 
       // Allow the next reader an attempt
-      self.reader(.Resume)
+      if !self.isEmpty { self.reader(.Resume) }
     }
 
     assert(oldElement != nil || self.isClosed)
@@ -299,7 +296,7 @@ class GCDChan<T>: Chan<T>
 A buffered channel with an N>1 element buffer
 */
 
-class GCDBufferedNChan<T>: GCDChan<T>
+class BufferedNChan<T>: BufferedChan<T>
 {
   private var q: Queue<T>
 
@@ -330,7 +327,7 @@ class GCDBufferedNChan<T>: GCDChan<T>
 A buffered channel with a one-element backing store.
 */
 
-class GCDBuffered1Chan<T>: GCDChan<T>
+class Buffered1Chan<T>: BufferedChan<T>
 {
   private var element: T?
 
@@ -367,7 +364,7 @@ A one-element channel which will only ever transmit one message.
 The first successful write operation immediately closes the channel.
 */
 
-public class GCDSingletonChan<T>: GCDBuffered1Chan<T>
+public class SingletonChan<T>: Buffered1Chan<T>
 {
   public init()
   {
@@ -378,15 +375,6 @@ public class GCDSingletonChan<T>: GCDBuffered1Chan<T>
   {
     super.writeElement(newElement)
     doClose()
-  }
-
-  /**
-  Reopen a SingletonChan; because recycling can be good.
-  */
-
-  func reopen()
-  {
-    closed = false
   }
 }
 

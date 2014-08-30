@@ -32,6 +32,8 @@
 		033DFE1819B12CB900F4B44B /* signal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 033DFE1619B12CB900F4B44B /* signal.swift */; };
 		033DFE1919B12CB900F4B44B /* signal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 033DFE1619B12CB900F4B44B /* signal.swift */; };
 		034B721519A484CF00F4B44B /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 034B721419A484CF00F4B44B /* main.swift */; };
+		036000DA19B2792300F4B44B /* chan-blocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0333016D19B15C3700F4B44B /* chan-blocks.swift */; };
+		036000DB19B2792300F4B44B /* chan-blocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0333016D19B15C3700F4B44B /* chan-blocks.swift */; };
 		038B6CD219A5384200F4B44B /* timing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035FDFE419A17E8B00F4B44B /* timing.swift */; };
 		03901B6D19B14FFC00F4B44B /* select-chan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03F01B8419B0F0F400F4B44B /* select-chan.swift */; };
 		03901B6E19B1501700F4B44B /* defer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 033A1AA719B10F7100F4B44B /* defer.swift */; };
@@ -372,6 +374,7 @@
 				03901B6D19B14FFC00F4B44B /* select-chan.swift in Sources */,
 				0315A17B19AD72B700F4B44B /* chan-utilities.swift in Sources */,
 				03216FB719B027D100F4B44B /* select-types.swift in Sources */,
+				036000DA19B2792300F4B44B /* chan-blocks.swift in Sources */,
 				0315A15C19AD3AAF00F4B44B /* chan-operators.swift in Sources */,
 				03F01B7F19B0413E00F4B44B /* shuffle.swift in Sources */,
 				0315A15F19AD3CED00F4B44B /* async.swift in Sources */,
@@ -421,6 +424,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				03B65B8419AFFC2C00F4B44B /* async.swift in Sources */,
+				036000DB19B2792300F4B44B /* chan-blocks.swift in Sources */,
 				03B65B8319AFFC2C00F4B44B /* chan-utilities.swift in Sources */,
 				033DFE1919B12CB900F4B44B /* signal.swift in Sources */,
 				03B65B8119AFFC2C00F4B44B /* chan-directional.swift in Sources */,
