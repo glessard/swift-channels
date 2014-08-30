@@ -10,8 +10,17 @@ import Dispatch
 
 public class Signal
 {
+  var raiseTask: () -> ()
+
+  public init(raiseTask: () -> ())
+  {
+    self.raiseTask = raiseTask
+  }
+
   public func Raise()
   {
+    self.raiseTask()
+    self.raiseTask = { }
   }
 }
 
@@ -25,12 +34,17 @@ public class pthreadSignal: Signal
   {
     threadCondition = cond
     threadMutex = mutex
+    super.init( {} )
   }
 
   public override func Raise()
   {
-    pthread_mutex_lock(threadMutex)
-    pthread_cond_broadcast(threadCondition)
-    pthread_mutex_unlock(threadMutex)
+    if threadMutex != nil
+    {
+      pthread_mutex_lock(threadMutex)
+      pthread_cond_broadcast(threadCondition)
+      pthread_mutex_unlock(threadMutex)
+    }
+    threadMutex = nil
   }
 }
