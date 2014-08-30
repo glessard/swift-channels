@@ -6,11 +6,10 @@
 //  Copyright (c) 2014 Guillaume Lessard. All rights reserved.
 //
 
-import Dispatch
-
 /**
   Merge the channels in the channels array into one.
-  Every item from the input channels will be able to be received via the returned channel.
+  Every item from the input channels will be able to be received via the returned channel.-
+  This function uses a simple round-robin approach to merging channels.
 
   :param: channels an array of (read-only) channels to merge.
 

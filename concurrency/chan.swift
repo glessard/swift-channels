@@ -201,13 +201,13 @@ public class Chan<T>: ReadableChannel, WritableChannel, SelectableChannel
 
   // Method for SelectableChannel
 
-  public func extract(payload: Selectee?) -> T?
+  public func extract(item: Selectee?) -> T?
   {
-    if payload != nil
+    if item != nil
     {
-      if let payload = payload as? SelectPayload<T>
+      if let item = item as? SelectPayload<T>
       {
-        return payload.data
+        return item.data
       }
     }
     return nil

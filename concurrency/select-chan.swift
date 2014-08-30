@@ -14,6 +14,11 @@ public func Select<T>(options: Chan<T>...) -> (Chan<T>?, Selectee)
 {
   assert(options.count > 0, "Select requires at least one argument")
 
+  return Select(options)
+}
+
+public func Select<T>(options: [Chan<T>])  -> (Chan<T>?, Selectee)
+{
   let resultChan = SelectChan<Selectable>()
 
   var closedOptions = 0

@@ -10,7 +10,7 @@
   ReadChan<T> wraps a ReadableChannel implementor in a concrete class.
 */
 
-public class ReadChan<T>: ReadableChannel, GeneratorType, SequenceType
+public class ReadChan<T>: ReadableChannel, SelectableChannel, GeneratorType, SequenceType
 {
   /**
     Return a new ReadChan<T> to stand in for ReadableChannel c.
@@ -45,6 +45,28 @@ public class ReadChan<T>: ReadableChannel, GeneratorType, SequenceType
 
   public func read() -> T?
   {
+    return nil
+  }
+
+  // SelectableChannel interface
+  
+  public var invalidSelection: Bool { return isClosed && isEmpty }
+
+  public func selectRead(channel: SelectChan<Selectable>, message: Selectable) -> Signal
+  {
+    assert(false, "This placeholder function should never execute!")
+    return Signal()
+  }
+
+  public func extract(payload: Selectee?) -> T?
+  {
+    if payload != nil
+    {
+      if let payload = payload as? SelectPayload<T>
+      {
+        return payload.data
+      }
+    }
     return nil
   }
 
@@ -135,7 +157,7 @@ class EnclosedReadChan<T>: ReadChan<T>
   ReadableChannel will be visible in the type signature.
 */
 
-public class ReadOnly<C: ReadableChannel>: ReadableChannel, GeneratorType, SequenceType
+public class ReadOnly<C: SelectableChannel>: ReadableChannel, SelectableChannel, GeneratorType, SequenceType
 {
   private var wrapped: C
 
@@ -164,6 +186,18 @@ public class ReadOnly<C: ReadableChannel>: ReadableChannel, GeneratorType, Seque
   public func generate() -> Self
   {
     return self
+  }
+
+  public var invalidSelection: Bool { return wrapped.invalidSelection }
+
+  public func selectRead(channel: SelectChan<Selectable>, message: Selectable) -> Signal
+  {
+    return wrapped.selectRead(channel, message: message)
+  }
+
+  public func extract(item: Selectee?) -> C.ReadElement?
+  {
+    return wrapped.extract(item)
   }
 }
 
