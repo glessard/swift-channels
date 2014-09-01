@@ -63,12 +63,10 @@ public protocol SelectableChannel: Selectable, ReadableChannel
 
 public class SelectChan<T>: SingletonChan<T>
 {
-  private let gcdq: dispatch_queue_t
   private var payload: Selectee
 
   public override init()
   {
-    gcdq = dispatch_queue_create("SelectChan", DISPATCH_QUEUE_SERIAL)
     let nilT: T? = nil
     payload = SelectPayload(payload: nilT)
     super.init()
@@ -78,11 +76,6 @@ public class SelectChan<T>: SingletonChan<T>
   {
     get { return payload }
     set { payload = newValue }
-  }
-
-  public func mutexAction(action: () -> ())
-  {
-    dispatch_sync(gcdq) { action() }
   }
 }
 
