@@ -12,19 +12,25 @@ import Dispatch
   What a type needs to be usable in the Select() function.
 */
 
+public typealias Signal = () -> ()
+
 public protocol Selectable: class
 {
   /**
     Select registers its notification channel by calling an implementation's selectRead() method.
     This channel is a subtype of SingletonChannel and thus only one recipient will be able to respond.
 
+    -> whatever code sends a notification back should run asynchronously.
+
     Associated data can be sent back along with the notification by copying it to the SelectChan.stash
     property. This (and sending the notification) can be done safely inside a closure that is invoked
-    through the channel's SelectChan.mutexAction() method. This ensures that it runs synchronously
+    through the channel's SelectChan.channelMutex() method. This ensures that it runs synchronously
     with any other closures attempting to do the same, ensuring that only the first succeeds.
 
     :param: channel the channel to use for a return notification.
     :param: message an identifier to be sent as the return notification.
+  
+    :return: a closure to be run once, which can unlock a stopped thread if needed.
   */
   func selectRead(channel: SelectChan<Selectable>, message: Selectable) -> Signal
 

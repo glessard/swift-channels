@@ -45,9 +45,6 @@
 		03B65B8719AFFC3000F4B44B /* logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E44D1419A7A71200F4B44B /* logging.swift */; };
 		03B65B8A19AFFC5300F4B44B /* select-types.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B65B8819AFFC4D00F4B44B /* select-types.swift */; };
 		03B65B8C19AFFD8100F4B44B /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B65B7A19AFFC1800F4B44B /* main.swift */; };
-		03E2A8C419B4C47E00F4B44B /* signal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E2A8C319B4C47E00F4B44B /* signal.swift */; };
-		03E2A8C519B4C47E00F4B44B /* signal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E2A8C319B4C47E00F4B44B /* signal.swift */; };
-		03E2A8C619B4C47E00F4B44B /* signal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E2A8C319B4C47E00F4B44B /* signal.swift */; };
 		03E57EBE19AC050400F4B44B /* chan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035FDFDB19A17DD500F4B44B /* chan.swift */; };
 		03E57EBF19AC050400F4B44B /* chan-protocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0310D0F919A8627800F4B44B /* chan-protocols.swift */; };
 		03E57EC019AC050400F4B44B /* chan-directional.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0367EA5919A8F84A00F4B44B /* chan-directional.swift */; };
@@ -123,7 +120,6 @@
 		03B65B7819AFFC1800F4B44B /* chan-select */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "chan-select"; sourceTree = BUILT_PRODUCTS_DIR; };
 		03B65B7A19AFFC1800F4B44B /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		03B65B8819AFFC4D00F4B44B /* select-types.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "select-types.swift"; sourceTree = "<group>"; };
-		03E2A8C319B4C47E00F4B44B /* signal.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = signal.swift; sourceTree = "<group>"; };
 		03E44D1419A7A71200F4B44B /* logging.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = logging.swift; sourceTree = "<group>"; };
 		03E44D1619A7AB5700F4B44B /* queue.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = queue.swift; sourceTree = "<group>"; };
 		03F01B8019B04D1500F4B44B /* select.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = select.swift; sourceTree = "<group>"; };
@@ -245,7 +241,6 @@
 				03F01B8419B0F0F400F4B44B /* select-chan.swift */,
 				03B65B8819AFFC4D00F4B44B /* select-types.swift */,
 				0315A17A19AD72B700F4B44B /* chan-utilities.swift */,
-				03E2A8C319B4C47E00F4B44B /* signal.swift */,
 				035FDFDD19A17DD500F4B44B /* async.swift */,
 			);
 			path = concurrency;
@@ -371,7 +366,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				0315A15719AD39E400F4B44B /* tokenize.swift in Sources */,
-				03E2A8C519B4C47E00F4B44B /* signal.swift in Sources */,
 				0315A17919AD527100F4B44B /* filter.swift in Sources */,
 				03901B6E19B1501700F4B44B /* defer.swift in Sources */,
 				03901B6D19B14FFC00F4B44B /* select-chan.swift in Sources */,
@@ -397,7 +391,6 @@
 			files = (
 				03E57EC219AC050400F4B44B /* async.swift in Sources */,
 				032066A819AC04D800F4B44B /* main.swift in Sources */,
-				03E2A8C419B4C47E00F4B44B /* signal.swift in Sources */,
 				03E57EC519AC050A00F4B44B /* logging.swift in Sources */,
 				03E57EBE19AC050400F4B44B /* chan.swift in Sources */,
 				03E57EC419AC050A00F4B44B /* queue.swift in Sources */,
@@ -437,7 +430,6 @@
 				033A1AA819B10F7100F4B44B /* defer.swift in Sources */,
 				03B65B8A19AFFC5300F4B44B /* select-types.swift in Sources */,
 				03216FB519B0274800F4B44B /* chan.swift in Sources */,
-				03E2A8C619B4C47E00F4B44B /* signal.swift in Sources */,
 				03B65B8C19AFFD8100F4B44B /* main.swift in Sources */,
 				03B65B8719AFFC3000F4B44B /* logging.swift in Sources */,
 				03B65B8019AFFC2C00F4B44B /* chan-protocols.swift in Sources */,

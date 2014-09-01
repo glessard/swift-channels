@@ -308,7 +308,7 @@ class BufferedChan<T>: Chan<T>
       }
     }
     
-    return Signal { self.channelMutex { self.readers(.Resume) } }
+    return { self.channelMutex { self.readers(.Resume) } }
   }
 }
 

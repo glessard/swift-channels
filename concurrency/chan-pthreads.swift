@@ -280,7 +280,11 @@ class BufferedChan<T>: pthreadChan<T>
       pthread_mutex_unlock(self.channelMutex)
     }
 
-    return pthreadSignal(cond: readCondition, mutex: channelMutex)
+    return {
+      pthread_mutex_lock(self.channelMutex)
+      pthread_cond_broadcast(self.readCondition)
+      pthread_mutex_unlock(self.channelMutex)
+    }
   }
 }
 

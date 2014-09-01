@@ -199,7 +199,7 @@ public class Chan<T>: ReadableChannel, WritableChannel, SelectableChannel
       }
     }
 
-    return Signal( {} )
+    return {}
   }
 
   // Method for SelectableChannel

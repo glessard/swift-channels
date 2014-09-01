@@ -55,7 +55,7 @@ public class ReadChan<T>: ReadableChannel, SelectableChannel, GeneratorType, Seq
   public func selectRead(channel: SelectChan<Selectable>, message: Selectable) -> Signal
   {
     assert(false, "This placeholder function should never execute!")
-    return Signal( {} )
+    return { }
   }
 
   public func extract(payload: Selectee?) -> T?

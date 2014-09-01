@@ -49,7 +49,7 @@ public func Select(options: Selectable...) -> (Selectable, Selectee)
   }
 
   // Unblock any remaining waiting threads upon function exit.
-  DeferredTaskList().defer { for signal in signals { signal.Raise() } }
+  DeferredTaskList().defer { for signal in signals { signal() } }
 
   if closedOptions < options.count
   {

@@ -40,7 +40,7 @@ public func Select<T>(options: [Chan<T>])  -> (Chan<T>?, Selectee)
   }
 
   // Unblock any remaining waiting threads upon function exit.
-  DeferredTaskList().defer { for signal in signals { signal.Raise() } }
+  DeferredTaskList().defer { for signal in signals { signal() } }
 
   if closedOptions < options.count
   {
