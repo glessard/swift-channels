@@ -24,7 +24,7 @@ public func shuffle<T>(a: Array<T>) -> ShuffledSequence<T>
 
 public class ShuffledSequence<T>: SequenceType, GeneratorType
 {
-  private let a: Array<T>
+  private let a: Slice<T>
 
   private var step = 0
   private var i: [Int]
@@ -32,7 +32,7 @@ public class ShuffledSequence<T>: SequenceType, GeneratorType
   public init(_ input: Array<T>)
   {
     let r = 0..<input.count
-    a = input // input[r]
+    a = input[r]
     i = Array(r)
   }
 
@@ -53,8 +53,6 @@ public class ShuffledSequence<T>: SequenceType, GeneratorType
       // housekeeping
       if j != step { (i[j],i[step]) = (i[step],i[j]) }
       step += 1
-
-//      syncprint("shuffling index \(index) of \(a.count) on step \(step)")
 
       // result
       return a[index]

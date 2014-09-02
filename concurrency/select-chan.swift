@@ -10,16 +10,16 @@
 Select gets notified of events by the first of a list of Selectable items.
 */
 
-public func Select<T>(options: Chan<T>...) -> (Chan<T>?, Selectee)
+public func Select<T>(options: Chan<T>...) -> (Chan<T>?, SelectionType)
 {
   assert(options.count > 0, "Select requires at least one argument")
 
   return Select(options)
 }
 
-public func Select<T>(options: [Chan<T>])  -> (Chan<T>?, Selectee)
+public func Select<T>(options: [Chan<T>])  -> (Chan<T>?, SelectionType)
 {
-  let resultChan = SelectChan<Selectable>()
+  let resultChan = SelectChan<(Selectable,SelectionType)>()
 
   var closedOptions = 0
   var signals = [Signal]()
@@ -35,7 +35,7 @@ public func Select<T>(options: [Chan<T>])  -> (Chan<T>?, Selectee)
       continue
     }
 
-    let signal = option.selectRead(resultChan, message: option)
+    let signal = option.selectRead(resultChan, messageID: option)
     signals.append(signal)
   }
 
@@ -44,12 +44,15 @@ public func Select<T>(options: [Chan<T>])  -> (Chan<T>?, Selectee)
 
   if closedOptions < options.count
   {
-    if let message = resultChan.read() as? Chan<T>
+    if let (message, selection) = resultChan.read()
     {
-      return (message, resultChan.stash)
+      if let message = message as? Chan<T>
+      {
+        return (message, selection)
+      }
     }
   }
 
   let nilS: Selectable? = nil
-  return (nil, SelectPayload(payload: nilS))
+  return (nil, Selection(payload: nilS))
 }
