@@ -26,7 +26,7 @@ public class ReadChan<T>: ReadableChannel, SelectableChannel, GeneratorType, Seq
     :return:  A ReadChan object that will pass along the elements from c.
   */
 
-  public class func Wrap<C: ReadableChannel where C.ReadElement == T>(c: C) -> ReadChan<T>
+  public class func Wrap<C: SelectableChannel where C.ReadElement == T>(c: C) -> ReadChan<T>
   {
     if let c = c as? ReadChan<T> { return c }
     if let c = c as? Chan<T>     { return WrappedReadChan(c) }
@@ -52,19 +52,19 @@ public class ReadChan<T>: ReadableChannel, SelectableChannel, GeneratorType, Seq
   
   public var invalidSelection: Bool { return isClosed && isEmpty }
 
-  public func selectRead(channel: SelectChan<Selectable>, message: Selectable) -> Signal
+  public func selectRead(channel: SelectChan<SelectionType>, messageID: Selectable) -> Signal
   {
     assert(false, "This placeholder function should never execute!")
     return { }
   }
 
-  public func extract(payload: Selectee?) -> T?
+  public func extract(selection: SelectionType?) -> T?
   {
-    if payload != nil
+    if selection != nil
     {
-      if let payload = payload as? SelectPayload<T>
+      if let selection = selection as? Selection<T>
       {
-        return payload.data
+        return selection.data
       }
     }
     return nil
@@ -112,6 +112,13 @@ class WrappedReadChan<T>: ReadChan<T>
   {
     return wrapped.read()
   }
+
+  override var invalidSelection: Bool { return wrapped.invalidSelection }
+
+  override func selectRead(channel: SelectChan<SelectionType>, messageID: Selectable) -> Signal
+  {
+    return wrapped.selectRead(channel, messageID: messageID)
+  }
 }
 
 /**
@@ -120,14 +127,17 @@ class WrappedReadChan<T>: ReadChan<T>
 
 class EnclosedReadChan<T>: ReadChan<T>
 {
-  init<C: ReadableChannel where C.ReadElement == T>(_ c: C)
+  init<C: SelectableChannel where C.ReadElement == T>(_ c: C)
   {
-    enclosedCapacity =  { c.capacity }
-    enclosedGetClosed = { c.isClosed }
-    enclosedCloseFunc = { c.close() }
+    enclosedCapacity =   { c.capacity }
+    enclosedGetClosed =  { c.isClosed }
+    enclosedCloseFunc =  { c.close() }
 
-    enclosedGetEmpty =  { c.isEmpty }
-    enclosedReadFunc =  { c.read() }
+    enclosedGetEmpty =   { c.isEmpty }
+    enclosedReadFunc =   { c.read() }
+
+    enclosedSelectGo =   { c.invalidSelection }
+    enclosedSelectRead = { c.selectRead($0, messageID: $1) }
   }
 
   // ReadableChannel implementation
@@ -148,6 +158,15 @@ class EnclosedReadChan<T>: ReadChan<T>
   override func read() -> T?
   {
     return enclosedReadFunc()
+  }
+
+  private var enclosedSelectGo: () -> Bool
+  override var invalidSelection: Bool { return enclosedSelectGo() }
+
+  private var enclosedSelectRead: (SelectChan<SelectionType>, Selectable) -> Signal
+  override func selectRead(channel: SelectChan<SelectionType>, messageID: Selectable) -> Signal
+  {
+    return enclosedSelectRead(channel, messageID)
   }
 }
 
@@ -190,12 +209,12 @@ public class ReadOnly<C: SelectableChannel>: ReadableChannel, SelectableChannel,
 
   public var invalidSelection: Bool { return wrapped.invalidSelection }
 
-  public func selectRead(channel: SelectChan<Selectable>, message: Selectable) -> Signal
+  public func selectRead(channel: SelectChan<SelectionType>, messageID: Selectable) -> Signal
   {
-    return wrapped.selectRead(channel, message: message)
+    return wrapped.selectRead(channel, messageID: messageID)
   }
 
-  public func extract(item: Selectee?) -> C.ReadElement?
+  public func extract(item: SelectionType?) -> C.ReadElement?
   {
     return wrapped.extract(item)
   }

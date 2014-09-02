@@ -32,7 +32,8 @@ public protocol Selectable: class
   
     :return: a closure to be run once, which can unlock a stopped thread if needed.
   */
-  func selectRead(channel: SelectChan<Selectable>, message: Selectable) -> Signal
+
+  func selectRead(channel: SelectChan<SelectionType>, messageID: Selectable) -> Signal
 
   /**
     If it makes no sense to launch the selectRead() method, return false to this.
@@ -46,8 +47,10 @@ public protocol Selectable: class
   A particular kind of Anything.
 */
 
-public protocol Selectee: class
+public protocol SelectionType: class
 {
+//  var selectable: Selectable { get }
+//  func getMessageID() -> Selectable
 }
 
 /**
@@ -55,33 +58,40 @@ public protocol Selectee: class
   After all, it should have created the object in its selectRead() method.
 */
 
-public protocol SelectableChannel: Selectable, ReadableChannel
+public protocol SelectableChannel: class, Selectable, ReadableChannel
 {
-  func extract(item: Selectee?) -> ReadElement?
+  func extract(item: SelectionType?) -> ReadElement?
+}
+
+public protocol SelectionChannel
+{
+  typealias WrittenElement
+
+  /**
+    selectMutex() must be used to send data to SelectChan in a thread-safe manner
+  */
+
+  func selectMutex(action: () -> ())
+
+  /**
+    selectSend() must be called within the closure sent to selectMutex()
+    in order to fulfill the Selectable contract.
+  */
+
+  func selectSend(newElement: WrittenElement)
 }
 
 /**
   A special kind of SingletonChan for use by Select.
-  SelectChan provides a way for a receiving channel to "stash" its payload
-  for later recovery upon return to the body of the Select function.
-  This is a special case of cross-thread data sharing.
+  SelectChan provides a way for a receiving channel to communicate back in a thread-safe
+  way by using the selectSend() method within a closure passed to selectMutex().
 */
 
 public class SelectChan<T>: SingletonChan<T>
 {
-  private var payload: Selectee
-
-  public override init()
+  override init()
   {
-    let nilT: T? = nil
-    payload = SelectPayload(payload: nilT)
     super.init()
-  }
-
-  var stash: Selectee
-  {
-    get { return payload }
-    set { payload = newValue }
   }
 }
 
@@ -90,12 +100,16 @@ public class SelectChan<T>: SingletonChan<T>
   It's like a Bag of Holding. For one thing at a time.
 */
 
-public class SelectPayload<T>: Selectee
+public class Selection<T>: SelectionType
 {
+  var messID: Selectable
   var data: T?
 
-  public init(payload: T?)
+  public init(messageID: Selectable, messageData: T?)
   {
-    data = payload
+    messID = messageID
+    data = messageData
   }
+
+  public func getMessageID() -> Selectable { return messID }
 }

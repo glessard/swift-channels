@@ -14,12 +14,6 @@ private enum QueueState
   case Running
 }
 
-private enum QueueAction
-{
-  case Suspend
-  case Resume
-}
-
 /**
 A buffered channel.
 */
@@ -29,17 +23,20 @@ class BufferedChan<T>: Chan<T>
   private let channelCapacity: Int
   private var closed: Bool = false
 
-  private let mutexq:  dispatch_queue_t
-  private let readerq: dispatch_queue_t
-  private let writerq: dispatch_queue_t
+  private let mutex:   dispatch_queue_t
+  private let readers: dispatch_queue_t
+  private let writers: dispatch_queue_t
+
+  private var readerState: QueueState = .Running
+  private var writerState: QueueState = .Running
 
   private init(var _ capacity: Int)
   {
     channelCapacity = (capacity < 0) ? 0 : capacity
 
-    mutexq =  dispatch_queue_create("channelmutex", DISPATCH_QUEUE_SERIAL)
-    readerq = dispatch_queue_create("channelreadr", DISPATCH_QUEUE_SERIAL)
-    writerq = dispatch_queue_create("channelwritr", DISPATCH_QUEUE_SERIAL)
+    mutex   = dispatch_queue_create("channelmutex", DISPATCH_QUEUE_SERIAL)
+    readers = dispatch_queue_create("channelreadq", DISPATCH_QUEUE_SERIAL)
+    writers = dispatch_queue_create("channelwritq", DISPATCH_QUEUE_SERIAL)
 
     super.init()
   }
@@ -48,70 +45,86 @@ class BufferedChan<T>: Chan<T>
 
   func channelMutex(action: () -> ())
   {
-    dispatch_sync(mutexq)  { action() }
+    dispatch_sync(mutex)   { action() }
   }
 
   private func readerMutex(action: () -> ())
   {
-    dispatch_sync(readerq) { action() }
+    dispatch_sync(readers) { action() }
   }
 
   private func writerMutex(action: () -> ())
   {
-    dispatch_sync(writerq) { action() }
+    dispatch_sync(writers) { action() }
   }
 
-  private var readerState: QueueState = .Running
-  private var writerState: QueueState = .Running
-
   /**
-    Set the state of the readers queue to .Running or .Suspended.
+    Suspend either the readers or the writers queue, and
+    resume the other queue in the process.
+
     By *definition*, this method is called while a mutex is locked.
+  
+    :param: queue either the readers or the writers queue.
   */
 
-  private func readers(action: QueueAction)
+  private func suspend(queue: dispatch_queue_t)
   {
-    switch action
+    if queue === readers
     {
-    case .Suspend:
       if readerState == .Running
       {
-        dispatch_suspend(self.readerq)
+        dispatch_suspend(readers)
         readerState = .Suspended
+        resume(writers)
       }
-
-    case .Resume:
-      if readerState == .Suspended
-      {
-        dispatch_resume(self.readerq)
-        readerState = .Running
-      }
+      return
     }
+
+    if queue === writers
+    {
+      if writerState == .Running
+      {
+        dispatch_suspend(writers)
+        writerState = .Suspended
+        resume(readers)
+      }
+      return
+    }
+
+    assert(false, "Attempted to suspend an invalid queue")
   }
 
   /**
-    Set the state of the writers queue to .Running or .Suspended.
+    Resume either the readers or the writers queue.
+
     By *definition*, this method is called while a mutex is locked.
+
+    :param: queue either the readers or the writers queue.
   */
 
-  private func writers(action: QueueAction)
+  private func resume(queue: dispatch_queue_t)
   {
-    switch action
+    if queue === readers
     {
-    case .Suspend:
-      if writerState == .Running
+      if readerState == .Suspended
       {
-        dispatch_suspend(self.writerq)
-        writerState = .Suspended
+        dispatch_resume(readers)
+        readerState = .Running
       }
+      return
+    }
 
-    case .Resume:
+    if queue === writers
+    {
       if writerState == .Suspended
       {
-        dispatch_resume(self.writerq)
+        dispatch_resume(writers)
         writerState = .Running
       }
+      return
     }
+
+    assert(false, "Attempted to resume an invalid queue")
   }
 
   // Logging
@@ -152,8 +165,8 @@ class BufferedChan<T>: Chan<T>
 
     channelMutex {
       self.doClose()
-      self.readers(.Resume)
-      self.writers(.Resume)
+      self.resume(self.readers)
+      self.resume(self.writers)
     }
   }
 
@@ -180,7 +193,7 @@ class BufferedChan<T>: Chan<T>
   {
     if self.isClosed { return }
 
-//    log("trying to send: \(newElement)")
+//    self.log("trying to send: \(newElement)")
 
     var hasSent = false
     while !hasSent
@@ -189,7 +202,7 @@ class BufferedChan<T>: Chan<T>
         self.channelMutex {
           if self.isFull && !self.isClosed
           {
-            self.writers(.Suspend)
+            self.suspend(self.writers)
             return // to the top of the while loop and be suspended
           }
 
@@ -198,16 +211,19 @@ class BufferedChan<T>: Chan<T>
           if !self.isFull { self.writeElement(newElement) }
           hasSent = true
 
-          // Channel is not empty; resume the readers queue.
-          self.readers(.Resume)
+//          self.log("sent element: \(newElement)")
 
-          // Preemptively suspend writers queue if appropriate
-          if self.isFull && !self.isClosed { self.writers(.Suspend) }
+          if self.isFull && !self.isClosed
+          { // Preemptively suspend writers queue when channel is full
+            self.suspend(self.writers)
+          }
+          else
+          { // Channel is not empty; resume the readers queue.
+            self.resume(self.readers)
+          }
         }
       }
     }
-
-//    log("sent element: \(newElement)")
   }
 
   /**
@@ -231,8 +247,8 @@ class BufferedChan<T>: Chan<T>
 
   override func read() -> T?
   {
-//    let id = readerCount++
-//    log("trying to receive #\(id)")
+    let id = readerCount++
+//    self.log("trying to receive #\(id)")
 
     var oldElement: T?
     var hasRead = false
@@ -242,25 +258,28 @@ class BufferedChan<T>: Chan<T>
         self.channelMutex {
           if self.isEmpty && !self.isClosed
           {
-            self.readers(.Suspend)
+            self.suspend(self.readers)
             return // to the top of the while loop and be suspended
           }
 
           oldElement = self.readElement()
           hasRead = true
 
-          // Preemptively suspend readers if appropriate
-          if self.isEmpty && !self.isClosed { self.readers(.Suspend) }
+//          self.log("reader \(id) received \(oldElement)")
 
-          // Channel is not full; resume the writers queue.
-          self.writers(.Resume)
+          if self.isEmpty && !self.isClosed
+          { // Preemptively suspend readers on empty channel
+            self.suspend(self.readers)
+          }
+          else
+          { // Channel is not full; resume the writers queue.
+          self.resume(self.writers)
+          }
         }
       }
     }
 
     assert(oldElement != nil || self.isClosed)
-
-//    log("received #\(id)")
 
     return oldElement
   }
@@ -275,7 +294,7 @@ class BufferedChan<T>: Chan<T>
     return nil
   }
 
-  override func selectRead(channel: SelectChan<Selectable>, message: Selectable) -> Signal
+  override func selectRead(channel: SelectChan<SelectionType>, messageID: Selectable) -> Signal
   {
     async {
       var hasRead = false
@@ -285,30 +304,33 @@ class BufferedChan<T>: Chan<T>
           self.channelMutex {
             if self.isEmpty && !self.isClosed && !channel.isClosed
             {
-              self.readers(.Suspend)
+              self.suspend(self.readers)
               return // to the top of the while loop and be suspended
             }
 
             channel.channelMutex {
               if !channel.isClosed
               {
-                channel.stash = SelectPayload(payload: self.readElement())
-                channel.writeElement(message)
+                let selection = Selection(messageID: messageID, messageData: self.readElement())
+                channel.selectSend(selection)
               }
             }
             hasRead = true
 
-            // Preemptively suspend readers if appropriate
-            if self.isEmpty && !self.isClosed { self.readers(.Suspend) }
-
-            // Channel is not full, resume writers.
-            self.writers(.Resume)
+            if self.isEmpty && !self.isClosed
+            { // Preemptively suspend readers on empty channel
+              self.suspend(self.readers)
+            }
+            else
+            { // Channel is not full; resume the writers queue.
+              self.resume(self.writers)
+            }
           }
         }
       }
     }
     
-    return { self.channelMutex { self.readers(.Resume) } }
+    return { self.channelMutex { self.resume(self.readers) } }
   }
 }
 
@@ -374,9 +396,12 @@ class Buffered1Chan<T>: BufferedChan<T>
 
   private override func readElement() ->T?
   {
-    let oldElement = self.element
-    self.element = nil
-    return oldElement
+    if let oldElement = self.element
+    {
+      self.element = nil
+      return oldElement
+    }
+    return nil
   }
 }
 
@@ -399,6 +424,30 @@ public class SingletonChan<T>: Buffered1Chan<T>
   }
 }
 
+extension SelectChan: SelectionChannel
+{
+  /**
+    selectMutex() must be used to send data to SelectChan in a thread-safe manner
+  */
+
+  public func selectMutex(action: () -> ())
+  {
+    if !self.isClosed
+    {
+      channelMutex { action() }
+    }
+  }
+
+  /**
+    selectSend(), used within the closure sent to selectMutex(), will send data to SelectionChannel
+  */
+  typealias WrittenElement=T
+
+  public func selectSend(newElement: WrittenElement)
+  {
+    super.writeElement(newElement)
+  }
+}
 
 /**
   A channel with no backing store.
@@ -421,72 +470,79 @@ class UnbufferedChan<T>: BufferedChan<T>
   }
 
   override var isEmpty: Bool { return (element == nil) }
-
   override var isFull: Bool  { return (element != nil) }
 
   /**
-  Close the channel
+    Tell whether the channel is ready to transfer data.
 
-  Any items still in the channel remain and can be retrieved.
-  New items cannot be added to a closed channel.
+    An unbuffered channel should always look empty to an external observer.
+    What is relevant internally is whether the data "is ready" to be transferred to a receiver.
+  
+    :return: whether the data is ready for a receive operation.
+  */
 
-  It should perhaps be considered an error to close a channel that has
-  already been closed, but in fact nothing will happen if it were to occur.
+  var isReady: Bool { return (element != nil) }
+
+  /**
+    Close the channel
+
+    Any items still in the channel remain and can be retrieved.
+    New items cannot be added to a closed channel.
+
+    It should perhaps be considered an error to close a channel that has
+    already been closed, but in fact nothing will happen if it were to occur.
   */
 
   override func close()
   {
     if closed { return }
 
-    log("closing 0-channel")
+//    self.log("closing 0-channel")
     super.close()
   }
 
   /**
-  Write an element to the channel
+    Write an element to the channel
 
-  If no reader is ready to receive, this call will block.
-  If the channel has been closed, no action will be taken.
+    If no reader is ready to receive, this call will block.
+    If the channel has been closed, no action will be taken.
 
-  :param: element the new element to be added to the channel.
+    :param: element the new element to be added to the channel.
   */
 
   override func write(newElement: T)
   {
     if self.isClosed { return }
 
-    log("writer \(newElement) is trying to send")
+//    self.log("writer \(newElement) is trying to send")
 
     var hasSent = false
     while !hasSent
     {
-      channelMutex {
-          self.blockedWriters += 1
-      }
-      // There is a race condition here when both queues just got suspended.
-      writerMutex {
+      // Is this atomic? It better be.
+      self.blockedWriters += 1
+
+      writerMutex {        // A suspended writer queue will block here.
         self.channelMutex {
           self.blockedWriters -= 1
 
-          self.log("writer \(newElement) thinks there are \(self.blockedReaders) blocked readers")
-          if (self.blockedReaders < 1 || !self.isEmpty) && !self.isClosed
+          self.suspend(self.writers) // will also resume readers
+
+          if (self.blockedReaders < 1 || self.isReady) && !self.isClosed
           {
-            self.log("writer \(newElement) is suspending the writers queue")
-            self.writers(.Suspend)
-            self.readers(.Resume)
+//            self.log("writer \(newElement) thinks there are \(self.blockedReaders) blocked readers")
             return // to the top of the loop and be suspended
           }
 
-          assert(self.isEmpty || self.isClosed, "Messed up an unbuffered send")
+          assert(!self.isReady || self.isClosed, "Messed up an unbuffered send")
 
           self.writeElement(newElement)
           hasSent = true
 
-          // Surely we can interest a reader
+          // Surely there is a reader waiting
           assert(self.blockedReaders > 0 || self.isClosed, "No receiver available!")
-          self.readers(.Resume)
 
-          self.log("writer \(newElement) has successfully sent")
+//          self.log("writer \(newElement) has successfully sent")
         }
       }
     }
@@ -498,50 +554,51 @@ class UnbufferedChan<T>: BufferedChan<T>
   }
 
   /**
-  Read an element from the channel.
+    Read an element from the channel.
 
-  If the channel is empty, this call will block until an element is available.
-  If the channel is empty and closed, this will return nil.
+    If the channel is empty, this call will block until an element is available.
+    If the channel is empty and closed, this will return nil.
 
-  :return: the oldest element from the channel.
+    :return: the oldest element from the channel.
   */
 
   override func read() -> T?
   {
-    let id = readerCount++
-    log("reader \(id) is trying to receive")
+//    let id = readerCount++
+//    self.log("reader \(id) is trying to receive")
 
     var oldElement: T?
     var hasRead = false
     while !hasRead
     {
-      channelMutex {
-          self.blockedReaders += 1
-          if self.blockedWriters > 0
-          { // Maybe we can interest a sender
-            self.log("reader \(id) thinks there are \(self.blockedWriters) blocked writers")
-            self.writers(.Resume)
-          }
-      }
-      // There is a race condition here when both queues just got suspended.
-      readerMutex {
+      // Is this atomic? It better be.
+      self.blockedReaders += 1
+
+      readerMutex {        // A suspended reader queue will block here.
         self.channelMutex {
           self.blockedReaders -= 1
-          if self.isEmpty && !self.isClosed
+
+          if !self.isReady && !self.isClosed
           {
-            self.log("reader \(id) is suspending the readers queue")
-            self.readers(.Suspend)
+            self.suspend(self.readers) // will also resume writers
+//            self.log("reader \(id) thinks there are \(self.blockedWriters) blocked writers")
             return // to the top of the loop and be suspended
           }
 
-          assert(!self.isEmpty || self.isClosed, "Messed up an unbuffered receive")
+          assert(self.isReady || self.isClosed, "Messed up an unbuffered receive")
 
           oldElement = self.readElement()
           hasRead = true
 
-          self.writers(.Resume)
-
-          self.log("reader \(id) received \(oldElement)")
+          if self.blockedReaders > 0
+          { // If other readers are waiting, wait for next writer.
+            self.suspend(self.readers)
+          }
+          else if self.blockedWriters == 0 && self.blockedReaders == 0
+          { // If both queues are empty, none should be suspended
+            self.resume(self.writers)
+          }
+//          self.log("reader \(id) received \(oldElement)")
         }
       }
     }
@@ -551,10 +608,60 @@ class UnbufferedChan<T>: BufferedChan<T>
 
   private override func readElement() ->T?
   {
-    let oldElement = self.element
-    self.element = nil
-    return oldElement
+    if let oldElement = self.element
+    {
+      self.element = nil
+      return oldElement
+    }
+    return nil
+  }
+
+  override func selectRead(channel: SelectChan<SelectionType>, messageID: Selectable) -> Signal
+  {
+    async {
+      var hasRead = false
+      while !hasRead
+      {
+        // Is this atomic? It better be.
+        self.blockedReaders += 1
+
+        self.readerMutex {        // A suspended reader queue will block here.
+          self.channelMutex {
+            self.blockedReaders -= 1
+
+            if !self.isReady && !self.isClosed
+            {
+              self.suspend(self.readers) // will also resume writers
+              return // to the top of the loop and be suspended
+            }
+
+            assert(self.isReady || self.isClosed, "Messed up an unbuffered receive")
+
+            channel.channelMutex {
+              if !channel.isClosed
+              {
+                let selection = Selection(messageID: messageID, messageData: self.readElement())
+                channel.selectSend(selection)
+              }
+            }
+            hasRead = true
+
+            if self.blockedReaders > 0
+            { // If other readers are waiting, wait for next writer.
+              self.suspend(self.readers)
+            }
+            else if self.blockedWriters == 0 && self.blockedReaders == 0
+            { // If both queues are empty, none should be suspended
+              self.resume(self.writers)
+            }
+          }
+        }
+      }
+    }
+
+    return { self.channelMutex { self.resume(self.readers) } }
   }
 }
 
-var readerCount = 0
+// Used to elucidate/troubleshoot message arrival order
+private var readerCount = 0

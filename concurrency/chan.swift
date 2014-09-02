@@ -185,18 +185,14 @@ public class Chan<T>: ReadableChannel, WritableChannel, SelectableChannel
 
   public var invalidSelection: Bool { return isClosed && isEmpty }
 
-  public func selectRead(channel: SelectChan<Selectable>, message: Selectable) -> Signal
+  public func selectRead(channel: SelectChan<SelectionType>, messageID: Selectable) -> Signal
   {
-    // The compiler is demanding this by claiming that 'isClosed' below is ambiguous.
-    let disambiguatedChannel: Chan<Selectable> = channel
-
-    channel.channelMutex {
-      if disambiguatedChannel.isClosed == false
-      {
-        let nilT: T? = nil
-        channel.stash = SelectPayload(payload: nilT)
-        channel.writeElement(message)
-      }
+    // Was getting issues by calling channel.isClosed from this context.
+    // Since selectMutex is calling it anyway, we're skipping it from this side.
+    channel.selectMutex {
+      let nilT: T? = nil
+      let selection = Selection(messageID: messageID, messageData: nilT)
+      channel.selectSend(selection)
     }
 
     return {}
@@ -204,13 +200,13 @@ public class Chan<T>: ReadableChannel, WritableChannel, SelectableChannel
 
   // Method for SelectableChannel
 
-  public func extract(item: Selectee?) -> T?
+  public func extract(selection: SelectionType?) -> T?
   {
-    if item != nil
+    if selection != nil
     {
-      if let item = item as? SelectPayload<T>
+      if let selection = selection as? Selection<T>
       {
-        return item.data
+        return selection.data
       }
     }
     return nil
