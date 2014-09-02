@@ -256,7 +256,7 @@ class BufferedChan<T>: pthreadChan<T>
     return nil
   }
 
-  override func selectRead(channel: SelectChan<Selectable>, message: Selectable) -> Signal
+  override func selectRead(channel: SelectChan<SelectionType>, messageID: Selectable) -> Signal
   {
     async {
       pthread_mutex_lock(self.channelMutex)
@@ -265,11 +265,11 @@ class BufferedChan<T>: pthreadChan<T>
         pthread_cond_wait(self.readCondition, self.channelMutex)
       }
 
-      channel.channelMutex {
+      channel.selectMutex {
         if !channel.isClosed
         {
-          channel.stash = SelectPayload(payload: self.readElement())
-          channel.writeElement(message)
+          let selection = Selection(messageID: messageID, messageData: self.readElement())
+          channel.selectSend(selection)
         }
       }
 
@@ -379,20 +379,35 @@ public class SingletonChan<T>: Buffered1Chan<T>
   }
 }
 
-extension SelectChan
+extension SelectChan: SelectionChannel
 {
-  func channelMutex(action: () -> ())
+  /**
+    selectMutex() must be used to send data to SelectChan in a thread-safe manner
+  */
+
+  public func selectMutex(action: () -> ())
   {
-    pthread_mutex_lock(channelMutex)
+    if !self.isClosed
+    {
+      pthread_mutex_lock(channelMutex)
 
-    action()
+      action()
 
-    // Unlock the readers and writers, just in case.
-    // This is not particularly reasonable.
-    pthread_cond_signal(readCondition)
-    pthread_cond_signal(writeCondition)
+      pthread_cond_signal(readCondition)
+      pthread_mutex_unlock(channelMutex)
+    }
+  }
 
-    pthread_mutex_unlock(channelMutex)
+  /**
+    selectSend() will send data to a SelectChan.
+    It must be called within the closure sent to selectMutex() for thread safety.
+  */
+
+  typealias WrittenElement = T
+
+  public func selectSend(newElement: T)
+  {
+    super.writeElement(newElement)
   }
 }
 
@@ -522,5 +537,50 @@ class UnbufferedChan<T>: pthreadChan<T>
 //    log("read from 0-channel")
 
     return element
+  }
+
+  override func selectRead(channel: SelectChan<SelectionType>, messageID: Selectable) -> Signal
+  {
+    async {
+      pthread_mutex_lock(self.channelMutex)
+
+//    log("attempting to read from 0-channel")
+
+      while self.isEmpty && !self.closed
+      {
+        self.blockedReaders += 1
+        if self.blockedWriters > 0
+        {
+          // Maybe we can interest a writer
+          pthread_cond_signal(self.writeCondition)
+        }
+        // wait for a writer to signal us
+        pthread_cond_wait(self.readCondition, self.channelMutex)
+        self.blockedReaders -= 1
+      }
+
+      assert(!self.isEmpty || self.isClosed, "Messed up an unbuffered read")
+
+      channel.selectMutex {
+        if !channel.isClosed
+        {
+          let selection = Selection(messageID: messageID, messageData: self.element)
+          channel.selectSend(selection)
+
+          self.element = nil
+        }
+      }
+
+      if self.closed { pthread_cond_signal(self.readCondition) }
+      pthread_mutex_unlock(self.channelMutex)
+
+//    log("read from 0-channel")
+    }
+
+    return {
+      pthread_mutex_lock(self.channelMutex)
+      pthread_cond_broadcast(self.readCondition)
+      pthread_mutex_unlock(self.channelMutex)
+    }
   }
 }
