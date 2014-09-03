@@ -10,14 +10,14 @@
   Select gets notified of events by the first of a list of Selectable items.
 */
 
-public func Select<T>(options: Chan<T>...) -> (Chan<T>?, SelectionType)
+public func Select<C: SelectableChannel>(options: C...) -> (C?, SelectionType)
 {
   assert(options.count > 0, "Select requires at least one argument")
 
   return Select(options)
 }
 
-public func Select<T>(options: [Chan<T>])  -> (Chan<T>?, SelectionType)
+public func Select<C: SelectableChannel>(options: [C])  -> (C?, SelectionType)
 {
   let resultChan = SelectChan<SelectionType>()
 
@@ -46,9 +46,9 @@ public func Select<T>(options: [Chan<T>])  -> (Chan<T>?, SelectionType)
   {
     if let selection = <-resultChan
     { // This should not be necessary, but some protocols are failing.
-      if let selection = selection as? Selection<T>
+      if let selection = selection as? Selection<C.ReadElement>
       {
-        return (selection.getMessageID() as? Chan<T>, selection)
+        return (selection.getMessageID() as? C, selection)
       }
     }
   }

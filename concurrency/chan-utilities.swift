@@ -31,7 +31,7 @@ func RRMerge<T>(channels: [ReadChan<T>]) -> ReadChan<T>
 
   // A non-clever, reliable, round-robin merging method.
   async {
-    mergeloop: for var i=0, closed=0; true; i++
+    for var i=0, closed=0; closed == channels.count; i++
     {
       if let element = <-channels[i % channels.count]
       {
@@ -42,9 +42,6 @@ func RRMerge<T>(channels: [ReadChan<T>]) -> ReadChan<T>
       {
         closed += 1
       }
-
-      if closed == channels.count { break mergeloop }
-      // All channels are closed. Job done.
     }
 
     mergeChannel.close()
