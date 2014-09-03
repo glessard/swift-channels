@@ -17,6 +17,8 @@ class pthreadChan<T>: Chan<T>
   // Instance variables
 
   private var closed = false
+  private var blockedReaders = 0
+  private var blockedWriters = 0
 
   private var channelMutex:   UnsafeMutablePointer<pthread_mutex_t>
   private var readCondition:  UnsafeMutablePointer<pthread_cond_t>
@@ -80,8 +82,8 @@ class pthreadChan<T>: Chan<T>
     doClose()
 
     // Unblock the threads waiting on our conditions.
-    pthread_cond_signal(readCondition)
-    pthread_cond_signal(writeCondition)
+    if blockedReaders > 0 { pthread_cond_signal(readCondition) }
+    if blockedWriters > 0 { pthread_cond_signal(writeCondition) }
     pthread_mutex_unlock(channelMutex)
   }
 
@@ -145,9 +147,9 @@ class BufferedChan<T>: pthreadChan<T>
   }
 
   private let logging = false
-  private func log(message: String) -> ()
+  private func log<PT>(object: PT) -> ()
   {
-    if logging { syncprint(message) }
+    if logging { syncprint(object) }
   }
 
   override var capacity: Int { return channelCapacity }
@@ -181,27 +183,29 @@ class BufferedChan<T>: pthreadChan<T>
 
   override func write(newElement: T)
   {
-    if self.closed { return }
+    if self.isClosed { return }
 
     pthread_mutex_lock(channelMutex)
 
-//    log("attempting to write to buffered channel")
+//    log("writer \(newElement) is trying to send")
 
-    while self.isFull && !self.closed
+    while self.isFull && !self.isClosed
     { // wait while the channel is full
+      blockedWriters += 1
       pthread_cond_wait(writeCondition, channelMutex)
+      blockedWriters -= 1
     }
 
     // If Channel is closed, we could get here while
     // the queue is "full". Don't overflow.
     if !self.isFull { writeElement(newElement) }
 
-    // Channel is not empty; signal this.
-    pthread_cond_signal(readCondition)
-    if self.closed { pthread_cond_signal(writeCondition) }
-    pthread_mutex_unlock(channelMutex)
+//    log("writer \(newElement) has successfully sent")
 
-//    log("wrote to buffered channel")
+    // Channel is not empty; signal this.
+    if blockedReaders > 0 { pthread_cond_signal(readCondition) }
+    if self.isClosed && blockedWriters > 0 { pthread_cond_signal(writeCondition) }
+    pthread_mutex_unlock(channelMutex)
   }
 
   /**
@@ -227,21 +231,24 @@ class BufferedChan<T>: pthreadChan<T>
   {
     pthread_mutex_lock(channelMutex)
 
-//    log("attempting to read from buffered channel")
+    let id = readerCount++
+//    log("reader \(id) is trying to receive")
 
-    while self.isEmpty && !self.closed
+    while self.isEmpty && !self.isClosed
     { // block while the channel is empty
+      blockedReaders += 1
       pthread_cond_wait(readCondition, channelMutex)
+      blockedReaders -= 1
     }
 
     let oldElement = readElement()
 
     // Channel is not full; signal this.
-    pthread_cond_signal(writeCondition)
-    if self.closed { pthread_cond_signal(readCondition) }
+    if blockedWriters > 0 { pthread_cond_signal(writeCondition) }
+    if self.isClosed && blockedReaders > 0 { pthread_cond_signal(readCondition) }
     pthread_mutex_unlock(channelMutex)
 
-//    log("read from buffered channel")
+//    log("reader \(id) received \(oldElement)")
 
     return oldElement
   }
@@ -262,28 +269,31 @@ class BufferedChan<T>: pthreadChan<T>
       pthread_mutex_lock(self.channelMutex)
       while self.isEmpty && !self.isClosed && !channel.isClosed
       {
+        self.blockedReaders += 1
         pthread_cond_wait(self.readCondition, self.channelMutex)
+        self.blockedReaders -= 1
       }
 
       channel.selectMutex {
         if !channel.isClosed
         {
-          let selection = Selection(messageID: messageID, messageData: self.readElement())
-          channel.selectSend(selection)
+          channel.selectSend(Selection(messageID: messageID, messageData: self.readElement()))
         }
       }
 
-      pthread_cond_signal(channel.readCondition)
-
-      pthread_cond_signal(self.writeCondition)
-      if self.closed { pthread_cond_signal(self.readCondition) }
+      // Channel is not full; signal this.
+      if self.blockedWriters > 0 { pthread_cond_signal(self.writeCondition) }
+      if self.isClosed && self.blockedReaders > 0 { pthread_cond_signal(self.readCondition) }
       pthread_mutex_unlock(self.channelMutex)
     }
 
     return {
-      pthread_mutex_lock(self.channelMutex)
-      pthread_cond_broadcast(self.readCondition)
-      pthread_mutex_unlock(self.channelMutex)
+      if self.blockedReaders > 0
+      {
+        pthread_mutex_lock(self.channelMutex)
+        pthread_cond_signal(self.readCondition)
+        pthread_mutex_unlock(self.channelMutex)
+      }
     }
   }
 }
@@ -379,10 +389,17 @@ public class SingletonChan<T>: Buffered1Chan<T>
   }
 }
 
-extension SelectChan: SelectionChannel
+/**
+  The SelectionChannel methods for SelectChan
+*/
+
+extension SelectChan //: SelectionChannel (repeating this crashes swiftc)
 {
   /**
     selectMutex() must be used to send data to SelectChan in a thread-safe manner
+  
+    Actions which must be performed synchronously with the SelectChan should be passed to
+    selectMutex() as a closure. The closure will only be executed if the channel is still open.
   */
 
   public func selectMutex(action: () -> ())
@@ -420,14 +437,9 @@ extension SelectChan: SelectionChannel
 class UnbufferedChan<T>: pthreadChan<T>
 {
   private var element: T? = nil
-  private var blockedReaders = 0
-  private var blockedWriters = 0
 
   override init()
   {
-    element = nil
-    blockedReaders = 0
-    blockedWriters = 0
     super.init()
   }
 
@@ -438,10 +450,21 @@ class UnbufferedChan<T>: pthreadChan<T>
   override var capacity: Int { return 0 }
 
   private let logging = false
-  private func log(message: String) -> ()
+  private func log<PT>(object: PT) -> ()
   {
-    if logging { syncprint(message) }
+    if logging { syncprint(object) }
   }
+
+  /**
+    Tell whether the channel is ready to transfer data.
+
+    An unbuffered channel should always look empty to an external observer.
+    What is relevant internally is whether the data "is ready" to be transferred to a receiver.
+
+    :return: whether the data is ready for a receive operation.
+  */
+
+  var isReady: Bool { return (element != nil) }
 
   /**
     Close the channel
@@ -472,31 +495,30 @@ class UnbufferedChan<T>: pthreadChan<T>
 
   override func write(newElement: T)
   {
-    if self.closed { return }
+    if self.isClosed { return }
 
     pthread_mutex_lock(channelMutex)
 
-//    log("attempting to write to 0-channel")
+//    log("writer \(newElement) is trying to send")
 
-    while ( blockedReaders == 0 || !self.isEmpty ) && !self.closed
-    {
+    while ( blockedReaders == 0 || self.isReady ) && !self.isClosed
+    { // wait while no reader is ready.
       blockedWriters += 1
-       // wait while no reader is ready.
       pthread_cond_wait(writeCondition, channelMutex)
       blockedWriters -= 1
     }
 
-    assert(self.isEmpty || self.closed, "Messed up an unbuffered write")
+    assert(self.isEmpty || self.isClosed, "Messed up an unbuffered write")
 
     self.element = newElement
 
-    // Surely we can interest a reader
-    assert(blockedReaders > 0 || self.closed, "No reader available!")
-    pthread_cond_signal(readCondition)
-    if self.closed { pthread_cond_signal(writeCondition) }
-    pthread_mutex_unlock(channelMutex)
+//    log("writer \(newElement) has successfully sent")
 
-//    log("wrote to 0-channel")
+    // Surely we can interest a reader
+    assert(blockedReaders > 0 || self.isClosed, "No reader available!")
+    pthread_cond_signal(readCondition)
+    if self.isClosed && blockedWriters > 0 { pthread_cond_signal(writeCondition) }
+    pthread_mutex_unlock(channelMutex)
   }
 
   /**
@@ -512,32 +534,37 @@ class UnbufferedChan<T>: pthreadChan<T>
   {
     pthread_mutex_lock(channelMutex)
 
-//    log("attempting to read from 0-channel")
+//    let id = readerCount++
+//    log("reader \(id) is trying to receive")
 
-    while self.isEmpty && !self.closed
+    while !self.isReady && !self.isClosed
     {
-      blockedReaders += 1
       if blockedWriters > 0
-      {
-        // Maybe we can interest a writer
+      { // Maybe we can interest a writer
         pthread_cond_signal(writeCondition)
       }
       // wait for a writer to signal us
+      blockedReaders += 1
       pthread_cond_wait(readCondition, channelMutex)
       blockedReaders -= 1
     }
 
-    assert(!self.isEmpty || self.isClosed, "Messed up an unbuffered read")
+    assert(self.isReady || self.isClosed, "Messed up an unbuffered read")
 
-    let element = self.element
+    let oldElement = self.element
     self.element = nil
 
-    if self.closed { pthread_cond_signal(readCondition) }
+//    log("reader \(id) received \(oldElement)")
+
+    if blockedReaders > 0
+    { // If other readers are waiting, signal a writer right away.
+      if blockedWriters > 0 { pthread_cond_signal(writeCondition) }
+      // If channel is closed, then signal a reader too.
+      if self.isClosed { pthread_cond_signal(readCondition) }
+    }
     pthread_mutex_unlock(channelMutex)
 
-//    log("read from 0-channel")
-
-    return element
+    return oldElement
   }
 
   override func selectRead(channel: SelectChan<SelectionType>, messageID: Selectable) -> Signal
@@ -545,9 +572,7 @@ class UnbufferedChan<T>: pthreadChan<T>
     async {
       pthread_mutex_lock(self.channelMutex)
 
-//    log("attempting to read from 0-channel")
-
-      while self.isEmpty && !self.closed
+      while !self.isReady && !self.isClosed
       {
         self.blockedReaders += 1
         if self.blockedWriters > 0
@@ -560,7 +585,7 @@ class UnbufferedChan<T>: pthreadChan<T>
         self.blockedReaders -= 1
       }
 
-      assert(!self.isEmpty || self.isClosed, "Messed up an unbuffered read")
+      assert(self.isReady || self.isClosed, "Messed up an unbuffered read")
 
       channel.selectMutex {
         if !channel.isClosed
@@ -572,16 +597,25 @@ class UnbufferedChan<T>: pthreadChan<T>
         }
       }
 
-      if self.closed { pthread_cond_signal(self.readCondition) }
+      if self.blockedReaders > 0
+      { // If other readers are waiting, signal a writer right away.
+        if self.blockedWriters > 0 { pthread_cond_signal(self.writeCondition) }
+        // If channel is closed, then signal a reader too.
+        if self.isClosed { pthread_cond_signal(self.readCondition) }
+      }
       pthread_mutex_unlock(self.channelMutex)
-
-//    log("read from 0-channel")
     }
 
     return {
-      pthread_mutex_lock(self.channelMutex)
-      pthread_cond_broadcast(self.readCondition)
-      pthread_mutex_unlock(self.channelMutex)
+      if self.blockedReaders > 0
+      {
+        pthread_mutex_lock(self.channelMutex)
+        pthread_cond_broadcast(self.readCondition)
+        pthread_mutex_unlock(self.channelMutex)
+      }
     }
   }
 }
+
+// Used to elucidate/troubleshoot message arrival order
+private var readerCount = 0
