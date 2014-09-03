@@ -8,7 +8,8 @@
 
 /**
   Merge the channels in the channels array into one.
-  Every item from the input channels will be able to be received via the returned channel.
+  Every item from the input channels will be able to be received via the returned channel.-
+  This function uses a simple round-robin approach to merging channels.
 
   :param: channels an array of (read-only) channels to merge.
 
@@ -30,7 +31,7 @@ func RRMerge<T>(channels: [ReadChan<T>]) -> ReadChan<T>
 
   // A non-clever, reliable, round-robin merging method.
   async {
-    mergeloop: for var i=0, closed=0; true; i++
+    for var i=0, closed=0; closed == channels.count; i++
     {
       if let element = <-channels[i % channels.count]
       {
@@ -41,9 +42,6 @@ func RRMerge<T>(channels: [ReadChan<T>]) -> ReadChan<T>
       {
         closed += 1
       }
-
-      if closed == channels.count { break mergeloop }
-      // All channels are closed. Job done.
     }
 
     mergeChannel.close()
@@ -51,4 +49,3 @@ func RRMerge<T>(channels: [ReadChan<T>]) -> ReadChan<T>
 
   return ReadChan.Wrap(mergeChannel)
 }
-

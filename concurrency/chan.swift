@@ -17,7 +17,7 @@ import Dispatch
   of the factory function returns an unbuffered channel.
 */
 
-public class Chan<T>: ReadableChannel, WritableChannel
+public class Chan<T>: ReadableChannel, WritableChannel, SelectableChannel
 {
   /**
     Factory function to obtain a new, unbuffered Chan<T> object (channel capacity = 0).
@@ -27,7 +27,7 @@ public class Chan<T>: ReadableChannel, WritableChannel
 
   public class func Make() -> Chan<T>
   {
-    return UnbufferedChan<T>(attributes: nil)
+    return Make(0)
   }
 
   /**
@@ -43,12 +43,12 @@ public class Chan<T>: ReadableChannel, WritableChannel
     switch capacity
     {
       case let c where c < 1:
-        return UnbufferedChan<T>(attributes: nil)
+        return UnbufferedChan<T>()
       case 1:
-        return Buffered1Chan<T>(capacity, attributes: nil)
+        return Buffered1Chan<T>()
 
       default:
-        return Buffered1Chan<T>(capacity, attributes: nil) // BufferedNChannel<T>(capacity)
+        return BufferedNChan<T>(capacity)
     }
   }
 
@@ -178,6 +178,37 @@ public class Chan<T>: ReadableChannel, WritableChannel
 
   public func read() -> T?
   {
+    return nil
+  }
+
+  // Methods for Selectable
+
+  public var invalidSelection: Bool { return isClosed && isEmpty }
+
+  public func selectRead(channel: SelectChan<SelectionType>, messageID: Selectable) -> Signal
+  {
+    // Was getting issues by calling channel.isClosed from this context.
+    // Since selectMutex is calling it anyway, we're skipping it from this side.
+    channel.selectMutex {
+      let nilT: T? = nil
+      let selection = Selection(messageID: messageID, messageData: nilT)
+      channel.selectSend(selection)
+    }
+
+    return {}
+  }
+
+  // Method for SelectableChannel
+
+  public func extract(selection: SelectionType?) -> T?
+  {
+    if selection != nil
+    {
+      if let selection = selection as? Selection<T>
+      {
+        return selection.data
+      }
+    }
     return nil
   }
 }
@@ -319,486 +350,4 @@ private class EnclosedDirectionalChan<T>: EnclosedChan<T>
   }
 }
 
-/**
-  The basis for our real channels
-*/
 
-private class ConcreteChan<T>: Chan<T>
-{
-  // Instance variables
-
-  private var closed = false
-
-  private var channelMutex:   UnsafeMutablePointer<pthread_mutex_t>
-  private var readCondition:  UnsafeMutablePointer<pthread_cond_t>
-  private var writeCondition: UnsafeMutablePointer<pthread_cond_t>
-
-  // Initialization and destruction
-
-  private init(attributes: UnsafeMutablePointer<pthread_mutexattr_t> = nil)
-  {
-    channelMutex = UnsafeMutablePointer<pthread_mutex_t>.alloc(1)
-    pthread_mutex_init(channelMutex, attributes)
-
-    writeCondition = UnsafeMutablePointer<pthread_cond_t>.alloc(1)
-    pthread_cond_init(writeCondition, nil)
-
-    readCondition = UnsafeMutablePointer<pthread_cond_t>.alloc(1)
-    pthread_cond_init(readCondition, nil)
-
-    closed = false
-
-    super.init()
-  }
-
-  private override convenience init()
-  {
-    self.init(attributes: nil)
-  }
-
-  deinit
-  {
-    pthread_mutex_destroy(channelMutex)
-    channelMutex.dealloc(1)
-
-    pthread_cond_destroy(readCondition)
-    readCondition.dealloc(1)
-
-    pthread_cond_destroy(writeCondition)
-    writeCondition.dealloc(1)
-  }
-
-  // Computed properties
-
-  /**
-    Determine whether the channel has been closed
-  */
-
-  private override var isClosed: Bool { return closed }
-
-  /**
-    Close the channel
-
-    Any items still in the channel remain and can be retrieved.
-    New items cannot be added to a closed channel.
-
-    It could be considered an error to close a channel that has already been closed.
-    The actual reaction shall be implementation-dependent.
-  */
-
-  private override func close()
-  {
-    if closed { return }
-
-    // Only bother with the mutex if necessary
-    pthread_mutex_lock(channelMutex)
-
-    self.closed = true
-
-    // Unblock the threads waiting on our conditions.
-    pthread_cond_signal(readCondition)
-    pthread_cond_signal(writeCondition)
-    pthread_mutex_unlock(channelMutex)
-  }
-
-  /**
-    Write a new element to the channel
-
-    If the channel is full, this call will block.
-    If the channel has been closed, no action will be taken.
-
-    :param: element the new element to be added to the channel.
-  */
-
-  private override func write(newElement: T)
-  {
-    _ = newElement
-  }
-
-  /**
-    Read the oldest element from the channel.
-
-    If the channel is empty, this call will block.
-    If the channel is empty and closed, this will return nil.
-
-    :return: the oldest element from the channel.
-  */
-
-  private override func read() -> T?
-  { // If we return 'nil', we should set the channel state to 'closed'
-    close()
-    return nil
-  }
-}
-
-/**
-  A buffered channel.
-*/
-
-private class BufferedChan<T>: ConcreteChan<T>
-{
-  private let channelCapacity: Int = 1
-
-  private init(var _ capacity: Int, attributes: UnsafeMutablePointer<pthread_mutexattr_t>)
-  {
-    if capacity < 1 { capacity = 1 }
-
-    channelCapacity = capacity
-    super.init(attributes: attributes)
-  }
-
-  private convenience init()
-  {
-    self.init(1, attributes: nil)
-  }
-
-  private let logging = false
-  private func log(message: String) -> ()
-  {
-    if logging { syncprint(message) }
-  }
-
-  private override var capacity: Int { return channelCapacity }
-
-  /**
-    Close the channel
-
-    Any items still in the channel remain and can be retrieved.
-    New items cannot be added to a closed channel.
-
-    It should perhaps be considered an error to close a channel that has
-    already been closed, but in fact nothing will happen if it were to occur.
-  */
-
-  private override func close()
-  {
-    if closed { return }
-
-//    log("closing buffered channel")
-    super.close()
-  }
-  
-  /**
-    Append an element to the channel
-
-    If the channel is full, this call will block.
-    If the channel has been closed, no action will be taken.
-
-    :param: element the new element to be added to the channel.
-  */
-
-  private override func write(newElement: T)
-  {
-    if self.closed { return }
-
-    pthread_mutex_lock(channelMutex)
-
-//    log("attempting to write to buffered channel")
-
-    while self.isFull && !self.closed
-    { // wait while the channel is full
-      pthread_cond_wait(writeCondition, channelMutex)
-    }
-
-    // If Channel is closed, we could get here while
-    // the queue is "full". Don't overflow.
-    if !self.isFull { writeElement(newElement) }
-
-    // Channel is not empty; signal this.
-    pthread_cond_signal(readCondition)
-    if self.closed { pthread_cond_signal(writeCondition) }
-    pthread_mutex_unlock(channelMutex)
-
-//    log("wrote to buffered channel")
-  }
-
-  /**
-    Write an element to the channel buffer, specific implementation.
-    This is used within write(newElement: T).
-    By *definition*, this method is called while a mutex is locked.
-  */
-  private func writeElement(newElement: T)
-  {
-    _ = newElement
-  }
-
-  /**
-    Return the oldest element from the channel.
-
-    If the channel is empty, this call will block.
-    If the channel is empty and closed, this will return nil.
-
-    :return: the oldest element from the channel.
-  */
-
-  private override func read() -> T?
-  {
-    pthread_mutex_lock(channelMutex)
-
-//    log("attempting to read from buffered channel")
-
-    while self.isEmpty && !self.closed
-    { // block while the channel is empty
-      pthread_cond_wait(readCondition, channelMutex)
-    }
-
-    let oldElement = readElement()
-
-    // Channel is not full; signal this.
-    pthread_cond_signal(writeCondition)
-    if self.closed { pthread_cond_signal(readCondition) }
-    pthread_mutex_unlock(channelMutex)
-
-//    log("read from buffered channel")
-
-    return oldElement
-  }
-
-  /**
-    Read an from the channel buffer, specific implementation.
-    This is used within read() ->T?
-    By *definition*, this method is called while a mutex is locked.
-  */
-  private func readElement() ->T?
-  {
-    return nil
-  }
-}
-
-
-/**
-  A buffered channel.
-*/
-
-private class BufferedNChan<T>: BufferedChan<T>
-{
-  private var q: Queue<T>
-
-  private override init(var _ capacity: Int, attributes: UnsafeMutablePointer<pthread_mutexattr_t>)
-  {
-    if capacity < 1 { capacity = 1 }
-
-    self.q = Queue<T>()
-    super.init(capacity, attributes: attributes)
-  }
-
-  private convenience init()
-  {
-    self.init(1, attributes: nil)
-  }
-
-  private override var isEmpty: Bool { return q.isEmpty }
-
-  private override var isFull: Bool { return q.count >= capacity }
-
-  private override func writeElement(newElement: T)
-  {
-    q.enqueue(newElement)
-  }
-
-  private override func readElement() ->T?
-  {
-    return q.dequeue()
-  }
-}
-
-/**
-  A buffered channel with a one-element backing store.
-*/
-
-private class Buffered1Chan<T>: BufferedChan<T>
-{
-  private var element: T? = nil
-
-  private override init(var _ capacity: Int, attributes: UnsafeMutablePointer<pthread_mutexattr_t>)
-  {
-    capacity = 1
-    element = nil
-    super.init(capacity, attributes: attributes)
-  }
-
-  private convenience init()
-  {
-    self.init(1, attributes: nil)
-  }
-
-  private override var isEmpty: Bool { return (element == nil) }
-
-  private override var isFull: Bool  { return (element != nil) }
-
-  private override func writeElement(newElement: T)
-  {
-    element = newElement
-  }
-
-  private override func readElement() ->T?
-  {
-    let oldElement = self.element
-    self.element = nil
-    return oldElement
-  }
-}
-
-/**
-  A one-element channel which will only ever transmit one message.
-  The first successful write operation also closes the channel.
-*/
-
-class SingletonChan<T>: Buffered1Chan<T>
-{
-  init()
-  {
-    // In order to call close() within the writeElement() method, the
-    // mutex we obtain must be recursive, which is not the default.
-
-    var mutexAttributes = UnsafeMutablePointer<pthread_mutexattr_t>.alloc(1)
-    pthread_mutexattr_init(mutexAttributes)
-    pthread_mutexattr_settype(mutexAttributes, PTHREAD_MUTEX_RECURSIVE)
-
-    super.init(1, attributes: mutexAttributes)
-
-    pthread_mutexattr_destroy(mutexAttributes)
-    mutexAttributes.dealloc(1)
-  }
-
-  private override func writeElement(newElement: T)
-  {
-    close()
-    super.writeElement(newElement)
-  }
-}
-
-
-/**
-  A channel with no backing store. Write operations block until a receiver is ready, while
-  conversely read operations block until a sender is ready.
-*/
-
-private class UnbufferedChan<T>: ConcreteChan<T>
-{
-  private var element: T? = nil
-  private var blockedReaders = 0
-  private var blockedWriters = 0
-
-  private convenience init()
-  {
-    self.init(attributes: nil)
-  }
-
-  private override init(attributes: UnsafeMutablePointer<pthread_mutexattr_t>)
-  {
-    element = nil
-    blockedReaders = 0
-    blockedWriters = 0
-    super.init(attributes: attributes)
-  }
-
-  private override var isEmpty: Bool { return (element == nil) }
-
-  private override var isFull: Bool  { return (element != nil) }
-
-  private override var capacity: Int { return 0 }
-
-  private let logging = false
-  private func log(message: String) -> ()
-  {
-    if logging { syncprint(message) }
-  }
-
-  /**
-  Close the channel
-
-  Any items still in the channel remain and can be retrieved.
-  New items cannot be added to a closed channel.
-
-  It should perhaps be considered an error to close a channel that has
-  already been closed, but in fact nothing will happen if it were to occur.
-  */
-
-  private override func close()
-  {
-    if closed { return }
-
-//    log("closing 0-channel")
-    super.close()
-  }
-  
-  /**
-    Write an element to the channel
-
-    If the channel is full, this call will block.
-    If the channel has been closed, no action will be taken.
-
-    :param: element the new element to be added to the channel.
-  */
-
-  private override func write(newElement: T)
-  {
-    if self.closed { return }
-
-    pthread_mutex_lock(channelMutex)
-
-//    log("attempting to write to 0-channel")
-
-    while ( blockedReaders == 0 || !self.isEmpty ) && !self.closed
-    {
-      blockedWriters += 1
-       // wait while no reader is ready.
-      pthread_cond_wait(writeCondition, channelMutex)
-      blockedWriters -= 1
-    }
-
-    assert(self.isEmpty || self.closed, "Messed up an unbuffered write")
-
-    self.element = newElement
-
-    // Surely we can interest a reader
-    assert(blockedReaders > 0 || self.closed, "No reader available!")
-    pthread_cond_signal(readCondition)
-    if self.closed { pthread_cond_signal(writeCondition) }
-    pthread_mutex_unlock(channelMutex)
-
-//    log("wrote to 0-channel")
-  }
-
-  /**
-    Read an element from the channel.
-
-    If the channel is empty, this call will block.
-    If the channel is empty and closed, this will return nil.
-
-    :return: the oldest element from the channel.
-  */
-
-  private override func read() -> T?
-  {
-    pthread_mutex_lock(channelMutex)
-
-//    log("attempting to read from 0-channel")
-
-    while self.isEmpty && !self.closed
-    {
-      blockedReaders += 1
-      if blockedWriters > 0
-      {
-        // Maybe we can interest a writer
-        pthread_cond_signal(writeCondition)
-      }
-      // wait for a writer to signal us
-      pthread_cond_wait(readCondition, channelMutex)
-      blockedReaders -= 1
-    }
-
-    assert(!self.isEmpty || self.isClosed, "Messed up an unbuffered read")
-
-    let element = self.element
-    self.element = nil
-
-    if self.closed { pthread_cond_signal(readCondition) }
-    pthread_mutex_unlock(channelMutex)
-
-//    log("read from 0-channel")
-
-    return element
-  }
-}

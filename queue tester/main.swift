@@ -11,8 +11,6 @@ import Darwin
 println("Start")
 let lim: UInt32 = 2
 
-// This crashes at 'swift_getGenericMetadata1' in Beta 6.
-// (Radar 18074776, dupe of 18067671)
 var q = Queue<Int>()
 
 for i in 1...10_000

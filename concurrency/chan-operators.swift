@@ -6,7 +6,6 @@
 //  Copyright (c) 2014 Guillaume Lessard. All rights reserved.
 //
 
-
 /**
   Channel send operator, global definition
   The precedence value chosen matches the assigment operators.
