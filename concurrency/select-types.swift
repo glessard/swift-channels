@@ -63,31 +63,13 @@ public protocol SelectableChannel: class, Selectable, ReadableChannel
   func extract(item: SelectionType?) -> ReadElement?
 }
 
-public protocol SelectionChannel
-{
-  typealias WrittenElement
-
-  /**
-    selectMutex() must be used to send data to SelectChan in a thread-safe manner
-  */
-
-  func selectMutex(action: () -> ())
-
-  /**
-    selectSend() must be called within the closure sent to selectMutex()
-    in order to fulfill the Selectable contract.
-  */
-
-  func selectSend(newElement: WrittenElement)
-}
-
 /**
   A special kind of SingletonChan for use by Select.
   SelectChan provides a way for a receiving channel to communicate back in a thread-safe
   way by using the selectSend() method within a closure passed to selectMutex().
 */
 
-public class SelectChan<T>: SingletonChan<T>
+public class SelectChan<T>: SingletonChan<T>, SelectionChannel
 {
   override init()
   {
@@ -96,7 +78,35 @@ public class SelectChan<T>: SingletonChan<T>
 }
 
 /**
-  You can put anything in here. And it has a non-generic type.
+  Some extra interface for SelectChan.
+  These methods have to be defined alongside the internals of SelectChan's superclass(es)
+*/
+
+public protocol SelectionChannel
+{
+  typealias WrittenElement
+
+  /**
+    selectMutex() must be used to send data to SelectChan in a thread-safe manner
+
+    Actions which must be performed synchronously with the SelectChan should be passed to
+    selectMutex() as a closure. The closure will only be executed if the channel is still open.
+  */
+
+  func selectMutex(action: () -> ())
+
+  /**
+    selectSend() will send data to a SelectChan.
+    It must be called within the closure sent to selectMutex() for thread safety.
+    By definition, this call occurs while the channel's mutex is locked for the current thread.
+  */
+
+  func selectSend(newElement: WrittenElement)
+}
+
+/**
+  You can put anything in a Selection<T>.
+  And it has a non-generic type in the form of a protocol.
   It's like a Bag of Holding. For one thing at a time.
 */
 
