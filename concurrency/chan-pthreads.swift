@@ -20,6 +20,11 @@ class pthreadChan<T>: Chan<T>
   private var blockedReaders = 0
   private var blockedWriters = 0
 
+  // pthreads variables
+  // This solution adapted from:
+  // Oracle Multithreaded Programming Guide, "The Producer/Consumer Problem"
+  // http://docs.oracle.com/cd/E19455-01/806-5257/sync-31/index.html
+
   private var channelMutex:   UnsafeMutablePointer<pthread_mutex_t>
   private var readCondition:  UnsafeMutablePointer<pthread_cond_t>
   private var writeCondition: UnsafeMutablePointer<pthread_cond_t>

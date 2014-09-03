@@ -13,25 +13,26 @@ the concurrency model of Labview, in that the execution of major nodes
 in the program could be organized around the flow of data through
 channels.
 
-The main part of this is a channel (`Chan<T>`) class that models sending
-and receiving (strongly typed) messages on a bounded queue. Message
-sending is achieved with an infix `<-` operator (as in Go); this
-operation will block whenever the channel is full. Message receiving is
-achieved with an unary prefix `<-` operator; this operation will block
-whenever the channel is empty.
+The main part of this is a channel (`Chan<T>`) class that models
+sending and receiving (strongly typed) messages on a bounded
+queue. Message sending is achieved with an infix `<-` operator (as in
+Go); this operation will block whenever the channel is full. Message
+receiving is achieved with an unary prefix `<-` operator; this
+operation will block whenever the channel is empty. A sender can
+signal task completion by closing a channel. Further sends have no
+effect, while receive continue normally until the channel is
+drained. Receiving from a closed, empty channel returns nil.
 
 Channels can be used in buffered and unbuffered form. In an unbuffered
 channel a receive operation will block until a sender is ready (and
-vice-versa). A buffered channel can accumulate a certain number of
-elements, after which the next send operation will block. Receive
-operations on an empty channel likewise block, until the channel is
-closed.
+vice-versa). A buffered channel can store a certain number of
+elements, after which the next send operation will block.
 
-The thread blocking logic is implemented using pthreads mutexes, while
-threads are spawned with Grand Central Dispatch (GCD). Thread blocking
-was successfully implemented with GCD, but turned out to be
-slower. The GCD-based channels can be found on the `gcd-channels`
-branch.
+Thread blocking is implemented with pthreads mutex locks and condition
+variables, while threads are spawned with Grand Central Dispatch
+(GCD). Thread blocking can be successfully implemented with GCD, but
+it is slower. A GCD-based channel implementation can be found on the
+`gcd-channels` branch.
 
 Along with a channels implementation, this library includes an `async`
 pseudo-keyword, a simple shortcut to launch a closure asynchronously
