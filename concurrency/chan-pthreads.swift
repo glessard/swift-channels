@@ -9,7 +9,7 @@
 import Dispatch
 
 /**
-The basis for our real channels
+  The basis for our real channels
 */
 
 class pthreadChan<T>: Chan<T>
@@ -86,8 +86,8 @@ class pthreadChan<T>: Chan<T>
   }
 
   /**
-      Close the channel, specific implementation. This is used within close().
-      By *definition*, this method is called while a mutex is locked.
+    Close the channel, specific implementation. This is used within close().
+    By *definition*, this method is called while a mutex is locked.
   */
 
   private func doClose()
@@ -292,7 +292,7 @@ class BufferedChan<T>: pthreadChan<T>
   A buffered channel with an N>1 element buffer
 */
 
-private class BufferedNChan<T>: BufferedChan<T>
+class BufferedNChan<T>: BufferedChan<T>
 {
   private var q: Queue<T>
 
@@ -309,9 +309,9 @@ private class BufferedNChan<T>: BufferedChan<T>
     self.init(1)
   }
 
-  private override var isEmpty: Bool { return q.isEmpty }
+  override var isEmpty: Bool { return q.isEmpty }
 
-  private override var isFull: Bool { return q.count >= capacity }
+  override var isFull: Bool { return q.count >= capacity }
 
   private override func writeElement(newElement: T)
   {
@@ -393,7 +393,6 @@ extension SelectChan: SelectionChannel
 
       action()
 
-      pthread_cond_signal(readCondition)
       pthread_mutex_unlock(channelMutex)
     }
   }
@@ -401,6 +400,7 @@ extension SelectChan: SelectionChannel
   /**
     selectSend() will send data to a SelectChan.
     It must be called within the closure sent to selectMutex() for thread safety.
+    By definition, this call occurs while this channel's mutex is locked for the current thread.
   */
 
   typealias WrittenElement = T
@@ -408,6 +408,7 @@ extension SelectChan: SelectionChannel
   public func selectSend(newElement: T)
   {
     super.writeElement(newElement)
+    pthread_cond_signal(readCondition)
   }
 }
 
