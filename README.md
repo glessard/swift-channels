@@ -22,20 +22,22 @@ whenever the channel is empty.
 
 Channels can be used in buffered and unbuffered form. In an unbuffered
 channel a receive operation will block until a sender is ready (and
-vice-versa). At the moment only the 1-element buffer works, though
-that appears to be an unintentional regression in the beta 6 compiler;
-given that the existing implementation of longer buffers worked
-earlier, it is likely that it will work again.
+vice-versa). A buffered channel can accumulate a certain number of
+elements, after which the next send operation will block. Receive
+operations on an empty channel likewise block, until the channel is
+closed.
 
 The thread blocking logic is implemented using pthreads mutexes, while
-the thread spawning logic uses Grand Central Dispatch (GCD). It may be
-possible to drop pthread mutexes entirely; stay tuned.
+threads are spawned with Grand Central Dispatch (GCD). Thread blocking
+was successfully implemented with GCD, but turned out to be
+slower. The GCD-based channels can be found on the `gcd-channels`
+branch.
 
 Along with a channels implementation, this library includes an `async`
-pseudo-keyword, as shortcut for the GCD method for launching a closure
-asynchronously in the background. The only requirement for a closure
-launched via `async` is that it have no parameters -- an easily
-achieved requirement. A return value will be ignored if it exists.
+pseudo-keyword, a simple shortcut to launch a closure asynchronously
+in the background with GCD. The only requirement for a closure
+launched via `async` is that it have no parameters. A return value
+will be ignored if it exists.
 
 Example:
 ```
@@ -66,12 +68,12 @@ closed. An empty, closed channel returns nil, thereby signaling to
 receivers that it has become closed.
 
 Missing from this is a powerful construct such as the Select keyword
-in Go, which is quite useful when dealing with multiple channels at
-once. The channel-select branch has an initial implementation, but
-runtime stability currently requires every channel to be of the same
-type, which greatly weakens the construct.
+from Go, which is quite useful when dealing with multiple channels at
+once. There is an initial implementation, but runtime stability
+currently requires every channel to be of the same type, which greatly
+weakens the construct.
 
-Also missing is anything that can predict deadlocks. They will happen!
-They don't have to. Good luck.
+Also missing is a deadlock detector. Deadlocks will happen! They
+don't have to. Good luck.
 
 I welcome questions and suggestions
