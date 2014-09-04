@@ -171,9 +171,9 @@ class EnclosedReadChan<T>: ReadChan<T>
 }
 
 /**
-  ReadOnly<C> wraps any implementor of ReadableChannel so that only
-  the ReadableChannel interface is available. The type of the wrapped
-  ReadableChannel will be visible in the type signature.
+  ReadOnly<C> wraps any implementor of SelectableChannel so that only
+  the SelectableChannel interface is available. The type of the wrapped
+  SelectableChannel will be visible in the type signature.
 */
 
 public class ReadOnly<C: SelectableChannel>: ReadableChannel, SelectableChannel, GeneratorType, SequenceType
@@ -250,7 +250,7 @@ public class WriteChan<T>: WritableChannel
   }
 
 
-  // ReadableChannel interface
+  // WritableChannel interface
 
   public var capacity: Int  { return 0 }
   public var isClosed: Bool { return true }

@@ -6,13 +6,23 @@
 //  Copyright (c) 2014 Guillaume Lessard. All rights reserved.
 //
 
-import Dispatch
+/**
+  An evocative name for a closure type sent back by a selectRead() method.
+  Upon being run, a Signal should try to resume the thread spawned by selectRead()
+  if said thread happens to be blocked.
+
+  This attempt may not always be successful, but if such cases the thread should
+  eventually be resumed, because there would be several threads contending for the channel.
+  There are situations where the Signal could be the only hope to resume the thread,
+  because it is the only one waiting on its channel. In those cases the attempt should
+  unblock the thread successfully.
+*/
+
+public typealias Signal = () -> ()
 
 /**
   What a type needs to be usable in the Select() function.
 */
-
-public typealias Signal = () -> ()
 
 public protocol Selectable: class
 {
@@ -20,7 +30,7 @@ public protocol Selectable: class
     Select registers its notification channel by calling an implementation's selectRead() method.
     This channel is a subtype of SingletonChannel and thus only one recipient will be able to respond.
 
-    -> whatever code sends a notification back should run asynchronously.
+    -> whatever code sends a notification back must run asynchronously.
 
     Associated data can be sent back along with the notification by copying it to the SelectChan.stash
     property. This (and sending the notification) can be done safely inside a closure that is invoked
@@ -30,7 +40,7 @@ public protocol Selectable: class
     :param: channel the channel to use for a return notification.
     :param: message an identifier to be sent as the return notification.
   
-    :return: a closure to be run once, which can unlock a stopped thread if needed.
+    :return: a closure to be run once, which can unblock a stopped thread if needed.
   */
 
   func selectRead(channel: SelectChan<SelectionType>, messageID: Selectable) -> Signal
@@ -71,6 +81,8 @@ public protocol SelectableChannel: class, Selectable, ReadableChannel
 
 public class SelectChan<T>: SingletonChan<T>, SelectionChannel
 {
+  typealias WrittenElement = T
+
   override init()
   {
     super.init()

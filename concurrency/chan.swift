@@ -141,6 +141,8 @@ public class Chan<T>: ReadableChannel, WritableChannel, SelectableChannel
 
   public var isClosed: Bool { return true }
 
+  // BasicChannel, WritableChannel and ReadableChannel methods.
+
   /**
     Close the channel
   
@@ -250,8 +252,9 @@ extension Chan: SequenceType
   Wrap an object that implements both ReadableChannel and WritableChannel (for element type T)
   in something than will look like a Chan<T>.
 
-  Even though the object may not be a Chan<T>, this is accomplish in wrapping its entire interface
-  in a series of closures. It's probably memory-heavy, but it's pretty nice that it can be done...
+  Even though the object may not be a Chan<T>, this is accomplished in wrapping its
+  entire ReadableChannel and WritableChannel interfaces in a series of closures.
+  It's probably memory-heavy, but it's pretty nice that it can be done...
 */
 
 private class EnclosedChan<T>: Chan<T>

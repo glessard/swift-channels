@@ -1,4 +1,4 @@
-//
+
 //  chan-pthreads.swift
 //  concurrency
 //
@@ -43,8 +43,6 @@ class pthreadChan<T>: Chan<T>
     pthread_cond_init(readCondition, nil)
 
     closed = false
-
-    super.init()
   }
 
   deinit
@@ -138,10 +136,7 @@ class pthreadChan<T>: Chan<T>
 
 class BufferedChan<T>: pthreadChan<T>
 {
-  private override init()
-  {
-    super.init()
-  }
+  // a small reporting utility
 
   private let logging = false
   private func log<PT>(object: PT) -> ()
@@ -305,9 +300,7 @@ class BufferedQChan<T>: BufferedChan<T>
   init(_ capacity: Int)
   {
     count = (capacity < 1) ? 1 : capacity
-
     self.q = Queue<T>()
-    super.init()
   }
 
   convenience override init()
@@ -340,15 +333,13 @@ class BufferedAChan<T>: BufferedChan<T>
 {
   private var buffer: Array<T?>
   private let count: Int
-  private var old  = 0
+  private var head = 0
   private var next = 0
 
   init(_ capacity: Int)
   {
     count = (capacity < 1) ? 1 : capacity
-
-    self.buffer = Array<T?>(count: count, repeatedValue: nil)
-    super.init()
+    buffer = Array<T?>(count: count, repeatedValue: nil)
   }
 
   convenience override init()
@@ -358,9 +349,9 @@ class BufferedAChan<T>: BufferedChan<T>
 
   override var capacity: Int { return count }
 
-  override var isEmpty: Bool { return old >= next }
+  override var isEmpty: Bool { return head >= next }
 
-  override var isFull: Bool { return old+count <= next }
+  override var isFull: Bool { return head+count <= next }
 
   private override func writeElement(newElement: T)
   {
@@ -371,11 +362,11 @@ class BufferedAChan<T>: BufferedChan<T>
 
   private override func readElement() ->T?
   {
-    let index = old%count
+    let index = head%count
     let oldElement = buffer[index]
     buffer[index] = nil
-    old += 1
-    return nil // oldElement
+    head += 1
+    return oldElement
   }
 }
 
@@ -385,17 +376,11 @@ class BufferedAChan<T>: BufferedChan<T>
 
 class Buffered1Chan<T>: BufferedChan<T>
 {
-  private var element: T? = nil
+  private var element: T?
 
-  private init(var _ capacity: Int)
+  override init()
   {
     element = nil
-    super.init()
-  }
-
-  convenience override init()
-  {
-    self.init(1)
   }
 
   override var capacity: Int { return 1 }
@@ -424,9 +409,9 @@ class Buffered1Chan<T>: BufferedChan<T>
 
 public class SingletonChan<T>: Buffered1Chan<T>
 {
-  public init()
+  public override init()
   {
-    super.init(1)
+    super.init()
   }
 
   override func writeElement(newElement: T)
@@ -466,8 +451,6 @@ extension SelectChan //: SelectionChannel (repeating this crashes swiftc)
     It must be called within the closure sent to selectMutex() for thread safety.
     By definition, this call occurs while this channel's mutex is locked for the current thread.
   */
-
-  typealias WrittenElement = T
 
   public func selectSend(newElement: T)
   {
