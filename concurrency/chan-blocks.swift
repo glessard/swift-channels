@@ -247,7 +247,7 @@ class BufferedChan<T>: Chan<T>
 
   override func read() -> T?
   {
-    let id = readerCount++
+//    let id = readerCount++
 //    self.log("trying to receive #\(id)")
 
     var oldElement: T?
@@ -458,8 +458,8 @@ extension SelectChan: SelectionChannel
 class UnbufferedChan<T>: BufferedChan<T>
 {
   private var element: T? = nil
-  private var blockedReaders = 0
-  private var blockedWriters = 0
+  private var blockedReaders: Int32
+  private var blockedWriters: Int32
 
   init()
   {
@@ -519,8 +519,8 @@ class UnbufferedChan<T>: BufferedChan<T>
     var hasSent = false
     while !hasSent
     {
-      // Is this atomic? It better be.
-      self.blockedWriters += 1
+      // self.blockedWriters += 1 -- atomically
+      OSAtomicIncrement32(&self.blockedWriters)
 
       writerMutex {        // A suspended writer queue will block here.
         self.channelMutex {
@@ -571,8 +571,8 @@ class UnbufferedChan<T>: BufferedChan<T>
     var hasRead = false
     while !hasRead
     {
-      // Is this atomic? It better be.
-      self.blockedReaders += 1
+      // self.blockedReaders += 1 -- atomically
+      OSAtomicIncrement32(&self.blockedReaders)
 
       readerMutex {        // A suspended reader queue will block here.
         self.channelMutex {
@@ -622,10 +622,10 @@ class UnbufferedChan<T>: BufferedChan<T>
       var hasRead = false
       while !hasRead
       {
-        // Is this atomic? It better be.
-        self.blockedReaders += 1
+        // self.blockedReaders += 1 -- atomically
+        OSAtomicIncrement32(&self.blockedReaders)
 
-        self.readerMutex {        // A suspended reader queue will block here.
+        self.readerMutex {        // A suspended reader queue will block the thread here.
           self.channelMutex {
             self.blockedReaders -= 1
 
@@ -659,9 +659,11 @@ class UnbufferedChan<T>: BufferedChan<T>
       }
     }
 
-    return { self.channelMutex { self.resume(self.readers) } }
+    return {
+      self.channelMutex { if self.blockedReaders > 0 { self.resume(self.readers) } }
+    }
   }
 }
 
 // Used to elucidate/troubleshoot message arrival order
-private var readerCount = 0
+//private var readerCount = 0
