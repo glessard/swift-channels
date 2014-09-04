@@ -300,6 +300,15 @@ class BufferedChan<T>: gcdChan<T>
     return nil
   }
 
+  /**
+    Take the next element that can be read from self, and send it to the channel passed in as a parameter.
+
+    :param: channel   the channel to which we're re-sending the element.
+    :param: messageID an identifier to be sent as the return notification.
+
+    :return: a closure that will unblock the thread if needed.
+  */
+
   override func selectRead(channel: SelectChan<SelectionType>, messageID: Selectable) -> Signal
   {
     async {
@@ -425,7 +434,7 @@ public class SingletonChan<T>: Buffered1Chan<T>
     super.init()
   }
 
-  override func writeElement(newElement: T)
+  private override func writeElement(newElement: T)
   {
     super.writeElement(newElement)
     doClose()
@@ -641,6 +650,15 @@ class UnbufferedChan<T>: gcdChan<T>
     }
     return nil
   }
+
+  /**
+    Take the next element that can be read from self, and send it to the channel passed in as a parameter.
+
+    :param: channel   the channel to which we're re-sending the element.
+    :param: messageID an identifier to be sent as the return notification.
+
+    :return: a closure that will unblock the thread if needed.
+  */
 
   override func selectRead(channel: SelectChan<SelectionType>, messageID: Selectable) -> Signal
   {
