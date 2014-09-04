@@ -48,7 +48,7 @@ public class Chan<T>: ReadableChannel, WritableChannel, SelectableChannel
         return Buffered1Chan<T>()
 
       default:
-        return BufferedNChan<T>(capacity)
+        return BufferedQChan<T>(capacity)
     }
   }
 

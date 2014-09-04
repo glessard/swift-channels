@@ -138,17 +138,9 @@ class pthreadChan<T>: Chan<T>
 
 class BufferedChan<T>: pthreadChan<T>
 {
-  private let channelCapacity: Int
-
-  private init(var _ capacity: Int)
+  private override init()
   {
-    channelCapacity = (capacity < 1) ? 1 : capacity
     super.init()
-  }
-
-  private convenience override init()
-  {
-    self.init(1)
   }
 
   private let logging = false
@@ -156,8 +148,6 @@ class BufferedChan<T>: pthreadChan<T>
   {
     if logging { syncprint(object) }
   }
-
-  override var capacity: Int { return channelCapacity }
 
   /**
     Close the channel
@@ -236,7 +226,7 @@ class BufferedChan<T>: pthreadChan<T>
   {
     pthread_mutex_lock(channelMutex)
 
-    let id = readerCount++
+//    let id = readerCount++
 //    log("reader \(id) is trying to receive")
 
     while self.isEmpty && !self.isClosed
@@ -304,29 +294,32 @@ class BufferedChan<T>: pthreadChan<T>
 }
 
 /**
-  A buffered channel with an N>1 element buffer
+  A buffered channel with an N element queue
 */
 
-class BufferedNChan<T>: BufferedChan<T>
+class BufferedQChan<T>: BufferedChan<T>
 {
+  private let count: Int
   private var q: Queue<T>
 
-  override init(var _ capacity: Int)
+  init(_ capacity: Int)
   {
-    capacity = (capacity < 1) ? 1 : capacity
+    count = (capacity < 1) ? 1 : capacity
 
     self.q = Queue<T>()
-    super.init(capacity)
+    super.init()
   }
 
-  private convenience init()
+  convenience override init()
   {
     self.init(1)
   }
 
+  override var capacity: Int { return count }
+
   override var isEmpty: Bool { return q.isEmpty }
 
-  override var isFull: Bool { return q.count >= capacity }
+  override var isFull: Bool { return q.count >= self.count }
 
   private override func writeElement(newElement: T)
   {
@@ -340,6 +333,53 @@ class BufferedNChan<T>: BufferedChan<T>
 }
 
 /**
+  A buffered channel with an N element rotating buffer
+*/
+
+class BufferedAChan<T>: BufferedChan<T>
+{
+  private var buffer: Array<T?>
+  private let count: Int
+  private var old  = 0
+  private var next = 0
+
+  init(_ capacity: Int)
+  {
+    count = (capacity < 1) ? 1 : capacity
+
+    self.buffer = Array<T?>(count: count, repeatedValue: nil)
+    super.init()
+  }
+
+  convenience override init()
+  {
+    self.init(1)
+  }
+
+  override var capacity: Int { return count }
+
+  override var isEmpty: Bool { return old >= next }
+
+  override var isFull: Bool { return old+count <= next }
+
+  private override func writeElement(newElement: T)
+  {
+    let index = next%count
+    buffer[index] = newElement
+    next += 1
+  }
+
+  private override func readElement() ->T?
+  {
+    let index = old%count
+    let oldElement = buffer[index]
+    buffer[index] = nil
+    old += 1
+    return nil // oldElement
+  }
+}
+
+/**
   A buffered channel with a one-element backing store.
 */
 
@@ -347,16 +387,18 @@ class Buffered1Chan<T>: BufferedChan<T>
 {
   private var element: T? = nil
 
-  private override init(var _ capacity: Int)
+  private init(var _ capacity: Int)
   {
     element = nil
-    super.init(1)
+    super.init()
   }
 
-  convenience init()
+  convenience override init()
   {
     self.init(1)
   }
+
+  override var capacity: Int { return 1 }
 
   override var isEmpty: Bool { return (element == nil) }
 
