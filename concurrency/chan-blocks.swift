@@ -8,6 +8,12 @@
 
 import Dispatch
 
+/**
+  Housekeeping help for dispatch_queue_t objects.
+  For some reason they don't expose their state at all,
+  so we have to do this ourselves.
+*/
+
 private enum QueueState
 {
   case Suspended
@@ -15,12 +21,13 @@ private enum QueueState
 }
 
 /**
-A buffered channel.
+  Our basis for channel implementations based on Grand Central Dispatch
 */
 
-class BufferedChan<T>: Chan<T>
+class gcdChan<T>: Chan<T>
 {
-  private let channelCapacity: Int
+  // instance variables
+
   private var closed: Bool = false
 
   private let mutex:   dispatch_queue_t
@@ -30,30 +37,28 @@ class BufferedChan<T>: Chan<T>
   private var readerState: QueueState = .Running
   private var writerState: QueueState = .Running
 
-  private init(var _ capacity: Int)
-  {
-    channelCapacity = (capacity < 0) ? 0 : capacity
+  // Initialization
 
+  private override init()
+  {
     mutex   = dispatch_queue_create("channelmutex", DISPATCH_QUEUE_SERIAL)
     readers = dispatch_queue_create("channelreadq", DISPATCH_QUEUE_SERIAL)
     writers = dispatch_queue_create("channelwritq", DISPATCH_QUEUE_SERIAL)
-
-    super.init()
   }
 
   // pseudo-keyword shortcuts for Grand Central Dispatch
 
-  func channelMutex(action: () -> ())
+  final private func channelMutex(action: () -> ())
   {
     dispatch_sync(mutex)   { action() }
   }
 
-  private func readerMutex(action: () -> ())
+  final private func readerMutex(action: () -> ())
   {
     dispatch_sync(readers) { action() }
   }
 
-  private func writerMutex(action: () -> ())
+  final private func writerMutex(action: () -> ())
   {
     dispatch_sync(writers) { action() }
   }
@@ -67,7 +72,7 @@ class BufferedChan<T>: Chan<T>
     :param: queue either the readers or the writers queue.
   */
 
-  private func suspend(queue: dispatch_queue_t)
+  final private func suspend(queue: dispatch_queue_t)
   {
     if queue === readers
     {
@@ -102,7 +107,7 @@ class BufferedChan<T>: Chan<T>
     :param: queue either the readers or the writers queue.
   */
 
-  private func resume(queue: dispatch_queue_t)
+  final private func resume(queue: dispatch_queue_t)
   {
     if queue === readers
     {
@@ -136,12 +141,6 @@ class BufferedChan<T>: Chan<T>
   }
 
   // Computed properties
-
-  /**
-    Report whether the channel capacity
-  */
-
-  override var capacity: Int { return channelCapacity }
 
   /**
     Determine whether the channel has been closed
@@ -179,7 +178,14 @@ class BufferedChan<T>: Chan<T>
   {
     closed = true
   }
+}
 
+/**
+  A buffered channel.
+*/
+
+class BufferedChan<T>: gcdChan<T>
+{
   /**
     Send an element to the channel
 
@@ -273,7 +279,7 @@ class BufferedChan<T>: Chan<T>
           }
           else
           { // Channel is not full; resume the writers queue.
-          self.resume(self.writers)
+            self.resume(self.writers)
           }
         }
       }
@@ -339,21 +345,27 @@ class BufferedChan<T>: Chan<T>
   A buffered channel with an N>1 element buffer
 */
 
-class BufferedNChan<T>: BufferedChan<T>
+class BufferedQChan<T>: BufferedChan<T>
 {
+  private let count: Int
   private var q: Queue<T>
 
-  override init(var _ capacity: Int)
+  init(var _ capacity: Int)
   {
-    if capacity < 1 { capacity = 1 }
-
+    count = (capacity < 1) ? 1: capacity
     self.q = Queue<T>()
-    super.init(capacity)
   }
+
+  convenience override init()
+  {
+    self.init(1)
+  }
+
+  override var capacity: Int { return count }
 
   override var isEmpty: Bool { return q.isEmpty }
 
-  override var isFull: Bool { return q.count >= capacity }
+  override var isFull: Bool { return q.count >= count }
 
   private override func writeElement(newElement: T)
   {
@@ -374,16 +386,12 @@ class Buffered1Chan<T>: BufferedChan<T>
 {
   private var element: T?
 
-  override init(_ capacity: Int)
+  override init()
   {
     element = nil
-    super.init(1)
   }
 
-  convenience init()
-  {
-    self.init(1)
-  }
+  override var capacity: Int { return 1 }
 
   override var isEmpty: Bool { return (element == nil) }
 
@@ -412,9 +420,9 @@ class Buffered1Chan<T>: BufferedChan<T>
 
 public class SingletonChan<T>: Buffered1Chan<T>
 {
-  public init()
+  public override init()
   {
-    super.init(1)
+    super.init()
   }
 
   override func writeElement(newElement: T)
@@ -424,10 +432,17 @@ public class SingletonChan<T>: Buffered1Chan<T>
   }
 }
 
-extension SelectChan: SelectionChannel
+/**
+  The SelectionChannel methods for SelectChan
+*/
+
+extension SelectChan //: SelectionChannel
 {
   /**
     selectMutex() must be used to send data to SelectChan in a thread-safe manner
+
+    Actions which must be performed synchronously with the SelectChan should be passed to
+    selectMutex() as a closure. The closure will only be executed if the channel is still open.
   */
 
   public func selectMutex(action: () -> ())
@@ -439,13 +454,15 @@ extension SelectChan: SelectionChannel
   }
 
   /**
-    selectSend(), used within the closure sent to selectMutex(), will send data to SelectionChannel
+    selectSend() will send data to a SelectChan.
+    It must be called within the closure sent to selectMutex() for thread safety.
+    By definition, this call occurs while this channel's mutex is locked for the current thread.
   */
-  typealias WrittenElement=T
 
-  public func selectSend(newElement: WrittenElement)
+  public func selectSend(newElement: T)
   {
     super.writeElement(newElement)
+    self.resume(self.readers)
   }
 }
 
@@ -455,19 +472,18 @@ extension SelectChan: SelectionChannel
   Conversely, receive operations block until a sender is ready.
 */
 
-class UnbufferedChan<T>: BufferedChan<T>
+class UnbufferedChan<T>: gcdChan<T>
 {
-  private var element: T? = nil
-  private var blockedReaders: Int32
-  private var blockedWriters: Int32
+  private var element: T?
+  private var blockedReaders: Int32 = 0
+  private var blockedWriters: Int32 = 0
 
-  init()
+  override init()
   {
     element = nil
-    blockedReaders = 0
-    blockedWriters = 0
-    super.init(0)
   }
+
+  override var capacity: Int { return 0 }
 
   override var isEmpty: Bool { return (element == nil) }
   override var isFull: Bool  { return (element != nil) }
@@ -481,7 +497,7 @@ class UnbufferedChan<T>: BufferedChan<T>
     :return: whether the data is ready for a receive operation.
   */
 
-  var isReady: Bool { return (element != nil) }
+  final var isReady: Bool { return (element != nil) }
 
   /**
     Close the channel
@@ -493,12 +509,10 @@ class UnbufferedChan<T>: BufferedChan<T>
     already been closed, but in fact nothing will happen if it were to occur.
   */
 
-  override func close()
+  private override func doClose()
   {
-    if closed { return }
-
 //    self.log("closing 0-channel")
-    super.close()
+    super.doClose()
   }
 
   /**
@@ -520,11 +534,11 @@ class UnbufferedChan<T>: BufferedChan<T>
     while !hasSent
     {
       // self.blockedWriters += 1 -- atomically
-      OSAtomicIncrement32(&self.blockedWriters)
+      OSAtomicIncrement32Barrier(&self.blockedWriters)
 
       writerMutex {        // A suspended writer queue will block here.
         self.channelMutex {
-          self.blockedWriters -= 1
+          OSAtomicDecrement32Barrier(&self.blockedWriters)
 
           self.suspend(self.writers) // will also resume readers
 
@@ -548,7 +562,13 @@ class UnbufferedChan<T>: BufferedChan<T>
     }
   }
 
-  private override func writeElement(newElement: T)
+  /**
+    Write an element to the channel buffer, specific implementation.
+    This is used within write(newElement: T).
+    By *definition*, this method is called while a mutex is locked.
+  */
+
+  private func writeElement(newElement: T)
   {
     element = newElement
   }
@@ -572,11 +592,11 @@ class UnbufferedChan<T>: BufferedChan<T>
     while !hasRead
     {
       // self.blockedReaders += 1 -- atomically
-      OSAtomicIncrement32(&self.blockedReaders)
+      OSAtomicIncrement32Barrier(&self.blockedReaders)
 
       readerMutex {        // A suspended reader queue will block here.
         self.channelMutex {
-          self.blockedReaders -= 1
+          OSAtomicDecrement32Barrier(&self.blockedReaders)
 
           if !self.isReady && !self.isClosed
           {
@@ -606,7 +626,13 @@ class UnbufferedChan<T>: BufferedChan<T>
     return oldElement
   }
 
-  private override func readElement() ->T?
+  /**
+    Read an from the channel buffer, specific implementation.
+    This is used within read() ->T?
+    By *definition*, this method is called while a mutex is locked.
+  */
+
+  private func readElement() ->T?
   {
     if let oldElement = self.element
     {
@@ -623,11 +649,11 @@ class UnbufferedChan<T>: BufferedChan<T>
       while !hasRead
       {
         // self.blockedReaders += 1 -- atomically
-        OSAtomicIncrement32(&self.blockedReaders)
+        OSAtomicIncrement32Barrier(&self.blockedReaders)
 
         self.readerMutex {        // A suspended reader queue will block the thread here.
           self.channelMutex {
-            self.blockedReaders -= 1
+            OSAtomicDecrement32Barrier(&self.blockedReaders)
 
             if !self.isReady && !self.isClosed
             {
