@@ -63,7 +63,7 @@ while let m = <-ch
 
 The `for` loop will count up to 10 on a background thread, sending
 results to the main thread, which prints them. The main thread pauses
-while waiting for results inside the `<-ch` channel receive
+while waiting for results inside the `<-ch` channel read
 operation. The `while` loop will then exit when the channel becomes
 closed. An empty, closed channel returns nil, thereby signaling to
 receivers that it has become closed.

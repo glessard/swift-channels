@@ -46,7 +46,7 @@ func syncprintwait()
   if res != 0
   {
     dispatch_suspend(PrintQueue)
-    Time.Wait(50)
+    NSThread.sleepForTimeInterval(0.1)
     println("Giving up on waiting")
   }
 }

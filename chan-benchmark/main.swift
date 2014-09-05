@@ -6,9 +6,11 @@
 //  Copyright (c) 2014 Guillaume Lessard. All rights reserved.
 //
 
+import Darwin
+
 let iterations = 100_000
 
-let buffered = Chan<Int>.Make(1)
+var buffered: Chan<Int> = Chan.Make(1)
 
 var tic = Time()
 
@@ -16,11 +18,11 @@ for i in 0..<iterations
 {
   buffered <- i
   let a = <-buffered
+  _ = a
 }
 buffered.close()
 
 println(tic.toc)
-
 
 let unbuffered = Chan<Int>.Make()
 
@@ -53,8 +55,8 @@ async {
 for i in 0..<iterations
 {
   let a = <-insane
+  _ = a
 }
 
 insane.close()
-
 println(tic.toc)
