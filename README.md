@@ -31,8 +31,9 @@ elements, after which the next send operation will block.
 Thread blocking is implemented with pthreads mutex locks and condition
 variables, while threads are spawned with Grand Central Dispatch
 (GCD). Thread blocking can be successfully implemented with GCD, but
-it is slower. A GCD-based channel implementation can be found on the
-`gcd-channels` branch.
+it is slower. A GCD-based channel implementation can be found in the
+file `concurrency/chan-blocks.swift`. It is a drop-in replacement for
+`chan-pthreads.swift`
 
 Along with a channels implementation, this library includes an `async`
 pseudo-keyword, a simple shortcut to launch a closure asynchronously
@@ -63,16 +64,15 @@ while let m = <-ch
 
 The `for` loop will count up to 10 on a background thread, sending
 results to the main thread, which prints them. The main thread pauses
-while waiting for results inside the `<-ch` channel read
+while waiting for results inside the `<-ch` channel receive
 operation. The `while` loop will then exit when the channel becomes
 closed. An empty, closed channel returns nil, thereby signaling to
 receivers that it has become closed.
 
 Missing from this is a powerful construct such as the Select keyword
 from Go, which is quite useful when dealing with multiple channels at
-once. There is an initial implementation, but runtime stability
-currently requires every channel to be of the same type, which greatly
-weakens the construct.
+once. There is an initial implementation that is both unstable and
+slow.
 
 Also missing is a deadlock detector. Deadlocks will happen! They
 don't have to. Good luck.
