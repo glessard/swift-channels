@@ -44,7 +44,7 @@ public protocol ReadableChannel: class, BasicChannel, GeneratorType, SequenceTyp
   func next() -> ReadElement?
 
   /**
-    Return self as GeneratorType.
+    Return self as a GeneratorType.
     This fulfills the SequenceType protocol.
 
     :return: an implementor of GeneratorType to iterate along the channel's elements.

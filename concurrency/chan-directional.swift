@@ -7,7 +7,11 @@
 //
 
 /**
-  ReadChan<T> wraps a ReadableChannel implementor in a concrete class.
+  ReadChan<T> is a wrapper for a SelectableChannel implementor.
+  If it had a WritableChannel implementation, it becomes inaccessible,
+  effectively making the channel one-way only.
+
+  This could be useful to clarify the intentions of an API.
 */
 
 public class ReadChan<T>: ReadableChannel, SelectableChannel, GeneratorType, SequenceType
@@ -34,7 +38,7 @@ public class ReadChan<T>: ReadableChannel, SelectableChannel, GeneratorType, Seq
     return EnclosedReadChan(c)
   }
 
-  // ReadableChannel interface
+  // ReadableChannel interface (abstract)
 
   public var capacity: Int  { return 0 }
   public var isClosed: Bool { return true }
@@ -48,25 +52,17 @@ public class ReadChan<T>: ReadableChannel, SelectableChannel, GeneratorType, Seq
     return nil
   }
 
-  // SelectableChannel interface
-  
+  // SelectableChannel interface (abstract)
+
   public var invalidSelection: Bool { return isClosed && isEmpty }
 
   public func selectRead(channel: SelectChan<SelectionType>, messageID: Selectable) -> Signal
   {
-    assert(false, "This placeholder function should never execute!")
     return { }
   }
 
   public func extract(selection: SelectionType?) -> T?
   {
-    if selection != nil
-    {
-      if let selection = selection as? Selection<T>
-      {
-        return selection.data
-      }
-    }
     return nil
   }
 
@@ -89,6 +85,11 @@ public class ReadChan<T>: ReadableChannel, SelectableChannel, GeneratorType, Seq
     return self
   }
 }
+
+/**
+  WrappedReadChan<T> wraps a Chan<T> and effectively hides its
+  WritableChannel implementation, effectively making the channel one-way only.
+*/
 
 class WrappedReadChan<T>: ReadChan<T>
 {
@@ -113,31 +114,43 @@ class WrappedReadChan<T>: ReadChan<T>
     return wrapped.read()
   }
 
+  // SelectableChannel implementation
+
   override var invalidSelection: Bool { return wrapped.invalidSelection }
 
   override func selectRead(channel: SelectChan<SelectionType>, messageID: Selectable) -> Signal
   {
     return wrapped.selectRead(channel, messageID: messageID)
   }
+
+  override func extract(selection: SelectionType?) -> T?
+  {
+    return wrapped.extract(selection)
+  }
 }
 
 /**
+  EnclosedReadChan<T> wraps an object that implements SelectableChannel and makes it
+  looks like a ReadChan<T> subclass.
 
+  This is accomplished in wrapping its entire ReadableChannel interface in a series of closures.
+  It's probably memory-heavy, but it can be done, and it works.
 */
 
 class EnclosedReadChan<T>: ReadChan<T>
 {
   init<C: SelectableChannel where C.ReadElement == T>(_ c: C)
   {
-    enclosedCapacity =   { c.capacity }
-    enclosedGetClosed =  { c.isClosed }
-    enclosedCloseFunc =  { c.close() }
+    enclosedCapacity =    { c.capacity }
+    enclosedGetClosed =   { c.isClosed }
+    enclosedCloseFunc =   { c.close() }
 
-    enclosedGetEmpty =   { c.isEmpty }
-    enclosedReadFunc =   { c.read() }
+    enclosedGetEmpty =    { c.isEmpty }
+    enclosedReadFunc =    { c.read() }
 
-    enclosedSelectGo =   { c.invalidSelection }
-    enclosedSelectRead = { c.selectRead($0, messageID: $1) }
+    enclosedSelectGo =    { c.invalidSelection }
+    enclosedSelectRead =  { c.selectRead($0, messageID: $1) }
+    enclosedExtractFunc = { c.extract($0) }
   }
 
   // ReadableChannel implementation
@@ -168,12 +181,19 @@ class EnclosedReadChan<T>: ReadChan<T>
   {
     return enclosedSelectRead(channel, messageID)
   }
+
+  private var enclosedExtractFunc: (SelectionType?) -> T?
+  override func extract(selection: SelectionType?) -> T?
+  {
+    return enclosedExtractFunc(selection)
+  }
 }
 
 /**
   ReadOnly<C> wraps any implementor of SelectableChannel so that only
   the SelectableChannel interface is available. The type of the wrapped
-  SelectableChannel will be visible in the type signature.
+  SelectableChannel will be visible in the type signature, but it
+  will have become a one-way channel.
 */
 
 public class ReadOnly<C: SelectableChannel>: ReadableChannel, SelectableChannel, GeneratorType, SequenceType
@@ -184,6 +204,8 @@ public class ReadOnly<C: SelectableChannel>: ReadableChannel, SelectableChannel,
   {
     wrapped = channel
   }
+
+  // ReadableChannel wrappers
 
   public var capacity: Int  { return wrapped.capacity }
   public var isClosed: Bool { return wrapped.isClosed }
@@ -197,15 +219,7 @@ public class ReadOnly<C: SelectableChannel>: ReadableChannel, SelectableChannel,
     return wrapped.read()
   }
 
-  public func next() -> C.ReadElement?
-  {
-    return wrapped.read()
-  }
-
-  public func generate() -> Self
-  {
-    return self
-  }
+  // SelectableChannel wrappers
 
   public var invalidSelection: Bool { return wrapped.invalidSelection }
 
@@ -218,11 +232,28 @@ public class ReadOnly<C: SelectableChannel>: ReadableChannel, SelectableChannel,
   {
     return wrapped.extract(item)
   }
+
+  // GeneratorType implementation
+
+  public func next() -> C.ReadElement?
+  {
+    return wrapped.read()
+  }
+
+  // SequenceType implementation
+
+  public func generate() -> Self
+  {
+    return self
+  }
 }
 
 /**
-  WriteChan<T> wraps a Chan<T> so that
-  only the WritableChannel interface is available.
+  WriteChan<T> is a wrapper for a WritableChannel implementor.
+  If it had a ReadableChannel implementation, it becomes inaccessible,
+  effectively making it a one-way channel.
+
+  This could be useful to clarify the intentions of an API.
 */
 
 public class WriteChan<T>: WritableChannel
@@ -250,7 +281,7 @@ public class WriteChan<T>: WritableChannel
   }
 
 
-  // WritableChannel interface
+  // WritableChannel interface (abstract)
 
   public var capacity: Int  { return 0 }
   public var isClosed: Bool { return true }
@@ -264,6 +295,12 @@ public class WriteChan<T>: WritableChannel
     _ = newElement
   }
 }
+
+/**
+  WrappedWriteChan<T> wraps a Chan<T> so that only its
+  WritableChannel interface is available. The instance
+  effectively becomes a one-way channel.
+*/
 
 class WrappedWriteChan<T>: WriteChan<T>
 {
@@ -286,6 +323,14 @@ class WrappedWriteChan<T>: WriteChan<T>
     wrapped.write(newElement)
   }
 }
+
+/**
+  EnclosedWriteChan<T> wraps an object that implements WritableChannel and makes it
+  looks like a WriteChan<T> subclass.
+
+  This is accomplished in wrapping its entire WritableChannel interface in a series of closures.
+  It's probably memory-heavy, but it can be done, and it works.
+*/
 
 class EnclosedWriteChan<T>: WriteChan<T>
 {
@@ -320,7 +365,9 @@ class EnclosedWriteChan<T>: WriteChan<T>
 
 /**
   WriteOnly<C> wraps any implementor of WritableChannel so that
-  only the WritableChannel interface is available.
+  only the WritableChannel interface is available. The type of the wrapped
+  WritableChannel will be visible in the type signature, but it
+  will have become a one-way channel.
 */
 
 public class WriteOnly<C: WritableChannel>: WritableChannel
