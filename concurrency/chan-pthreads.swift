@@ -59,12 +59,12 @@ class pthreadChan<T>: Chan<T>
 
   // a small reporting utility
 
-  private let logging = false
-  private func log<PT>(object: PT) -> ()
-  {
-    if logging { syncprint(object) }
-  }
-  
+//  private let logging = false
+//  private func log<PT>(object: PT) -> ()
+//  {
+//    if logging { syncprint(object) }
+//  }
+
   // Computed properties
 
   /**
