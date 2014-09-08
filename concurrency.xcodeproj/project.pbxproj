@@ -8,12 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		030A900E19B5A28C00F4B44B /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 030A900D19B5A28C00F4B44B /* main.swift */; };
-		030A901219B5A29700F4B44B /* chan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035FDFDB19A17DD500F4B44B /* chan.swift */; };
-		030A901419B5A2A800F4B44B /* chan-protocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0310D0F919A8627800F4B44B /* chan-protocols.swift */; };
-		030A901519B5A2A800F4B44B /* chan-directional.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0367EA5919A8F84A00F4B44B /* chan-directional.swift */; };
-		030A901619B5A2A800F4B44B /* chan-operators.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035FDFE819A23FF700F4B44B /* chan-operators.swift */; };
-		030A901719B5A2A800F4B44B /* select-types.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B65B8819AFFC4D00F4B44B /* select-types.swift */; };
-		030A901819B5A2A800F4B44B /* async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035FDFDD19A17DD500F4B44B /* async.swift */; };
 		030A901919B5A2A800F4B44B /* timing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035FDFE419A17E8B00F4B44B /* timing.swift */; };
 		030A901A19B5A2A800F4B44B /* logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E44D1419A7A71200F4B44B /* logging.swift */; };
 		032066A819AC04D800F4B44B /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 032066A719AC04D800F4B44B /* main.swift */; };
@@ -28,7 +22,8 @@
 		032E6B9C19BD23C200F4B44B /* select-types.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B65B8819AFFC4D00F4B44B /* select-types.swift */; };
 		032E6B9D19BD23C200F4B44B /* queue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E44D1619A7AB5700F4B44B /* queue.swift */; };
 		032E6B9E19BD23C900F4B44B /* logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E44D1419A7A71200F4B44B /* logging.swift */; };
-		0341D1FE19BCBFD700F4B44B /* queue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E44D1619A7AB5700F4B44B /* queue.swift */; };
+		03493DDC19BD398200F4B44B /* Channels.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 032E6B8019BD23B500F4B44B /* Channels.framework */; };
+		03493DDD19BD398400F4B44B /* Channels.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 032E6B8019BD23B500F4B44B /* Channels.framework */; };
 		03E10E2619BB6CD800F4B44B /* timing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035FDFE419A17E8B00F4B44B /* timing.swift */; };
 		03E10E2719BB6D6A00F4B44B /* logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E44D1419A7A71200F4B44B /* logging.swift */; };
 /* End PBXBuildFile section */
@@ -84,6 +79,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				03493DDD19BD398400F4B44B /* Channels.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -91,6 +87,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				03493DDC19BD398200F4B44B /* Channels.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -359,15 +356,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				030A901719B5A2A800F4B44B /* select-types.swift in Sources */,
-				030A901519B5A2A800F4B44B /* chan-directional.swift in Sources */,
 				030A900E19B5A28C00F4B44B /* main.swift in Sources */,
-				030A901819B5A2A800F4B44B /* async.swift in Sources */,
-				030A901619B5A2A800F4B44B /* chan-operators.swift in Sources */,
-				030A901219B5A29700F4B44B /* chan.swift in Sources */,
 				030A901A19B5A2A800F4B44B /* logging.swift in Sources */,
-				0341D1FE19BCBFD700F4B44B /* queue.swift in Sources */,
-				030A901419B5A2A800F4B44B /* chan-protocols.swift in Sources */,
 				030A901919B5A2A800F4B44B /* timing.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -629,6 +619,7 @@
 				032E6B9219BD23B600F4B44B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		032E6B9319BD23B600F4B44B /* Build configuration list for PBXNativeTarget "ChannelsTests" */ = {
 			isa = XCConfigurationList;
@@ -637,6 +628,7 @@
 				032E6B9519BD23B600F4B44B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		03BF58BD19A17D8D00F4B44B /* Build configuration list for PBXProject "concurrency" */ = {
 			isa = XCConfigurationList;

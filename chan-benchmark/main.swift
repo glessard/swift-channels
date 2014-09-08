@@ -7,6 +7,7 @@
 //
 
 import Darwin
+import Channels
 
 let iterations = 100_000
 
@@ -18,7 +19,6 @@ for i in 0..<iterations
 {
   buffered <- i
   let a = <-buffered
-  _ = a
 }
 buffered.close()
 
@@ -55,7 +55,6 @@ async {
 for i in 0..<iterations
 {
   let a = <-insane
-  _ = a
 }
 
 insane.close()
