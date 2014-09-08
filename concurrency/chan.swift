@@ -17,7 +17,7 @@ import Dispatch
   of the factory function returns an unbuffered channel.
 */
 
-public class Chan<T>: ReadableChannel, WritableChannel, SelectableChannel
+public class Chan<T>: ReceivingChannel, SendingChannel, SelectableChannel
 {
   /**
     Factory function to obtain a new, unbuffered Chan<T> object (channel capacity = 0).
@@ -67,7 +67,7 @@ public class Chan<T>: ReadableChannel, WritableChannel, SelectableChannel
   }
 
   /**
-    Factory function to obtain a Chan<T> wrapper for any implementor of protocol<ReadableChannel, WritableChannel>.
+    Factory function to obtain a Chan<T> wrapper for any implementor of both ReceivingChannel and SendingChannel.
 
     Why would anyone need this? Perhaps someone implemented a channel quite separately from this library,
     yet needs to be compatible with it.
@@ -77,8 +77,8 @@ public class Chan<T>: ReadableChannel, WritableChannel, SelectableChannel
     :return: a newly-wrapped Chan<T> object
   */
 
-  public class func Wrap<C: protocol<ReadableChannel, WritableChannel>
-                         where C.ReadElement == T, C.ReadElement == C.WrittenElement>(c: C) -> Chan<T>
+  public class func Wrap<C: protocol<ReceivingChannel, SendingChannel>
+                         where C.ReceivedElement == T, C.ReceivedElement == C.SentElement>(c: C) -> Chan<T>
   {
     if let c = c as? Chan<T> { return c }
 
@@ -86,31 +86,31 @@ public class Chan<T>: ReadableChannel, WritableChannel, SelectableChannel
   }
 
   /**
-    Factory function to obtain a Chan<T> wrapper for any ReadableChannel
+    Factory function to obtain a Chan<T> wrapper for any ReceivingChannel
 
     Don't use this. This way lies madness. Your program will deadlock.
 
-    :param:  c a ReadableChannel implementor to wrap
+    :param:  c a ReceivingChannel implementor to wrap
 
     :return: a newly-wrapped Chan<T> object
   */
 
-  class func Wrap<C: ReadableChannel where C.ReadElement == T>(c: C) -> Chan<T>
+  class func Wrap<C: ReceivingChannel where C.ReceivedElement == T>(c: C) -> Chan<T>
   {
     return EnclosedDirectionalChan(c)
   }
 
   /**
-    Factory function to obtain a Chan<T> wrapper for any WritableChannel
+    Factory function to obtain a Chan<T> wrapper for any SendingChannel
 
     Don't use this. This way lies madness. Your program will deadlock.
 
-    :param:  c a WritableChannel implementor to wrap
+    :param:  c a SendingChannel implementor to wrap
 
     :return: a newly-wrapped Chan<T> object
   */
 
-  class func Wrap<C: WritableChannel where C.WrittenElement == T>(c: C) -> Chan<T>
+  class func Wrap<C: SendingChannel where C.SentElement == T>(c: C) -> Chan<T>
   {
     return EnclosedDirectionalChan(c)
   }
@@ -118,10 +118,10 @@ public class Chan<T>: ReadableChannel, WritableChannel, SelectableChannel
   // Computed properties
 
   /**
-    Determine whether the channel is empty (and therefore can't be read from)
+    Determine whether the channel is empty (and therefore can't be received from)
   */
 
-  public var isEmpty: Bool { return false }
+  public var isEmpty: Bool { return true }
 
   /**
     Determine whether the channel is full (and can't be written to)
@@ -141,7 +141,7 @@ public class Chan<T>: ReadableChannel, WritableChannel, SelectableChannel
 
   public var isClosed: Bool { return true }
 
-  // BasicChannel, WritableChannel and ReadableChannel methods.
+  // BasicChannel, SendingChannel and ReceivingChannel methods.
 
   /**
     Close the channel
@@ -156,7 +156,7 @@ public class Chan<T>: ReadableChannel, WritableChannel, SelectableChannel
   public func close() { }
 
   /**
-    Write a new element to the channel
+    Send a new element to the channel
   
     If the channel is full, this call will block.
     If the channel has been closed, no action will be taken.
@@ -164,13 +164,13 @@ public class Chan<T>: ReadableChannel, WritableChannel, SelectableChannel
     :param: element the new element to be added to the channel.
   */
 
-  public func write(newElement: T)
+  public func send(newElement: T)
   {
     _ = newElement
   }
 
   /**
-    Read the oldest element from the channel.
+    Receive the oldest element from the channel.
 
     If the channel is empty, this call will block.
     If the channel is empty and closed, this will return nil.
@@ -178,7 +178,7 @@ public class Chan<T>: ReadableChannel, WritableChannel, SelectableChannel
     :return: the oldest element from the channel.
   */
 
-  public func read() -> T?
+  public func receive() -> T?
   {
     return nil
   }
@@ -187,14 +187,10 @@ public class Chan<T>: ReadableChannel, WritableChannel, SelectableChannel
 
   public var invalidSelection: Bool { return isClosed && isEmpty }
 
-  public func selectRead(channel: SelectChan<SelectionType>, messageID: Selectable) -> Signal
+  public func selectReceive(channel: SelectChan<SelectionType>, messageID: Selectable) -> Signal
   {
-    // Was getting issues by calling channel.isClosed from this context.
-    // Since selectMutex is calling it anyway, we're skipping it from this side.
     channel.selectMutex {
-      let nilT: T? = nil
-      let selection = Selection(messageID: messageID, messageData: nilT)
-      channel.selectSend(selection)
+      channel.selectSend(Selection(messageID: messageID, messageData: (nil as T?)))
     }
 
     return {}
@@ -219,7 +215,7 @@ extension Chan: GeneratorType
 {
   /**
     Return the next element from the channel.
-    This is an alias for Chan<T>.read() and fulfills the GeneratorType protocol.
+    This is an alias for Chan<T>.receive() and fulfills the GeneratorType protocol.
 
     If the channel is empty, this call will block.
     If the channel is empty and closed, this will return nil.
@@ -229,7 +225,7 @@ extension Chan: GeneratorType
 
   public func next() -> T?
   {
-    return read()
+    return receive()
   }
 }
 
@@ -249,28 +245,33 @@ extension Chan: SequenceType
 }
 
 /**
-  Wrap an object that implements both ReadableChannel and WritableChannel (for element type T)
+  Wrap an object that implements both ReceivingChannel and SendingChannel (for element type T)
   in something than will look like a Chan<T>.
 
   Even though the object may not be a Chan<T>, this is accomplished in wrapping its
-  entire ReadableChannel and WritableChannel interfaces in a series of closures.
+  entire ReceivingChannel and SendingChannel interfaces in a series of closures.
   It's probably memory-heavy, but it's pretty nice that it can be done...
 */
 
 private class EnclosedChan<T>: Chan<T>
 {
-  private init<C: protocol<ReadableChannel,WritableChannel> where C.ReadElement == T, C.ReadElement == C.WrittenElement>(_ c: C)
+  private init<C: protocol<ReceivingChannel,SendingChannel>
+               where C.ReceivedElement == T, C.ReceivedElement == C.SentElement>(_ c: C)
   {
     enclosedCapacity =  { c.capacity }
     enclosedGetClosed = { c.isClosed }
     enclosedCloseFunc = { c.close() }
 
     enclosedGetFull =   { c.isFull }
-    enclosedWriteFunc = { c.write($0) }
+    enclosedSendFunc =  { c.send($0) }
 
-    enclosedGetEmpty =  { c.isEmpty }
-    enclosedReadFunc =  { c.read() }
-  }
+    enclosedGetEmpty =    { c.isEmpty }
+    enclosedReceiveFunc = { c.receive() }
+
+//    enclosedIsSelectable =  { c.invalidSelection }
+//    enclosedSelectReceive = { c.selectReceive($0, messageID: $1) }
+//    enclosedExtractFunc =   { c.extract($0) }
+}
 
   private override init()
   {
@@ -279,10 +280,17 @@ private class EnclosedChan<T>: Chan<T>
     enclosedCloseFunc = { }
 
     enclosedGetFull =   { true }
-    enclosedWriteFunc = { _ = $0 }
+    enclosedSendFunc =  { _ = $0 }
 
     enclosedGetEmpty =  { true }
-    enclosedReadFunc =  { nil }
+    enclosedReceiveFunc =  { nil }
+
+//    enclosedIsSelectable =  { false }
+//    enclosedSelectReceive = { _ = $0; _ = $1; {} }
+//    enclosedExtractFunc =   {
+//      (a: SelectionType?) -> T? in
+//      nil as T?
+//    }
   }
 
   private var  enclosedCapacity: () -> Int
@@ -297,24 +305,39 @@ private class EnclosedChan<T>: Chan<T>
   private var  enclosedGetFull: () -> Bool
   override var isFull: Bool { return enclosedGetFull() }
 
-  private var  enclosedWriteFunc: (T) -> ()
-  override func write(newElement: T)
+  private var  enclosedSendFunc: (T) -> ()
+  override func send(newElement: T)
   {
-    enclosedWriteFunc(newElement)
+    enclosedSendFunc(newElement)
   }
 
   private var  enclosedGetEmpty: () -> Bool
   override var isEmpty: Bool { return enclosedGetEmpty() }
 
-  private var  enclosedReadFunc: () -> T?
-  override func read() -> T?
+  private var  enclosedReceiveFunc: () -> T?
+  override func receive() -> T?
   {
-    return enclosedReadFunc()
+    return enclosedReceiveFunc()
   }
+
+//  private var enclosedIsSelectable: () -> Bool
+//  override var invalidSelection: Bool { return enclosedIsSelectable() }
+
+//  private var enclosedSelectReceive: (SelectChan<SelectionType>, Selectable) -> Signal
+//  override func selectReceive(channel: SelectChan<SelectionType>, messageID: Selectable) -> Signal
+//  {
+//    return enclosedSelectReceive(channel, messageID)
+//  }
+
+//  private var enclosedExtractFunc: (SelectionType?) -> T?
+//  override func extract(selection: SelectionType?) -> T?
+//  {
+//    return enclosedExtractFunc(selection)
+//  }
 }
 
 /**
-  A wrapper for a an implementor of ReadableChannel or WritableChannel, but not both.
+  A wrapper for a an implementor of ReceivingChannel or SendingChannel, but not both.
   It wraps said implementor inside something that appears to implement protocols.
 
   This way lies madness. Do not use this. Deadlocks will happen.
@@ -322,7 +345,7 @@ private class EnclosedChan<T>: Chan<T>
 
 private class EnclosedDirectionalChan<T>: EnclosedChan<T>
 {
-  private override init<C: ReadableChannel where C.ReadElement == T>(_ c: C)
+  private override init<C: ReceivingChannel where C.ReceivedElement == T>(_ c: C)
   {
     super.init()
 
@@ -331,13 +354,13 @@ private class EnclosedDirectionalChan<T>: EnclosedChan<T>
     enclosedCloseFunc = { c.close() }
 
     enclosedGetFull =   { true }
-    enclosedWriteFunc = { _ = $0 }
+    enclosedSendFunc =  { _ = $0 }
 
     enclosedGetEmpty =  { c.isEmpty }
-    enclosedReadFunc =  { c.read() }
+    enclosedReceiveFunc =  { c.receive() }
   }
 
-  private override init<C: WritableChannel where C.WrittenElement == T>(_ c: C)
+  private override init<C: SendingChannel where C.SentElement == T>(_ c: C)
   {
     super.init()
 
@@ -346,10 +369,10 @@ private class EnclosedDirectionalChan<T>: EnclosedChan<T>
     enclosedCloseFunc = { c.close() }
 
     enclosedGetFull =   { c.isFull }
-    enclosedWriteFunc = { c.write($0) }
+    enclosedSendFunc =  { c.send($0) }
 
     enclosedGetEmpty =  { true }
-    enclosedReadFunc =  { nil }
+    enclosedReceiveFunc =  { nil }
   }
 }
 

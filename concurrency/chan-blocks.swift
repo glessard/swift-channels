@@ -195,7 +195,7 @@ class BufferedChan<T>: gcdChan<T>
     :param: element the new element to be added to the channel.
   */
 
-  override func write(newElement: T)
+  override func send(newElement: T)
   {
     if self.isClosed { return }
 
@@ -234,7 +234,7 @@ class BufferedChan<T>: gcdChan<T>
 
   /**
     Write an element to the channel buffer, specific implementation.
-    This is used within write(newElement: T).
+    This is used within send(newElement: T).
     By *definition*, this method is called while a mutex is locked.
   */
   private func writeElement(newElement: T)
@@ -251,7 +251,7 @@ class BufferedChan<T>: gcdChan<T>
     :return: the oldest element from the channel.
   */
 
-  override func read() -> T?
+  override func receive() -> T?
   {
 //    let id = readerCount++
 //    self.log("trying to receive #\(id)")
@@ -292,7 +292,7 @@ class BufferedChan<T>: gcdChan<T>
 
   /**
     Read an from the channel buffer, specific implementation.
-    This is used within read() ->T?
+    This is used within receive() ->T?
     By *definition*, this method is called while a mutex is locked.
   */
   private func readElement() ->T?
@@ -301,7 +301,8 @@ class BufferedChan<T>: gcdChan<T>
   }
 
   /**
-    Take the next element that can be read from self, and send it to the channel passed in as a parameter.
+    Take the next element that can be received from self,
+    and send it to the channel passed in as a parameter.
 
     :param: channel   the channel to which we're re-sending the element.
     :param: messageID an identifier to be sent as the return notification.
@@ -309,7 +310,7 @@ class BufferedChan<T>: gcdChan<T>
     :return: a closure that will unblock the thread if needed.
   */
 
-  override func selectRead(channel: SelectChan<SelectionType>, messageID: Selectable) -> Signal
+  override func selectReceive(channel: SelectChan<SelectionType>, messageID: Selectable) -> Signal
   {
     async {
       var hasRead = false
@@ -323,17 +324,13 @@ class BufferedChan<T>: gcdChan<T>
               return // to the top of the while loop and be suspended
             }
 
-            channel.channelMutex {
-              if !channel.isClosed
-              {
-                let selection = Selection(messageID: messageID, messageData: self.readElement())
-                channel.selectSend(selection)
-              }
+            channel.selectMutex {
+              channel.selectSend(Selection(messageID: messageID, messageData: self.readElement()))
             }
             hasRead = true
 
             if self.isEmpty && !self.isClosed
-            { // Preemptively suspend readers on empty channel
+            { // Preemptively suspend readers when channel is empty
               self.suspend(self.readers)
             }
             else
@@ -445,10 +442,10 @@ public class SingletonChan<T>: Buffered1Chan<T>
   The SelectionChannel methods for SelectChan
 */
 
-extension SelectChan //: SelectionChannel
+extension SelectChan //: SelectingChannel
 {
   /**
-    selectMutex() must be used to send data to SelectChan in a thread-safe manner
+    selectMutex() must be used to send data to a SelectingChannel in a thread-safe manner
 
     Actions which must be performed synchronously with the SelectChan should be passed to
     selectMutex() as a closure. The closure will only be executed if the channel is still open.
@@ -463,7 +460,7 @@ extension SelectChan //: SelectionChannel
   }
 
   /**
-    selectSend() will send data to a SelectChan.
+    selectSend() will send data to a SelectingChannel.
     It must be called within the closure sent to selectMutex() for thread safety.
     By definition, this call occurs while this channel's mutex is locked for the current thread.
   */
@@ -494,8 +491,23 @@ class UnbufferedChan<T>: gcdChan<T>
 
   override var capacity: Int { return 0 }
 
-  override var isEmpty: Bool { return (element == nil) }
-  override var isFull: Bool  { return (element != nil) }
+  /**
+  isEmpty is meaningless when capacity equals zero.
+  However, receive() is nearly guaranteed to block, so return true.
+
+  :return: true
+  */
+
+  override var isEmpty: Bool { return true }
+
+  /**
+  isFull is meaningless when capacity equals zero.
+  However, send() is nearly guaranteed to block, so return true.
+
+  :return: true
+  */
+
+  override var isFull: Bool  { return true }
 
   /**
     Tell whether the channel is ready to transfer data.
@@ -525,7 +537,7 @@ class UnbufferedChan<T>: gcdChan<T>
   }
 
   /**
-    Write an element to the channel
+    Send an element to the channel
 
     If no reader is ready to receive, this call will block.
     If the channel has been closed, no action will be taken.
@@ -533,7 +545,7 @@ class UnbufferedChan<T>: gcdChan<T>
     :param: element the new element to be added to the channel.
   */
 
-  override func write(newElement: T)
+  override func send(newElement: T)
   {
     if self.isClosed { return }
 
@@ -565,6 +577,8 @@ class UnbufferedChan<T>: gcdChan<T>
           // Surely there is a reader waiting
           assert(self.blockedReaders > 0 || self.isClosed, "No receiver available!")
 
+          if self.isClosed { self.resume(self.writers) }
+
 //          self.log("writer \(newElement) has successfully sent")
         }
       }
@@ -573,7 +587,7 @@ class UnbufferedChan<T>: gcdChan<T>
 
   /**
     Write an element to the channel buffer, specific implementation.
-    This is used within write(newElement: T).
+    This is used within send(newElement: T).
     By *definition*, this method is called while a mutex is locked.
   */
 
@@ -583,7 +597,7 @@ class UnbufferedChan<T>: gcdChan<T>
   }
 
   /**
-    Read an element from the channel.
+    Receive an element from the channel.
 
     If the channel is empty, this call will block until an element is available.
     If the channel is empty and closed, this will return nil.
@@ -591,7 +605,7 @@ class UnbufferedChan<T>: gcdChan<T>
     :return: the oldest element from the channel.
   */
 
-  override func read() -> T?
+  override func receive() -> T?
   {
 //    let id = readerCount++
 //    self.log("reader \(id) is trying to receive")
@@ -614,8 +628,6 @@ class UnbufferedChan<T>: gcdChan<T>
             return // to the top of the loop and be suspended
           }
 
-          assert(self.isReady || self.isClosed, "Messed up an unbuffered receive")
-
           oldElement = self.readElement()
           hasRead = true
 
@@ -637,7 +649,7 @@ class UnbufferedChan<T>: gcdChan<T>
 
   /**
     Read an from the channel buffer, specific implementation.
-    This is used within read() ->T?
+    This is used within receive() ->T?
     By *definition*, this method is called while a mutex is locked.
   */
 
@@ -652,7 +664,7 @@ class UnbufferedChan<T>: gcdChan<T>
   }
 
   /**
-    Take the next element that can be read from self, and send it to the channel passed in as a parameter.
+    Take the next element that can be received from self, and send it to the channel passed in as a parameter.
 
     :param: channel   the channel to which we're re-sending the element.
     :param: messageID an identifier to be sent as the return notification.
@@ -660,7 +672,7 @@ class UnbufferedChan<T>: gcdChan<T>
     :return: a closure that will unblock the thread if needed.
   */
 
-  override func selectRead(channel: SelectChan<SelectionType>, messageID: Selectable) -> Signal
+  override func selectReceive(channel: SelectChan<SelectionType>, messageID: Selectable) -> Signal
   {
     async {
       var hasRead = false
@@ -679,14 +691,8 @@ class UnbufferedChan<T>: gcdChan<T>
               return // to the top of the loop and be suspended
             }
 
-            assert(self.isReady || self.isClosed, "Messed up an unbuffered receive")
-
-            channel.channelMutex {
-              if !channel.isClosed
-              {
-                let selection = Selection(messageID: messageID, messageData: self.readElement())
-                channel.selectSend(selection)
-              }
+            channel.selectMutex {
+              channel.selectSend(Selection(messageID: messageID, messageData: self.readElement()))
             }
             hasRead = true
 

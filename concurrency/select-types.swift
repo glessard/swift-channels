@@ -7,8 +7,8 @@
 //
 
 /**
-  An evocative name for a closure type sent back by a selectRead() method.
-  Upon being run, a Signal should try to resume the thread spawned by selectRead()
+  An evocative name for a closure type sent back by a selectReceive() method.
+  Upon being run, a Signal should try to resume the thread spawned by selectReceive()
   if said thread happens to be blocked.
 
   This attempt may not always be successful, but if such cases the thread should
@@ -27,7 +27,7 @@ public typealias Signal = () -> ()
 public protocol Selectable: class
 {
   /**
-    Select registers its notification channel by calling an implementation's selectRead() method.
+    Select registers its notification channel by calling an implementation's selectReceive() method.
     This channel is a subtype of SingletonChannel and thus only one recipient will be able to respond.
 
     -> whatever code sends a notification back must run asynchronously.
@@ -43,10 +43,10 @@ public protocol Selectable: class
     :return: a closure to be run once, which can unblock a stopped thread if needed.
   */
 
-  func selectRead(channel: SelectChan<SelectionType>, messageID: Selectable) -> Signal
+  func selectReceive(channel: SelectChan<SelectionType>, messageID: Selectable) -> Signal
 
   /**
-    If it makes no sense to launch the selectRead() method, return false to this.
+    If it makes no sense to invoke the selectReceive() method at this time, return false.
     If every Selectable in the list returns false, Select will assume that it should stop.
   */
 
@@ -65,23 +65,25 @@ public protocol SelectionType: class
 
 /**
   A channel that is Selectable should know how to extract data from one of these.
-  After all, it should have created the object in its selectRead() method.
+  After all, it should have created the object in its selectReceive() method.
 */
 
-public protocol SelectableChannel: class, Selectable, ReadableChannel
+public protocol SelectableChannel: class, Selectable, ReceivingChannel
 {
-  func extract(item: SelectionType?) -> ReadElement?
+  func extract(item: SelectionType?) -> ReceivedElement?
 }
 
 /**
   A special kind of SingletonChan for use by Select.
   SelectChan provides a way for a receiving channel to communicate back in a thread-safe
   way by using the selectSend() method within a closure passed to selectMutex().
+
+  This would be better as an internal type.
 */
 
-public class SelectChan<T>: SingletonChan<T>, SelectionChannel
+public class SelectChan<T>: SingletonChan<T>, SelectingChannel
 {
-  typealias WrittenElement = T
+  typealias SentElement = T
 
   override init()
   {
@@ -94,9 +96,9 @@ public class SelectChan<T>: SingletonChan<T>, SelectionChannel
   These methods have to be defined alongside the internals of SelectChan's superclass(es)
 */
 
-public protocol SelectionChannel
+public protocol SelectingChannel
 {
-  typealias WrittenElement
+  typealias SentElement
 
   /**
     selectMutex() must be used to send data to SelectChan in a thread-safe manner
@@ -113,7 +115,7 @@ public protocol SelectionChannel
     By definition, this call occurs while the channel's mutex is locked for the current thread.
   */
 
-  func selectSend(newElement: WrittenElement)
+  func selectSend(newElement: SentElement)
 }
 
 /**

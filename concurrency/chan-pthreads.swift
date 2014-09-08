@@ -134,7 +134,7 @@ class BufferedChan<T>: pthreadChan<T>
     :param: element the new element to be added to the channel.
   */
 
-  override func write(newElement: T)
+  override func send(newElement: T)
   {
     if self.isClosed { return }
 
@@ -163,7 +163,7 @@ class BufferedChan<T>: pthreadChan<T>
 
   /**
     Write an element to the channel buffer, specific implementation.
-    This is used within write(newElement: T).
+    This is used within send(newElement: T).
     By *definition*, this method is called while a mutex is locked.
   */
 
@@ -181,7 +181,7 @@ class BufferedChan<T>: pthreadChan<T>
     :return: the oldest element from the channel.
   */
 
-  override func read() -> T?
+  override func receive() -> T?
   {
     pthread_mutex_lock(channelMutex)
 
@@ -209,7 +209,7 @@ class BufferedChan<T>: pthreadChan<T>
 
   /**
     Read an from the channel buffer, specific implementation.
-    This is used within read() ->T?
+    This is used within receive() ->T?
     By *definition*, this method is called while a mutex is locked.
   */
 
@@ -227,7 +227,7 @@ class BufferedChan<T>: pthreadChan<T>
     :return: a closure that will unblock the thread if needed.
   */
 
-  override func selectRead(channel: SelectChan<SelectionType>, messageID: Selectable) -> Signal
+  override func selectReceive(channel: SelectChan<SelectionType>, messageID: Selectable) -> Signal
   {
     async {
       pthread_mutex_lock(self.channelMutex)
@@ -453,8 +453,23 @@ class UnbufferedChan<T>: pthreadChan<T>
 
   override var capacity: Int { return 0 }
 
-  override var isEmpty: Bool { return (element == nil) }
-  override var isFull: Bool  { return (element != nil) }
+  /**
+    isEmpty is meaningless when capacity equals zero.
+    However, receive() is nearly guaranteed to block, so return true.
+  
+    :return: true
+  */
+
+  override var isEmpty: Bool { return true }
+
+  /**
+    isFull is meaningless when capacity equals zero.
+    However, send() is nearly guaranteed to block, so return true.
+  
+    :return: true
+  */
+
+  override var isFull: Bool  { return true }
 
   /**
     Tell whether the channel is ready to transfer data.
@@ -486,7 +501,7 @@ class UnbufferedChan<T>: pthreadChan<T>
     :param: element the new element to be added to the channel.
   */
 
-  override func write(newElement: T)
+  override func send(newElement: T)
   {
     if self.isClosed { return }
 
@@ -501,7 +516,7 @@ class UnbufferedChan<T>: pthreadChan<T>
       blockedWriters -= 1
     }
 
-    assert(self.isEmpty || self.isClosed, "Messed up an unbuffered write")
+    assert(!self.isReady || self.isClosed, "Messed up an unbuffered send")
 
     writeElement(newElement)
 
@@ -516,7 +531,7 @@ class UnbufferedChan<T>: pthreadChan<T>
 
   /**
     Write an element to the channel buffer, specific implementation.
-    This is used within write(newElement: T).
+    This is used within send(newElement: T).
     By *definition*, this method is called while a mutex is locked.
   */
 
@@ -526,7 +541,7 @@ class UnbufferedChan<T>: pthreadChan<T>
   }
 
   /**
-    Read an element from the channel.
+    Receive an element from the channel.
 
     If the channel is empty, this call will block.
     If the channel is empty and closed, this will return nil.
@@ -534,7 +549,7 @@ class UnbufferedChan<T>: pthreadChan<T>
     :return: the oldest element from the channel.
   */
 
-  override func read() -> T?
+  override func receive() -> T?
   {
     pthread_mutex_lock(channelMutex)
 
@@ -553,8 +568,6 @@ class UnbufferedChan<T>: pthreadChan<T>
       blockedReaders -= 1
     }
 
-    assert(self.isReady || self.isClosed, "Messed up an unbuffered read")
-
     let oldElement = readElement()
 
 //    log("reader \(id) received \(oldElement)")
@@ -572,7 +585,7 @@ class UnbufferedChan<T>: pthreadChan<T>
 
   /**
     Read an from the channel buffer, specific implementation.
-    This is used within read() ->T?
+    This is used within receive() ->T?
     By *definition*, this method is called while a mutex is locked.
   */
 
@@ -587,7 +600,7 @@ class UnbufferedChan<T>: pthreadChan<T>
   }
 
   /**
-    Take the next element that can be read from self, and send it to the channel passed in as a parameter.
+    Take the next element that can be received from self, and send it to the channel passed in as a parameter.
 
     :param: channel   the channel to which we're re-sending the element.
     :param: messageID an identifier to be sent as the return notification.
@@ -595,7 +608,7 @@ class UnbufferedChan<T>: pthreadChan<T>
     :return: a closure that will unblock the thread if needed.
   */
 
-  override func selectRead(channel: SelectChan<SelectionType>, messageID: Selectable) -> Signal
+  override func selectReceive(channel: SelectChan<SelectionType>, messageID: Selectable) -> Signal
   {
     async {
       pthread_mutex_lock(self.channelMutex)

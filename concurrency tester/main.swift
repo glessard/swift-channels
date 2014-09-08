@@ -7,11 +7,12 @@
 //
 
 import Darwin
+import Channels
 
 // Workaround for (presumably) a generics parser bug:
 typealias ReturnTuple = (Int,Int,Int)
-func worker<CI: ReadableChannel, CO: WritableChannel
-            where CI.ReadElement == Int, CO.WrittenElement == ReturnTuple>
+func worker<CI: ReceivingChannel, CO: SendingChannel
+            where CI.ReceivedElement == Int, CO.SentElement == ReturnTuple>
            (inputChannel: CI, outputChannel: CO)
 //func worker(inputChannel: ReadChan<Int>, outputChannel: WriteChan<(Int,Int,Int)>)
 {
@@ -37,16 +38,16 @@ var outChan  = Chan.Make(type: (0,0,0), 0)
 async { Time.Wait(10); worker(ReadChan.Wrap(workChan), WriteChan.Wrap(outChan)) }
 async { Time.Wait(20); worker(ReadChan.Wrap(workChan), WriteChan.Wrap(outChan)) }
 async { Time.Wait(30); worker(ReadChan.Wrap(workChan), WriteChan.Wrap(outChan)) }
-async { Time.Wait(40); worker(ReadChan.Wrap(workChan), WriteChan.Wrap(outChan)) }
-async { Time.Wait(50); worker(ReadChan.Wrap(workChan), WriteChan.Wrap(outChan)) }
+//async { Time.Wait(40); worker(ReadChan.Wrap(workChan), WriteChan.Wrap(outChan)) }
+//async { Time.Wait(50); worker(ReadChan.Wrap(workChan), WriteChan.Wrap(outChan)) }
 
 let workElements = 10;
 for a in 0..<workElements
 {
-  async { Time.Wait(100+1000*a); workChan <- a }
+  async { Time.Wait(100+100*a); workChan <- a }
 }
 // Uncomment the following to close the channel prematurely
-//async { Time.Wait(workElements*20); syncprint("closing work channel"); workChan.close() }
+//async { Time.Wait(workElements*70); syncprint("closing work channel"); workChan.close() }
 
 var outputArray = [Int?](count: workElements, repeatedValue: nil)
 
@@ -61,5 +62,6 @@ for (i,(c,v,s)) in enumerate(outChan)
 
 let errors = outputArray.filter { $0 == nil }
 
+Time.Wait(10)
 syncprint("Dropped \(errors.count) elements")
 syncprintwait()

@@ -19,7 +19,7 @@ infix operator <- { associativity left precedence 90}
   If the channel is full, this call will block.
   If the channel has been closed, an assertion may fail.
 
-  This is the equivalent of Chan<T>.write(T)
+  This is the equivalent of Chan<T>.send(T)
 
   :param:  chan
   :param:  element the new element to be added to the channel.
@@ -27,9 +27,9 @@ infix operator <- { associativity left precedence 90}
   :return: the channel just written to, enabling multiple sends in one line.
 */
 
-public func <-<C: WritableChannel>(chan: C, element: C.WrittenElement) -> C
+public func <-<C: SendingChannel>(chan: C, element: C.SentElement) -> C
 {
-  chan.write(element)
+  chan.send(element)
   return chan
 }
 
@@ -51,7 +51,7 @@ prefix operator <- {}
   :return: the oldest element from the channel
 */
 
-public prefix func <-<C: ReadableChannel>(var chan: C) -> C.ReadElement?
+public prefix func <-<C: ReceivingChannel>(var chan: C) -> C.ReceivedElement?
 {
-  return chan.read()
+  return chan.receive()
 }

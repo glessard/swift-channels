@@ -7,21 +7,23 @@
 //
 
 /**
-  The interface required for the reading (receiving) end of a channel.
+  The interface required for the receiving end of a channel.
 */
 
-public protocol ReadableChannel: class, BasicChannel, GeneratorType, SequenceType
+public protocol ReceivingChannel: class, BasicChannel, GeneratorType, SequenceType
 {
-  typealias ReadElement
+  typealias ReceivedElement
 
   /**
-    Report whether the channel is empty (and therefore can't be read from)
+    Report whether the channel is empty (and therefore isn't ready to be received from)
   */
 
   var isEmpty: Bool { get }
 
   /**
-    Read the oldest element from the channel.
+    Receive the oldest element from the channel.
+    The channel will no longer hold a copy of (or reference to) the item.
+    Used internally by the <- receive operator.
 
     If the channel is empty, this call will block.
     If the channel is empty and closed, this will return nil.
@@ -29,11 +31,11 @@ public protocol ReadableChannel: class, BasicChannel, GeneratorType, SequenceTyp
     :return: the oldest element from the channel.
   */
 
-  func read() -> ReadElement?
+  func receive() -> ReceivedElement?
 
   /**
     Return the next element from the channel.
-    This should be an alias for ReadableChannel.read() and will fulfill the GeneratorType protocol.
+    This should be an alias for ReceivingChannel.receive() and will fulfill the GeneratorType protocol.
 
     If the channel is empty, this call will block.
     If the channel is empty and closed, this will return nil.
@@ -41,7 +43,7 @@ public protocol ReadableChannel: class, BasicChannel, GeneratorType, SequenceTyp
     :return: the oldest element from the channel.
   */
 
-  func next() -> ReadElement?
+  func next() -> ReceivedElement?
 
   /**
     Return self as a GeneratorType.
@@ -54,29 +56,30 @@ public protocol ReadableChannel: class, BasicChannel, GeneratorType, SequenceTyp
 }
 
 /**
-  The interface required for the writing (sending) end of a channel.
+  The interface required for the sending end of a channel.
 */
 
-public protocol WritableChannel: class, BasicChannel
+public protocol SendingChannel: class, BasicChannel
 {
-  typealias WrittenElement
+  typealias SentElement
 
   /**
-    Report whether the channel is full (and can't be written to)
+    Report whether the channel is full (and can't be sent to)
   */
 
   var isFull: Bool { get }
 
   /**
-  Write a new element to the channel
+    Send a new element to the channel. The caller should probably not retain a
+    reference to anything thus sent. Used internally by the <- send operator.
 
-  If the channel is full, this call will block.
-  If the channel has been closed, no action will be taken.
+    If the channel is full, this call will block.
+    If the channel has been closed, no action will be taken.
 
-  :param: element the new element to be added to the channel.
+    :param: element the new element to be sent to the channel.
   */
 
-   func write(newElement: WrittenElement)
+  func send(newElement: SentElement)
 }
 
 /**
@@ -108,5 +111,5 @@ public protocol BasicChannel: class
     The actual reaction shall be implementation-dependent.
   */
 
-   func close()
+  func close()
 }

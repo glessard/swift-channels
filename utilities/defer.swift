@@ -25,16 +25,16 @@ private class TaskList
   }
 }
 
-public struct DeferredTaskList
+struct DeferredTaskList
 {
   private var tasklist = TaskList()
 
-  public func defer(task: () -> ())
+  func defer(task: () -> ())
   {
     tasklist.append(task)
   }
 
-  public func defer<IgnoredType>(task: () -> IgnoredType)
+  func defer<IgnoredType>(task: () -> IgnoredType)
   {
     tasklist.append { _ = task() }
   }

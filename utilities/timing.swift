@@ -12,11 +12,11 @@ import Foundation.NSThread
   A struct whose purpose is to pretty-print short durations of time.
 */
 
-struct Milliseconds: Printable
+public struct Milliseconds: Printable
 {
   var milliseconds: Double = 0.0
 
-  var description: String
+  public var description: String
   {
     if milliseconds > 5000
     { // over 5 seconds: just show seconds down to thousandths
@@ -47,15 +47,15 @@ struct Milliseconds: Printable
   Timing-related wrappers for NSDate and NSThread, named for readability.
 */
 
-class Time: Printable
+public class Time: Printable
 {
   var d: NSDate
 
-  init() { d = NSDate() }
+  public init() { d = NSDate() }
 
-  class func Now() -> Time { return Time() }
+  public class func Now() -> Time { return Time() }
 
-  var description: String { return d.description }
+  public var description: String { return d.description }
 }
 
 /**
@@ -71,12 +71,12 @@ extension Time
     println(Time.Since(starttime))
   */
 
-  class func Since(a: NSDate) -> Milliseconds
+  public class func Since(a: NSDate) -> Milliseconds
   {
     return Milliseconds(a.timeIntervalSinceNow)
   }
 
-  class func Since(tic: Time) -> Milliseconds
+  public class func Since(tic: Time) -> Milliseconds
   {
     return tic.toc
   }
@@ -88,7 +88,7 @@ extension Time
     println(tic.toc)
   */
 
-  var toc: Milliseconds { return Milliseconds(d.timeIntervalSinceNow) }
+  public var toc: Milliseconds { return Milliseconds(d.timeIntervalSinceNow) }
 }
 
 /**
@@ -97,22 +97,22 @@ extension Time
 
 extension Time
 {
-  class func Wait(interval: Milliseconds)
+  public class func Wait(interval: Milliseconds)
   {
     Time.Wait(interval.milliseconds)
   }
 
-  class func Wait(milliseconds: Int)
+  public class func Wait(milliseconds: Int)
   {
     Time.Wait(Double(milliseconds))
   }
 
-  class func Wait(milliseconds: UInt32)
+  public class func Wait(milliseconds: UInt32)
   {
     Time.Wait(Double(milliseconds))
   }
 
-  class func Wait(milliseconds: Double)
+  public class func Wait(milliseconds: Double)
   {
     if milliseconds > 0
     { NSThread.sleepForTimeInterval(milliseconds*0.001) }
