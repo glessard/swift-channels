@@ -12,8 +12,7 @@ func main() {
 
 	for i:=0; i<iterations; i++ {
 		buffered <- i
-		a := <-buffered
-		_ = a
+		_ = <-buffered
 	}
 
 	close(buffered)
@@ -21,7 +20,7 @@ func main() {
 	fmt.Println(time.Since(then))
 
 
-	unbuffered := make(chan int, 1)
+	unbuffered := make(chan int)
 
 	then = time.Now()
 
@@ -34,6 +33,24 @@ func main() {
 
 	for a := range(unbuffered) { _ = a}
 
+	fmt.Println(time.Since(then))
+
+
+	buflen := iterations/100
+	bufferedN := make(chan int, buflen)
+
+	then = time.Now()
+	for j:=0; j<(iterations/buflen); j++ {
+
+		for i:=0; i<buflen; i++ {
+			bufferedN <- i
+		}
+
+		for i:=0; i<buflen; i++ {
+			_ = <-bufferedN
+		}
+	}
+	close(bufferedN)
 	fmt.Println(time.Since(then))
 }
 

@@ -10,15 +10,16 @@ import Darwin
 import Channels
 
 let iterations = 100_000
+var tic: Time
 
 var buffered: Chan<Int> = Chan.Make(1)
 
-var tic = Time()
+tic = Time()
 
 for i in 0..<iterations
 {
   buffered <- i
-  let a = <-buffered
+  _ = <-buffered
 }
 buffered.close()
 
@@ -36,26 +37,27 @@ async {
   unbuffered.close()
 }
 
-while let a = <-unbuffered { }
+while let a = <-unbuffered { _ = a }
 
 println(tic.toc)
 
-
-let insane = Chan<Int>.Make(1)
+let buflen = iterations/100
+let bufferedN = Chan<Int>.Make(buflen)
 
 tic = Time()
 
-async {
-  for i in 0..<iterations
+for j in 0..<(iterations/buflen)
+{
+  for i in 0..<buflen
   {
-    async { insane <- i }
+    bufferedN <- i
+  }
+
+  for i in 0..<buflen
+  {
+    _ = <-bufferedN
   }
 }
+bufferedN.close()
 
-for i in 0..<iterations
-{
-  let a = <-insane
-}
-
-insane.close()
 println(tic.toc)
