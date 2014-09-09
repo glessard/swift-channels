@@ -12,7 +12,6 @@
 		030A901A19B5A2A800F4B44B /* logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E44D1419A7A71200F4B44B /* logging.swift */; };
 		032066A819AC04D800F4B44B /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 032066A719AC04D800F4B44B /* main.swift */; };
 		032E6B8519BD23B500F4B44B /* Channels.h in Headers */ = {isa = PBXBuildFile; fileRef = 032E6B8419BD23B500F4B44B /* Channels.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		032E6B8F19BD23B600F4B44B /* ChannelsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 032E6B8E19BD23B600F4B44B /* ChannelsTests.swift */; };
 		032E6B9619BD23C200F4B44B /* async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035FDFDD19A17DD500F4B44B /* async.swift */; };
 		032E6B9719BD23C200F4B44B /* chan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035FDFDB19A17DD500F4B44B /* chan.swift */; };
 		032E6B9819BD23C200F4B44B /* chan-pthreads.swift in Sources */ = {isa = PBXBuildFile; fileRef = 036000DD19B4B11D00F4B44B /* chan-pthreads.swift */; };
@@ -22,7 +21,10 @@
 		032E6B9C19BD23C200F4B44B /* select-types.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B65B8819AFFC4D00F4B44B /* select-types.swift */; };
 		032E6B9D19BD23C200F4B44B /* queue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E44D1619A7AB5700F4B44B /* queue.swift */; };
 		03493DDC19BD398200F4B44B /* Channels.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 032E6B8019BD23B500F4B44B /* Channels.framework */; };
-		03493DDD19BD398400F4B44B /* Channels.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 032E6B8019BD23B500F4B44B /* Channels.framework */; };
+		035DE14D19BEF47A00F4B44B /* BufferedNChannelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035DE14C19BEF47A00F4B44B /* BufferedNChannelTests.swift */; };
+		035DE14F19BEF6BC00F4B44B /* Buffered1ChannelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035DE14E19BEF6BC00F4B44B /* Buffered1ChannelTests.swift */; };
+		03D070FD19BEEF5200F4B44B /* UnbufferedChannelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D070FC19BEEF5200F4B44B /* UnbufferedChannelTests.swift */; };
+		03D070FF19BEEFC800F4B44B /* ChannelsPerformanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D070FE19BEEFC800F4B44B /* ChannelsPerformanceTests.swift */; };
 		03E10E2619BB6CD800F4B44B /* timing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035FDFE419A17E8B00F4B44B /* timing.swift */; };
 		03E10E2719BB6D6A00F4B44B /* logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E44D1419A7A71200F4B44B /* logging.swift */; };
 		03E83DDF19BE378400F4B44B /* ChannelsTests.xctest in Resources */ = {isa = PBXBuildFile; fileRef = 032E6B8A19BD23B600F4B44B /* ChannelsTests.xctest */; };
@@ -61,8 +63,9 @@
 		032E6B8419BD23B500F4B44B /* Channels.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Channels.h; sourceTree = "<group>"; };
 		032E6B8A19BD23B600F4B44B /* ChannelsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ChannelsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		032E6B8D19BD23B600F4B44B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		032E6B8E19BD23B600F4B44B /* ChannelsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChannelsTests.swift; sourceTree = "<group>"; };
 		033A1AA719B10F7100F4B44B /* defer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = defer.swift; sourceTree = "<group>"; };
+		035DE14C19BEF47A00F4B44B /* BufferedNChannelTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BufferedNChannelTests.swift; sourceTree = "<group>"; };
+		035DE14E19BEF6BC00F4B44B /* Buffered1ChannelTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Buffered1ChannelTests.swift; sourceTree = "<group>"; };
 		035FDFDB19A17DD500F4B44B /* chan.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = chan.swift; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
 		035FDFDD19A17DD500F4B44B /* async.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = async.swift; sourceTree = "<group>"; };
 		035FDFE419A17E8B00F4B44B /* timing.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = timing.swift; sourceTree = "<group>"; };
@@ -70,6 +73,8 @@
 		036000DD19B4B11D00F4B44B /* chan-pthreads.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "chan-pthreads.swift"; sourceTree = "<group>"; };
 		0367EA5919A8F84A00F4B44B /* chan-directional.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = "chan-directional.swift"; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
 		03B65B8819AFFC4D00F4B44B /* select-types.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "select-types.swift"; sourceTree = "<group>"; };
+		03D070FC19BEEF5200F4B44B /* UnbufferedChannelTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UnbufferedChannelTests.swift; sourceTree = "<group>"; };
+		03D070FE19BEEFC800F4B44B /* ChannelsPerformanceTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChannelsPerformanceTests.swift; sourceTree = "<group>"; };
 		03E44D1419A7A71200F4B44B /* logging.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = logging.swift; sourceTree = "<group>"; };
 		03E44D1619A7AB5700F4B44B /* queue.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = queue.swift; path = ../utilities/queue.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -79,7 +84,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				03493DDD19BD398400F4B44B /* Channels.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -144,7 +148,10 @@
 		032E6B8B19BD23B600F4B44B /* ChannelsTests */ = {
 			isa = PBXGroup;
 			children = (
-				032E6B8E19BD23B600F4B44B /* ChannelsTests.swift */,
+				03D070FE19BEEFC800F4B44B /* ChannelsPerformanceTests.swift */,
+				03D070FC19BEEF5200F4B44B /* UnbufferedChannelTests.swift */,
+				035DE14E19BEF6BC00F4B44B /* Buffered1ChannelTests.swift */,
+				035DE14C19BEF47A00F4B44B /* BufferedNChannelTests.swift */,
 				032E6B8C19BD23B600F4B44B /* Supporting Files */,
 			);
 			path = ChannelsTests;
@@ -326,10 +333,10 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				032066A419AC04D800F4B44B /* concurrency tester */,
-				030A900A19B5A28C00F4B44B /* chan-benchmark */,
 				032E6B7F19BD23B500F4B44B /* Channels */,
 				032E6B8919BD23B600F4B44B /* ChannelsTests */,
+				032066A419AC04D800F4B44B /* concurrency tester */,
+				030A900A19B5A28C00F4B44B /* chan-benchmark */,
 			);
 		};
 /* End PBXProject section */
@@ -392,7 +399,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				032E6B8F19BD23B600F4B44B /* ChannelsTests.swift in Sources */,
+				035DE14D19BEF47A00F4B44B /* BufferedNChannelTests.swift in Sources */,
+				03D070FD19BEEF5200F4B44B /* UnbufferedChannelTests.swift in Sources */,
+				035DE14F19BEF6BC00F4B44B /* Buffered1ChannelTests.swift in Sources */,
+				03D070FF19BEEFC800F4B44B /* ChannelsPerformanceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -442,6 +452,7 @@
 		032E6B9119BD23B600F4B44B /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ANALYZER_SECURITY_FLOATLOOPCOUNTER = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
@@ -458,6 +469,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
 			};
@@ -466,6 +478,7 @@
 		032E6B9219BD23B600F4B44B /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ANALYZER_SECURITY_FLOATLOOPCOUNTER = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
@@ -478,6 +491,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
 			};
@@ -498,6 +512,7 @@
 				INFOPLIST_FILE = ChannelsTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
 			};
 			name = Debug;
 		};
@@ -512,6 +527,7 @@
 				INFOPLIST_FILE = ChannelsTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
 			};
 			name = Release;
 		};
