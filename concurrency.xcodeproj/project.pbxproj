@@ -20,9 +20,24 @@
 		032E6B9B19BD23C200F4B44B /* chan-operators.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035FDFE819A23FF700F4B44B /* chan-operators.swift */; };
 		032E6B9C19BD23C200F4B44B /* select-types.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B65B8819AFFC4D00F4B44B /* select-types.swift */; };
 		032E6B9D19BD23C200F4B44B /* queue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E44D1619A7AB5700F4B44B /* queue.swift */; };
-		03493DDC19BD398200F4B44B /* Channels.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 032E6B8019BD23B500F4B44B /* Channels.framework */; };
 		035DE14D19BEF47A00F4B44B /* BufferedNChannelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035DE14C19BEF47A00F4B44B /* BufferedNChannelTests.swift */; };
 		035DE14F19BEF6BC00F4B44B /* Buffered1ChannelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035DE14E19BEF6BC00F4B44B /* Buffered1ChannelTests.swift */; };
+		035E580219C0079C00F4B44B /* async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035FDFDD19A17DD500F4B44B /* async.swift */; };
+		035E580319C0079C00F4B44B /* chan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035FDFDB19A17DD500F4B44B /* chan.swift */; };
+		035E580419C0079C00F4B44B /* chan-pthreads.swift in Sources */ = {isa = PBXBuildFile; fileRef = 036000DD19B4B11D00F4B44B /* chan-pthreads.swift */; };
+		035E580519C0079C00F4B44B /* chan-protocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0310D0F919A8627800F4B44B /* chan-protocols.swift */; };
+		035E580619C0079C00F4B44B /* chan-directional.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0367EA5919A8F84A00F4B44B /* chan-directional.swift */; };
+		035E580719C0079C00F4B44B /* chan-operators.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035FDFE819A23FF700F4B44B /* chan-operators.swift */; };
+		035E580819C0079C00F4B44B /* select-types.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B65B8819AFFC4D00F4B44B /* select-types.swift */; };
+		035E580919C0079C00F4B44B /* queue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E44D1619A7AB5700F4B44B /* queue.swift */; };
+		035E580A19C0082A00F4B44B /* async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035FDFDD19A17DD500F4B44B /* async.swift */; };
+		035E580B19C0082A00F4B44B /* chan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035FDFDB19A17DD500F4B44B /* chan.swift */; };
+		035E580C19C0082A00F4B44B /* chan-pthreads.swift in Sources */ = {isa = PBXBuildFile; fileRef = 036000DD19B4B11D00F4B44B /* chan-pthreads.swift */; };
+		035E580D19C0082A00F4B44B /* chan-protocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0310D0F919A8627800F4B44B /* chan-protocols.swift */; };
+		035E580E19C0082A00F4B44B /* chan-directional.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0367EA5919A8F84A00F4B44B /* chan-directional.swift */; };
+		035E580F19C0082A00F4B44B /* chan-operators.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035FDFE819A23FF700F4B44B /* chan-operators.swift */; };
+		035E581019C0082A00F4B44B /* select-types.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B65B8819AFFC4D00F4B44B /* select-types.swift */; };
+		035E581119C0082A00F4B44B /* queue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E44D1619A7AB5700F4B44B /* queue.swift */; };
 		03D070FD19BEEF5200F4B44B /* UnbufferedChannelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D070FC19BEEF5200F4B44B /* UnbufferedChannelTests.swift */; };
 		03D070FF19BEEFC800F4B44B /* ChannelsPerformanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D070FE19BEEFC800F4B44B /* ChannelsPerformanceTests.swift */; };
 		03E10E2619BB6CD800F4B44B /* timing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035FDFE419A17E8B00F4B44B /* timing.swift */; };
@@ -91,7 +106,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				03493DDC19BD398200F4B44B /* Channels.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -181,10 +195,10 @@
 			children = (
 				03BF58C419A17D8D00F4B44B /* concurrency */,
 				035FDFE319A17E8B00F4B44B /* utilities */,
-				032066A619AC04D800F4B44B /* concurrency tester */,
-				030A900C19B5A28C00F4B44B /* chan-benchmark */,
 				032E6B8119BD23B500F4B44B /* Channels */,
 				032E6B8B19BD23B600F4B44B /* ChannelsTests */,
+				032066A619AC04D800F4B44B /* concurrency tester */,
+				030A900C19B5A28C00F4B44B /* chan-benchmark */,
 				03BF58C319A17D8D00F4B44B /* Products */,
 			);
 			sourceTree = "<group>";
@@ -364,9 +378,17 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				035E580B19C0082A00F4B44B /* chan.swift in Sources */,
+				035E580A19C0082A00F4B44B /* async.swift in Sources */,
+				035E580C19C0082A00F4B44B /* chan-pthreads.swift in Sources */,
+				035E580F19C0082A00F4B44B /* chan-operators.swift in Sources */,
 				030A900E19B5A28C00F4B44B /* main.swift in Sources */,
 				030A901A19B5A2A800F4B44B /* logging.swift in Sources */,
+				035E580D19C0082A00F4B44B /* chan-protocols.swift in Sources */,
+				035E580E19C0082A00F4B44B /* chan-directional.swift in Sources */,
+				035E581119C0082A00F4B44B /* queue.swift in Sources */,
 				030A901919B5A2A800F4B44B /* timing.swift in Sources */,
+				035E581019C0082A00F4B44B /* select-types.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -374,9 +396,17 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				035E580319C0079C00F4B44B /* chan.swift in Sources */,
+				035E580219C0079C00F4B44B /* async.swift in Sources */,
+				035E580419C0079C00F4B44B /* chan-pthreads.swift in Sources */,
+				035E580719C0079C00F4B44B /* chan-operators.swift in Sources */,
 				032066A819AC04D800F4B44B /* main.swift in Sources */,
 				03E10E2619BB6CD800F4B44B /* timing.swift in Sources */,
+				035E580519C0079C00F4B44B /* chan-protocols.swift in Sources */,
+				035E580619C0079C00F4B44B /* chan-directional.swift in Sources */,
+				035E580919C0079C00F4B44B /* queue.swift in Sources */,
 				03E10E2719BB6D6A00F4B44B /* logging.swift in Sources */,
+				035E580819C0079C00F4B44B /* select-types.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
