@@ -179,7 +179,7 @@ class UnbufferedChannelTests: XCTestCase
 
   func testNoSender()
   {
-    let expectation = expectationWithDescription("Unbuffered Send, no Receiver")
+    let expectation = expectationWithDescription("Unbuffered Receive, no Sender")
     var unbuffered = Chan<Int>.Make()
 
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {

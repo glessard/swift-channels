@@ -194,7 +194,7 @@ class Buffered1ChannelTests: XCTestCase
 
   func testNoSender()
   {
-    let expectation = expectationWithDescription("Buffered(1) Send, no Receiver")
+    let expectation = expectationWithDescription("Buffered(1) Receive, no Sender")
     var buff1 = Chan<Int>.Make(1)
 
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
