@@ -71,7 +71,7 @@ class pthreadChan<T>: Chan<T>
     Determine whether the channel has been closed
   */
 
-  override var isClosed: Bool { return closed }
+  override func isClosedFunc() -> Bool { return closed }
 
   /**
     Close the channel
@@ -282,11 +282,11 @@ class BufferedQChan<T>: BufferedChan<T>
     self.init(1)
   }
 
-  override var capacity: Int { return count }
+  override func capacityFunc() -> Int { return count }
 
-  override var isEmpty: Bool { return q.isEmpty }
+  override func isEmptyFunc() -> Bool { return q.isEmpty }
 
-  override var isFull: Bool { return q.count >= self.count }
+  override func isFullFunc() -> Bool { return q.count >= self.count }
 
   private override func writeElement(newElement: T)
   {
@@ -321,11 +321,11 @@ class BufferedAChan<T>: BufferedChan<T>
     self.init(1)
   }
 
-  override var capacity: Int { return count }
+  override func capacityFunc() -> Int { return count }
 
-  override var isEmpty: Bool { return head >= next }
+  override func isEmptyFunc() -> Bool { return head >= next }
 
-  override var isFull: Bool { return head+count <= next }
+  override func isFullFunc() -> Bool { return head+count <= next }
 
   private override func writeElement(newElement: T)
   {
@@ -357,11 +357,11 @@ class Buffered1Chan<T>: BufferedChan<T>
     element = nil
   }
 
-  override var capacity: Int { return 1 }
+  override func capacityFunc() -> Int { return 1 }
 
-  override var isEmpty: Bool { return (element == nil) }
+  override func isEmptyFunc() -> Bool { return (element == nil) }
 
-  override var isFull: Bool  { return (element != nil) }
+  override func isFullFunc() -> Bool  { return (element != nil) }
 
   private override func writeElement(newElement: T)
   {
@@ -479,7 +479,7 @@ class UnbufferedChan<T>: pthreadChan<T>
     element = nil
   }
 
-  override var capacity: Int { return 0 }
+  override func capacityFunc() -> Int { return 0 }
 
   /**
     isEmpty is meaningless when capacity equals zero.
@@ -488,7 +488,7 @@ class UnbufferedChan<T>: pthreadChan<T>
     :return: true
   */
 
-  override var isEmpty: Bool { return true }
+  override func isEmptyFunc() -> Bool { return true }
 
   /**
     isFull is meaningless when capacity equals zero.
@@ -497,7 +497,7 @@ class UnbufferedChan<T>: pthreadChan<T>
     :return: true
   */
 
-  override var isFull: Bool  { return true }
+  override func isFullFunc() -> Bool  { return true }
 
   /**
     Tell whether the channel is ready to transfer data.

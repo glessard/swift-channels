@@ -121,25 +121,33 @@ public class Chan<T>: ReceivingChannel, SendingChannel, SelectableChannel
     Determine whether the channel is empty (and therefore can't be received from)
   */
 
-  public var isEmpty: Bool { return true }
+  final public var isEmpty: Bool { return isEmptyFunc() }
+
+  func isEmptyFunc() -> Bool { return true }
 
   /**
     Determine whether the channel is full (and can't be written to)
   */
 
-  public var isFull: Bool { return false }
+  final public var isFull: Bool { return isFullFunc() }
+
+  func isFullFunc() -> Bool { return false }
   
   /**
     Report the channel capacity
   */
 
-  public var capacity: Int { return 0 }
+  final public var capacity: Int { return capacityFunc() }
+
+  func capacityFunc() -> Int { return 0 }
 
   /**
     Determine whether the channel has been closed
   */
 
-  public var isClosed: Bool { return true }
+  final public var isClosed: Bool { return isClosedFunc() }
+
+  func isClosedFunc() -> Bool { return true }
 
   // BasicChannel, SendingChannel and ReceivingChannel methods.
 
@@ -294,16 +302,19 @@ private class EnclosedChan<T>: Chan<T>
   }
 
   private var  enclosedCapacity: () -> Int
-  override var capacity: Int { return enclosedCapacity() }
+//  override var capacity: Int { return enclosedCapacity() }
+  override func capacityFunc() -> Int { return enclosedCapacity() }
 
   private var  enclosedGetClosed: () -> Bool
-  override var isClosed: Bool { return enclosedGetClosed() }
+//  override var isClosed: Bool { return enclosedGetClosed() }
+  override func isClosedFunc() -> Bool { return enclosedGetClosed() }
 
   private var  enclosedCloseFunc: () -> ()
   override func close() { enclosedCloseFunc() }
 
   private var  enclosedGetFull: () -> Bool
-  override var isFull: Bool { return enclosedGetFull() }
+//  override var isFull: Bool { return enclosedGetFull() }
+  override func isFullFunc() -> Bool { return enclosedGetFull() }
 
   private var  enclosedSendFunc: (T) -> ()
   override func send(newElement: T)
@@ -312,7 +323,8 @@ private class EnclosedChan<T>: Chan<T>
   }
 
   private var  enclosedGetEmpty: () -> Bool
-  override var isEmpty: Bool { return enclosedGetEmpty() }
+//  override var isEmpty: Bool { return enclosedGetEmpty() }
+  override func isEmptyFunc() -> Bool { return enclosedGetEmpty() }
 
   private var  enclosedReceiveFunc: () -> T?
   override func receive() -> T?
