@@ -391,6 +391,31 @@ public class SingletonChan<T>: Buffered1Chan<T>
     super.init()
   }
 
+  /**
+    Append an element to the channel
+
+    This method will not block because only one send operation
+    can occur in the lifetime of a SingletonChan.
+
+    The first successful send will close the channel; further
+    send operations will have no effect.
+
+    :param: element the new element to be added to the channel.
+  */
+
+  override func send(newElement: T)
+  {
+    if self.isClosed { return }
+
+    pthread_mutex_lock(channelMutex)
+
+    if !self.isFull && !self.isClosed { writeElement(newElement) }
+
+    // Channel is not empty; signal this.
+    if blockedReaders > 0 { pthread_cond_signal(readCondition) }
+    pthread_mutex_unlock(channelMutex)
+  }
+  
   private override func writeElement(newElement: T)
   {
     super.writeElement(newElement)
@@ -402,7 +427,7 @@ public class SingletonChan<T>: Buffered1Chan<T>
   The SelectionChannel methods for SelectChan
 */
 
-extension SelectChan //: SelectionChannel (repeating this crashes swiftc)
+extension SelectChan //: SelectingChannel // (repeating this crashes swiftc)
 {
   /**
     selectMutex() must be used to send data to SelectChan in a thread-safe manner
@@ -413,7 +438,7 @@ extension SelectChan //: SelectionChannel (repeating this crashes swiftc)
 
   public func selectMutex(action: () -> ())
   {
-    if !self.isClosed
+    if !self.isFull && !self.isClosed
     {
       pthread_mutex_lock(channelMutex)
 
@@ -431,8 +456,11 @@ extension SelectChan //: SelectionChannel (repeating this crashes swiftc)
 
   public func selectSend(newElement: T)
   {
-    super.writeElement(newElement)
-    pthread_cond_signal(readCondition)
+    if !self.isFull && !self.isClosed
+    {
+      super.writeElement(newElement)
+      pthread_cond_signal(readCondition)
+    }
   }
 }
 
