@@ -43,7 +43,7 @@ public protocol Selectable: class
     :return: a closure to be run once, which can unblock a stopped thread if needed.
   */
 
-  func selectReceive(channel: SelectChan<SelectionType>, messageID: Selectable) -> Signal
+  func selectReceive(channel: SelectChan<Selection>, messageID: Selectable) -> Signal
 
   /**
     If it makes no sense to invoke the selectReceive() method at this time, return false.
@@ -70,7 +70,7 @@ public protocol SelectionType: class
 
 public protocol SelectableChannel: class, Selectable, ReceivingChannel
 {
-  func extract(item: SelectionType?) -> ReceivedElement?
+  func extract(item: Selection) -> ReceivedElement?
 }
 
 /**
@@ -124,16 +124,16 @@ public protocol SelectingChannel
   It's like a Bag of Holding. For one thing at a time.
 */
 
-public class Selection<T>: SelectionType
+public class Selection
 {
-  var messID: Selectable
-  var data: T?
+  let id: Selectable
+  let data: Any?
 
-  public init(messageID: Selectable, messageData: T?)
+  public init<T>(messageID: Selectable, messageData: T?)
   {
-    messID = messageID
+    id = messageID
     data = messageData
   }
 
-  public func getMessageID() -> Selectable { return messID }
+  public var messageID: Selectable { return id }
 }

@@ -195,7 +195,7 @@ public class Chan<T>: ReceivingChannel, SendingChannel, SelectableChannel
 
   public var invalidSelection: Bool { return isClosed && isEmpty }
 
-  public func selectReceive(channel: SelectChan<SelectionType>, messageID: Selectable) -> Signal
+  public func selectReceive(channel: SelectChan<Selection>, messageID: Selectable) -> Signal
   {
     channel.selectMutex {
       channel.selectSend(Selection(messageID: messageID, messageData: (nil as T?)))
@@ -206,15 +206,14 @@ public class Chan<T>: ReceivingChannel, SendingChannel, SelectableChannel
 
   // Method for SelectableChannel
 
-  public func extract(selection: SelectionType?) -> T?
+  public func extract(selection: Selection) -> T?
   {
-    if selection != nil
+    let data = selection.data
+    if data is T?
     {
-      if let selection = selection as? Selection<T>
-      {
-        return selection.data
-      }
+      return data as T?
     }
+
     return nil
   }
 }
@@ -296,7 +295,7 @@ private class EnclosedChan<T>: Chan<T>
 //    enclosedIsSelectable =  { false }
 //    enclosedSelectReceive = { _ = $0; _ = $1; {} }
 //    enclosedExtractFunc =   {
-//      (a: SelectionType?) -> T? in
+//      (a: Selection?) -> T? in
 //      nil as T?
 //    }
   }
@@ -335,14 +334,14 @@ private class EnclosedChan<T>: Chan<T>
 //  private var enclosedIsSelectable: () -> Bool
 //  override var invalidSelection: Bool { return enclosedIsSelectable() }
 
-//  private var enclosedSelectReceive: (SelectChan<SelectionType>, Selectable) -> Signal
-//  override func selectReceive(channel: SelectChan<SelectionType>, messageID: Selectable) -> Signal
+//  private var enclosedSelectReceive: (SelectChan<Selection>, Selectable) -> Signal
+//  override func selectReceive(channel: SelectChan<Selection>, messageID: Selectable) -> Signal
 //  {
 //    return enclosedSelectReceive(channel, messageID)
 //  }
 
-//  private var enclosedExtractFunc: (SelectionType?) -> T?
-//  override func extract(selection: SelectionType?) -> T?
+//  private var enclosedExtractFunc: (Selection?) -> T?
+//  override func extract(selection: Selection?) -> T?
 //  {
 //    return enclosedExtractFunc(selection)
 //  }

@@ -56,7 +56,7 @@ public class ReadChan<T>: ReceivingChannel, SelectableChannel, GeneratorType, Se
 
   public var invalidSelection: Bool { return isClosed && isEmpty }
 
-  public func selectReceive(channel: SelectChan<SelectionType>, messageID: Selectable) -> Signal
+  public func selectReceive(channel: SelectChan<Selection>, messageID: Selectable) -> Signal
   {
     channel.selectMutex {
       channel.selectSend(Selection(messageID: messageID, messageData: (nil as T?)))
@@ -65,7 +65,7 @@ public class ReadChan<T>: ReceivingChannel, SelectableChannel, GeneratorType, Se
     return {}
   }
 
-  public func extract(selection: SelectionType?) -> T?
+  public func extract(selection: Selection) -> T?
   {
     return nil
   }
@@ -122,12 +122,12 @@ class WrappedReadChan<T>: ReadChan<T>
 
   override var invalidSelection: Bool { return wrapped.invalidSelection }
 
-  override func selectReceive(channel: SelectChan<SelectionType>, messageID: Selectable) -> Signal
+  override func selectReceive(channel: SelectChan<Selection>, messageID: Selectable) -> Signal
   {
     return wrapped.selectReceive(channel, messageID: messageID)
   }
 
-  override func extract(selection: SelectionType?) -> T?
+  override func extract(selection: Selection) -> T?
   {
     return wrapped.extract(selection)
   }
@@ -180,14 +180,14 @@ class EnclosedReadChan<T>: ReadChan<T>
   private var enclosedIsSelectable: () -> Bool
   override var invalidSelection: Bool { return enclosedIsSelectable() }
 
-  private var enclosedSelectReceive: (SelectChan<SelectionType>, Selectable) -> Signal
-  override func selectReceive(channel: SelectChan<SelectionType>, messageID: Selectable) -> Signal
+  private var enclosedSelectReceive: (SelectChan<Selection>, Selectable) -> Signal
+  override func selectReceive(channel: SelectChan<Selection>, messageID: Selectable) -> Signal
   {
     return enclosedSelectReceive(channel, messageID)
   }
 
-  private var enclosedExtractFunc: (SelectionType?) -> T?
-  override func extract(selection: SelectionType?) -> T?
+  private var enclosedExtractFunc: (Selection) -> T?
+  override func extract(selection: Selection) -> T?
   {
     return enclosedExtractFunc(selection)
   }
@@ -227,12 +227,12 @@ public class ReadOnly<C: SelectableChannel>: ReceivingChannel, SelectableChannel
 
   public var invalidSelection: Bool { return wrapped.invalidSelection }
 
-  public func selectReceive(channel: SelectChan<SelectionType>, messageID: Selectable) -> Signal
+  public func selectReceive(channel: SelectChan<Selection>, messageID: Selectable) -> Signal
   {
     return wrapped.selectReceive(channel, messageID: messageID)
   }
 
-  public func extract(item: SelectionType?) -> C.ReceivedElement?
+  public func extract(item: Selection) -> C.ReceivedElement?
   {
     return wrapped.extract(item)
   }

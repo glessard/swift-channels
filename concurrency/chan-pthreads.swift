@@ -227,7 +227,7 @@ class BufferedChan<T>: pthreadChan<T>
     :return: a closure that will unblock the thread if needed.
   */
 
-  override func selectReceive(channel: SelectChan<SelectionType>, messageID: Selectable) -> Signal
+  override func selectReceive(channel: SelectChan<Selection>, messageID: Selectable) -> Signal
   {
     async {
       pthread_mutex_lock(self.channelMutex)
@@ -239,10 +239,7 @@ class BufferedChan<T>: pthreadChan<T>
       }
 
       channel.selectMutex {
-        if !channel.isClosed
-        {
-          channel.selectSend(Selection(messageID: messageID, messageData: self.readElement()))
-        }
+        channel.selectSend(Selection(messageID: messageID, messageData: self.readElement()))
       }
 
       // Channel is not full; signal this.
@@ -636,7 +633,7 @@ class UnbufferedChan<T>: pthreadChan<T>
     :return: a closure that will unblock the thread if needed.
   */
 
-  override func selectReceive(channel: SelectChan<SelectionType>, messageID: Selectable) -> Signal
+  override func selectReceive(channel: SelectChan<Selection>, messageID: Selectable) -> Signal
   {
     async {
       pthread_mutex_lock(self.channelMutex)
