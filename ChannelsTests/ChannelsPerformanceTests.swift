@@ -33,7 +33,7 @@ class ChannelsPerformanceTests: XCTestCase
     }
   }
 
-  func testPerformanceBufferedN()
+  func testPerformanceBufferedNQueue()
   {
     var bufferedN = Chan<Int>.Make(buflen)
 

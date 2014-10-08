@@ -42,7 +42,7 @@ while let a = <-unbuffered { _ = a }
 println(tic.toc)
 
 let buflen = iterations/100
-let bufferedN = Chan<Int>.Make(buflen)
+let bufferedQ = BufferedQChan<Int>(buflen)
 
 tic = Time()
 
@@ -50,14 +50,34 @@ for j in 0..<(iterations/buflen)
 {
   for i in 0..<buflen
   {
-    bufferedN <- i
+    bufferedQ <- i
   }
 
   for i in 0..<buflen
   {
-    _ = <-bufferedN
+    _ = <-bufferedQ
   }
 }
-bufferedN.close()
+bufferedQ.close()
+
+println(tic.toc)
+
+let bufferedA = BufferedAChan<Int>(buflen)
+
+tic = Time()
+
+for j in 0..<(iterations/buflen)
+{
+  for i in 0..<buflen
+  {
+    bufferedA <- i
+  }
+
+  for i in 0..<buflen
+  {
+    _ = <-bufferedA
+  }
+}
+bufferedA.close()
 
 println(tic.toc)

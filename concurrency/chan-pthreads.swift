@@ -305,7 +305,7 @@ class BufferedAChan<T>: BufferedChan<T>
   private var buffer: Array<T?>
   private let count: Int
   private var head = 0
-  private var next = 0
+  private var tail = 0
 
   init(_ capacity: Int)
   {
@@ -320,15 +320,15 @@ class BufferedAChan<T>: BufferedChan<T>
 
   override func capacityFunc() -> Int { return count }
 
-  override func isEmptyFunc() -> Bool { return head >= next }
+  override func isEmptyFunc() -> Bool { return head >= tail }
 
-  override func isFullFunc() -> Bool { return head+count <= next }
+  override func isFullFunc() -> Bool { return head+count <= tail }
 
   private override func writeElement(newElement: T)
   {
-    let index = next%count
+    let index = tail%count
     buffer[index] = newElement
-    next += 1
+    tail += 1
   }
 
   private override func readElement() ->T?
