@@ -32,41 +32,41 @@ struct DispatchQueue
 /**
   Execute a closure on a concurrent background thread.
 
-  :param: coroutine the closure to execute
+  :param: task the closure to execute
 */
-public func async (coroutine: () -> ())
+public func async (task: () -> ())
 {
-  dispatch_async(DispatchQueue.Global) { coroutine() }
+  dispatch_async(DispatchQueue.Global) { task() }
 }
 
 /**
   Execute a closure on a concurrent background thread, discarding any return value.
 
-  :param: coroutine the closure to execute
+  :param: task the closure to execute
 */
-public func async<Discarded> (coroutine: () -> Discarded)
+public func async<IgnoredType> (task: () -> IgnoredType)
 {
-  dispatch_async(DispatchQueue.Global) { _ = coroutine() }
+  dispatch_async(DispatchQueue.Global) { _ = task() }
 }
 
 /**
   Execute a closure on a concurrent background thread, and associate it with 'group'
 
   :param: group     the dispatch group, as obtained from dispatch_group_create()
-  :param: coroutine the closure to execute
+  :param: task the closure to execute
 */
-public func async(#group: dispatch_group_t, coroutine: () -> ())
+public func async(#group: dispatch_group_t, task: () -> ())
 {
-  dispatch_group_async(group, DispatchQueue.Global) { coroutine() }
+  dispatch_group_async(group, DispatchQueue.Global) { task() }
 }
 
 /**
   Execute a closure on a concurrent background thread, and associate it with 'group'
 
   :param: group     the dispatch group, as obtained from dispatch_group_create()
-  :param: coroutine the closure to execute
+  :param: task the closure to execute
 */
-public func async<Discarded>(#group: dispatch_group_t, coroutine: () -> Discarded)
+public func async<IgnoredType>(#group: dispatch_group_t, task: () -> IgnoredType)
 {
-  dispatch_group_async(group, DispatchQueue.Global) { _ = coroutine() }
+  dispatch_group_async(group, DispatchQueue.Global) { _ = task() }
 }
