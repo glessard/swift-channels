@@ -1,17 +1,15 @@
 swift-channels
 ==============
 
-Channels to safely pass data between asynchronous tasks in swift.
-
 This library contains concurrency constructs for use in Swift, tested on
 Mac OS X.
 
 The concurrency model this attempts to achieve is similar to that of
 Go, wherein concurrent threads are encouraged to synchronize and share
-data through constrained channels. This is also somewhat similar to
-the concurrency model of Labview, in that the execution of major nodes
-in the program could be organized around the flow of data through
-channels.
+data chiefly through type-constrained channels. This is also somewhat
+similar to the concurrency model of Labview, in that the execution of
+major nodes in the program can be organized around the flow of data
+through channels.
 
 The main part of this is a channel (`Chan<T>`) class that models
 sending and receiving (strongly typed) messages on a bounded
