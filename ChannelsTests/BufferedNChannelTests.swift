@@ -27,11 +27,11 @@ class BufferedNChannelTests: XCTestCase
 
   func testSendReceive1()
   {
-    var buffered = Chan<UInt32>.Make(buflen)
+    var (tx, rx) = Channel<UInt32>.Make(buflen)
 
     let value =  arc4random()
-    buffered <- value
-    let result = <-buffered
+    tx <- value
+    let result = <-rx
 
     XCTAssert(value == result, "BufferedNChan")
   }
@@ -48,10 +48,10 @@ class BufferedNChannelTests: XCTestCase
       values.append(arc4random_uniform(UInt32.max/2))
     }
 
-    var bufferedN = Chan<UInt32>.Make(buflen)
+    var (tx, rx) = Channel<UInt32>.Make(buflen)
     for v in values
     {
-      bufferedN <- v
+      tx <- v
     }
 
     let selectedValue = Int(arc4random_uniform(UInt32(buflen)))
@@ -59,7 +59,7 @@ class BufferedNChannelTests: XCTestCase
 
     for i in 0..<buflen
     {
-      if let e = <-bufferedN
+      if let e = <-rx
       {
         XCTAssert(e == values[i], "BufferedNChan")
       }

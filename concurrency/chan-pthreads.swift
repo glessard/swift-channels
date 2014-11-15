@@ -1,4 +1,4 @@
-
+//
 //  chan-pthreads.swift
 //  concurrency
 //
@@ -10,6 +10,10 @@ import Dispatch
 
 /**
   The basis for our real channels
+
+  This solution adapted from:
+  Oracle Multithreaded Programming Guide, "The Producer/Consumer Problem"
+  http://docs.oracle.com/cd/E19455-01/806-5257/sync-31/index.html
 */
 
 class pthreadChan<T>: Chan<T>
@@ -21,9 +25,6 @@ class pthreadChan<T>: Chan<T>
   private var blockedWriters = 0
 
   // pthreads variables
-  // This solution adapted from:
-  // Oracle Multithreaded Programming Guide, "The Producer/Consumer Problem"
-  // http://docs.oracle.com/cd/E19455-01/806-5257/sync-31/index.html
 
   private var channelMutex:   UnsafeMutablePointer<pthread_mutex_t>
   private var readCondition:  UnsafeMutablePointer<pthread_cond_t>
@@ -116,16 +117,6 @@ class pthreadChan<T>: Chan<T>
 class BufferedChan<T>: pthreadChan<T>
 {
   /**
-    Close the channel
-  */
-
-  private override func doClose()
-  {
-//    log("closing buffered channel")
-    super.doClose()
-  }
-  
-  /**
     Append an element to the channel
 
     If the channel is full, this call will block.
@@ -134,7 +125,7 @@ class BufferedChan<T>: pthreadChan<T>
     :param: element the new element to be added to the channel.
   */
 
-  override func send(newElement: T)
+  override func write(newElement: T)
   {
     if self.isClosed { return }
 
@@ -181,7 +172,7 @@ class BufferedChan<T>: pthreadChan<T>
     :return: the oldest element from the channel.
   */
 
-  override func receive() -> T?
+  override func read() -> T?
   {
     pthread_mutex_lock(channelMutex)
 
@@ -227,36 +218,36 @@ class BufferedChan<T>: pthreadChan<T>
     :return: a closure that will unblock the thread if needed.
   */
 
-  override func selectReceive(channel: SelectChan<Selection>, messageID: Selectable) -> Signal
-  {
-    async {
-      pthread_mutex_lock(self.channelMutex)
-      while self.isEmpty && !self.isClosed && !channel.isClosed
-      {
-        self.blockedReaders += 1
-        pthread_cond_wait(self.readCondition, self.channelMutex)
-        self.blockedReaders -= 1
-      }
-
-      channel.selectMutex {
-        channel.selectSend(Selection(messageID: messageID, messageData: self.readElement()))
-      }
-
-      // Channel is not full; signal this.
-      if self.blockedWriters > 0 { pthread_cond_signal(self.writeCondition) }
-      if self.isClosed && self.blockedReaders > 0 { pthread_cond_signal(self.readCondition) }
-      pthread_mutex_unlock(self.channelMutex)
-    }
-
-    return {
-      if self.blockedReaders > 0
-      {
-        pthread_mutex_lock(self.channelMutex)
-        pthread_cond_signal(self.readCondition)
-        pthread_mutex_unlock(self.channelMutex)
-      }
-    }
-  }
+//  override func selectReceive(channel: SelectChan<Selection>, messageID: Selectable) -> Signal
+//  {
+//    async {
+//      pthread_mutex_lock(self.channelMutex)
+//      while self.isEmpty && !self.isClosed && !channel.isClosed
+//      {
+//        self.blockedReaders += 1
+//        pthread_cond_wait(self.readCondition, self.channelMutex)
+//        self.blockedReaders -= 1
+//      }
+//
+//      channel.selectMutex {
+//        channel.selectSend(Selection(messageID: messageID, messageData: self.readElement()))
+//      }
+//
+//      // Channel is not full; signal this.
+//      if self.blockedWriters > 0 { pthread_cond_signal(self.writeCondition) }
+//      if self.isClosed && self.blockedReaders > 0 { pthread_cond_signal(self.readCondition) }
+//      pthread_mutex_unlock(self.channelMutex)
+//    }
+//
+//    return {
+//      if self.blockedReaders > 0
+//      {
+//        pthread_mutex_lock(self.channelMutex)
+//        pthread_cond_signal(self.readCondition)
+//        pthread_mutex_unlock(self.channelMutex)
+//      }
+//    }
+//  }
 }
 
 /**
@@ -297,7 +288,7 @@ class BufferedQChan<T>: BufferedChan<T>
 }
 
 /**
-  A buffered channel with an N element rotating buffer
+  A buffered channel with an N element circular buffer
 */
 
 class BufferedAChan<T>: BufferedChan<T>
@@ -400,7 +391,7 @@ public class SingletonChan<T>: Buffered1Chan<T>
     :param: element the new element to be added to the channel.
   */
 
-  override func send(newElement: T)
+  override func write(newElement: T)
   {
     if self.isClosed { return }
 
@@ -424,42 +415,42 @@ public class SingletonChan<T>: Buffered1Chan<T>
   The SelectionChannel methods for SelectChan
 */
 
-extension SelectChan //: SelectingChannel // (repeating this crashes swiftc)
-{
-  /**
-    selectMutex() must be used to send data to SelectChan in a thread-safe manner
-  
-    Actions which must be performed synchronously with the SelectChan should be passed to
-    selectMutex() as a closure. The closure will only be executed if the channel is still open.
-  */
-
-  public func selectMutex(action: () -> ())
-  {
-    if !self.isFull && !self.isClosed
-    {
-      pthread_mutex_lock(channelMutex)
-
-      action()
-
-      pthread_mutex_unlock(channelMutex)
-    }
-  }
-
-  /**
-    selectSend() will send data to a SelectChan.
-    It must be called within the closure sent to selectMutex() for thread safety.
-    By definition, this call occurs while this channel's mutex is locked for the current thread.
-  */
-
-  public func selectSend(newElement: T)
-  {
-    if !self.isFull && !self.isClosed
-    {
-      super.writeElement(newElement)
-      pthread_cond_signal(readCondition)
-    }
-  }
-}
+//extension SelectChan //: SelectingChannel // (repeating this crashes swiftc)
+//{
+//  /**
+//    selectMutex() must be used to send data to SelectChan in a thread-safe manner
+//  
+//    Actions which must be performed synchronously with the SelectChan should be passed to
+//    selectMutex() as a closure. The closure will only be executed if the channel is still open.
+//  */
+//
+//  public func selectMutex(action: () -> ())
+//  {
+//    if !self.isFull && !self.isClosed
+//    {
+//      pthread_mutex_lock(channelMutex)
+//
+//      action()
+//
+//      pthread_mutex_unlock(channelMutex)
+//    }
+//  }
+//
+//  /**
+//    selectSend() will send data to a SelectChan.
+//    It must be called within the closure sent to selectMutex() for thread safety.
+//    By definition, this call occurs while this channel's mutex is locked for the current thread.
+//  */
+//
+//  public func selectSend(newElement: T)
+//  {
+//    if !self.isFull && !self.isClosed
+//    {
+//      super.writeElement(newElement)
+//      pthread_cond_signal(readCondition)
+//    }
+//  }
+//}
 
 /**
   A channel with no backing store.
@@ -526,7 +517,7 @@ class UnbufferedChan<T>: pthreadChan<T>
     :param: element the new element to be added to the channel.
   */
 
-  override func send(newElement: T)
+  override func write(newElement: T)
   {
     if self.isClosed { return }
 
@@ -574,7 +565,7 @@ class UnbufferedChan<T>: pthreadChan<T>
     :return: the oldest element from the channel.
   */
 
-  override func receive() -> T?
+  override func read() -> T?
   {
     pthread_mutex_lock(channelMutex)
 
@@ -633,49 +624,49 @@ class UnbufferedChan<T>: pthreadChan<T>
     :return: a closure that will unblock the thread if needed.
   */
 
-  override func selectReceive(channel: SelectChan<Selection>, messageID: Selectable) -> Signal
-  {
-    async {
-      pthread_mutex_lock(self.channelMutex)
-
-      while !self.isReady && !self.isClosed
-      {
-        if self.blockedWriters > 0
-        {
-          // Maybe we can interest a writer
-          pthread_cond_signal(self.writeCondition)
-        }
-        // wait for a writer to signal us
-        self.blockedReaders += 1
-        pthread_cond_wait(self.readCondition, self.channelMutex)
-        self.blockedReaders -= 1
-      }
-
-      channel.selectMutex {
-        if !channel.isClosed
-        {
-          channel.selectSend(Selection(messageID: messageID, messageData: self.readElement()))
-        }
-      }
-
-      if self.blockedReaders > 0
-      { // If other readers are waiting, signal a writer right away.
-        if self.blockedWriters > 0 { pthread_cond_signal(self.writeCondition) }
-        // If channel is closed, then signal a reader too.
-        if self.isClosed { pthread_cond_signal(self.readCondition) }
-      }
-      pthread_mutex_unlock(self.channelMutex)
-    }
-
-    return {
-      if self.blockedReaders > 0
-      {
-        pthread_mutex_lock(self.channelMutex)
-        pthread_cond_broadcast(self.readCondition)
-        pthread_mutex_unlock(self.channelMutex)
-      }
-    }
-  }
+//  override func selectReceive(channel: SelectChan<Selection>, messageID: Selectable) -> Signal
+//  {
+//    async {
+//      pthread_mutex_lock(self.channelMutex)
+//
+//      while !self.isReady && !self.isClosed
+//      {
+//        if self.blockedWriters > 0
+//        {
+//          // Maybe we can interest a writer
+//          pthread_cond_signal(self.writeCondition)
+//        }
+//        // wait for a writer to signal us
+//        self.blockedReaders += 1
+//        pthread_cond_wait(self.readCondition, self.channelMutex)
+//        self.blockedReaders -= 1
+//      }
+//
+//      channel.selectMutex {
+//        if !channel.isClosed
+//        {
+//          channel.selectSend(Selection(messageID: messageID, messageData: self.readElement()))
+//        }
+//      }
+//
+//      if self.blockedReaders > 0
+//      { // If other readers are waiting, signal a writer right away.
+//        if self.blockedWriters > 0 { pthread_cond_signal(self.writeCondition) }
+//        // If channel is closed, then signal a reader too.
+//        if self.isClosed { pthread_cond_signal(self.readCondition) }
+//      }
+//      pthread_mutex_unlock(self.channelMutex)
+//    }
+//
+//    return {
+//      if self.blockedReaders > 0
+//      {
+//        pthread_mutex_lock(self.channelMutex)
+//        pthread_cond_broadcast(self.readCondition)
+//        pthread_mutex_unlock(self.channelMutex)
+//      }
+//    }
+//  }
 }
 
 // Used to elucidate/troubleshoot message arrival order

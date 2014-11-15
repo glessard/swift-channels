@@ -83,18 +83,11 @@ public protocol SendingChannel: class, BasicChannel
 }
 
 /**
-  The interface any channel needs.
-  Not useful by itself.
+  Interface that any channel needs. Not useful by itself.
 */
 
 public protocol BasicChannel: class
 {
-  /**
-    Report the channel capacity
-  */
-
-  var capacity: Int { get }
-
   /**
     Report whether the channel has been closed
   */

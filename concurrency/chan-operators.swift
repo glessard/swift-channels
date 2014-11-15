@@ -19,7 +19,7 @@ infix operator <- { associativity left precedence 90}
   If the channel is full, this call will block.
   If the channel has been closed, an assertion may fail.
 
-  This is the equivalent of Chan<T>.send(T)
+  This is the equivalent of Sender<T>.send(T)
 
   :param:  chan
   :param:  element the new element to be added to the channel.
@@ -46,7 +46,7 @@ prefix operator <- {}
   If the channel is empty, this call will block.
   If the channel is empty and closed, this will return nil.
 
-  This is the equivalent of Chan<T>.read() -> T?
+  This is the equivalent of Receiver<T>.receive() -> T?
 
   :return: the oldest element from the channel
 */

@@ -20,11 +20,11 @@ class Buffered1ChannelTests: XCTestCase
 
   func testSendReceive()
   {
-    var buffered1 = Chan<UInt32>.Make(1)
+    var (tx,rx) = Channel<UInt32>.Make(1)
 
     let value =  arc4random()
-    buffered1 <- value
-    let result = <-buffered1
+    tx <- value
+    let result = <-rx
 
     XCTAssert(value == result, "Pass")
   }
@@ -36,10 +36,10 @@ class Buffered1ChannelTests: XCTestCase
   func testReceiveFirst()
   {
     let expectation = expectationWithDescription("Buffered(1) Receive then Send")
-    var buff1 = Chan.Make(type: expectation,1)
+    var (tx,rx) = Channel.Make(type: expectation,1)
 
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-      if let x = <-buff1
+      if let x = <-rx
       {
         x.fulfill()
       }
@@ -50,11 +50,11 @@ class Buffered1ChannelTests: XCTestCase
     }
 
     dispatch_after(1_000_000_000, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-      buff1 <- expectation
-      buff1.close()
+      tx <- expectation
+      tx.close()
     }
 
-    waitForExpectationsWithTimeout(2.0) { _ = $0; buff1.close() }
+    waitForExpectationsWithTimeout(2.0) { _ = $0; tx.close() }
   }
 
   /**
@@ -64,15 +64,15 @@ class Buffered1ChannelTests: XCTestCase
   func testSendFirst()
   {
     let expectation = expectationWithDescription("Buffered(1) Send then Receive")
-    var buff1 = Chan.Make(type: expectation,1)
+    var (tx, rx) = Channel.Make(type: expectation,1)
 
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-      buff1 <- expectation
-      buff1.close()
+      tx <- expectation
+      tx.close()
     }
 
     dispatch_after(1_000_000_000, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-      if let x = <-buff1
+      if let x = <-rx
       {
         x.fulfill()
       }
@@ -82,7 +82,7 @@ class Buffered1ChannelTests: XCTestCase
       }
     }
 
-    waitForExpectationsWithTimeout(2.0) { _ = $0; buff1.close() }
+    waitForExpectationsWithTimeout(2.0) { _ = $0; tx.close() }
   }
 
   /**
@@ -92,20 +92,20 @@ class Buffered1ChannelTests: XCTestCase
   func testBlockedSend()
   {
     let expectation = expectationWithDescription("Buffered(1) blocked Send, verified reception")
-    var buff1 = Chan<UInt32>.Make(1)
+    var (tx, rx) = Channel<UInt32>.Make(1)
 
     var valsent = arc4random()
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
       valsent = arc4random()
-      buff1 <- arc4random() <- valsent
-      buff1.close()
+      tx <- arc4random() <- valsent
+      tx.close()
     }
 
     var valrecd = arc4random()
     dispatch_after(1_000_000_000, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-      if !buff1.isClosed
+      if !rx.isClosed
       {
-        while let v = <-buff1
+        while let v = <-rx
         {
           valrecd = v
         }
@@ -117,7 +117,7 @@ class Buffered1ChannelTests: XCTestCase
       }
     }
 
-    waitForExpectationsWithTimeout(2.0) { _ = $0; buff1.close() }
+    waitForExpectationsWithTimeout(2.0) { _ = $0; tx.close() }
     XCTAssert(valsent == valrecd, "\(valsent) ≠ \(valrecd) in buffered(1)")
   }
 
@@ -128,11 +128,11 @@ class Buffered1ChannelTests: XCTestCase
   func testBlockedReceive()
   {
     let expectation = expectationWithDescription("Buffered(1) blocked Receive, verified reception")
-    var buff1 = Chan<UInt32>.Make(1)
+    var (tx, rx) = Channel<UInt32>.Make(1)
 
     var valrecd = arc4random()
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-      while let v = <-buff1
+      while let v = <-rx
       {
         valrecd = v
       }
@@ -141,11 +141,11 @@ class Buffered1ChannelTests: XCTestCase
 
     var valsent = arc4random()
     dispatch_after(1_000_000_000, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-      if !buff1.isClosed
+      if !tx.isClosed
       {
         valsent = arc4random()
-        buff1 <- valsent
-        buff1.close()
+        tx <- valsent
+        tx.close()
       }
       else
       {
@@ -153,7 +153,7 @@ class Buffered1ChannelTests: XCTestCase
       }
     }
 
-    waitForExpectationsWithTimeout(2.0) { _ = $0; buff1.close() }
+    waitForExpectationsWithTimeout(2.0) { _ = $0; tx.close() }
     XCTAssert(valsent == valrecd, "\(valsent) ≠ \(valrecd) in buffered(1)")
   }
 
@@ -164,20 +164,20 @@ class Buffered1ChannelTests: XCTestCase
   func testNoReceiver()
   {
     let expectation = expectationWithDescription("Buffered(1) Send, no Receiver")
-    var buff1 = Chan<()>.Make(1)
+    var (tx, _) = Channel<()>.Make(1)
 
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-      buff1 <- () <- ()
+      tx <- () <- ()
       expectation.fulfill()
 
       // The following should have no effect
-      buff1.close()
+      tx.close()
     }
 
     dispatch_after(1_000_000_000, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-      if !buff1.isClosed
+      if !tx.isClosed
       {
-        buff1.close()
+        tx.close()
       }
       else
       {
@@ -185,7 +185,7 @@ class Buffered1ChannelTests: XCTestCase
       }
     }
 
-    waitForExpectationsWithTimeout(2.0) { _ = $0; buff1.close() }
+    waitForExpectationsWithTimeout(2.0) { _ = $0; tx.close() }
   }
 
   /**
@@ -195,10 +195,10 @@ class Buffered1ChannelTests: XCTestCase
   func testNoSender()
   {
     let expectation = expectationWithDescription("Buffered(1) Receive, no Sender")
-    var buff1 = Chan<Int>.Make(1)
+    var (_, rx) = Channel<Int>.Make(1)
 
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-      while let v = <-buff1
+      while let v = <-rx
       {
         XCTFail("should not receive anything")
       }
@@ -206,9 +206,9 @@ class Buffered1ChannelTests: XCTestCase
     }
 
     dispatch_after(1_000_000_000, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-      if !buff1.isClosed
+      if !rx.isClosed
       {
-        buff1.close()
+        rx.close()
       }
       else
       {
@@ -216,6 +216,6 @@ class Buffered1ChannelTests: XCTestCase
       }
     }
 
-    waitForExpectationsWithTimeout(2.0) { _ = $0; buff1.close() }
+    waitForExpectationsWithTimeout(2.0) { _ = $0; rx.close() }
   }
 }

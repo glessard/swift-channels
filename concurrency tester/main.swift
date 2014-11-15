@@ -7,14 +7,13 @@
 //
 
 import Darwin
-import Channels
+//import Channels
 
 // Workaround for (presumably) a generics parser bug:
 typealias ReturnTuple = (Int,Int,Int)
 func worker<CI: ReceivingChannel, CO: SendingChannel
             where CI.ReceivedElement == Int, CO.SentElement == ReturnTuple>
            (inputChannel: CI, outputChannel: CO)
-//func worker(inputChannel: ReadChan<Int>, outputChannel: WriteChan<(Int,Int,Int)>)
 {
   var messageCount = 0
 
@@ -32,32 +31,32 @@ func worker<CI: ReceivingChannel, CO: SendingChannel
   outputChannel.close()
 }
 
-var workChan = Chan<Int>.Make(1)
-var outChan  = Chan.Make(type: (0,0,0), 0)
+var workChan = Channel<Int>.Make(1)
+var outChan  = Channel.Make(type: (0,0,0), 0)
 
-async { Time.Wait(10); worker(ReadChan.Wrap(workChan), WriteChan.Wrap(outChan)) }
-async { Time.Wait(20); worker(ReadChan.Wrap(workChan), WriteChan.Wrap(outChan)) }
-async { Time.Wait(30); worker(ReadChan.Wrap(workChan), WriteChan.Wrap(outChan)) }
-//async { Time.Wait(40); worker(ReadChan.Wrap(workChan), WriteChan.Wrap(outChan)) }
-//async { Time.Wait(50); worker(ReadChan.Wrap(workChan), WriteChan.Wrap(outChan)) }
+async { Time.Wait(10); worker(workChan.rx, outChan.tx) }
+async { Time.Wait(20); worker(workChan.rx, outChan.tx) }
+async { Time.Wait(30); worker(workChan.rx, outChan.tx) }
+async { Time.Wait(40); worker(workChan.rx, outChan.tx) }
+async { Time.Wait(50); worker(workChan.rx, outChan.tx) }
 
 let workElements = 10;
 for a in 0..<workElements
 {
-  async { Time.Wait(100+100*a); workChan <- a }
+  async { Time.Wait(100+100*a); workChan.tx <- a }
 }
 // Uncomment the following to close the channel prematurely
-//async { Time.Wait(workElements*70); syncprint("closing work channel"); workChan.close() }
+//async { Time.Wait(workElements*70); syncprint("closing work channel"); workChan.tx.close() }
 
 var outputArray = [Int?](count: workElements, repeatedValue: nil)
 
 // receive data from channel until it is closed
-for (i,(c,v,s)) in enumerate(outChan)
+for (i,(c,v,s)) in enumerate(outChan.rx)
 {
   outputArray[v] = s
   syncprint(String(format: "%02d: (%02d) %02d %ld", i, c, v, s))
 
-  if i >= workElements-1 { workChan.close() }
+  if i >= workElements-1 { workChan.tx.close() }
 }
 
 let errors = outputArray.filter { $0 == nil }
