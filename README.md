@@ -15,12 +15,19 @@ channels.
 
 The main part of this is a channel (`Chan<T>`) class that models
 sending and receiving (strongly typed) messages on a bounded
-queue. Message sending is achieved with an infix `<-` operator (as in
-Go); this operation will block whenever the channel is full. Message
-receiving is achieved with an unary prefix `<-` operator; this
-operation will block whenever the channel is empty. A sender can
-signal task completion by closing a channel. Further sends have no
-effect, while receive continue normally until the channel is
+queue. Channel creation returns a tuple of objects that model
+the endpoints of the channel (as in Rust).
+
+Sending on the channel is achieved with an infix `<-` operator on the
+Sender object; this operation will block whenever the channel is
+full. Receiving from the channel is achieved with an unary prefix `<-`
+operator on the Receiver object; this operation will block whenever
+the channel is empty.
+
+A channel can be closed by invoking the `close()` method on either the
+Sender or the Receiver, though closing via the Sender should be more
+useful. Further sends on a closed channel have no effect, while
+receive operations continue normally until the channel is
 drained. Receiving from a closed, empty channel returns nil.
 
 Channels can be used in buffered and unbuffered form. In an unbuffered
@@ -45,18 +52,18 @@ Example:
 ```
 import Darwin
 
-let ch = Chan<Int>.Make()
+let (sender, receiver) = Channel<Int>.Make()
 
 async {
   for i in 1...10
   {
-    ch <- i
+    sender <- i
     sleep(1)
   }
-  ch.close()
+  sender.close()
 }
 
-while let m = <-ch
+while let m = <-receiver
 {
   println(m)
 }
@@ -64,17 +71,14 @@ while let m = <-ch
 
 The `for` loop will count up to 10 on a background thread, sending
 results to the main thread, which prints them. The main thread pauses
-while waiting for results inside the `<-ch` channel receive
+while waiting for results inside `<-receiver`, the channel receive
 operation. The `while` loop will then exit when the channel becomes
-closed. An empty, closed channel returns nil, thereby signaling to
-receivers that it has become closed.
+closed. Receiving from a channel that is both empty and closed returns
+nil, thereby signaling that the channel has become closed.
 
 Missing from this is a powerful construct such as the Select keyword
 from Go, which is quite useful when dealing with multiple channels at
 once. There is an initial implementation that is both unstable and
-slow.
+slow, on the `channel-select` branch.
 
-Also missing is a deadlock detector. Deadlocks will happen! They
-don't have to. Good luck.
-
-I welcome questions and suggestions
+I welcome questions and suggestions.
