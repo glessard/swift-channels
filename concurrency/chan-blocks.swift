@@ -146,7 +146,7 @@ class gcdChan<T>: Chan<T>
     Determine whether the channel has been closed
   */
 
-  override var isClosed: Bool { return closed }
+  override func isClosedFunc() -> Bool { return closed }
   
   /**
     Close the channel
@@ -187,7 +187,7 @@ class gcdChan<T>: Chan<T>
 class BufferedChan<T>: gcdChan<T>
 {
   /**
-    Send an element to the channel
+    Append an element to the channel
 
     If the channel is full, this call will block.
     If the channel has been closed, no action will be taken.
@@ -195,7 +195,7 @@ class BufferedChan<T>: gcdChan<T>
     :param: element the new element to be added to the channel.
   */
 
-  override func send(newElement: T)
+  override func write(newElement: T)
   {
     if self.isClosed { return }
 
@@ -243,7 +243,7 @@ class BufferedChan<T>: gcdChan<T>
   }
 
   /**
-    Receive the oldest element from the channel.
+    Return the oldest element from the channel.
 
     If the channel is empty, this call will block.
     If the channel is empty and closed, this will return nil.
@@ -251,7 +251,7 @@ class BufferedChan<T>: gcdChan<T>
     :return: the oldest element from the channel.
   */
 
-  override func receive() -> T?
+  override func read() -> T?
   {
 //    let id = readerCount++
 //    self.log("trying to receive #\(id)")
@@ -310,45 +310,45 @@ class BufferedChan<T>: gcdChan<T>
     :return: a closure that will unblock the thread if needed.
   */
 
-  override func selectReceive(channel: SelectChan<SelectionType>, messageID: Selectable) -> Signal
-  {
-    async {
-      var hasRead = false
-      while !hasRead
-      {
-        self.readerMutex { // A suspended reader queue will block here.
-          self.channelMutex {
-            if self.isEmpty && !self.isClosed && !channel.isClosed
-            {
-              self.suspend(self.readers)
-              return // to the top of the while loop and be suspended
-            }
-
-            channel.selectMutex {
-              channel.selectSend(Selection(messageID: messageID, messageData: self.readElement()))
-            }
-            hasRead = true
-
-            if self.isEmpty && !self.isClosed
-            { // Preemptively suspend readers when channel is empty
-              self.suspend(self.readers)
-            }
-            else
-            { // Channel is not full; resume the writers queue.
-              self.resume(self.writers)
-            }
-          }
-        }
-      }
-    }
-    
-    return { self.channelMutex { self.resume(self.readers) } }
-  }
+//  override func selectReceive(channel: SelectChan<SelectionType>, messageID: Selectable) -> Signal
+//  {
+//    async {
+//      var hasRead = false
+//      while !hasRead
+//      {
+//        self.readerMutex { // A suspended reader queue will block here.
+//          self.channelMutex {
+//            if self.isEmpty && !self.isClosed && !channel.isClosed
+//            {
+//              self.suspend(self.readers)
+//              return // to the top of the while loop and be suspended
+//            }
+//
+//            channel.selectMutex {
+//              channel.selectSend(Selection(messageID: messageID, messageData: self.readElement()))
+//            }
+//            hasRead = true
+//
+//            if self.isEmpty && !self.isClosed
+//            { // Preemptively suspend readers when channel is empty
+//              self.suspend(self.readers)
+//            }
+//            else
+//            { // Channel is not full; resume the writers queue.
+//              self.resume(self.writers)
+//            }
+//          }
+//        }
+//      }
+//    }
+//    
+//    return { self.channelMutex { self.resume(self.readers) } }
+//  }
 }
 
 
 /**
-  A buffered channel with an N>1 element buffer
+  A buffered channel with an N>1 element queue
 */
 
 class BufferedQChan<T>: BufferedChan<T>
@@ -367,11 +367,11 @@ class BufferedQChan<T>: BufferedChan<T>
     self.init(1)
   }
 
-  override var capacity: Int { return count }
+  override func capacityFunc() -> Int { return count }
 
-  override var isEmpty: Bool { return q.isEmpty }
+  override func isEmptyFunc() -> Bool { return q.isEmpty }
 
-  override var isFull: Bool { return q.count >= count }
+  override func isFullFunc() ->  Bool { return q.count >= count }
 
   private override func writeElement(newElement: T)
   {
@@ -397,11 +397,11 @@ class Buffered1Chan<T>: BufferedChan<T>
     element = nil
   }
 
-  override var capacity: Int { return 1 }
+  override func capacityFunc() -> Int { return 1 }
 
-  override var isEmpty: Bool { return (element == nil) }
+  override func isEmptyFunc() -> Bool { return (element == nil) }
 
-  override var isFull: Bool  { return (element != nil) }
+  override func isFullFunc() ->  Bool  { return (element != nil) }
 
   private override func writeElement(newElement: T)
   {
@@ -442,35 +442,35 @@ public class SingletonChan<T>: Buffered1Chan<T>
   The SelectionChannel methods for SelectChan
 */
 
-extension SelectChan //: SelectingChannel
-{
-  /**
-    selectMutex() must be used to send data to a SelectingChannel in a thread-safe manner
-
-    Actions which must be performed synchronously with the SelectChan should be passed to
-    selectMutex() as a closure. The closure will only be executed if the channel is still open.
-  */
-
-  public func selectMutex(action: () -> ())
-  {
-    if !self.isClosed
-    {
-      channelMutex { action() }
-    }
-  }
-
-  /**
-    selectSend() will send data to a SelectingChannel.
-    It must be called within the closure sent to selectMutex() for thread safety.
-    By definition, this call occurs while this channel's mutex is locked for the current thread.
-  */
-
-  public func selectSend(newElement: T)
-  {
-    super.writeElement(newElement)
-    self.resume(self.readers)
-  }
-}
+//extension SelectChan //: SelectingChannel
+//{
+//  /**
+//    selectMutex() must be used to send data to a SelectingChannel in a thread-safe manner
+//
+//    Actions which must be performed synchronously with the SelectChan should be passed to
+//    selectMutex() as a closure. The closure will only be executed if the channel is still open.
+//  */
+//
+//  public func selectMutex(action: () -> ())
+//  {
+//    if !self.isClosed
+//    {
+//      channelMutex { action() }
+//    }
+//  }
+//
+//  /**
+//    selectSend() will send data to a SelectingChannel.
+//    It must be called within the closure sent to selectMutex() for thread safety.
+//    By definition, this call occurs while this channel's mutex is locked for the current thread.
+//  */
+//
+//  public func selectSend(newElement: T)
+//  {
+//    super.writeElement(newElement)
+//    self.resume(self.readers)
+//  }
+//}
 
 /**
   A channel with no backing store.
@@ -489,7 +489,7 @@ class UnbufferedChan<T>: gcdChan<T>
     element = nil
   }
 
-  override var capacity: Int { return 0 }
+  override func capacityFunc() -> Int  { return 0 }
 
   /**
   isEmpty is meaningless when capacity equals zero.
@@ -498,7 +498,7 @@ class UnbufferedChan<T>: gcdChan<T>
   :return: true
   */
 
-  override var isEmpty: Bool { return true }
+  override func isEmptyFunc() -> Bool { return true }
 
   /**
   isFull is meaningless when capacity equals zero.
@@ -507,7 +507,7 @@ class UnbufferedChan<T>: gcdChan<T>
   :return: true
   */
 
-  override var isFull: Bool  { return true }
+  override func isFullFunc() -> Bool  { return true }
 
   /**
     Tell whether the channel is ready to transfer data.
@@ -522,12 +522,6 @@ class UnbufferedChan<T>: gcdChan<T>
 
   /**
     Close the channel
-
-    Any items still in the channel remain and can be retrieved.
-    New items cannot be added to a closed channel.
-
-    It should perhaps be considered an error to close a channel that has
-    already been closed, but in fact nothing will happen if it were to occur.
   */
 
   private override func doClose()
@@ -537,7 +531,7 @@ class UnbufferedChan<T>: gcdChan<T>
   }
 
   /**
-    Send an element to the channel
+    Write an element to the channel
 
     If no reader is ready to receive, this call will block.
     If the channel has been closed, no action will be taken.
@@ -545,7 +539,7 @@ class UnbufferedChan<T>: gcdChan<T>
     :param: element the new element to be added to the channel.
   */
 
-  override func send(newElement: T)
+  override func write(newElement: T)
   {
     if self.isClosed { return }
 
@@ -605,7 +599,7 @@ class UnbufferedChan<T>: gcdChan<T>
     :return: the oldest element from the channel.
   */
 
-  override func receive() -> T?
+  override func read() -> T?
   {
 //    let id = readerCount++
 //    self.log("reader \(id) is trying to receive")
@@ -672,47 +666,47 @@ class UnbufferedChan<T>: gcdChan<T>
     :return: a closure that will unblock the thread if needed.
   */
 
-  override func selectReceive(channel: SelectChan<SelectionType>, messageID: Selectable) -> Signal
-  {
-    async {
-      var hasRead = false
-      while !hasRead
-      {
-        // self.blockedReaders += 1 -- atomically
-        OSAtomicIncrement32Barrier(&self.blockedReaders)
-
-        self.readerMutex {        // A suspended reader queue will block the thread here.
-          self.channelMutex {
-            OSAtomicDecrement32Barrier(&self.blockedReaders)
-
-            if !self.isReady && !self.isClosed
-            {
-              self.suspend(self.readers) // will also resume writers
-              return // to the top of the loop and be suspended
-            }
-
-            channel.selectMutex {
-              channel.selectSend(Selection(messageID: messageID, messageData: self.readElement()))
-            }
-            hasRead = true
-
-            if self.blockedReaders > 0
-            { // If other readers are waiting, wait for next writer.
-              self.suspend(self.readers)
-            }
-            else if self.blockedWriters == 0 && self.blockedReaders == 0
-            { // If both queues are empty, none should be suspended
-              self.resume(self.writers)
-            }
-          }
-        }
-      }
-    }
-
-    return {
-      self.channelMutex { if self.blockedReaders > 0 { self.resume(self.readers) } }
-    }
-  }
+//  override func selectReceive(channel: SelectChan<SelectionType>, messageID: Selectable) -> Signal
+//  {
+//    async {
+//      var hasRead = false
+//      while !hasRead
+//      {
+//        // self.blockedReaders += 1 -- atomically
+//        OSAtomicIncrement32Barrier(&self.blockedReaders)
+//
+//        self.readerMutex {        // A suspended reader queue will block the thread here.
+//          self.channelMutex {
+//            OSAtomicDecrement32Barrier(&self.blockedReaders)
+//
+//            if !self.isReady && !self.isClosed
+//            {
+//              self.suspend(self.readers) // will also resume writers
+//              return // to the top of the loop and be suspended
+//            }
+//
+//            channel.selectMutex {
+//              channel.selectSend(Selection(messageID: messageID, messageData: self.readElement()))
+//            }
+//            hasRead = true
+//
+//            if self.blockedReaders > 0
+//            { // If other readers are waiting, wait for next writer.
+//              self.suspend(self.readers)
+//            }
+//            else if self.blockedWriters == 0 && self.blockedReaders == 0
+//            { // If both queues are empty, none should be suspended
+//              self.resume(self.writers)
+//            }
+//          }
+//        }
+//      }
+//    }
+//
+//    return {
+//      self.channelMutex { if self.blockedReaders > 0 { self.resume(self.readers) } }
+//    }
+//  }
 }
 
 // Used to elucidate/troubleshoot message arrival order
