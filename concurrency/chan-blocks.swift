@@ -22,6 +22,9 @@ private enum QueueState
 
 /**
   Our basis for channel implementations based on Grand Central Dispatch
+
+  This is an adaptation of a standard pthreads solution for the producer/consumer problem
+  to the blocks-and-queues Weltanschauung of Grand Central Dispatch. It might not be optimal.
 */
 
 class gcdChan<T>: Chan<T>
