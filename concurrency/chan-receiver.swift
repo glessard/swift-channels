@@ -14,22 +14,22 @@
   This could be useful to clarify the intentions of an API.
 */
 
-public class Receiver<T>: ReceivingChannel, GeneratorType, SequenceType
+public class Receiver<T>: ReceiverType, GeneratorType, SequenceType
 {
   /**
-    Return a new ReadChan<T> to stand in for ReceivingChannel c.
+    Return a new ReadChan<T> to stand in for ReceiverType c.
 
     If c is a (subclass of) Receiver, c will be returned directly.
 
-    If c is any other kind of ReceivingChannel, c will be wrapped in an
+    If c is any other kind of ReceiverType, c will be wrapped in an
     EnclosedReadChan, which uses closures to wrap the interface of c.
 
-    :param: c A ReceivingChannel implementor to be wrapped by a Receiver object.
+    :param: c A ReceiverType implementor to be wrapped by a Receiver object.
   
     :return:  A Receiver object that will pass along the elements from c.
   */
 
-  public class func Wrap<C: ReceivingChannel where C.ReceivedElement == T>(c: C) -> Receiver<T>
+  public class func Wrap<C: ReceiverType where C.ReceivedElement == T>(c: C) -> Receiver<T>
   {
     if let c = c as? Receiver<T>
     {
@@ -40,7 +40,7 @@ public class Receiver<T>: ReceivingChannel, GeneratorType, SequenceType
     return WrappedReceiver(c)
   }
 
-  // ReceivingChannel interface (abstract)
+  // ReceiverType interface (abstract)
 
   public var isClosed: Bool { return true }
 
@@ -87,7 +87,7 @@ class ChanReceiver<T>: Receiver<T>
     wrapped = c
   }
 
-  // ReceivingChannel implementation
+  // ReceiverType implementation
 
   override var isClosed: Bool { return wrapped.isClosed }
 
@@ -116,16 +116,16 @@ class ChanReceiver<T>: Receiver<T>
 }
 
 /**
-  EnclosedReceiver<T> wraps an object that implements ReceivingChannel and makes it
+  EnclosedReceiver<T> wraps an object that implements ReceiverType and makes it
   looks like a Receiver<T> subclass.
 
-  This is accomplished in wrapping its entire ReceivingChannel interface in a series of closures.
+  This is accomplished in wrapping its entire ReceiverType interface in a series of closures.
   While that is probably memory-heavy, it works.
 */
 
 class EnclosedReceiver<T>: Receiver<T>
 {
-  init<C: ReceivingChannel where C.ReceivedElement == T>(_ c: C)
+  init<C: ReceiverType where C.ReceivedElement == T>(_ c: C)
   {
     enclosedGetClosed = { c.isClosed }
     enclosedCloseFunc = { c.close() }
@@ -138,7 +138,7 @@ class EnclosedReceiver<T>: Receiver<T>
 //    enclosedExtractFunc =   { c.extract($0) }
   }
 
-  // ReceivingChannel implementation
+  // ReceiverType implementation
 
   private var  enclosedGetClosed: () -> Bool
   override var isClosed: Bool { return enclosedGetClosed() }
@@ -172,11 +172,11 @@ class EnclosedReceiver<T>: Receiver<T>
 }
 
 /**
-  WrappedReceiver<T,C> wraps an instance of any type C that implements ReceivingChannel,
+  WrappedReceiver<T,C> wraps an instance of any type C that implements ReceiverType,
   and makes it look like a subclass of Receiver<T>.
 */
 
-class WrappedReceiver<T, C: ReceivingChannel where C.ReceivedElement == T>: Receiver<T>
+class WrappedReceiver<T, C: ReceiverType where C.ReceivedElement == T>: Receiver<T>
 {
   private var wrapped: C
 
@@ -185,7 +185,7 @@ class WrappedReceiver<T, C: ReceivingChannel where C.ReceivedElement == T>: Rece
     wrapped = channel
   }
 
-  // ReceivingChannel wrappers
+  // ReceiverType wrappers
 
   override var isClosed: Bool { return wrapped.isClosed }
 

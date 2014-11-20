@@ -6,14 +6,20 @@
 //  Copyright (c) 2014 Guillaume Lessard. All rights reserved.
 //
 
+/**
+  Changing the various wait times (in worker() and in the workElements loop)
+  can illustrate the contention cases for multiple senders and multiple receivers.
+
+  The number of starts and stops of the senders and receivers queues is minimized
+  so as to avoid unnecessary out-of-order message transmissions. In the pthreads
+  case, randomness could be increased by substituting all calls to pthread_cond_signal
+  with calls to pthread_cond_broadcast instead.
+*/
+
 import Darwin
 //import Channels
 
-// Workaround for (presumably) a generics parser bug:
-typealias ReturnTuple = (Int,Int,Int)
-func worker<CI: ReceivingChannel, CO: SendingChannel
-            where CI.ReceivedElement == Int, CO.SentElement == ReturnTuple>
-           (inputChannel: CI, outputChannel: CO)
+func worker(inputChannel: Receiver<Int>, outputChannel: Sender<(Int,Int,Int)>)
 {
   var messageCount = 0
 
@@ -34,11 +40,10 @@ func worker<CI: ReceivingChannel, CO: SendingChannel
 var workChan = Channel<Int>.Make(1)
 var outChan  = Channel.Make(type: (0,0,0), 0)
 
-async { Time.Wait(10); worker(workChan.rx, outChan.tx) }
-async { Time.Wait(20); worker(workChan.rx, outChan.tx) }
-async { Time.Wait(30); worker(workChan.rx, outChan.tx) }
-async { Time.Wait(40); worker(workChan.rx, outChan.tx) }
-async { Time.Wait(50); worker(workChan.rx, outChan.tx) }
+for w in 1...5
+{
+  async { Time.Wait(w*10); worker(workChan.rx, outChan.tx) }
+}
 
 let workElements = 10;
 for a in 0..<workElements

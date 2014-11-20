@@ -10,7 +10,7 @@
   Sender<T> exposes the sending end of a channel.
 */
 
-public class Sender<T>: SendingChannel
+public class Sender<T>: SenderType
 {
   /**
     Return a new Sender<T> to stand in for SendingChannel c.
@@ -24,7 +24,7 @@ public class Sender<T>: SendingChannel
     :return:  A Sender object that will pass along the elements from c.
   */
 
-  public class func Wrap<C: SendingChannel where C.SentElement == T>(c: C) -> Sender<T>
+  public class func Wrap<C: SenderType where C.SentElement == T>(c: C) -> Sender<T>
   {
     if let c = c as? Sender<T>
     {
@@ -35,7 +35,7 @@ public class Sender<T>: SendingChannel
     return WrappedSender(c)
   }
 
-  // SendingChannel interface (abstract)
+  // SenderType interface (abstract)
 
   public var isClosed: Bool { return true }
 
@@ -85,7 +85,7 @@ class ChanSender<T>: Sender<T>
 
 class EnclosedSender<T>: Sender<T>
 {
-  init<C: SendingChannel where C.SentElement == T>(_ c: C)
+  init<C: SenderType where C.SentElement == T>(_ c: C)
   {
     enclosedGetClosed = { c.isClosed }
     enclosedCloseFunc = { c.close() }
@@ -118,7 +118,7 @@ class EnclosedSender<T>: Sender<T>
   The choice is probably a matter of larger binary code vs. larger memory use.
 */
 
-class WrappedSender<T, C: SendingChannel where C.SentElement == T>: Sender<T>
+class WrappedSender<T, C: SenderType where C.SentElement == T>: Sender<T>
 {
   private var wrapped: C
 

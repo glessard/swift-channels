@@ -27,7 +27,7 @@ infix operator <- { associativity left precedence 90}
   :return: the channel just written to, enabling multiple sends in one line.
 */
 
-public func <-<C: SendingChannel>(chan: C, element: C.SentElement) -> C
+public func <-<C: SenderType>(chan: C, element: C.SentElement) -> C
 {
   chan.send(element)
   return chan
@@ -51,7 +51,7 @@ prefix operator <- {}
   :return: the oldest element from the channel
 */
 
-public prefix func <-<C: ReceivingChannel>(var chan: C) -> C.ReceivedElement?
+public prefix func <-<C: ReceiverType>(var chan: C) -> C.ReceivedElement?
 {
   return chan.receive()
 }

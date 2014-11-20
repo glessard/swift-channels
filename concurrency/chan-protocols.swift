@@ -10,7 +10,7 @@
   The interface required for the receiving end of a channel.
 */
 
-public protocol ReceivingChannel: class, BasicChannel, GeneratorType, SequenceType
+public protocol ReceiverType: class, BasicChannelType, GeneratorType, SequenceType
 {
   typealias ReceivedElement
 
@@ -59,7 +59,7 @@ public protocol ReceivingChannel: class, BasicChannel, GeneratorType, SequenceTy
   The interface required for the sending end of a channel.
 */
 
-public protocol SendingChannel: class, BasicChannel
+public protocol SenderType: class, BasicChannelType
 {
   typealias SentElement
 
@@ -86,7 +86,7 @@ public protocol SendingChannel: class, BasicChannel
   Interface that any channel needs. Not useful by itself.
 */
 
-public protocol BasicChannel: class
+public protocol BasicChannelType: class
 {
   /**
     Report whether the channel has been closed
