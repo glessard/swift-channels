@@ -368,50 +368,6 @@ class Buffered1Chan<T>: BufferedChan<T>
 }
 
 /**
-  A one-element channel which will only ever transmit one message.
-  The first successful write operation also closes the channel.
-*/
-
-public class SingletonChan<T>: Buffered1Chan<T>
-{
-  public override init()
-  {
-    super.init()
-  }
-
-  /**
-    Append an element to the channel
-
-    This method will not block because only one send operation
-    can occur in the lifetime of a SingletonChan.
-
-    The first successful send will close the channel; further
-    send operations will have no effect.
-
-    :param: element the new element to be added to the channel.
-  */
-
-  override func write(newElement: T)
-  {
-    if self.isClosed { return }
-
-    pthread_mutex_lock(channelMutex)
-
-    if !self.isFull && !self.isClosed { writeElement(newElement) }
-
-    // Channel is not empty; signal this.
-    if blockedReaders > 0 { pthread_cond_signal(readCondition) }
-    pthread_mutex_unlock(channelMutex)
-  }
-  
-  private override func writeElement(newElement: T)
-  {
-    super.writeElement(newElement)
-    doClose()
-  }
-}
-
-/**
   The SelectionChannel methods for SelectChan
 */
 

@@ -17,6 +17,10 @@
 		032E6B8519BD23B500F4B44B /* Channels.h in Headers */ = {isa = PBXBuildFile; fileRef = 032E6B8419BD23B500F4B44B /* Channels.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		035DE14D19BEF47A00F4B44B /* BufferedNChannelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035DE14C19BEF47A00F4B44B /* BufferedNChannelTests.swift */; };
 		035DE14F19BEF6BC00F4B44B /* Buffered1ChannelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035DE14E19BEF6BC00F4B44B /* Buffered1ChannelTests.swift */; };
+		03B1686D1A1D10E600F4B44B /* chan-singleton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B1686C1A1D10E600F4B44B /* chan-singleton.swift */; };
+		03B1686E1A1D111000F4B44B /* chan-singleton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B1686C1A1D10E600F4B44B /* chan-singleton.swift */; };
+		03B1686F1A1D111100F4B44B /* chan-singleton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B1686C1A1D10E600F4B44B /* chan-singleton.swift */; };
+		03B168711A1D743500F4B44B /* SingletonChannelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B168701A1D743500F4B44B /* SingletonChannelTests.swift */; };
 		03D070FD19BEEF5200F4B44B /* UnbufferedChannelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D070FC19BEEF5200F4B44B /* UnbufferedChannelTests.swift */; };
 		03D070FF19BEEFC800F4B44B /* ChannelsPerformanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D070FE19BEEFC800F4B44B /* ChannelsPerformanceTests.swift */; };
 		03E10E2619BB6CD800F4B44B /* timing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035FDFE419A17E8B00F4B44B /* timing.swift */; };
@@ -95,6 +99,8 @@
 		0367EA5919A8F84A00F4B44B /* chan-sender.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = "chan-sender.swift"; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
 		039AF2DE1A16CC1A00F4B44B /* channel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = channel.swift; sourceTree = "<group>"; };
 		039AF2E01A16CDA900F4B44B /* chan-receiver.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "chan-receiver.swift"; sourceTree = "<group>"; };
+		03B1686C1A1D10E600F4B44B /* chan-singleton.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "chan-singleton.swift"; sourceTree = "<group>"; };
+		03B168701A1D743500F4B44B /* SingletonChannelTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SingletonChannelTests.swift; sourceTree = "<group>"; };
 		03B65B8819AFFC4D00F4B44B /* select-types.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "select-types.swift"; sourceTree = "<group>"; };
 		03D070FC19BEEF5200F4B44B /* UnbufferedChannelTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UnbufferedChannelTests.swift; sourceTree = "<group>"; };
 		03D070FE19BEEFC800F4B44B /* ChannelsPerformanceTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChannelsPerformanceTests.swift; sourceTree = "<group>"; };
@@ -175,6 +181,7 @@
 				03D070FC19BEEF5200F4B44B /* UnbufferedChannelTests.swift */,
 				035DE14E19BEF6BC00F4B44B /* Buffered1ChannelTests.swift */,
 				035DE14C19BEF47A00F4B44B /* BufferedNChannelTests.swift */,
+				03B168701A1D743500F4B44B /* SingletonChannelTests.swift */,
 				032E6B8C19BD23B600F4B44B /* Supporting Files */,
 			);
 			path = ChannelsTests;
@@ -232,6 +239,7 @@
 				035FDFDB19A17DD500F4B44B /* chan.swift */,
 				032384271A1C1A8500F4B44B /* chan-blocks.swift */,
 				036000DD19B4B11D00F4B44B /* chan-pthreads.swift */,
+				03B1686C1A1D10E600F4B44B /* chan-singleton.swift */,
 				0310D0F919A8627800F4B44B /* chan-protocols.swift */,
 				0367EA5919A8F84A00F4B44B /* chan-sender.swift */,
 				039AF2E01A16CDA900F4B44B /* chan-receiver.swift */,
@@ -402,6 +410,7 @@
 				0323842F1A1C1D5000F4B44B /* chan-pthreads.swift in Sources */,
 				03E284791A16E35A00F4B44B /* channel.swift in Sources */,
 				03E2847F1A16E35A00F4B44B /* chan-operators.swift in Sources */,
+				03B1686E1A1D111000F4B44B /* chan-singleton.swift in Sources */,
 				030A901919B5A2A800F4B44B /* timing.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -412,6 +421,7 @@
 			files = (
 				03E284821A16E35B00F4B44B /* async.swift in Sources */,
 				03E2848F1A172A5900F4B44B /* future.swift in Sources */,
+				03B1686F1A1D111100F4B44B /* chan-singleton.swift in Sources */,
 				03E284841A16E35B00F4B44B /* chan.swift in Sources */,
 				03E284871A16E35B00F4B44B /* chan-sender.swift in Sources */,
 				03E284881A16E35B00F4B44B /* chan-receiver.swift in Sources */,
@@ -438,6 +448,7 @@
 				03E284771A16E35900F4B44B /* queue.swift in Sources */,
 				03E284701A16E35900F4B44B /* chan.swift in Sources */,
 				03E284751A16E35900F4B44B /* chan-operators.swift in Sources */,
+				03B1686D1A1D10E600F4B44B /* chan-singleton.swift in Sources */,
 				03E284721A16E35900F4B44B /* chan-protocols.swift in Sources */,
 				03E2846F1A16E35900F4B44B /* channel.swift in Sources */,
 			);
@@ -447,6 +458,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				03B168711A1D743500F4B44B /* SingletonChannelTests.swift in Sources */,
 				035DE14D19BEF47A00F4B44B /* BufferedNChannelTests.swift in Sources */,
 				03D070FD19BEEF5200F4B44B /* UnbufferedChannelTests.swift in Sources */,
 				035DE14F19BEF6BC00F4B44B /* Buffered1ChannelTests.swift in Sources */,
