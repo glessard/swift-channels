@@ -17,6 +17,7 @@
 		032E6B8519BD23B500F4B44B /* Channels.h in Headers */ = {isa = PBXBuildFile; fileRef = 032E6B8419BD23B500F4B44B /* Channels.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		035DE14D19BEF47A00F4B44B /* BufferedNChannelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035DE14C19BEF47A00F4B44B /* BufferedNChannelTests.swift */; };
 		035DE14F19BEF6BC00F4B44B /* Buffered1ChannelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035DE14E19BEF6BC00F4B44B /* Buffered1ChannelTests.swift */; };
+		039FF9631A1E5BBF00F4B44B /* QueueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 039FF9621A1E5BBF00F4B44B /* QueueTests.swift */; };
 		03B1686D1A1D10E600F4B44B /* chan-singleton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B1686C1A1D10E600F4B44B /* chan-singleton.swift */; };
 		03B1686E1A1D111000F4B44B /* chan-singleton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B1686C1A1D10E600F4B44B /* chan-singleton.swift */; };
 		03B1686F1A1D111100F4B44B /* chan-singleton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B1686C1A1D10E600F4B44B /* chan-singleton.swift */; };
@@ -99,6 +100,7 @@
 		0367EA5919A8F84A00F4B44B /* chan-sender.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = "chan-sender.swift"; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
 		039AF2DE1A16CC1A00F4B44B /* channel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = channel.swift; sourceTree = "<group>"; };
 		039AF2E01A16CDA900F4B44B /* chan-receiver.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "chan-receiver.swift"; sourceTree = "<group>"; };
+		039FF9621A1E5BBF00F4B44B /* QueueTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = QueueTests.swift; sourceTree = "<group>"; };
 		03B1686C1A1D10E600F4B44B /* chan-singleton.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "chan-singleton.swift"; sourceTree = "<group>"; };
 		03B168701A1D743500F4B44B /* SingletonChannelTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SingletonChannelTests.swift; sourceTree = "<group>"; };
 		03B65B8819AFFC4D00F4B44B /* select-types.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "select-types.swift"; sourceTree = "<group>"; };
@@ -182,6 +184,7 @@
 				035DE14E19BEF6BC00F4B44B /* Buffered1ChannelTests.swift */,
 				035DE14C19BEF47A00F4B44B /* BufferedNChannelTests.swift */,
 				03B168701A1D743500F4B44B /* SingletonChannelTests.swift */,
+				039FF9621A1E5BBF00F4B44B /* QueueTests.swift */,
 				032E6B8C19BD23B600F4B44B /* Supporting Files */,
 			);
 			path = ChannelsTests;
@@ -459,6 +462,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				03B168711A1D743500F4B44B /* SingletonChannelTests.swift in Sources */,
+				039FF9631A1E5BBF00F4B44B /* QueueTests.swift in Sources */,
 				035DE14D19BEF47A00F4B44B /* BufferedNChannelTests.swift in Sources */,
 				03D070FD19BEEF5200F4B44B /* UnbufferedChannelTests.swift in Sources */,
 				035DE14F19BEF6BC00F4B44B /* Buffered1ChannelTests.swift in Sources */,

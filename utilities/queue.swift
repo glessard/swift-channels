@@ -10,21 +10,21 @@
   A simple queue, implemented as a linked list.
 */
 
-class Queue<T>: SequenceType, GeneratorType
+public class Queue<T>: SequenceType, GeneratorType
 {
   private var head: Node<T>?
   private var tail: Node<T>!
 
   private var size: Int = 0
 
-  init()
+  public init()
   {
     head = nil
     tail = nil
     size = 0
   }
 
-  init(newElement: T)
+  public init(newElement: T)
   {
     let newNode = Node<T>(newElement)
     head = newNode
@@ -32,48 +32,49 @@ class Queue<T>: SequenceType, GeneratorType
     size = 1
   }
 
-  var isEmpty: Bool { return head == nil }
+  public var isEmpty: Bool { return head == nil }
 
-  var count: Int { return size }
+  public var count: Int { return size }
 
-  func realCount() -> Int
+  public func realCount() -> Int
   {
     var i: Int = 0
     var node = head
 
-    while node != nil
+    while let n = node
     { // Iterate along the linked nodes while counting
-      node = node!.next
+      node = n.next
       i++
     }
 
-    assert(i == size, "Queue might have lost data")
+//    assert(i == size, "Queue might have lost data")
 
     return i
   }
 
-  func enqueue(newElement: T)
+  public func enqueue(newElement: T)
   {
     let newNode = Node<T>(newElement)
     size += 1
 
     if (head == nil)
     {
+//      assert(tail == nil, "Queue has a tail but no head")
+
       head = newNode
       tail = newNode
-      size = 1
       return
     }
 
     // tail can only be nil when head is nil.
-    assert(tail != nil, "Queue is missing its tail while not missing its head")
-    assert(tail.next == nil, "Queue tail is not the actual tail")
+//    assert(tail != nil, "Queue is missing its tail while not missing its head")
+//    assert(tail.next == nil, "Queue tail is not the actual tail")
 
     tail.next = newNode
     tail = newNode
   }
 
-  func dequeue() -> T?
+  public func dequeue() -> T?
   {
     if let oldhead = head
     {
@@ -94,14 +95,14 @@ class Queue<T>: SequenceType, GeneratorType
 
   // Implementation of GeneratorType
 
-  func next() -> T?
+  public func next() -> T?
   {
     return dequeue()
   }
 
   // Implementation of SequenceType
 
-  func generate() -> Self
+  public func generate() -> Self
   {
     return self
   }
