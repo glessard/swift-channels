@@ -203,4 +203,21 @@ class UnbufferedChannelTests: XCTestCase
 
     waitForExpectationsWithTimeout(2.0) { _ = $0; tx.close() }
   }
+
+  func testPerformanceWithContention()
+  {
+    var (tx, rx) = Channel<Int>.Make()
+
+    self.measureBlock() {
+      async {
+        for i in 0..<iterations
+        {
+          tx <- i
+        }
+        tx.close()
+      }
+
+      for m in rx { _ = m }
+    }
+  }
 }

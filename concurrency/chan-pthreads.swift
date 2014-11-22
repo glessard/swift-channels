@@ -6,7 +6,8 @@
 //  Copyright (c) 2014 Guillaume Lessard. All rights reserved.
 //
 
-import Dispatch
+//import Dispatch
+import Darwin
 
 /**
   The basis for our real channels
@@ -329,41 +330,6 @@ class BufferedAChan<T>: BufferedChan<T>
     buffer[index] = nil
     head += 1
     return oldElement
-  }
-}
-
-/**
-  A buffered channel with a one-element backing store.
-*/
-
-class Buffered1Chan<T>: BufferedChan<T>
-{
-  private var element: T?
-
-  override init()
-  {
-    element = nil
-  }
-
-  override func capacityFunc() -> Int { return 1 }
-
-  override func isEmptyFunc() -> Bool { return (element == nil) }
-
-  override func isFullFunc() -> Bool  { return (element != nil) }
-
-  private override func writeElement(newElement: T)
-  {
-    element = newElement
-  }
-
-  private override func readElement() ->T?
-  {
-    if let oldElement = self.element
-    {
-      self.element = nil
-      return oldElement
-    }
-    return nil
   }
 }
 

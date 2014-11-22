@@ -19,11 +19,29 @@ tic = Time()
 for i in 0..<iterations
 {
   buffered.tx <- i
-  _ = <-buffered.rx
+  if let r = <-buffered.rx
+  {
+    assert(r == i)
+  }
 }
-buffered.tx.close()
+//buffered.tx.close()
 
 println(tic.toc)
+
+tic = Time()
+
+async {
+  for i in 0..<iterations
+  {
+    buffered.tx <- i
+  }
+  buffered.tx.close()
+}
+
+while let a = <-buffered.rx { _ = a }
+
+println(tic.toc)
+
 
 let unbuffered = Channel<Int>.Make()
 

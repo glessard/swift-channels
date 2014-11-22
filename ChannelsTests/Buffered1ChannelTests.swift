@@ -167,22 +167,16 @@ class Buffered1ChannelTests: XCTestCase
     var (tx, _) = Channel<()>.Make(1)
 
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+      XCTAssert(!tx.isClosed, "Buffered(1) should not be closed")
       tx <- () <- ()
       expectation.fulfill()
 
-      // The following should have no effect
-      tx.close()
+      XCTAssert(tx.isClosed, "Buffered(1) should be closed")
     }
 
     dispatch_after(1_000_000_000, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-      if !tx.isClosed
-      {
-        tx.close()
-      }
-      else
-      {
-        XCTFail("Buffered(1) should not be closed")
-      }
+      XCTAssert(!tx.isClosed, "Buffered(1) should not be closed")
+      tx.close()
     }
 
     waitForExpectationsWithTimeout(2.0) { _ = $0; tx.close() }
@@ -217,5 +211,36 @@ class Buffered1ChannelTests: XCTestCase
     }
 
     waitForExpectationsWithTimeout(2.0) { _ = $0; rx.close() }
+  }
+
+  func testPerformanceNoContention()
+  {
+    var (tx, rx) = Channel<Int>.Make(1)
+
+    self.measureBlock() {
+      for i in 0..<iterations
+      {
+        tx <- i
+        _ = <-rx
+      }
+      tx.close()
+    }
+  }
+
+  func testPerformanceWithContention()
+  {
+    var (tx, rx) = Channel<Int>.Make(1)
+
+    self.measureBlock() {
+      async {
+        for i in 0..<iterations
+        {
+          tx <- i
+        }
+        tx.close()
+      }
+
+      for m in rx { _ = m }
+    }
   }
 }

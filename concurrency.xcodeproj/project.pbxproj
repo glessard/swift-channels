@@ -11,17 +11,28 @@
 		030A901919B5A2A800F4B44B /* timing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035FDFE419A17E8B00F4B44B /* timing.swift */; };
 		030A901A19B5A2A800F4B44B /* logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E44D1419A7A71200F4B44B /* logging.swift */; };
 		032066A819AC04D800F4B44B /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 032066A719AC04D800F4B44B /* main.swift */; };
-		0323842F1A1C1D5000F4B44B /* chan-pthreads.swift in Sources */ = {isa = PBXBuildFile; fileRef = 036000DD19B4B11D00F4B44B /* chan-pthreads.swift */; };
 		032384301A1C1D6100F4B44B /* chan-pthreads.swift in Sources */ = {isa = PBXBuildFile; fileRef = 036000DD19B4B11D00F4B44B /* chan-pthreads.swift */; };
 		032384311A1C1D6100F4B44B /* chan-pthreads.swift in Sources */ = {isa = PBXBuildFile; fileRef = 036000DD19B4B11D00F4B44B /* chan-pthreads.swift */; };
 		032E6B8519BD23B500F4B44B /* Channels.h in Headers */ = {isa = PBXBuildFile; fileRef = 032E6B8419BD23B500F4B44B /* Channels.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		033215741A20623C00F4B44B /* chan-buffered1.swift in Sources */ = {isa = PBXBuildFile; fileRef = 033215731A20623C00F4B44B /* chan-buffered1.swift */; };
 		035DE14D19BEF47A00F4B44B /* BufferedNChannelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035DE14C19BEF47A00F4B44B /* BufferedNChannelTests.swift */; };
 		035DE14F19BEF6BC00F4B44B /* Buffered1ChannelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035DE14E19BEF6BC00F4B44B /* Buffered1ChannelTests.swift */; };
 		039FF9631A1E5BBF00F4B44B /* QueueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 039FF9621A1E5BBF00F4B44B /* QueueTests.swift */; };
+		039FF9681A1E95D300F4B44B /* async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035FDFDD19A17DD500F4B44B /* async.swift */; };
+		039FF9691A1E95D300F4B44B /* channel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 039AF2DE1A16CC1A00F4B44B /* channel.swift */; };
+		039FF96A1A1E95D300F4B44B /* chan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035FDFDB19A17DD500F4B44B /* chan.swift */; };
+		039FF96D1A1E95D300F4B44B /* chan-protocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0310D0F919A8627800F4B44B /* chan-protocols.swift */; };
+		039FF96E1A1E95D300F4B44B /* chan-sender.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0367EA5919A8F84A00F4B44B /* chan-sender.swift */; };
+		039FF96F1A1E95D300F4B44B /* chan-receiver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 039AF2E01A16CDA900F4B44B /* chan-receiver.swift */; };
+		039FF9701A1E95D300F4B44B /* chan-operators.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035FDFE819A23FF700F4B44B /* chan-operators.swift */; };
+		039FF9711A1E95D300F4B44B /* queue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E44D1619A7AB5700F4B44B /* queue.swift */; };
 		03B1686D1A1D10E600F4B44B /* chan-singleton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B1686C1A1D10E600F4B44B /* chan-singleton.swift */; };
-		03B1686E1A1D111000F4B44B /* chan-singleton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B1686C1A1D10E600F4B44B /* chan-singleton.swift */; };
 		03B1686F1A1D111100F4B44B /* chan-singleton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B1686C1A1D10E600F4B44B /* chan-singleton.swift */; };
 		03B168711A1D743500F4B44B /* SingletonChannelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B168701A1D743500F4B44B /* SingletonChannelTests.swift */; };
+		03C0D0751A1EA2D400F4B44B /* chan-pthreads.swift in Sources */ = {isa = PBXBuildFile; fileRef = 036000DD19B4B11D00F4B44B /* chan-pthreads.swift */; };
+		03C0D0761A1EA2DE00F4B44B /* chan-singleton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B1686C1A1D10E600F4B44B /* chan-singleton.swift */; };
+		03C566341A20655700F4B44B /* chan-buffered1.swift in Sources */ = {isa = PBXBuildFile; fileRef = 033215731A20623C00F4B44B /* chan-buffered1.swift */; };
+		03C566351A20655800F4B44B /* chan-buffered1.swift in Sources */ = {isa = PBXBuildFile; fileRef = 033215731A20623C00F4B44B /* chan-buffered1.swift */; };
 		03D070FD19BEEF5200F4B44B /* UnbufferedChannelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D070FC19BEEF5200F4B44B /* UnbufferedChannelTests.swift */; };
 		03D070FF19BEEFC800F4B44B /* ChannelsPerformanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D070FE19BEEFC800F4B44B /* ChannelsPerformanceTests.swift */; };
 		03E10E2619BB6CD800F4B44B /* timing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035FDFE419A17E8B00F4B44B /* timing.swift */; };
@@ -33,14 +44,6 @@
 		03E284741A16E35900F4B44B /* chan-receiver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 039AF2E01A16CDA900F4B44B /* chan-receiver.swift */; };
 		03E284751A16E35900F4B44B /* chan-operators.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035FDFE819A23FF700F4B44B /* chan-operators.swift */; };
 		03E284771A16E35900F4B44B /* queue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E44D1619A7AB5700F4B44B /* queue.swift */; };
-		03E284781A16E35A00F4B44B /* async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035FDFDD19A17DD500F4B44B /* async.swift */; };
-		03E284791A16E35A00F4B44B /* channel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 039AF2DE1A16CC1A00F4B44B /* channel.swift */; };
-		03E2847A1A16E35A00F4B44B /* chan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035FDFDB19A17DD500F4B44B /* chan.swift */; };
-		03E2847C1A16E35A00F4B44B /* chan-protocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0310D0F919A8627800F4B44B /* chan-protocols.swift */; };
-		03E2847D1A16E35A00F4B44B /* chan-sender.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0367EA5919A8F84A00F4B44B /* chan-sender.swift */; };
-		03E2847E1A16E35A00F4B44B /* chan-receiver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 039AF2E01A16CDA900F4B44B /* chan-receiver.swift */; };
-		03E2847F1A16E35A00F4B44B /* chan-operators.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035FDFE819A23FF700F4B44B /* chan-operators.swift */; };
-		03E284811A16E35A00F4B44B /* queue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E44D1619A7AB5700F4B44B /* queue.swift */; };
 		03E284821A16E35B00F4B44B /* async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035FDFDD19A17DD500F4B44B /* async.swift */; };
 		03E284831A16E35B00F4B44B /* channel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 039AF2DE1A16CC1A00F4B44B /* channel.swift */; };
 		03E284841A16E35B00F4B44B /* chan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035FDFDB19A17DD500F4B44B /* chan.swift */; };
@@ -89,6 +92,7 @@
 		032E6B8419BD23B500F4B44B /* Channels.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Channels.h; sourceTree = "<group>"; };
 		032E6B8A19BD23B600F4B44B /* ChannelsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ChannelsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		032E6B8D19BD23B600F4B44B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		033215731A20623C00F4B44B /* chan-buffered1.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "chan-buffered1.swift"; sourceTree = "<group>"; };
 		033A1AA719B10F7100F4B44B /* defer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = defer.swift; sourceTree = "<group>"; };
 		035DE14C19BEF47A00F4B44B /* BufferedNChannelTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BufferedNChannelTests.swift; sourceTree = "<group>"; };
 		035DE14E19BEF6BC00F4B44B /* Buffered1ChannelTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Buffered1ChannelTests.swift; sourceTree = "<group>"; };
@@ -243,6 +247,7 @@
 				032384271A1C1A8500F4B44B /* chan-blocks.swift */,
 				036000DD19B4B11D00F4B44B /* chan-pthreads.swift */,
 				03B1686C1A1D10E600F4B44B /* chan-singleton.swift */,
+				033215731A20623C00F4B44B /* chan-buffered1.swift */,
 				0310D0F919A8627800F4B44B /* chan-protocols.swift */,
 				0367EA5919A8F84A00F4B44B /* chan-sender.swift */,
 				039AF2E01A16CDA900F4B44B /* chan-receiver.swift */,
@@ -402,19 +407,20 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				03E284781A16E35A00F4B44B /* async.swift in Sources */,
-				03E2847A1A16E35A00F4B44B /* chan.swift in Sources */,
-				03E2847D1A16E35A00F4B44B /* chan-sender.swift in Sources */,
-				03E2847E1A16E35A00F4B44B /* chan-receiver.swift in Sources */,
-				03E284811A16E35A00F4B44B /* queue.swift in Sources */,
-				03E2847C1A16E35A00F4B44B /* chan-protocols.swift in Sources */,
+				039FF9681A1E95D300F4B44B /* async.swift in Sources */,
+				039FF96A1A1E95D300F4B44B /* chan.swift in Sources */,
+				03C0D0761A1EA2DE00F4B44B /* chan-singleton.swift in Sources */,
+				039FF96E1A1E95D300F4B44B /* chan-sender.swift in Sources */,
+				039FF9711A1E95D300F4B44B /* queue.swift in Sources */,
 				030A900E19B5A28C00F4B44B /* main.swift in Sources */,
 				030A901A19B5A2A800F4B44B /* logging.swift in Sources */,
-				0323842F1A1C1D5000F4B44B /* chan-pthreads.swift in Sources */,
-				03E284791A16E35A00F4B44B /* channel.swift in Sources */,
-				03E2847F1A16E35A00F4B44B /* chan-operators.swift in Sources */,
-				03B1686E1A1D111000F4B44B /* chan-singleton.swift in Sources */,
+				03C0D0751A1EA2D400F4B44B /* chan-pthreads.swift in Sources */,
+				039FF9691A1E95D300F4B44B /* channel.swift in Sources */,
 				030A901919B5A2A800F4B44B /* timing.swift in Sources */,
+				03C566351A20655800F4B44B /* chan-buffered1.swift in Sources */,
+				039FF9701A1E95D300F4B44B /* chan-operators.swift in Sources */,
+				039FF96F1A1E95D300F4B44B /* chan-receiver.swift in Sources */,
+				039FF96D1A1E95D300F4B44B /* chan-protocols.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -432,6 +438,7 @@
 				03E2848B1A16E35B00F4B44B /* queue.swift in Sources */,
 				03E284861A16E35B00F4B44B /* chan-protocols.swift in Sources */,
 				032384301A1C1D6100F4B44B /* chan-pthreads.swift in Sources */,
+				03C566341A20655700F4B44B /* chan-buffered1.swift in Sources */,
 				032066A819AC04D800F4B44B /* main.swift in Sources */,
 				03E10E2619BB6CD800F4B44B /* timing.swift in Sources */,
 				03E284831A16E35B00F4B44B /* channel.swift in Sources */,
@@ -446,6 +453,7 @@
 			files = (
 				03E284741A16E35900F4B44B /* chan-receiver.swift in Sources */,
 				03E284731A16E35900F4B44B /* chan-sender.swift in Sources */,
+				033215741A20623C00F4B44B /* chan-buffered1.swift in Sources */,
 				032384311A1C1D6100F4B44B /* chan-pthreads.swift in Sources */,
 				03E284911A17303900F4B44B /* async.swift in Sources */,
 				03E284771A16E35900F4B44B /* queue.swift in Sources */,
@@ -489,7 +497,7 @@
 		030A901119B5A28C00F4B44B /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_OPTIMIZATION_LEVEL = s;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 			};
@@ -613,10 +621,11 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_OPTIMIZATION_LEVEL = 3;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
@@ -632,7 +641,7 @@
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
 			};
 			name = Debug;
 		};
@@ -653,7 +662,7 @@
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				COPY_PHASE_STRIP = YES;
+				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -666,6 +675,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				MTL_ENABLE_DEBUG_INFO = NO;
+				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 			};

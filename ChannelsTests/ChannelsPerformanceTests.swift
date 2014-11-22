@@ -12,8 +12,8 @@ import XCTest
 
 import Channels
 
-private let iterations = 100_000
-private let buflen = iterations/100
+let iterations = 100_000
+let buflen = iterations/100
 
 // These are the same as chan-benchmark/main.swift (and chan-benchmark/chan-benchmark.go)
 
