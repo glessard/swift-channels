@@ -55,8 +55,6 @@ public class SingletonChan<T>: Chan<T>
 
     readCondition = UnsafeMutablePointer<pthread_cond_t>.alloc(1)
     pthread_cond_init(readCondition, nil)
-
-    closed = false
   }
 
   deinit
@@ -96,8 +94,8 @@ public class SingletonChan<T>: Chan<T>
     Any items still in the channel remain and can be retrieved.
     New items cannot be added to a closed channel.
 
-    It could be considered an error to close a channel that has already been closed.
-    The actual reaction shall be implementation-dependent.
+    It could be considered an error to close a channel that has already
+    been closed. This implementation doesn't do anything.
   */
 
   override func close()
@@ -106,10 +104,12 @@ public class SingletonChan<T>: Chan<T>
 
     closed = true
 
-    // Unblock the threads waiting on our conditions.
+    // Unblock any thread waiting on our conditions.
     if blockedReaders > 0
     {
+      pthread_mutex_lock(channelMutex)
       pthread_cond_signal(readCondition)
+      pthread_mutex_unlock(channelMutex)
     }
   }
   
@@ -129,14 +129,16 @@ public class SingletonChan<T>: Chan<T>
   {
     let writer = OSAtomicIncrement64Barrier(&writerCount)
 
-    if writer != 0 { return }
+    if writer != 0
+    { // if writer is not 0, this call is happening too late.
+      return
+    }
 
     element = newElement
     OSAtomicIncrement64Barrier(&elementsWritten)
-
     close()
 
-    // Channel is not empty; signal this.
+    // Channel is not empty; unblock any waiting thread.
     if blockedReaders > 0
     {
       pthread_mutex_lock(channelMutex)
@@ -156,11 +158,11 @@ public class SingletonChan<T>: Chan<T>
 
   override func read() -> T?
   {
-    if self.isEmpty && !self.isClosed
+    if (elementsWritten < 0) && !self.isClosed
     {
       pthread_mutex_lock(channelMutex)
       // block until the channel is no longer empty
-      while self.isEmpty && !self.isClosed
+      while (elementsWritten < 0) && !self.isClosed
       {
         blockedReaders += 1
         pthread_cond_wait(readCondition, channelMutex)
@@ -182,19 +184,20 @@ public class SingletonChan<T>: Chan<T>
     return oldElement
   }
 
-  private func readElement(reader: Int64) -> T?
+  private final func readElement(reader: Int64) -> T?
   {
     if reader == 0
     {
       let oldElement = self.element
+      OSAtomicIncrement64Barrier(&elementsRead)
       // Whether to set self.element to nil is an interesting question.
       // If T is a reference type (or otherwise contains a reference), then
-      // setting to nil is desirable to avoid unnecessarily extending the
+      // nulling is desirable to in order to avoid unnecessarily extending the
       // lifetime of the referred-to element.
-      // In the case of SingletonChan, there is no contention when writing
-      // to self.element; in other implementations, this will be different.
+      // In the case of SingletonChan, there is no contention at this point
+      // when writing to self.element, nor is there the possibility of a 
+      // flurry of messages. In other implementations, this will be different.
       self.element = nil
-      OSAtomicIncrement64Barrier(&elementsRead)
       return oldElement
     }
     return nil
