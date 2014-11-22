@@ -18,7 +18,6 @@ public class SingletonChan<T>: Chan<T>
   public class func Make() -> (tx: Sender<T>, rx: Receiver<T>)
   {
     let channel = SingletonChan()
-
     return (ChanSender(channel), ChanReceiver(channel))
   }
 
@@ -78,7 +77,7 @@ public class SingletonChan<T>: Chan<T>
 
   override func isFullFunc() -> Bool
   {
-    return elementsWritten - elementsRead >= capacityFunc()
+    return elementsWritten > elementsRead
   }
 
   override func capacityFunc() -> Int
@@ -140,7 +139,9 @@ public class SingletonChan<T>: Chan<T>
     // Channel is not empty; signal this.
     if blockedReaders > 0
     {
+      pthread_mutex_lock(channelMutex)
       pthread_cond_signal(readCondition)
+      pthread_mutex_unlock(channelMutex)
     }
   }
 
@@ -155,13 +156,11 @@ public class SingletonChan<T>: Chan<T>
 
   override func read() -> T?
   {
-    let reader = OSAtomicIncrement64Barrier(&readerCount)
-
-    while self.isEmpty && !self.isClosed
-    { // block until the channel is no longer empty
+    if self.isEmpty && !self.isClosed
+    {
       pthread_mutex_lock(channelMutex)
-      // necessary to check again, in case acquiring the mutex took a long time
-      if self.isEmpty && !self.isClosed
+      // block until the channel is no longer empty
+      while self.isEmpty && !self.isClosed
       {
         blockedReaders += 1
         pthread_cond_wait(readCondition, channelMutex)
@@ -170,11 +169,14 @@ public class SingletonChan<T>: Chan<T>
       pthread_mutex_unlock(channelMutex)
     }
 
+    let reader = OSAtomicIncrement64Barrier(&readerCount)
     let oldElement: T? = readElement(reader)
 
-    if self.isClosed && blockedReaders > 0
+    if blockedReaders > 0
     {
+      pthread_mutex_lock(channelMutex)
       pthread_cond_signal(readCondition)
+      pthread_mutex_unlock(channelMutex)
     }
 
     return oldElement

@@ -49,12 +49,6 @@ public class Channel<T>
     return (ChanSender(channel), ChanReceiver(channel))
   }
 
-  public class func MakeSingleton() -> (tx: Sender<T>, rx: Receiver<T>)
-  {
-    let channel = SingletonChan<T>()
-    return (ChanSender(channel), ChanReceiver(channel))
-  }
-
   /**
     Factory function to obtain a new Chan<T> object, using a sample element to determine the type.
 
@@ -67,5 +61,15 @@ public class Channel<T>
   public class func Make(#type: T, _ capacity: Int = 0) -> (tx: Sender<T>, rx: Receiver<T>)
   {
     return Make(capacity)
+  }
+
+  public class func MakeSingleton() -> (tx: Sender<T>, rx: Receiver<T>)
+  {
+    return SingletonChan<T>.Make()
+  }
+
+  public class func MakeSingleton(#type: T) -> (tx: Sender<T>, rx: Receiver<T>)
+  {
+    return MakeSingleton()
   }
 }

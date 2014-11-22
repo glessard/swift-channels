@@ -7,7 +7,6 @@
 //
 
 import Darwin
-import Foundation
 import XCTest
 
 import Channels
@@ -26,7 +25,7 @@ class SingletonChannelTests: XCTestCase
     tx <- value
     let result = <-rx
 
-    XCTAssert(result == value, "Pass")
+    XCTAssert(result == value, "Incorrect value obtained from channel.")
   }
 
   /**
@@ -42,8 +41,8 @@ class SingletonChannelTests: XCTestCase
     let result1 = <-rx
     let result2 = <-rx
 
-    XCTAssert(result1 == value, "Pass")
-    XCTAssert(result2 == nil, "Pass")
+    XCTAssert(result1 == value, "Incorrect value obtained from channel.")
+    XCTAssert(result2 == nil, "Non-nil value incorrectly obtained from channel.")
   }
 
   /**
@@ -68,7 +67,7 @@ class SingletonChannelTests: XCTestCase
       last = i
     }
 
-    XCTAssert(last == 0, "Pass")
+    XCTAssert(last == 0, "Incorrect number of messages received from channel")
   }
   
   /**
@@ -77,7 +76,7 @@ class SingletonChannelTests: XCTestCase
 
   func testReceiveFirst()
   {
-    let expectation = expectationWithDescription("Buffered(1) Receive then Send")
+    let expectation = expectationWithDescription("Singleton Channel Receive then Send")
     var (tx,rx) = SingletonChan.Make(type: expectation)
 
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
@@ -105,7 +104,7 @@ class SingletonChannelTests: XCTestCase
 
   func testSendFirst()
   {
-    let expectation = expectationWithDescription("Buffered(1) Send then Receive")
+    let expectation = expectationWithDescription("Singleton Channel Send then Receive")
     var (tx, rx) = SingletonChan.Make(type: expectation)
 
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
@@ -120,47 +119,11 @@ class SingletonChannelTests: XCTestCase
       }
       else
       {
-        XCTFail("buffered receive should have received non-nil element")
+        XCTFail("singleton channel receive should have received non-nil element")
       }
     }
 
     waitForExpectationsWithTimeout(2.0) { _ = $0; tx.close() }
-  }
-
-  /**
-    Block on send, then verify the data was transmitted unchanged.
-  */
-
-  func testBlockedSend()
-  {
-    let expectation = expectationWithDescription("Buffered(1) blocked Send, verified reception")
-    var (tx, rx) = Channel<UInt32>.Make(1)
-
-    var valsent = arc4random()
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-      valsent = arc4random()
-      tx <- arc4random() <- valsent
-      tx.close()
-    }
-
-    var valrecd = arc4random()
-    dispatch_after(1_000_000_000, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-      if !rx.isClosed
-      {
-        while let v = <-rx
-        {
-          valrecd = v
-        }
-        expectation.fulfill()
-      }
-      else
-      {
-        XCTFail("Channel should not be closed")
-      }
-    }
-
-    waitForExpectationsWithTimeout(2.0) { _ = $0; tx.close() }
-    XCTAssert(valsent == valrecd, "\(valsent) ≠ \(valrecd) in buffered(1)")
   }
 
   /**
@@ -169,8 +132,8 @@ class SingletonChannelTests: XCTestCase
 
   func testBlockedReceive()
   {
-    let expectation = expectationWithDescription("Buffered(1) blocked Receive, verified reception")
-    var (tx, rx) = Channel<UInt32>.Make(1)
+    let expectation = expectationWithDescription("Singleton Channel blocked Receive, verified reception")
+    var (tx, rx) = Channel<UInt32>.MakeSingleton()
 
     var valrecd = arc4random()
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
@@ -178,6 +141,7 @@ class SingletonChannelTests: XCTestCase
       {
         valrecd = v
       }
+      XCTAssert(rx.isClosed, "Singleton Channel should be closed after first receive")
       expectation.fulfill()
     }
 
@@ -187,7 +151,6 @@ class SingletonChannelTests: XCTestCase
       {
         valsent = arc4random()
         tx <- valsent
-        tx.close()
       }
       else
       {
@@ -196,7 +159,7 @@ class SingletonChannelTests: XCTestCase
     }
 
     waitForExpectationsWithTimeout(2.0) { _ = $0; tx.close() }
-    XCTAssert(valsent == valrecd, "\(valsent) ≠ \(valrecd) in buffered(1)")
+    XCTAssert(valsent == valrecd, "\(valsent) ≠ \(valrecd) in Singleton Channel")
   }
 
   /**
@@ -205,26 +168,20 @@ class SingletonChannelTests: XCTestCase
 
   func testNoReceiver()
   {
-    let expectation = expectationWithDescription("Buffered(1) Send, no Receiver")
-    var (tx, _) = Channel<()>.Make(1)
+    let expectation = expectationWithDescription("Singleton Channel Send, no Receiver")
+    var (tx, _) = Channel<()>.MakeSingleton()
 
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+      XCTAssert(!tx.isClosed, "Singleton channel should be open")
+
       tx <- () <- ()
       expectation.fulfill()
 
-      // The following should have no effect
-      tx.close()
+      XCTAssert(tx.isClosed, "Singleton channel should be closed")
     }
 
     dispatch_after(1_000_000_000, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-      if !tx.isClosed
-      {
-        tx.close()
-      }
-      else
-      {
-        XCTFail("Buffered(1) should not be closed")
-      }
+      XCTAssert(tx.isClosed, "Singleton channel should be closed")
     }
 
     waitForExpectationsWithTimeout(2.0) { _ = $0; tx.close() }
@@ -236,8 +193,8 @@ class SingletonChannelTests: XCTestCase
 
   func testNoSender()
   {
-    let expectation = expectationWithDescription("Buffered(1) Receive, no Sender")
-    var (_, rx) = Channel<Int>.Make(1)
+    let expectation = expectationWithDescription("Singleton Channel Receive, no Sender")
+    var (_, rx) = Channel<Int>.MakeSingleton()
 
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
       while let v = <-rx
@@ -254,7 +211,7 @@ class SingletonChannelTests: XCTestCase
       }
       else
       {
-        XCTFail("Buffered(1) should not be closed")
+        XCTFail("Singleton Channel should not be closed")
       }
     }
 
