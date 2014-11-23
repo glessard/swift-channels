@@ -24,9 +24,12 @@ for i in 0..<iterations
     assert(r == i)
   }
 }
-//buffered.tx.close()
+buffered.tx.close()
 
 println(tic.toc)
+
+
+buffered = Channel<Int>.Make(1)
 
 tic = Time()
 

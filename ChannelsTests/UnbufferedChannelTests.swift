@@ -34,7 +34,7 @@ class UnbufferedChannelTests: XCTestCase
       }
     }
 
-    dispatch_after(1_000_000_000, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
       tx <- expectation
       tx.close()
     }
@@ -56,7 +56,7 @@ class UnbufferedChannelTests: XCTestCase
       tx.close()
     }
 
-    dispatch_after(1_000_000_000, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
       if let x = <-rx
       {
         x.fulfill()
@@ -87,7 +87,7 @@ class UnbufferedChannelTests: XCTestCase
     }
 
     var valrecd = UInt32.max-1
-    dispatch_after(1_000_000_000, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
       if !rx.isClosed
       {
         while let v = <-rx
@@ -125,7 +125,7 @@ class UnbufferedChannelTests: XCTestCase
     }
 
     var valsent = UInt32.max
-    dispatch_after(1_000_000_000, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
       if !tx.isClosed
       {
         valsent = arc4random()
@@ -159,7 +159,7 @@ class UnbufferedChannelTests: XCTestCase
       tx.close()
     }
 
-    dispatch_after(1_000_000_000, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
       if !rx.isClosed
       {
         rx.close()
@@ -190,7 +190,7 @@ class UnbufferedChannelTests: XCTestCase
       expectation.fulfill()
     }
 
-    dispatch_after(1_000_000_000, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
       if !tx.isClosed
       {
         tx.close()

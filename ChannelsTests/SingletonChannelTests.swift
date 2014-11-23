@@ -90,7 +90,7 @@ class SingletonChannelTests: XCTestCase
       }
     }
 
-    dispatch_after(1_000_000_000, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
       tx <- expectation
       tx.close()
     }
@@ -112,7 +112,7 @@ class SingletonChannelTests: XCTestCase
       tx.close()
     }
 
-    dispatch_after(1_000_000_000, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
       if let x = <-rx
       {
         x.fulfill()
@@ -146,7 +146,7 @@ class SingletonChannelTests: XCTestCase
     }
 
     var valsent = arc4random()
-    dispatch_after(1_000_000_000, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
       if !tx.isClosed
       {
         valsent = arc4random()
@@ -172,7 +172,7 @@ class SingletonChannelTests: XCTestCase
     var (tx, _) = Channel<()>.MakeSingleton()
 
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-      XCTAssert(!tx.isClosed, "Singleton channel should be open")
+      XCTAssert(tx.isClosed == false, "Singleton channel should be open")
 
       tx <- () <- ()
       expectation.fulfill()
@@ -180,7 +180,7 @@ class SingletonChannelTests: XCTestCase
       XCTAssert(tx.isClosed, "Singleton channel should be closed")
     }
 
-    dispatch_after(1_000_000_000, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
       XCTAssert(tx.isClosed, "Singleton channel should be closed")
     }
 
@@ -204,15 +204,9 @@ class SingletonChannelTests: XCTestCase
       expectation.fulfill()
     }
 
-    dispatch_after(1_000_000_000, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-      if !rx.isClosed
-      {
-        rx.close()
-      }
-      else
-      {
-        XCTFail("Singleton Channel should not be closed")
-      }
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+      XCTAssert(rx.isClosed == false, "Singleton channel should be open")
+      rx.close()
     }
 
     waitForExpectationsWithTimeout(2.0) { _ = $0; rx.close() }

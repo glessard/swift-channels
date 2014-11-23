@@ -49,7 +49,7 @@ class Buffered1ChannelTests: XCTestCase
       }
     }
 
-    dispatch_after(1_000_000_000, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
       tx <- expectation
       tx.close()
     }
@@ -71,7 +71,7 @@ class Buffered1ChannelTests: XCTestCase
       tx.close()
     }
 
-    dispatch_after(1_000_000_000, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
       if let x = <-rx
       {
         x.fulfill()
@@ -102,19 +102,14 @@ class Buffered1ChannelTests: XCTestCase
     }
 
     var valrecd = arc4random()
-    dispatch_after(1_000_000_000, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-      if !rx.isClosed
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+      XCTAssert(tx.isClosed == false, "Buffered(1) should not be closed")
+
+      while let v = <-rx
       {
-        while let v = <-rx
-        {
-          valrecd = v
-        }
-        expectation.fulfill()
+        valrecd = v
       }
-      else
-      {
-        XCTFail("Channel should not be closed")
-      }
+      expectation.fulfill()
     }
 
     waitForExpectationsWithTimeout(2.0) { _ = $0; tx.close() }
@@ -140,17 +135,12 @@ class Buffered1ChannelTests: XCTestCase
     }
 
     var valsent = arc4random()
-    dispatch_after(1_000_000_000, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-      if !tx.isClosed
-      {
-        valsent = arc4random()
-        tx <- valsent
-        tx.close()
-      }
-      else
-      {
-        XCTFail("Channel should not be closed")
-      }
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+      XCTAssert(tx.isClosed == false, "Buffered(1) should not be closed")
+
+      valsent = arc4random()
+      tx <- valsent
+      tx.close()
     }
 
     waitForExpectationsWithTimeout(2.0) { _ = $0; tx.close() }
@@ -167,15 +157,15 @@ class Buffered1ChannelTests: XCTestCase
     var (tx, _) = Channel<()>.Make(1)
 
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-      XCTAssert(!tx.isClosed, "Buffered(1) should not be closed")
+      XCTAssert(tx.isClosed == false, "Buffered(1) should not be closed")
       tx <- () <- ()
       expectation.fulfill()
 
       XCTAssert(tx.isClosed, "Buffered(1) should be closed")
     }
 
-    dispatch_after(1_000_000_000, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-      XCTAssert(!tx.isClosed, "Buffered(1) should not be closed")
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+      XCTAssert(tx.isClosed == false, "Buffered(1) should not be closed")
       tx.close()
     }
 
@@ -199,15 +189,9 @@ class Buffered1ChannelTests: XCTestCase
       expectation.fulfill()
     }
 
-    dispatch_after(1_000_000_000, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-      if !rx.isClosed
-      {
-        rx.close()
-      }
-      else
-      {
-        XCTFail("Buffered(1) should not be closed")
-      }
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+      XCTAssert(rx.isClosed == false, "Buffered(1) should not be closed")
+      rx.close()
     }
 
     waitForExpectationsWithTimeout(2.0) { _ = $0; rx.close() }

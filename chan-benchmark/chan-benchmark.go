@@ -20,6 +20,22 @@ func main() {
 	fmt.Println(time.Since(then))
 
 
+	buffered = make(chan int, 1)
+
+	then = time.Now()
+
+	go func() {
+		for i:=0; i<iterations; i++ {
+			buffered <- i
+		}
+		close(buffered)
+	}()
+
+	for a := range(buffered) { _ = a }
+
+	fmt.Println(time.Since(then))
+
+
 	unbuffered := make(chan int)
 
 	then = time.Now()
