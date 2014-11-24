@@ -52,6 +52,18 @@ public class Receiver<T>: ReceiverType, GeneratorType, SequenceType
     return ChanReceiver(c)
   }
 
+  /**
+    Return a new Receiver<T> to act as the receiving enpoint for a ChannelType.
+
+    :param: c A object that implements ChannelType
+    :return:  A Receiver<T> object that will receive elements from c
+  */
+
+  class func Wrap<C: ChannelType where C.ElementType == T>(c: C) -> Receiver<T>
+  {
+    return ChannelReceiver(c)
+  }
+
   // Make sure this doesn't get instantiated lightly.
 
   private init() { }

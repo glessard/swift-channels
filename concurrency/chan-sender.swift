@@ -47,6 +47,18 @@ public class Sender<T>: SenderType
     return ChanSender(c)
   }
 
+  /**
+    Return a new Sender<T> to act as the sending enpoint for a ChannelType
+
+    :param: c An object that implements ChannelType
+    :return:  A Sender<T> object that will send elements to c
+  */
+
+  class func Wrap<C: ChannelType where C.ElementType == T>(c: C) -> Sender<T>
+  {
+    return ChannelSender(c)
+  }
+
   // Make sure this doesn't get instantiated lightly.
 
   private init() { }
