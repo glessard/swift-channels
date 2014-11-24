@@ -13,7 +13,7 @@ import Darwin
   the first successful write operation closes the channel.
 */
 
-public class SingletonChan<T>: Chan<T>
+public final class SingletonChan<T>: Chan<T>
 {
   public class func Make() -> (tx: Sender<T>, rx: Receiver<T>)
   {

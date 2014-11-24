@@ -12,7 +12,7 @@ import Darwin
   A channel that uses a 1-element buffer.
 */
 
-public class Buffered1Chan<T>: Chan<T>
+final class Buffered1Chan<T>: Chan<T>
 {
   private var element: T?
 
@@ -33,7 +33,7 @@ public class Buffered1Chan<T>: Chan<T>
 
   // Initialization and destruction
 
-  public override init()
+  override init()
   {
     element = nil
 
