@@ -35,6 +35,22 @@ public class Sender<T>: SenderType
     return WrappedSender(c)
   }
 
+  /**
+    Return a new Sender<T> to act as the sending enpoint for a Chan<T>.
+
+    :param: c A Chan<T> object
+    :return:  A Sender<T> object that will send elements to the Chan<T>
+  */
+
+  class func Wrap(c: Chan<T>) -> Sender<T>
+  {
+    return ChanSender(c)
+  }
+
+  // Make sure this doesn't get instantiated lightly.
+
+  private init() { }
+
   // SenderType interface (abstract)
 
   public var isClosed: Bool { return true }

@@ -17,7 +17,7 @@
 public class Receiver<T>: ReceiverType, GeneratorType, SequenceType
 {
   /**
-    Return a new ReadChan<T> to stand in for ReceiverType c.
+    Return a new Receiver<T> to stand in for ReceiverType c.
 
     If c is a (subclass of) Receiver, c will be returned directly.
 
@@ -39,6 +39,22 @@ public class Receiver<T>: ReceiverType, GeneratorType, SequenceType
 //    return EnclosedReceiver(c)
     return WrappedReceiver(c)
   }
+
+  /**
+    Return a new Receiver<T> to act as the receiving enpoint for a Chan<T>.
+  
+    :param: c A Chan<T> object
+    :return:  A Receiver<T> object that will receive elements from the Chan<T>
+  */
+
+  class func Wrap(c: Chan<T>) -> Receiver<T>
+  {
+    return ChanReceiver(c)
+  }
+
+  // Make sure this doesn't get instantiated lightly.
+
+  private init() { }
 
   // ReceiverType interface (abstract)
 
@@ -74,8 +90,7 @@ public class Receiver<T>: ReceiverType, GeneratorType, SequenceType
 }
 
 /**
-  WrappedReadChan<T> wraps a Chan<T> and effectively hides its
-  SendingChannel implementation, effectively making the channel one-way only.
+  ChanReceiver<T> wraps a Chan<T> to become its receiving endpoint.
 */
 
 class ChanReceiver<T>: Receiver<T>

@@ -46,7 +46,7 @@ public class Channel<T>
         channel = BufferedQChan<T>(capacity)
     }
 
-    return (ChanSender(channel), ChanReceiver(channel))
+    return (Sender.Wrap(channel), Receiver.Wrap(channel))
   }
 
   /**
