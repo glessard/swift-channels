@@ -125,7 +125,7 @@ public final class SingletonChan<T>: Chan<T>
     :param: element the new element to be added to the channel.
   */
 
-  override func write(newElement: T)
+  override func put(newElement: T)
   {
     let writer = OSAtomicIncrement64Barrier(&writerCount)
 
@@ -156,7 +156,7 @@ public final class SingletonChan<T>: Chan<T>
     :return: the oldest element from the channel.
   */
 
-  override func read() -> T?
+  override func take() -> T?
   {
     if (elementsWritten < 0) && !self.isClosed
     {

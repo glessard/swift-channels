@@ -116,7 +116,7 @@ final class Buffered1Chan<T>: Chan<T>
     :param: element the new element to be added to the channel.
   */
 
-  override func write(newElement: T)
+  override func put(newElement: T)
   {
     if self.closed { return }
 
@@ -156,7 +156,7 @@ final class Buffered1Chan<T>: Chan<T>
     :return: the oldest element from the channel.
   */
 
-  override func read() -> T?
+  override func take() -> T?
   {
     pthread_mutex_lock(channelMutex)
 

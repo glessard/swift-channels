@@ -126,13 +126,13 @@ class BufferedChan<T>: pthreadChan<T>
     :param: element the new element to be added to the channel.
   */
 
-  override func write(newElement: T)
+  override func put(newElement: T)
   {
     if self.isClosed { return }
 
     pthread_mutex_lock(channelMutex)
 
-//    log("writer \(newElement) is trying to send")
+//    syncprint("writer \(newElement) is trying to send")
 
     while self.isFull && !self.isClosed
     { // wait while the channel is full
@@ -145,7 +145,7 @@ class BufferedChan<T>: pthreadChan<T>
     // the queue is "full". Don't overflow.
     if !self.isFull { writeElement(newElement) }
 
-//    log("writer \(newElement) has successfully sent")
+//    syncprint("writer \(newElement) has successfully sent")
 
     // Channel is not empty; signal this.
     if blockedReaders > 0 { pthread_cond_signal(readCondition) }
@@ -173,12 +173,12 @@ class BufferedChan<T>: pthreadChan<T>
     :return: the oldest element from the channel.
   */
 
-  override func read() -> T?
+  override func take() -> T?
   {
     pthread_mutex_lock(channelMutex)
 
 //    let id = readerCount++
-//    log("reader \(id) is trying to receive")
+//    syncprint("reader \(id) is trying to receive")
 
     while self.isEmpty && !self.isClosed
     { // block while the channel is empty
@@ -194,7 +194,7 @@ class BufferedChan<T>: pthreadChan<T>
     if self.isClosed && blockedReaders > 0 { pthread_cond_signal(readCondition) }
     pthread_mutex_unlock(channelMutex)
 
-//    log("reader \(id) received \(oldElement)")
+//    syncprint("reader \(id) received \(oldElement)")
 
     return oldElement
   }
@@ -384,6 +384,9 @@ class UnbufferedChan<T>: pthreadChan<T>
 {
   private var element: T?
 
+  private var elementsWritten: Int64 = -1
+  private var elementsRead: Int64 = -1
+
   override init()
   {
     element = nil
@@ -410,23 +413,12 @@ class UnbufferedChan<T>: pthreadChan<T>
   override func isFullFunc() -> Bool  { return true }
 
   /**
-    Tell whether the channel is ready to transfer data.
-
-    An unbuffered channel should always look empty to an external observer.
-    What is relevant internally is whether the data "is ready" to be transferred to a receiver.
-
-    :return: whether the data is ready for a receive operation.
-  */
-
-  final var isReady: Bool { return (element != nil) }
-
-  /**
     Close the channel
   */
 
   private override func doClose()
   {
-//    log("closing 0-channel")
+//    syncprint("closing 0-channel")
     super.doClose()
   }
   
@@ -439,43 +431,35 @@ class UnbufferedChan<T>: pthreadChan<T>
     :param: element the new element to be added to the channel.
   */
 
-  override func write(newElement: T)
+  override func put(newElement: T)
   {
-    if self.isClosed { return }
+    if self.closed { return }
 
     pthread_mutex_lock(channelMutex)
 
-//    log("writer \(newElement) is trying to send")
+//    syncprint("writer \(newElement) is trying to send")
 
-    while ( blockedReaders == 0 || self.isReady ) && !self.isClosed
+    while ( blockedReaders == 0 || elementsWritten > elementsRead ) && !self.closed
     { // wait while no reader is ready.
       blockedWriters += 1
       pthread_cond_wait(writeCondition, channelMutex)
       blockedWriters -= 1
     }
 
-    assert(!self.isReady || self.isClosed, "Messed up an unbuffered send")
+    assert(elementsWritten <= elementsRead || self.closed, "Messed up an unbuffered send")
 
-    writeElement(newElement)
-
-//    log("writer \(newElement) has successfully sent")
+    if !self.closed
+    {
+      self.element = newElement
+      elementsWritten += 1
+      //    syncprint("writer \(newElement) has successfully sent")
+    }
 
     // Surely we can interest a reader
     assert(blockedReaders > 0 || self.isClosed, "No reader available!")
     pthread_cond_signal(readCondition)
-    if self.isClosed && blockedWriters > 0 { pthread_cond_signal(writeCondition) }
+    if self.closed && blockedWriters > 0 { pthread_cond_signal(writeCondition) }
     pthread_mutex_unlock(channelMutex)
-  }
-
-  /**
-    Write an element to the channel buffer, specific implementation.
-    This is used within send(newElement: T).
-    By *definition*, this method is called while a mutex is locked.
-  */
-
-  private func writeElement(newElement: T)
-  {
-    element = newElement
   }
 
   /**
@@ -487,14 +471,14 @@ class UnbufferedChan<T>: pthreadChan<T>
     :return: the oldest element from the channel.
   */
 
-  override func read() -> T?
+  override func take() -> T?
   {
     pthread_mutex_lock(channelMutex)
 
 //    let id = readerCount++
-//    log("reader \(id) is trying to receive")
+//    syncprint("reader \(id) is trying to receive")
 
-    while !self.isReady && !self.isClosed
+    while elementsWritten <= elementsRead && !self.closed
     {
       if blockedWriters > 0
       { // Maybe we can interest a writer
@@ -506,9 +490,19 @@ class UnbufferedChan<T>: pthreadChan<T>
       blockedReaders -= 1
     }
 
-    let oldElement = readElement()
+    if self.closed && (elementsWritten <= elementsRead)
+    {
+      self.element = nil
+    }
+    else
+    {
+      assert(elementsRead < elementsWritten, "Inconsistent unbuffered channel state")
+    }
 
-//    log("reader \(id) received \(oldElement)")
+    let oldElement = self.element
+    elementsRead += 1
+
+//    syncprint("reader \(id) received \(oldElement)")
 
     if blockedReaders > 0
     { // If other readers are waiting, signal a writer right away.

@@ -87,7 +87,33 @@ class ChanSender<T>: Sender<T>
 
   override func send(newElement: T)
   {
-    wrapped.write(newElement)
+    wrapped.put(newElement)
+  }
+}
+
+/**
+  ChanSender<T> wraps a Chan<T> and allows sending through it
+  via a SendingChannel interface.
+*/
+
+class ChannelSender<T, C: ChannelType where C.ElementType == T>: Sender<T>
+{
+  private var wrapped: C
+
+  init(_ channel: C)
+  {
+    wrapped = channel
+  }
+
+  override var isClosed: Bool { return wrapped.isClosed }
+
+  override var isFull:  Bool { return wrapped.isFull }
+
+  override func close() { wrapped.close() }
+
+  override func send(newElement: T)
+  {
+    wrapped.put(newElement)
   }
 }
 

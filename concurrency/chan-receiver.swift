@@ -112,22 +112,35 @@ class ChanReceiver<T>: Receiver<T>
 
   override func receive() -> T?
   {
-    return wrapped.read()
+    return wrapped.take()
+  }
+}
+
+/**
+  ChanReceiver<T> wraps a ChannelType to become its receiving endpoint.
+*/
+
+class ChannelReceiver<T, C: ChannelType where C.ElementType == T>: Receiver<T>
+{
+  private var wrapped: C
+
+  init(_ c: C)
+  {
+    wrapped = c
   }
 
-  // SelectableChannel implementation
+  // ReceiverType implementation
 
-//  override var invalidSelection: Bool { return wrapped.invalidSelection }
-//
-//  override func selectReceive(channel: SelectChan<Selection>, messageID: Selectable) -> Signal
-//  {
-//    return wrapped.selectReceive(channel, messageID: messageID)
-//  }
-//
-//  override func extract(selection: Selection) -> T?
-//  {
-//    return wrapped.extract(selection)
-//  }
+  override var isClosed: Bool { return wrapped.isClosed }
+
+  override var isEmpty:  Bool { return wrapped.isEmpty }
+
+  override func close() { wrapped.close() }
+
+  override func receive() -> T?
+  {
+    return wrapped.take()
+  }
 }
 
 /**

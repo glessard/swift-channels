@@ -15,7 +15,7 @@
   of the factory function returns an unbuffered channel.
 */
 
-class Chan<T>
+class Chan<T>: ChannelType
 {
   // Computed properties
 
@@ -72,7 +72,7 @@ class Chan<T>
     :param: element the new element to be added to the channel.
   */
 
-  func write(newElement: T)
+  func put(newElement: T)
   {
     _ = newElement
   }
@@ -86,7 +86,7 @@ class Chan<T>
     :return: the oldest element from the channel.
   */
 
-  func read() -> T?
+  func take() -> T?
   {
     return nil
   }
