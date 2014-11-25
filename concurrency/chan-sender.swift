@@ -17,11 +17,11 @@ public class Sender<T>: SenderType
 
     If c is a (subclass of) Sender, c will be returned directly.
 
-    If c is any other kind of SendingChannel, c will be wrapped in an EnclosedSender.
+    If c is any other kind of SenderType, c will be wrapped in a WrappedSender.
 
-    :param: c A SendingChannel implementor to be wrapped by a WriteChan object.
+    :param: c A SenderType implementor to be wrapped by a Sender object.
 
-    :return:  A Sender object that will pass along the elements from c.
+    :return:  A Sender object that will pass along the elements to c.
   */
 
   public class func Wrap<C: SenderType where C.SentElement == T>(c: C) -> Sender<T>
@@ -79,7 +79,7 @@ public class Sender<T>: SenderType
 
 /**
   ChanSender<T> wraps a Chan<T> and allows sending through it
-  via a SendingChannel interface.
+  via a SenderType interface.
 */
 
 class ChanSender<T>: Sender<T>
@@ -104,8 +104,8 @@ class ChanSender<T>: Sender<T>
 }
 
 /**
-  ChanSender<T> wraps a Chan<T> and allows sending through it
-  via a SendingChannel interface.
+  ChannelSender<T,C> wraps a ChannelType (as C) and allows sending through it
+  via a SenderType interface.
 */
 
 class ChannelSender<T, C: ChannelType where C.ElementType == T>: Sender<T>
@@ -130,10 +130,10 @@ class ChannelSender<T, C: ChannelType where C.ElementType == T>: Sender<T>
 }
 
 /**
-  EnclosedSender<T> wraps an object that implements SendingChannel and makes it
+  EnclosedSender<T> wraps an object that implements SenderType and makes it
   looks like a Sender<T> subclass.
 
-  This is accomplished in wrapping its entire SendingChannel interface in a series of closures.
+  This is accomplished in wrapping its entire SenderType interface in a series of closures.
   While that is probably memory-heavy, it works. WrappedSender uses a generic approach.
 */
 
@@ -165,7 +165,7 @@ class EnclosedSender<T>: Sender<T>
 }
 
 /**
-  WrappedSender<T,C> wraps an instance of any type C that implements SendingChannel,
+  WrappedSender<T,C> wraps an instance of any type C that implements SenderType,
   and makes it looks like a Sender<T> subclass.
 
   WrappedSender uses a generic approach, unlike EnclosedSender.
