@@ -17,6 +17,7 @@
 		033215741A20623C00F4B44B /* chan-buffered1.swift in Sources */ = {isa = PBXBuildFile; fileRef = 033215731A20623C00F4B44B /* chan-buffered1.swift */; };
 		035DE14D19BEF47A00F4B44B /* BufferedNChannelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035DE14C19BEF47A00F4B44B /* BufferedNChannelTests.swift */; };
 		035DE14F19BEF6BC00F4B44B /* Buffered1ChannelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035DE14E19BEF6BC00F4B44B /* Buffered1ChannelTests.swift */; };
+		036D686C1A250C0D00F4B44B /* ChannelTestCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 036D686B1A250C0D00F4B44B /* ChannelTestCase.swift */; };
 		039FF9631A1E5BBF00F4B44B /* QueueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 039FF9621A1E5BBF00F4B44B /* QueueTests.swift */; };
 		039FF9681A1E95D300F4B44B /* async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035FDFDD19A17DD500F4B44B /* async.swift */; };
 		039FF9691A1E95D300F4B44B /* channel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 039AF2DE1A16CC1A00F4B44B /* channel.swift */; };
@@ -34,7 +35,6 @@
 		03C566341A20655700F4B44B /* chan-buffered1.swift in Sources */ = {isa = PBXBuildFile; fileRef = 033215731A20623C00F4B44B /* chan-buffered1.swift */; };
 		03C566351A20655800F4B44B /* chan-buffered1.swift in Sources */ = {isa = PBXBuildFile; fileRef = 033215731A20623C00F4B44B /* chan-buffered1.swift */; };
 		03D070FD19BEEF5200F4B44B /* UnbufferedChannelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D070FC19BEEF5200F4B44B /* UnbufferedChannelTests.swift */; };
-		03D070FF19BEEFC800F4B44B /* ChannelsPerformanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D070FE19BEEFC800F4B44B /* ChannelsPerformanceTests.swift */; };
 		03E10E2619BB6CD800F4B44B /* timing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035FDFE419A17E8B00F4B44B /* timing.swift */; };
 		03E10E2719BB6D6A00F4B44B /* logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E44D1419A7A71200F4B44B /* logging.swift */; };
 		03E2846F1A16E35900F4B44B /* channel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 039AF2DE1A16CC1A00F4B44B /* channel.swift */; };
@@ -102,6 +102,7 @@
 		035FDFE819A23FF700F4B44B /* chan-operators.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = "chan-operators.swift"; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
 		036000DD19B4B11D00F4B44B /* chan-pthreads.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "chan-pthreads.swift"; sourceTree = "<group>"; };
 		0367EA5919A8F84A00F4B44B /* chan-sender.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = "chan-sender.swift"; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
+		036D686B1A250C0D00F4B44B /* ChannelTestCase.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChannelTestCase.swift; sourceTree = "<group>"; };
 		039AF2DE1A16CC1A00F4B44B /* channel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = channel.swift; sourceTree = "<group>"; };
 		039AF2E01A16CDA900F4B44B /* chan-receiver.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "chan-receiver.swift"; sourceTree = "<group>"; };
 		039FF9621A1E5BBF00F4B44B /* QueueTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = QueueTests.swift; sourceTree = "<group>"; };
@@ -109,7 +110,6 @@
 		03B168701A1D743500F4B44B /* SingletonChannelTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SingletonChannelTests.swift; sourceTree = "<group>"; };
 		03B65B8819AFFC4D00F4B44B /* select-types.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "select-types.swift"; sourceTree = "<group>"; };
 		03D070FC19BEEF5200F4B44B /* UnbufferedChannelTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UnbufferedChannelTests.swift; sourceTree = "<group>"; };
-		03D070FE19BEEFC800F4B44B /* ChannelsPerformanceTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChannelsPerformanceTests.swift; sourceTree = "<group>"; };
 		03E2848E1A17154C00F4B44B /* future.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = future.swift; sourceTree = "<group>"; };
 		03E44D1419A7A71200F4B44B /* logging.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = logging.swift; sourceTree = "<group>"; };
 		03E44D1619A7AB5700F4B44B /* queue.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = queue.swift; path = ../utilities/queue.swift; sourceTree = "<group>"; };
@@ -183,11 +183,11 @@
 		032E6B8B19BD23B600F4B44B /* ChannelsTests */ = {
 			isa = PBXGroup;
 			children = (
-				03D070FE19BEEFC800F4B44B /* ChannelsPerformanceTests.swift */,
-				03D070FC19BEEF5200F4B44B /* UnbufferedChannelTests.swift */,
+				036D686B1A250C0D00F4B44B /* ChannelTestCase.swift */,
 				035DE14E19BEF6BC00F4B44B /* Buffered1ChannelTests.swift */,
-				035DE14C19BEF47A00F4B44B /* BufferedNChannelTests.swift */,
 				03B168701A1D743500F4B44B /* SingletonChannelTests.swift */,
+				03D070FC19BEEF5200F4B44B /* UnbufferedChannelTests.swift */,
+				035DE14C19BEF47A00F4B44B /* BufferedNChannelTests.swift */,
 				039FF9621A1E5BBF00F4B44B /* QueueTests.swift */,
 				032E6B8C19BD23B600F4B44B /* Supporting Files */,
 			);
@@ -474,7 +474,7 @@
 				035DE14D19BEF47A00F4B44B /* BufferedNChannelTests.swift in Sources */,
 				03D070FD19BEEF5200F4B44B /* UnbufferedChannelTests.swift in Sources */,
 				035DE14F19BEF6BC00F4B44B /* Buffered1ChannelTests.swift in Sources */,
-				03D070FF19BEEFC800F4B44B /* ChannelsPerformanceTests.swift in Sources */,
+				036D686C1A250C0D00F4B44B /* ChannelTestCase.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

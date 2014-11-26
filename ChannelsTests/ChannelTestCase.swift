@@ -1,0 +1,246 @@
+//
+//  ChannelTestCase.swift
+//  concurrency
+//
+//  Created by Guillaume Lessard on 2014-11-25.
+//  Copyright (c) 2014 Guillaume Lessard. All rights reserved.
+//
+
+import Darwin
+import Foundation
+import XCTest
+
+import Channels
+
+class ChannelTestCase: XCTestCase
+{
+  var id: String { return "" }
+
+  let iterations = 100_000
+
+  var buflen: Int { return iterations/iterations }
+
+  /**
+    Sequential send, then receive on the same thread.
+  */
+
+  func ChannelTestSendReceive(tx: Sender<UInt32>, _ rx: Receiver<UInt32>)
+  {
+    let value =  arc4random()
+    tx <- value
+    let result = <-rx
+
+    XCTAssert(value == result, "Wrong value received from channel " + id)
+  }
+
+  /**
+    Launch a receive task ahead of launching a send task. Fulfill the asynchronous
+    'expectation' after its reference has transited through the channel.
+  */
+
+  func ChannelTestReceiveFirst(tx: Sender<XCTestExpectation>, _ rx: Receiver<XCTestExpectation>, expectation: XCTestExpectation)
+  {
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+      if let x = <-rx
+      {
+        x.fulfill()
+      }
+      else
+      {
+        XCTFail(self.id + " receiver should have received non-nil element")
+      }
+    }
+
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+      tx <- expectation
+      tx.close()
+    }
+
+    waitForExpectationsWithTimeout(2.0) { _ = $0; tx.close() }
+  }
+
+  /**
+    Launch an asynchronous receive task ahead of launching a send task,
+    then verify the data was transmitted unchanged.
+  */
+
+  func ChannelTestBlockedReceive(tx: Sender<UInt32>, _ rx: Receiver<UInt32>, expectation: XCTestExpectation)
+  {
+    var valrecd = arc4random()
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+      while let v = <-rx
+      {
+        valrecd = v
+      }
+      expectation.fulfill()
+    }
+
+    var valsent = arc4random()
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+      XCTAssert(tx.isClosed == false, self.id + " should not be closed")
+
+      valsent = arc4random()
+      tx <- valsent
+      tx.close()
+    }
+
+    waitForExpectationsWithTimeout(2.0) { _ = $0; tx.close() }
+    XCTAssert(valsent == valrecd, "\(valsent) ≠ \(valrecd) in " + id)
+  }
+  
+  /**
+    Launch a send task ahead of launching a receive task. Fulfill the asynchronous
+    'expectation' after its reference has transited through the channel.
+  */
+
+  func ChannelTestSendFirst(tx: Sender<XCTestExpectation>, _ rx: Receiver<XCTestExpectation>, expectation: XCTestExpectation)
+  {
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+      tx <- expectation
+      tx.close()
+    }
+
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+      if let x = <-rx
+      {
+        x.fulfill()
+      }
+      else
+      {
+        XCTFail(self.id + " receiver should have received non-nil element")
+      }
+    }
+
+    waitForExpectationsWithTimeout(2.0) { _ = $0; tx.close() }
+}
+
+  /**
+    Block on send, then verify the data was transmitted unchanged.
+  */
+
+  func ChannelTestBlockedSend(tx: Sender<UInt32>, _ rx: Receiver<UInt32>, expectation: XCTestExpectation)
+  {
+    var valsent = arc4random()
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+      valsent = arc4random()
+      for i in 0..<self.buflen
+      {
+        tx <- arc4random()
+      }
+      tx <- valsent
+      tx.close()
+    }
+
+    var valrecd = arc4random()
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+      XCTAssert(tx.isClosed == false, self.id + " should not be closed")
+
+      while let v = <-rx
+      {
+        valrecd = v
+      }
+      expectation.fulfill()
+    }
+
+    waitForExpectationsWithTimeout(2.0) { _ = $0; tx.close() }
+    XCTAssert(valsent == valrecd, "\(valsent) ≠ \(valrecd) in " + id)
+  }
+
+  /**
+    Block on receive, unblock on channel close
+  */
+
+  func ChannelTestNoSender(rx: Receiver<Int>, expectation: XCTestExpectation)
+  {
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+      while let v = <-rx
+      {
+        XCTFail(self.id + " should not receive anything")
+      }
+      expectation.fulfill()
+    }
+
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+      XCTAssert(rx.isClosed == false, self.id + " channel should be open")
+      rx.close()
+    }
+
+    waitForExpectationsWithTimeout(2.0) { _ = $0; rx.close() }
+  }
+
+  /**
+    Block on send, unblock on channel close
+  */
+
+  func ChannelTestNoReceiver(tx: Sender<()>, expectation: XCTestExpectation)
+  {
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+      for i in 0...self.buflen
+      {
+        tx <- ()
+      }
+      expectation.fulfill()
+    }
+
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+      XCTAssert(tx.isClosed == false, self.id + " channel should be open")
+      tx.close()
+    }
+
+    waitForExpectationsWithTimeout(2.0) { _ = $0; tx.close() }
+  }
+
+  /**
+    Performance test when avoiding thread contention, while keeping the channel at never more than 1 item full.
+  */
+
+  func ChannelPerformanceNoContention(tx: Sender<Int>, _ rx: Receiver<Int>)
+  {
+    self.measureBlock() {
+      for i in 0..<self.iterations
+      {
+        tx <- i
+        _ = <-rx
+      }
+      tx.close()
+    }
+  }
+
+  /**
+    Performance test when avoiding thread contention. This one fills then empties the channel buffer.
+  */
+
+  func ChannelPerformanceLoopNoContention(tx: Sender<Int>, _ rx: Receiver<Int>)
+  {
+    self.measureBlock() {
+      for j in 0..<(self.iterations/self.buflen)
+      {
+        for i in 0..<self.buflen { tx <- i }
+        for i in 0..<self.buflen { _ = <-rx }
+      }
+      tx.close()
+    }
+  }
+
+  /**
+    Performance test with thread contention.
+    The 1st thread fills the channel as fast as it can.
+    The 2nd thread empties the chanenl as fast as it can.
+    Eventually, the 2 threads start to wait for eath other.
+  */
+
+  func ChannelPerformanceWithContention(tx: Sender<Int>, _ rx: Receiver<Int>)
+  {
+    self.measureBlock() {
+      async {
+        for i in 0..<self.iterations
+        {
+          tx <- i
+        }
+        tx.close()
+      }
+
+      for m in rx { _ = m }
+    }
+  }
+}

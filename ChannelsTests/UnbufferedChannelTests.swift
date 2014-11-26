@@ -12,34 +12,20 @@ import XCTest
 
 import Channels
 
-class UnbufferedChannelTests: XCTestCase
+class UnbufferedChannelTests: ChannelTestCase
 {
+  override var id: String { return "Unbuffered" }
+
   /**
     Fulfill the asynchronous 'expectation' after its reference has transited through the channel.
   */
 
   func testReceiveFirst()
   {
-    let expectation = expectationWithDescription("Unbuffered Receive then Send")
-    var (tx, rx) = Channel.Make(type: expectation)
+    let xp = expectationWithDescription(id + " Receive then Send")!
+    var (tx, rx) = Channel.Make(type: xp)
 
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-      if let x = <-rx
-      {
-        x.fulfill()
-      }
-      else
-      {
-        XCTFail("unbuffered receive should have received non-nil element")
-      }
-    }
-
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-      tx <- expectation
-      tx.close()
-    }
-
-    waitForExpectationsWithTimeout(2.0) { _ = $0; tx.close() }
+    ChannelTestReceiveFirst(tx, rx, expectation: xp)
   }
 
   /**
@@ -48,26 +34,10 @@ class UnbufferedChannelTests: XCTestCase
 
   func testSendFirst()
   {
-    let expectation = expectationWithDescription("Unbuffered Send then Receive")
+    let expectation = expectationWithDescription(id + " Send then Receive")!
     var (tx, rx) = Channel.Make(type: expectation)
 
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-      tx <- expectation
-      tx.close()
-    }
-
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-      if let x = <-rx
-      {
-        x.fulfill()
-      }
-      else
-      {
-        XCTFail("unbuffered receive should have received non-nil element")
-      }
-    }
-
-    waitForExpectationsWithTimeout(2.0) { _ = $0; tx.close() }
+    ChannelTestSendFirst(tx, rx, expectation: expectation)
   }
 
   /**
@@ -76,34 +46,10 @@ class UnbufferedChannelTests: XCTestCase
 
   func testBlockedSend()
   {
-    let expectation = expectationWithDescription("Unbuffered Send, verified receive")
+    let expectation = expectationWithDescription(id + " Send, verified receive")
     var (tx, rx) = Channel<UInt32>.Make()
 
-    var valsent = UInt32.max
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-      valsent = arc4random()
-      tx <- valsent
-      tx.close()
-    }
-
-    var valrecd = UInt32.max-1
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-      if !rx.isClosed
-      {
-        while let v = <-rx
-        {
-          valrecd = v
-        }
-        expectation.fulfill()
-      }
-      else
-      {
-        XCTFail("unbuffered should not be closed")
-      }
-    }
-
-    waitForExpectationsWithTimeout(2.0) { _ = $0; tx.close() }
-    XCTAssert(valsent == valrecd, "\(valsent) ≠ \(valrecd) in unbuffered")
+    ChannelTestBlockedSend(tx, rx, expectation: expectation)
   }
 
   /**
@@ -112,34 +58,10 @@ class UnbufferedChannelTests: XCTestCase
 
   func testBlockedReceive()
   {
-    let expectation = expectationWithDescription("Unbuffered Receive, with verification")
+    let expectation = expectationWithDescription(id + " Receive, with verification")
     var (tx, rx) = Channel<UInt32>.Make()
 
-    var valrecd = UInt32.max-1
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-      while let v = <-rx
-      {
-        valrecd = v
-      }
-      expectation.fulfill()
-    }
-
-    var valsent = UInt32.max
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-      if !tx.isClosed
-      {
-        valsent = arc4random()
-        tx <- valsent
-        tx.close()
-      }
-      else
-      {
-        XCTFail("unbuffered should not be closed")
-      }
-    }
-
-    waitForExpectationsWithTimeout(2.0) { _ = $0; tx.close() }
-    XCTAssert(valsent == valrecd, "\(valsent) ≠ \(valrecd) in unbuffered")
+    ChannelTestBlockedReceive(tx, rx, expectation: expectation)
   }
 
   /**
@@ -148,29 +70,10 @@ class UnbufferedChannelTests: XCTestCase
 
   func testNoReceiver()
   {
-    let expectation = expectationWithDescription("Unbuffered Send, no Receiver")
-    var (tx, rx) = Channel<()>.Make()
+    let xp = expectationWithDescription(id + " Send, no Receiver")
+    var (tx, _) = Channel<()>.Make()
 
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-      tx <- ()
-      expectation.fulfill()
-
-      // The following should have no effect
-      tx.close()
-    }
-
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-      if !rx.isClosed
-      {
-        rx.close()
-      }
-      else
-      {
-        XCTFail("unbuffered should not be closed")
-      }
-    }
-
-    waitForExpectationsWithTimeout(2.0) { _ = $0; tx.close() }
+    ChannelTestNoReceiver(tx, expectation: xp)
   }
 
   /**
@@ -179,45 +82,16 @@ class UnbufferedChannelTests: XCTestCase
 
   func testNoSender()
   {
-    let expectation = expectationWithDescription("Unbuffered Receive, no Sender")
-    var (tx, rx) = Channel<Int>.Make()
+    let xp = expectationWithDescription(id + " Receive, no Sender")
+    var (_, rx) = Channel<Int>.Make()
 
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-      while let v = <-rx
-      {
-        XCTFail("should not receive anything")
-      }
-      expectation.fulfill()
-    }
-
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-      if !tx.isClosed
-      {
-        tx.close()
-      }
-      else
-      {
-        XCTFail("unbuffered should not be closed")
-      }
-    }
-
-    waitForExpectationsWithTimeout(2.0) { _ = $0; tx.close() }
+    ChannelTestNoSender(rx, expectation: xp)
   }
 
   func testPerformanceWithContention()
   {
     var (tx, rx) = Channel<Int>.Make()
 
-    self.measureBlock() {
-      async {
-        for i in 0..<iterations
-        {
-          tx <- i
-        }
-        tx.close()
-      }
-
-      for m in rx { _ = m }
-    }
+    ChannelPerformanceWithContention(tx, rx)
   }
 }

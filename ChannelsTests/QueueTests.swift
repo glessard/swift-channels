@@ -14,10 +14,6 @@ import Channels
 
 class QueueTests: XCTestCase
 {
-  /**
-  Sequential send, then receive on the same thread.
-  */
-
   func testQueue()
   {
     var q = Queue<Int>()
