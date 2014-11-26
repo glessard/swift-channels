@@ -68,22 +68,17 @@ public final class SingletonChan<T>: Chan<T>
 
   // Computed property accessors
 
-  override func isEmptyFunc() -> Bool
+  final override var isEmpty: Bool // isEmptyFunc() -> Bool
   {
     return elementsWritten <= elementsRead
   }
 
-  override func isFullFunc() -> Bool
+  final override var isFull: Bool // isFullFunc() -> Bool
   {
     return elementsWritten > elementsRead
   }
 
-  override func capacityFunc() -> Int
-  {
-    return 1
-  }
-
-  override func isClosedFunc() -> Bool
+  final override var isClosed: Bool
   {
     return closed
   }

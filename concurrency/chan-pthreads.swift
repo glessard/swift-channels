@@ -6,7 +6,6 @@
 //  Copyright (c) 2014 Guillaume Lessard. All rights reserved.
 //
 
-//import Dispatch
 import Darwin
 
 /**
@@ -21,19 +20,19 @@ class pthreadChan<T>: Chan<T>
 {
   // Instance variables
 
-  private var closed = false
-  private var blockedReaders = 0
-  private var blockedWriters = 0
+  final var closed = false
+  final var blockedReaders = 0
+  final var blockedWriters = 0
 
   // pthreads variables
 
-  private var channelMutex:   UnsafeMutablePointer<pthread_mutex_t>
-  private var readCondition:  UnsafeMutablePointer<pthread_cond_t>
-  private var writeCondition: UnsafeMutablePointer<pthread_cond_t>
+  final var channelMutex:   UnsafeMutablePointer<pthread_mutex_t>
+  final var readCondition:  UnsafeMutablePointer<pthread_cond_t>
+  final var writeCondition: UnsafeMutablePointer<pthread_cond_t>
 
   // Initialization and destruction
 
-  private override init()
+  override init()
   {
     channelMutex = UnsafeMutablePointer<pthread_mutex_t>.alloc(1)
     pthread_mutex_init(channelMutex, nil)
@@ -59,21 +58,13 @@ class pthreadChan<T>: Chan<T>
     writeCondition.dealloc(1)
   }
 
-  // a small reporting utility
-
-//  private let logging = false
-//  private func log<PT>(object: PT) -> ()
-//  {
-//    if logging { syncprint(object) }
-//  }
-
   // Computed properties
 
   /**
     Determine whether the channel has been closed
   */
 
-  override func isClosedFunc() -> Bool { return closed }
+  final override var isClosed: Bool { return closed }
 
   /**
     Close the channel
@@ -81,33 +72,24 @@ class pthreadChan<T>: Chan<T>
     Any items still in the channel remain and can be retrieved.
     New items cannot be added to a closed channel.
 
-    It could be considered an error to close a channel that has already been closed.
-    The actual reaction shall be implementation-dependent.
+    It could be considered an error to close a channel that has already
+    been closed. The actual reaction shall be implementation-dependent.
   */
 
   override func close()
   {
     if closed { return }
 
-    // Only bother with the mutex if necessary
-    pthread_mutex_lock(channelMutex)
-
-    doClose()
+    closed = true
 
     // Unblock the threads waiting on our conditions.
-    if blockedReaders > 0 { pthread_cond_signal(readCondition) }
-    if blockedWriters > 0 { pthread_cond_signal(writeCondition) }
-    pthread_mutex_unlock(channelMutex)
-  }
-
-  /**
-    Close the channel, specific implementation. This is used within close().
-    By *definition*, this method is called while a mutex is locked.
-  */
-
-  private func doClose()
-  {
-    self.closed = true
+    if blockedReaders > 0 || blockedWriters > 0
+    {
+      pthread_mutex_lock(channelMutex)
+      pthread_cond_signal(writeCondition)
+      pthread_cond_signal(readCondition)
+      pthread_mutex_unlock(channelMutex)
+    }
   }
 }
 
@@ -252,47 +234,10 @@ class BufferedChan<T>: pthreadChan<T>
 }
 
 /**
-  A buffered channel with an N element queue
-*/
-
-class BufferedQChan<T>: BufferedChan<T>
-{
-  private let count: Int
-  private var q: Queue<T>
-
-  init(_ capacity: Int)
-  {
-    count = (capacity < 1) ? 1 : capacity
-    self.q = Queue<T>()
-  }
-
-  convenience override init()
-  {
-    self.init(1)
-  }
-
-  override func capacityFunc() -> Int { return count }
-
-  override func isEmptyFunc() -> Bool { return q.isEmpty }
-
-  override func isFullFunc() -> Bool { return q.count >= self.count }
-
-  private override func writeElement(newElement: T)
-  {
-    q.enqueue(newElement)
-  }
-
-  private override func readElement() ->T?
-  {
-    return q.dequeue()
-  }
-}
-
-/**
   A buffered channel with an N element circular buffer
 */
 
-class BufferedAChan<T>: BufferedChan<T>
+class pthreadsBufferedAChan<T>: BufferedChan<T>
 {
   private var buffer: Array<T?>
   private let count: Int
@@ -310,11 +255,13 @@ class BufferedAChan<T>: BufferedChan<T>
     self.init(1)
   }
 
-  override func capacityFunc() -> Int { return count }
+//  override func capacityFunc() -> Int { return count }
 
-  override func isEmptyFunc() -> Bool { return head >= tail }
+//  override func isEmptyFunc() -> Bool { return head >= tail }
+  final override var isEmpty: Bool  { return head >= tail }
 
-  override func isFullFunc() -> Bool { return head+count <= tail }
+//  override func isFullFunc() -> Bool { return head+count <= tail }
+  final override var isFull: Bool { return head+count <= tail }
 
   private override func writeElement(newElement: T)
   {
@@ -392,36 +339,6 @@ class UnbufferedChan<T>: pthreadChan<T>
     element = nil
   }
 
-  override func capacityFunc() -> Int { return 0 }
-
-  /**
-    isEmpty is meaningless when capacity equals zero.
-    However, receive() is nearly guaranteed to block, so return true.
-  
-    :return: true
-  */
-
-  override func isEmptyFunc() -> Bool { return true }
-
-  /**
-    isFull is meaningless when capacity equals zero.
-    However, send() is nearly guaranteed to block, so return true.
-  
-    :return: true
-  */
-
-  override func isFullFunc() -> Bool  { return true }
-
-  /**
-    Close the channel
-  */
-
-  private override func doClose()
-  {
-//    syncprint("closing 0-channel")
-    super.doClose()
-  }
-  
   /**
     Write an element to the channel
 

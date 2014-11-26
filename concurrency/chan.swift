@@ -23,33 +23,19 @@ class Chan<T>: ChannelType
     Determine whether the channel is empty (and therefore can't be received from)
   */
 
-  final var isEmpty: Bool { return isEmptyFunc() }
-
-  func isEmptyFunc() -> Bool { return true }
+  var isEmpty: Bool { return true }
 
   /**
     Determine whether the channel is full (and can't be written to)
   */
 
-  final var isFull: Bool { return isFullFunc() }
-
-  func isFullFunc() -> Bool { return false }
-  
-  /**
-    Report the channel capacity
-  */
-
-  final var capacity: Int { return capacityFunc() }
-
-  func capacityFunc() -> Int { return 0 }
+  var isFull: Bool { return true }
 
   /**
     Determine whether the channel has been closed
   */
 
-  final var isClosed: Bool { return isClosedFunc() }
-
-  func isClosedFunc() -> Bool { return true }
+  var isClosed: Bool { return true }
 
   /**
     Close the channel
@@ -64,7 +50,7 @@ class Chan<T>: ChannelType
   func close() { }
 
   /**
-    Send a new element to the channel
+    Put a new element in the channel
   
     If the channel is full, this call will block.
     If the channel has been closed, no action will be taken.
@@ -78,10 +64,10 @@ class Chan<T>: ChannelType
   }
 
   /**
-    Receive the oldest element from the channel.
+    Take the oldest element from the channel.
 
-    If the channel is empty, this call will block.
     If the channel is empty and closed, this will return nil.
+    If the channel is empty (but not closed), this call will block.
 
     :return: the oldest element from the channel.
   */

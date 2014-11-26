@@ -1,5 +1,5 @@
 //
-//  chan-buffered1.swift
+//  chan-1buffered.swift
 //  concurrency
 //
 //  Created by Guillaume Lessard on 2014-11-19.
@@ -9,24 +9,32 @@
 import Darwin
 
 /**
-  A channel that uses a 1-element buffer.
+  A channel that uses a N-element queue as a backing store.
 */
 
-final class Buffered1Chan<T>: pthreadChan<T>
+final class BufferedQChan<T>: pthreadChan<T>
 {
-  private var element: T?
+  private final let capacity: Int
+  private final var q: Queue<T>
 
   // housekeeping variables
 
-  private var elementsWritten: Int64 = -1
-  private var elementsRead: Int64 = -1
+  private final var elementsWritten: Int64 = -1
+  private final var elementsRead: Int64 = -1
 
-  // Initialization and destruction
+  // Initialization
 
-  override init()
+  init(_ capacity: Int)
   {
-    element = nil
+    self.capacity = (capacity < 1) ? 1 : capacity
+    self.q = Queue<T>()
+
     super.init()
+  }
+
+  convenience override init()
+  {
+    self.init(1)
   }
 
   // Computed property accessors
@@ -34,11 +42,13 @@ final class Buffered1Chan<T>: pthreadChan<T>
   final override var isEmpty: Bool
   {
     return elementsWritten <= elementsRead
+//     return q.isEmpty
   }
 
   final override var isFull: Bool
   {
-    return elementsWritten > elementsRead
+    return (elementsWritten - elementsRead >= capacity)
+//     return q.count >= capacity
   }
 
   /**
@@ -55,7 +65,7 @@ final class Buffered1Chan<T>: pthreadChan<T>
     if self.closed { return }
 
     pthread_mutex_lock(channelMutex)
-    while (elementsWritten > elementsRead) && !self.closed
+    while (elementsWritten - elementsRead >= capacity) && !self.closed
     { // block while channel is full
       blockedWriters += 1
       pthread_cond_wait(writeCondition, channelMutex)
@@ -64,7 +74,7 @@ final class Buffered1Chan<T>: pthreadChan<T>
 
     if !self.closed
     {
-      self.element = newElement
+      q.enqueue(newElement)
       elementsWritten += 1
     }
 
@@ -101,26 +111,8 @@ final class Buffered1Chan<T>: pthreadChan<T>
       blockedReaders -= 1
     }
 
-    if self.closed && (elementsWritten <= elementsRead)
-    {
-      self.element = nil
-    }
-    else
-    {
-      assert(elementsRead < elementsWritten, "Inconsistent state in Buffered1Chan<T>")
-    }
-
-    let oldElement = self.element
+    let oldElement = q.dequeue()
     elementsRead += 1
-
-    // Whether to set self.element to nil is an interesting question.
-    // If T is a reference type (or otherwise contains a reference), then
-    // nulling is desirable to in order to avoid unnecessarily extending the
-    // lifetime of the referred-to element.
-    // In the case of a potentially long-lived buffered channel, there is a
-    // potential for contention at this point. This implementation is
-    // choosing to take the risk of extending the life of its messages.
-    // Also, setting self.element to nil at this point would be slow. Somehow.
 
     if self.closed && blockedReaders > 0
     {

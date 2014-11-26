@@ -12,10 +12,10 @@
 
 public class Queue<T>: SequenceType, GeneratorType
 {
-  private var head: Node<T>?
-  private var tail: Node<T>!
+  final private var head: Node<T>?
+  final private var tail: Node<T>!
 
-  private var size: Int = 0
+  final private var size: Int = 0
 
   public init()
   {
@@ -32,9 +32,9 @@ public class Queue<T>: SequenceType, GeneratorType
     size = 1
   }
 
-  public var isEmpty: Bool { return head == nil }
+  final public var isEmpty: Bool { return size == 0 }
 
-  public var count: Int { return size }
+  final public var count: Int { return size }
 
   public func realCount() -> Int
   {
@@ -55,16 +55,18 @@ public class Queue<T>: SequenceType, GeneratorType
   public func enqueue(newElement: T)
   {
     let newNode = Node<T>(newElement)
-    size += 1
 
-    if (head == nil)
+    if (size == 0)
     {
 //      assert(tail == nil, "Queue has a tail but no head")
 
+      size = 1
       head = newNode
       tail = newNode
       return
     }
+
+    size += 1
 
     // tail can only be nil when head is nil.
 //    assert(tail != nil, "Queue is missing its tail while not missing its head")
@@ -84,7 +86,7 @@ public class Queue<T>: SequenceType, GeneratorType
       head = oldhead.next
 
       // Logical housekeeping
-      if head == nil { tail = nil }
+      if size == 0 { tail = nil }
 
       return oldhead.element
     }
