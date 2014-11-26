@@ -12,7 +12,7 @@ import Darwin
 let iterations = 100_000
 var tic: Time
 
-var buffered = Channel<Int>.Make(1)
+var buffered = Channel.Wrap(Buffered1Chan<Int>())
 
 tic = Time()
 
@@ -29,7 +29,7 @@ buffered.tx.close()
 println(tic.toc)
 
 
-buffered = Channel<Int>.Make(1)
+buffered = Channel.Wrap(Buffered1Chan<Int>())
 
 tic = Time()
 
@@ -46,7 +46,7 @@ while let a = <-buffered.rx { _ = a }
 println(tic.toc)
 
 
-let unbuffered = Channel<Int>.Make()
+let unbuffered = Channel.Wrap(UnbufferedChan<Int>())
 
 tic = Time()
 
@@ -62,8 +62,8 @@ while let a = <-unbuffered.rx { _ = a }
 
 println(tic.toc)
 
-let buflen = iterations/100
-let bufferedN = Channel<Int>.Make(buflen)
+let buflen = iterations/1000
+let bufferedA = Channel.Wrap(BufferedAChan<Int>(buflen))
 
 tic = Time()
 
@@ -71,14 +71,34 @@ for j in 0..<(iterations/buflen)
 {
   for i in 0..<buflen
   {
-    bufferedN.tx <- i
+    bufferedA.tx <- i
   }
 
   for i in 0..<buflen
   {
-    _ = <-bufferedN.rx
+    _ = <-bufferedA.rx
   }
 }
-bufferedN.tx.close()
+bufferedA.tx.close()
+
+println(tic.toc)
+
+let bufferedQ = Channel.Wrap(BufferedQChan<Int>(buflen))
+
+tic = Time()
+
+for j in 0..<(iterations/buflen)
+{
+  for i in 0..<buflen
+  {
+    bufferedQ.tx <- i
+  }
+
+  for i in 0..<buflen
+  {
+    _ = <-bufferedQ.rx
+  }
+}
+bufferedQ.tx.close()
 
 println(tic.toc)

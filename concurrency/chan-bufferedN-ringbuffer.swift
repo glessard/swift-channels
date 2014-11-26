@@ -1,5 +1,5 @@
 //
-//  chan-bufferedN-queue.swift
+//  chan-bufferedN-ringbuffer.swift
 //  concurrency
 //
 //  Created by Guillaume Lessard on 2014-11-19.
@@ -9,25 +9,29 @@
 import Darwin
 
 /**
-  A channel that uses a N-element queue as a backing store.
+  A channel that uses an array as a backing store.
 */
 
-final class BufferedQChan<T>: pthreadChan<T>
+final class BufferedAChan<T>: pthreadChan<T>
 {
   private final let capacity: Int
-  private final var q: Queue<T>
+
+  private final var buffer: Array<T?>
+  private final let buflen: Int
 
   // housekeeping variables
 
-  private final var elementsWritten: Int64 = -1
-  private final var elementsRead: Int64 = -1
+  private final var head = 0
+  private final var tail = 0
 
-  // Initialization
+  // Initialization and destruction
 
   init(_ capacity: Int)
   {
     self.capacity = (capacity < 1) ? 1 : capacity
-    self.q = Queue<T>()
+
+    buflen = capacity // restrict this to powers of two for potentially better speed.
+    buffer = Array<T?>(count: buflen, repeatedValue: nil)
 
     super.init()
   }
@@ -41,14 +45,12 @@ final class BufferedQChan<T>: pthreadChan<T>
 
   final override var isEmpty: Bool
   {
-    return elementsWritten <= elementsRead
-//     return q.isEmpty
+    return head >= tail
   }
 
   final override var isFull: Bool
   {
-    return (elementsWritten - elementsRead >= capacity)
-//     return q.count >= capacity
+    return head+capacity <= tail
   }
 
   /**
@@ -65,7 +67,7 @@ final class BufferedQChan<T>: pthreadChan<T>
     if self.closed { return }
 
     pthread_mutex_lock(channelMutex)
-    while (elementsWritten - elementsRead >= capacity) && !self.closed
+    while (head+capacity <= tail) && !self.closed
     { // block while channel is full
       blockedWriters += 1
       pthread_cond_wait(writeCondition, channelMutex)
@@ -74,8 +76,8 @@ final class BufferedQChan<T>: pthreadChan<T>
 
     if !self.closed
     {
-      q.enqueue(newElement)
-      elementsWritten += 1
+      buffer[tail%buflen] = newElement
+      tail += 1
     }
 
     // Channel is not empty; signal if appropriate
@@ -104,15 +106,24 @@ final class BufferedQChan<T>: pthreadChan<T>
   {
     pthread_mutex_lock(channelMutex)
 
-    while (elementsWritten <= elementsRead) && !self.closed
+    while (head >= tail) && !self.closed
     { // block while channel is empty
       blockedReaders += 1
       pthread_cond_wait(readCondition, channelMutex)
       blockedReaders -= 1
     }
 
-    let oldElement = q.dequeue()
-    elementsRead += 1
+    if self.closed && (head >= tail)
+    {
+      buffer[head%buflen] = nil
+    }
+    else
+    {
+      assert(head < tail, "Inconsistent state in BufferedAChan<T>")
+    }
+
+    let oldElement = buffer[head%buflen]
+    head += 1
 
     if self.closed && blockedReaders > 0
     {
