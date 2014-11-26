@@ -46,7 +46,7 @@ public class Channel<T>
         channel = BufferedQChan<T>(capacity)
     }
 
-    return (Sender.Wrap(channel), Receiver.Wrap(channel))
+    return Wrap(channel)
   }
 
   /**
@@ -85,6 +85,16 @@ public class Channel<T>
   public class func MakeSingleton(#type: T) -> (tx: Sender<T>, rx: Receiver<T>)
   {
     return MakeSingleton()
+  }
+
+  class func Wrap(c: Chan<T>) -> (tx: Sender<T>, rx: Receiver<T>)
+  {
+    return (Sender.Wrap(c), Receiver.Wrap(c))
+  }
+
+  class func Wrap<T, C: ChannelType where C.ElementType == T>(c: C) -> (tx: Sender<T>, rx: Receiver<T>)
+  {
+    return (Sender.Wrap(c), Receiver.Wrap(c))
   }
 }
 

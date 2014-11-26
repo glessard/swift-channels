@@ -18,7 +18,7 @@ public final class SingletonChan<T>: Chan<T>
   public class func Make() -> (tx: Sender<T>, rx: Receiver<T>)
   {
     let channel = SingletonChan()
-    return (ChanSender(channel), ChanReceiver(channel))
+    return (Sender.Wrap(channel), Receiver.Wrap(channel))
   }
 
   public class func Make(#type: T) -> (tx: Sender<T>, rx: Receiver<T>)
