@@ -23,13 +23,13 @@ public func shuffle<C: CollectionType where
   The input collection is not modified: the shuffling itself is done using an adjunct array of indices.
 */
 
-public class ShuffledSequence<C: CollectionType where
-                              C.Index: RandomAccessIndexType>: SequenceType, GeneratorType
+public struct ShuffledSequence<C: CollectionType where
+                               C.Index: RandomAccessIndexType>: SequenceType, GeneratorType
 {
   private let collection: C
   private let count: Int
 
-  private var step = 0
+  private var step = -1
   private var i: [C.Index]
 
   public init(_ input: C)
@@ -39,28 +39,26 @@ public class ShuffledSequence<C: CollectionType where
     i = Array(collection.startIndex..<collection.endIndex)
   }
 
-  public func next() -> C.Generator.Element?
+  public mutating func next() -> C.Generator.Element?
   {
+    step += 1
+
     if step < count
     {
-      // select element
+      // select a random element from the rest of the collection
       let j = step + Int(arc4random_uniform(UInt32(count-step)))
 
       // swap element to the current step in the array
-      if j != step { (i[j],i[step]) = (i[step],i[j]) }
-      let index = i[step]
-
-      // step past the selected element's index
-      step += 1
+      swap(&i[j], &i[step])
 
       // return the new random element.
-      return collection[index]
+      return collection[i[step]]
     }
 
     return nil
   }
 
-  public func generate() -> Self
+  public func generate() -> ShuffledSequence
   {
     return self
   }
