@@ -8,14 +8,13 @@
 import Darwin
 
 /**
-  Get a sequence/generator wrapper of collection that will return its elements in a random order.
+  Get a sequence/generator that will return a collection's elements in a random order.
   The input collection is not modified in any way.
 */
 
-public func shuffle<C: CollectionType where
-                    C.Index: RandomAccessIndexType>(collection: C) -> ShuffledSequence<C>
+public func shuffle<C: CollectionType>(c: C) -> PermutationGenerator<C, SequenceOf<C.Index>>
 {
-  return ShuffledSequence(collection)
+  return PermutationGenerator(elements: c, indices: SequenceOf(IndexShuffler(c.startIndex..<c.endIndex)))
 }
 
 /**
@@ -23,23 +22,51 @@ public func shuffle<C: CollectionType where
   The input collection is not modified: the shuffling itself is done using an adjunct array of indices.
 */
 
-public struct ShuffledSequence<C: CollectionType where
-                               C.Index: RandomAccessIndexType>: SequenceType, GeneratorType
+public struct ShuffledSequence<C: CollectionType>: SequenceType, GeneratorType
 {
   private let collection: C
-  private let count: Int
-
-  private var step = -1
-  private var i: [C.Index]
+  private var indexShuffler: IndexShuffler<Range<C.Index>>
 
   public init(_ input: C)
   {
     collection = input
-    count = countElements(collection) as Int
-    i = Array(collection.startIndex..<collection.endIndex)
+    indexShuffler = IndexShuffler(collection.startIndex..<collection.endIndex)
   }
 
   public mutating func next() -> C.Generator.Element?
+  {
+    if let index = indexShuffler.next()
+    {
+      return collection[index]
+    }
+    return nil
+  }
+
+  public func generate() -> ShuffledSequence
+  {
+    return self
+  }
+}
+
+/**
+  A stepwise implementation of the Knuth Shuffle (a.k.a. Fisher-Yates Shuffle),
+  using a sequence of indices for the input.
+*/
+
+public struct IndexShuffler<S: SequenceType where
+                            S.Generator.Element: ForwardIndexType>: SequenceType, GeneratorType
+{
+  private let count: Int
+  private var step = -1
+  private var i: [S.Generator.Element]
+
+  public init(_ input: S)
+  {
+    i = Array(input)
+    count = countElements(i) as Int
+  }
+
+  public mutating func next() -> S.Generator.Element?
   {
     step += 1
 
@@ -52,13 +79,13 @@ public struct ShuffledSequence<C: CollectionType where
       swap(&i[j], &i[step])
 
       // return the new random element.
-      return collection[i[step]]
+      return i[step]
     }
 
     return nil
   }
 
-  public func generate() -> ShuffledSequence
+  public func generate() -> IndexShuffler
   {
     return self
   }
