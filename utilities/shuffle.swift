@@ -24,8 +24,11 @@ public func shuffle<C: CollectionType>(c: C) -> PermutationGenerator<C, Sequence
 
 public struct ShuffledSequence<C: CollectionType>: SequenceType, GeneratorType
 {
+  public typealias Element = C.Generator.Element
+  public typealias Index = C.Index
+
   private let collection: C
-  private var indexShuffler: IndexShuffler<Range<C.Index>>
+  private var indexShuffler: IndexShuffler<Range<Index>>
 
   public init(_ input: C)
   {
@@ -33,7 +36,7 @@ public struct ShuffledSequence<C: CollectionType>: SequenceType, GeneratorType
     indexShuffler = IndexShuffler(collection.startIndex..<collection.endIndex)
   }
 
-  public mutating func next() -> C.Generator.Element?
+  public mutating func next() -> Element?
   {
     if let index = indexShuffler.next()
     {
@@ -56,9 +59,11 @@ public struct ShuffledSequence<C: CollectionType>: SequenceType, GeneratorType
 public struct IndexShuffler<S: SequenceType where
                             S.Generator.Element: ForwardIndexType>: SequenceType, GeneratorType
 {
+  public typealias Index = S.Generator.Element
+
   private let count: Int
   private var step = -1
-  private var i: [S.Generator.Element]
+  private var i: [Index]
 
   public init(_ input: S)
   {
@@ -66,19 +71,19 @@ public struct IndexShuffler<S: SequenceType where
     count = countElements(i) as Int
   }
 
-  public mutating func next() -> S.Generator.Element?
+  public mutating func next() -> Index?
   {
     step += 1
 
     if step < count
     {
-      // select a random element from the rest of the collection
+      // select a random Index from the rest of the array
       let j = step + Int(arc4random_uniform(UInt32(count-step)))
 
-      // swap element to the current step in the array
+      // swap that Index with the one at the current step in the array
       swap(&i[j], &i[step])
 
-      // return the new random element.
+      // return the new random Index.
       return i[step]
     }
 
