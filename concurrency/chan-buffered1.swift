@@ -130,8 +130,8 @@ final class Buffered1Chan<T>: pthreadChan<T>
     {
       pthread_cond_signal(writeCondition)
     }
-
     pthread_mutex_unlock(channelMutex)
+
     return oldElement
   }
 }

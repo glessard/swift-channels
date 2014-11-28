@@ -13,7 +13,7 @@ import Darwin
   the first successful write operation closes the channel.
 */
 
-public final class SingletonChan<T>: Chan<T>
+public final class SingletonChan<T>: pthreadChan<T>
 {
   public class func Make() -> (tx: Sender<T>, rx: Receiver<T>)
   {
@@ -36,78 +36,26 @@ public final class SingletonChan<T>: Chan<T>
   private var elementsWritten: Int64 = -1
   private var elementsRead: Int64 = -1
 
-  private var closed = false
-  private var blockedReaders = 0
-
-  // pthreads variables
-
-  private var channelMutex:   UnsafeMutablePointer<pthread_mutex_t>
-  private var readCondition:  UnsafeMutablePointer<pthread_cond_t>
-
   // Initialization and destruction
 
   public override init()
   {
     element = nil
-
-    channelMutex = UnsafeMutablePointer<pthread_mutex_t>.alloc(1)
-    pthread_mutex_init(channelMutex, nil)
-
-    readCondition = UnsafeMutablePointer<pthread_cond_t>.alloc(1)
-    pthread_cond_init(readCondition, nil)
-  }
-
-  deinit
-  {
-    pthread_mutex_destroy(channelMutex)
-    channelMutex.dealloc(1)
-
-    pthread_cond_destroy(readCondition)
-    readCondition.dealloc(1)
+    super.init()
   }
 
   // Computed property accessors
 
-  final override var isEmpty: Bool // isEmptyFunc() -> Bool
+  final override var isEmpty: Bool
   {
     return elementsWritten <= elementsRead
   }
 
-  final override var isFull: Bool // isFullFunc() -> Bool
+  final override var isFull: Bool
   {
     return elementsWritten > elementsRead
   }
 
-  final override var isClosed: Bool
-  {
-    return closed
-  }
-
-  /**
-    Close the channel
-
-    Any items still in the channel remain and can be retrieved.
-    New items cannot be added to a closed channel.
-
-    It could be considered an error to close a channel that has already
-    been closed. This implementation doesn't do anything.
-  */
-
-  override func close()
-  {
-    if closed { return }
-
-    closed = true
-
-    // Unblock any thread waiting on our conditions.
-    if blockedReaders > 0
-    {
-      pthread_mutex_lock(channelMutex)
-      pthread_cond_signal(readCondition)
-      pthread_mutex_unlock(channelMutex)
-    }
-  }
-  
   /**
     Append an element to the channel
 
