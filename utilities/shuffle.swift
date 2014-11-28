@@ -12,9 +12,10 @@ import Darwin
   The input collection is not modified in any way.
 */
 
-public func shuffle<C: CollectionType>(c: C) -> PermutationGenerator<C, SequenceOf<C.Index>>
+public func shuffle<C: CollectionType>(c: C) -> SequenceOf<C.Generator.Element>
 {
-  return PermutationGenerator(elements: c, indices: SequenceOf(IndexShuffler(c.startIndex..<c.endIndex)))
+  let shuffledIndices = IndexShuffler(c.startIndex..<c.endIndex)
+  return SequenceOf(PermutationGenerator(elements: c, indices: shuffledIndices))
 }
 
 /**

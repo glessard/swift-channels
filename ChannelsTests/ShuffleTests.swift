@@ -11,7 +11,7 @@ import XCTest
 
 class ShuffleTests: XCTestCase
 {
-  let a = Array(stride(from: -100.0, to: 1e4, by: 1.0))
+  let a = Array(stride(from: -5.0, to: 1e4, by: 0.8))
 
   func testPerformanceShuffle()
   {
@@ -31,6 +31,33 @@ class ShuffleTests: XCTestCase
   {
     self.measureBlock() {
       var s = Array(SequenceOf(ShuffledSequence(self.a)))
+    }
+  }
+
+  func testPerformancePermutationGenerator()
+  {
+    self.measureBlock() {
+      let shuffledIndices = IndexShuffler(self.a.startIndex..<self.a.endIndex)
+      let permutation = PermutationGenerator(elements: self.a, indices: shuffledIndices)
+      var s = Array(permutation)
+    }
+  }
+
+  func testPerformancePermutationGeneratorOfSequenceOfShuffledIndices()
+  {
+    self.measureBlock() {
+      let shuffledIndices = IndexShuffler(self.a.startIndex..<self.a.endIndex)
+      let permutation = PermutationGenerator(elements: self.a, indices: SequenceOf(shuffledIndices))
+      var s = Array(permutation)
+    }
+  }
+
+  func testPerformanceSequenceOfPermutationGenerator()
+  {
+    self.measureBlock() {
+      let shuffledIndices = IndexShuffler(self.a.startIndex..<self.a.endIndex)
+      let permutation = PermutationGenerator(elements: self.a, indices: shuffledIndices)
+      var s = Array(SequenceOf(permutation))
     }
   }
 }
