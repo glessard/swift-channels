@@ -15,6 +15,11 @@ class SingletonChannelTests: ChannelTestCase
 {
   override var id: String { return "Singleton" }
 
+  override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
+  {
+    return Channel<T>.MakeSingleton()
+  }
+
   /**
     Sequential send, then receive on the same thread.
   */
@@ -23,7 +28,7 @@ class SingletonChannelTests: ChannelTestCase
   {
     var (tx,rx) = SingletonChan<UInt32>.Make()
 
-    ChannelTestSendReceive(tx, rx)
+    ChannelTestSendReceive() //tx, rx)
   }
 
   /**
@@ -74,10 +79,7 @@ class SingletonChannelTests: ChannelTestCase
 
   func testReceiveFirst()
   {
-    let xp = expectationWithDescription(id + " Channel Receive then Send")!
-    var (tx,rx) = SingletonChan.Make(type: xp)
-
-    ChannelTestReceiveFirst(tx, rx, expectation: xp)
+    ChannelTestReceiveFirst()
   }
 
   /**
@@ -86,10 +88,7 @@ class SingletonChannelTests: ChannelTestCase
 
   func testSendFirst()
   {
-    let xp = expectationWithDescription(id + " Channel Send then Receive")!
-    var (tx, rx) = SingletonChan.Make(type: xp)
-
-    ChannelTestSendFirst(tx, rx, expectation: xp)
+    ChannelTestSendFirst()
   }
 
   /**
@@ -98,10 +97,7 @@ class SingletonChannelTests: ChannelTestCase
 
   func testBlockedReceive()
   {
-    let expectation = expectationWithDescription(id + " Channel blocked Receive, verified reception")
-    var (tx, rx) = Channel<UInt32>.MakeSingleton()
-
-    ChannelTestBlockedReceive(tx, rx, expectation: expectation)
+    ChannelTestBlockedReceive()
   }
 
   /**
@@ -136,9 +132,6 @@ class SingletonChannelTests: ChannelTestCase
 
   func testNoSender()
   {
-    let xp = expectationWithDescription(id + " Channel Receive, no Sender")
-    var (_, rx) = Channel<Int>.MakeSingleton()
-
-    ChannelTestNoSender(rx, expectation: xp)
+    ChannelTestNoSender()
   }
 }

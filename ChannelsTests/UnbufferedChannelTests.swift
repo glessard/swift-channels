@@ -16,16 +16,18 @@ class UnbufferedChannelTests: ChannelTestCase
 {
   override var id: String { return "Unbuffered" }
 
+  override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
+  {
+    return Channel<T>.Make(0)
+  }
+
   /**
     Fulfill the asynchronous 'expectation' after its reference has transited through the channel.
   */
 
   func testReceiveFirst()
   {
-    let xp = expectationWithDescription(id + " Receive then Send")!
-    var (tx, rx) = Channel.Make(type: xp)
-
-    ChannelTestReceiveFirst(tx, rx, expectation: xp)
+    ChannelTestReceiveFirst()
   }
 
   /**
@@ -34,10 +36,7 @@ class UnbufferedChannelTests: ChannelTestCase
 
   func testSendFirst()
   {
-    let expectation = expectationWithDescription(id + " Send then Receive")!
-    var (tx, rx) = Channel.Make(type: expectation)
-
-    ChannelTestSendFirst(tx, rx, expectation: expectation)
+    ChannelTestSendFirst()
   }
 
   /**
@@ -46,10 +45,7 @@ class UnbufferedChannelTests: ChannelTestCase
 
   func testBlockedSend()
   {
-    let expectation = expectationWithDescription(id + " Send, verified receive")
-    var (tx, rx) = Channel<UInt32>.Make()
-
-    ChannelTestBlockedSend(tx, rx, expectation: expectation)
+    ChannelTestBlockedSend()
   }
 
   /**
@@ -58,10 +54,7 @@ class UnbufferedChannelTests: ChannelTestCase
 
   func testBlockedReceive()
   {
-    let expectation = expectationWithDescription(id + " Receive, with verification")
-    var (tx, rx) = Channel<UInt32>.Make()
-
-    ChannelTestBlockedReceive(tx, rx, expectation: expectation)
+    ChannelTestBlockedReceive()
   }
 
   /**
@@ -70,10 +63,7 @@ class UnbufferedChannelTests: ChannelTestCase
 
   func testNoReceiver()
   {
-    let xp = expectationWithDescription(id + " Send, no Receiver")
-    var (tx, _) = Channel<()>.Make()
-
-    ChannelTestNoReceiver(tx, expectation: xp)
+    ChannelTestNoReceiver()
   }
 
   /**
@@ -82,16 +72,11 @@ class UnbufferedChannelTests: ChannelTestCase
 
   func testNoSender()
   {
-    let xp = expectationWithDescription(id + " Receive, no Sender")
-    var (_, rx) = Channel<Int>.Make()
-
-    ChannelTestNoSender(rx, expectation: xp)
+    ChannelTestNoSender()
   }
 
   func testPerformanceWithContention()
   {
-    var (tx, rx) = Channel<Int>.Make()
-
-    ChannelPerformanceWithContention(tx, rx)
+    ChannelPerformanceWithContention()
   }
 }

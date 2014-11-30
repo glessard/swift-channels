@@ -20,12 +20,19 @@ class ChannelTestCase: XCTestCase
 
   var buflen: Int { return iterations/iterations }
 
+  func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
+  {
+    return Channel<T>.Make(1)
+  }
+
   /**
     Sequential send, then receive on the same thread.
   */
 
-  func ChannelTestSendReceive(tx: Sender<UInt32>, _ rx: Receiver<UInt32>)
+  func ChannelTestSendReceive()
   {
+    let (tx, rx) = InstantiateTestChannel(UInt32)
+
     let value =  arc4random()
     tx <- value
     let result = <-rx
@@ -38,8 +45,11 @@ class ChannelTestCase: XCTestCase
     'expectation' after its reference has transited through the channel.
   */
 
-  func ChannelTestReceiveFirst(tx: Sender<XCTestExpectation>, _ rx: Receiver<XCTestExpectation>, expectation: XCTestExpectation)
+  func ChannelTestReceiveFirst()
   {
+    let (tx, rx) = InstantiateTestChannel(XCTestExpectation)
+    let expectation = expectationWithDescription(id + " Receive then Send")!
+
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
       if let x = <-rx
       {
@@ -64,8 +74,11 @@ class ChannelTestCase: XCTestCase
     then verify the data was transmitted unchanged.
   */
 
-  func ChannelTestBlockedReceive(tx: Sender<UInt32>, _ rx: Receiver<UInt32>, expectation: XCTestExpectation)
+  func ChannelTestBlockedReceive()
   {
+    let (tx, rx) = InstantiateTestChannel(UInt32)
+    let expectation = expectationWithDescription(id + " blocked Receive, verified reception")
+
     var valrecd = arc4random()
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
       while let v = <-rx
@@ -93,8 +106,11 @@ class ChannelTestCase: XCTestCase
     'expectation' after its reference has transited through the channel.
   */
 
-  func ChannelTestSendFirst(tx: Sender<XCTestExpectation>, _ rx: Receiver<XCTestExpectation>, expectation: XCTestExpectation)
+  func ChannelTestSendFirst()
   {
+    let (tx, rx) = InstantiateTestChannel(XCTestExpectation)
+    let expectation = expectationWithDescription(id + " Send then Receive")!
+
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
       tx <- expectation
       tx.close()
@@ -118,8 +134,11 @@ class ChannelTestCase: XCTestCase
     Block on send, then verify the data was transmitted unchanged.
   */
 
-  func ChannelTestBlockedSend(tx: Sender<UInt32>, _ rx: Receiver<UInt32>, expectation: XCTestExpectation)
+  func ChannelTestBlockedSend()
   {
+    let (tx, rx) = InstantiateTestChannel(UInt32)
+    let expectation = expectationWithDescription(id + "blocked Send, verified reception")
+
     var valsent = arc4random()
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
       valsent = arc4random()
@@ -150,8 +169,11 @@ class ChannelTestCase: XCTestCase
     Block on receive, unblock on channel close
   */
 
-  func ChannelTestNoSender(rx: Receiver<Int>, expectation: XCTestExpectation)
+  func ChannelTestNoSender()
   {
+    let (_, rx) = InstantiateTestChannel(Int)
+    let expectation = expectationWithDescription(id + " Receive, no Sender")
+
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
       while let v = <-rx
       {
@@ -172,8 +194,11 @@ class ChannelTestCase: XCTestCase
     Block on send, unblock on channel close
   */
 
-  func ChannelTestNoReceiver(tx: Sender<()>, expectation: XCTestExpectation)
+  func ChannelTestNoReceiver()
   {
+    let (tx, _) = InstantiateTestChannel(Void)
+    let expectation = expectationWithDescription(id + " Send, no Receiver")
+
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
       for i in 0...self.buflen
       {
@@ -194,9 +219,11 @@ class ChannelTestCase: XCTestCase
     Performance test when avoiding thread contention, while keeping the channel at never more than 1 item full.
   */
 
-  func ChannelPerformanceNoContention(tx: Sender<Int>, _ rx: Receiver<Int>)
+  func ChannelPerformanceNoContention()
   {
     self.measureBlock() {
+      let (tx, rx) = self.InstantiateTestChannel(Int)
+
       for i in 0..<self.iterations
       {
         tx <- i
@@ -210,9 +237,11 @@ class ChannelTestCase: XCTestCase
     Performance test when avoiding thread contention. This one fills then empties the channel buffer.
   */
 
-  func ChannelPerformanceLoopNoContention(tx: Sender<Int>, _ rx: Receiver<Int>)
+  func ChannelPerformanceLoopNoContention()
   {
     self.measureBlock() {
+      let (tx, rx) = self.InstantiateTestChannel(Int)
+
       for j in 0..<(self.iterations/self.buflen)
       {
         for i in 0..<self.buflen { tx <- i }
@@ -229,18 +258,22 @@ class ChannelTestCase: XCTestCase
     Eventually, the 2 threads start to wait for eath other.
   */
 
-  func ChannelPerformanceWithContention(tx: Sender<Int>, _ rx: Receiver<Int>)
+  func ChannelPerformanceWithContention()
   {
     self.measureBlock() {
+      let (tx, rx) = self.InstantiateTestChannel(Int)
+
       async {
-        for i in 0..<self.iterations
+        for i in 1...self.iterations
         {
           tx <- i
         }
         tx.close()
       }
 
-      for m in rx { _ = m }
+      for m in rx {
+        _ = m
+      }
     }
   }
 }
