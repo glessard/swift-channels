@@ -218,6 +218,27 @@
 			name = "Supporting Files";
 			sourceTree = "<group>";
 		};
+		033F86611A295A2C00F4B44B /* pthreads */ = {
+			isa = PBXGroup;
+			children = (
+				036000DD19B4B11D00F4B44B /* chan-pthreads.swift */,
+				03B1686C1A1D10E600F4B44B /* chan-singleton.swift */,
+				03A677D51A29336D00F4B44B /* chan-unbuffered.swift */,
+				033215731A20623C00F4B44B /* chan-buffered1.swift */,
+				0361AD881A25B0E400F4B44B /* chan-bufferedN-queue.swift */,
+				0361AD8C1A25B4A300F4B44B /* chan-bufferedN-ringbuffer.swift */,
+			);
+			name = pthreads;
+			sourceTree = "<group>";
+		};
+		033F86621A295A8700F4B44B /* blocks */ = {
+			isa = PBXGroup;
+			children = (
+				032384271A1C1A8500F4B44B /* chan-blocks.swift */,
+			);
+			name = blocks;
+			sourceTree = "<group>";
+		};
 		035FDFE319A17E8B00F4B44B /* utilities */ = {
 			isa = PBXGroup;
 			children = (
@@ -259,18 +280,13 @@
 			children = (
 				035FDFDD19A17DD500F4B44B /* async.swift */,
 				039AF2DE1A16CC1A00F4B44B /* channel.swift */,
-				035FDFDB19A17DD500F4B44B /* chan.swift */,
-				032384271A1C1A8500F4B44B /* chan-blocks.swift */,
-				036000DD19B4B11D00F4B44B /* chan-pthreads.swift */,
-				03B1686C1A1D10E600F4B44B /* chan-singleton.swift */,
-				03A677D51A29336D00F4B44B /* chan-unbuffered.swift */,
-				033215731A20623C00F4B44B /* chan-buffered1.swift */,
-				0361AD881A25B0E400F4B44B /* chan-bufferedN-queue.swift */,
-				0361AD8C1A25B4A300F4B44B /* chan-bufferedN-ringbuffer.swift */,
 				0310D0F919A8627800F4B44B /* chan-protocols.swift */,
 				0367EA5919A8F84A00F4B44B /* chan-sender.swift */,
 				039AF2E01A16CDA900F4B44B /* chan-receiver.swift */,
 				035FDFE819A23FF700F4B44B /* chan-operators.swift */,
+				035FDFDB19A17DD500F4B44B /* chan.swift */,
+				033F86621A295A8700F4B44B /* blocks */,
+				033F86611A295A2C00F4B44B /* pthreads */,
 				03B65B8819AFFC4D00F4B44B /* select-types.swift */,
 				03E44D1619A7AB5700F4B44B /* queue.swift */,
 			);

@@ -106,3 +106,46 @@ public protocol BasicChannelType: class
 
   func close()
 }
+
+/**
+  ChannelType is the connection between a SenderType and  ReceiverType.
+*/
+
+protocol ChannelType: BasicChannelType
+{
+  typealias ElementType
+
+  /**
+    Determine whether the channel is empty (and can't be received from at the moment)
+  */
+
+  var isEmpty: Bool { get }
+
+  /**
+    Determine whether the channel is full (and can't be written to at the moment)
+  */
+
+  var isFull: Bool { get }
+
+  /**
+    Put a new element in the channel
+
+    If the channel is full, this call will block.
+    If the channel has been closed, no action will be taken.
+
+    :param: element the new element to be added to the channel.
+  */
+
+  func put(newElement: ElementType)
+
+  /**
+    Obtain the oldest element from the channel.
+
+    If the channel is empty, this call will block.
+    If the channel is empty and closed, this will return nil.
+
+    :return: the oldest element from the channel.
+  */
+
+  func take() -> ElementType?
+}
