@@ -1,5 +1,5 @@
 //
-//  channel.swift
+//  gcd-channel.swift
 //  concurrency
 //
 //  Created by Guillaume Lessard on 2014-08-16.
@@ -10,7 +10,7 @@
   Factory functions to create Sender and Receiver pairs linked by a channel.
 */
 
-public class Channel<T>
+public class gcdChannel<T>
 {
   /**
     Factory function to obtain a new, unbuffered Chan<T> object (channel capacity = 0).
@@ -38,15 +38,15 @@ public class Channel<T>
     switch capacity
     {
       case let c where c < 1:
-        channel = UnbufferedChan<T>()
+        channel = gcdUnbufferedChan<T>()
       case 1:
-        channel = Buffered1Chan<T>()
+        channel = gcdBuffered1Chan<T>()
 
       default:
-        channel = BufferedQChan<T>(capacity)
+        channel = gcdBufferedQChan<T>(capacity)
     }
 
-    return Wrap(channel)
+    return Channel.Wrap(channel)
   }
 
   /**
@@ -71,29 +71,19 @@ public class Channel<T>
 
   public class func MakeSingleton() -> (tx: Sender<T>, rx: Receiver<T>)
   {
-    return Wrap(SingletonChan<T>())
+    return Channel.Wrap(gcdSingletonChan<T>())
   }
 
-  /**
-    Factory function to obtain a new Chan<T> object, using a sample element to determine the type.
-
-    :param: type a sample object whose type will be used for the channel's element type. The object is not retained.
-
-    :return: a newly-created, empty Sender<T>/Receiver<T> pair.
-  */
-
-  public class func MakeSingleton(#type: T) -> (tx: Sender<T>, rx: Receiver<T>)
-  {
-    return MakeSingleton()
-  }
-
-  class func Wrap(c: Chan<T>) -> (tx: Sender<T>, rx: Receiver<T>)
-  {
-    return (Sender.Wrap(c), Receiver.Wrap(c))
-  }
-
-  class func Wrap<T, C: ChannelType where C.ElementType == T>(c: C) -> (tx: Sender<T>, rx: Receiver<T>)
-  {
-    return (Sender.Wrap(c), Receiver.Wrap(c))
-  }
+//  /**
+//    Factory function to obtain a new Chan<T> object, using a sample element to determine the type.
+//
+//    :param: type a sample object whose type will be used for the channel's element type. The object is not retained.
+//
+//    :return: a newly-created, empty Sender<T>/Receiver<T> pair.
+//  */
+//
+//  public class func MakeSingleton(#type: T) -> (tx: Sender<T>, rx: Receiver<T>)
+//  {
+//    return MakeSingleton()
+//  }
 }

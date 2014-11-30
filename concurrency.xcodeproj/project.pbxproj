@@ -24,6 +24,13 @@
 		0361AD8E1A25B4A300F4B44B /* chan-bufferedN-ringbuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0361AD8C1A25B4A300F4B44B /* chan-bufferedN-ringbuffer.swift */; };
 		0361AD8F1A25B4A300F4B44B /* chan-bufferedN-ringbuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0361AD8C1A25B4A300F4B44B /* chan-bufferedN-ringbuffer.swift */; };
 		036D686C1A250C0D00F4B44B /* ChannelTestCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 036D686B1A250C0D00F4B44B /* ChannelTestCase.swift */; };
+		03781E3E1A2BDB6400F4B44B /* gcd-channel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03781E3D1A2BDB6400F4B44B /* gcd-channel.swift */; };
+		03781E3F1A2BDF0400F4B44B /* chan-blocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 032384271A1C1A8500F4B44B /* chan-blocks.swift */; };
+		03781E401A2BDF0500F4B44B /* chan-blocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 032384271A1C1A8500F4B44B /* chan-blocks.swift */; };
+		03781E411A2BDF0500F4B44B /* chan-blocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 032384271A1C1A8500F4B44B /* chan-blocks.swift */; };
+		03781E421A2BDF0C00F4B44B /* gcd-channel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03781E3D1A2BDB6400F4B44B /* gcd-channel.swift */; };
+		03781E431A2BDF0D00F4B44B /* gcd-channel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03781E3D1A2BDB6400F4B44B /* gcd-channel.swift */; };
+		03781E441A2BDF9000F4B44B /* logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E44D1419A7A71200F4B44B /* logging.swift */; };
 		03816F6F1A26D76B00F4B44B /* shuffle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03216FB219B01E4000F4B44B /* shuffle.swift */; };
 		03816F731A26D7BD00F4B44B /* ShuffleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03816F721A26D7BD00F4B44B /* ShuffleTests.swift */; };
 		039FF9631A1E5BBF00F4B44B /* QueueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 039FF9621A1E5BBF00F4B44B /* QueueTests.swift */; };
@@ -116,6 +123,7 @@
 		0361AD8C1A25B4A300F4B44B /* chan-bufferedN-ringbuffer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "chan-bufferedN-ringbuffer.swift"; sourceTree = "<group>"; };
 		0367EA5919A8F84A00F4B44B /* chan-sender.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = "chan-sender.swift"; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
 		036D686B1A250C0D00F4B44B /* ChannelTestCase.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChannelTestCase.swift; sourceTree = "<group>"; };
+		03781E3D1A2BDB6400F4B44B /* gcd-channel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "gcd-channel.swift"; sourceTree = "<group>"; };
 		03816F721A26D7BD00F4B44B /* ShuffleTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ShuffleTests.swift; sourceTree = "<group>"; };
 		039AF2DE1A16CC1A00F4B44B /* channel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = channel.swift; sourceTree = "<group>"; };
 		039AF2E01A16CDA900F4B44B /* chan-receiver.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "chan-receiver.swift"; sourceTree = "<group>"; };
@@ -234,6 +242,7 @@
 		033F86621A295A8700F4B44B /* blocks */ = {
 			isa = PBXGroup;
 			children = (
+				03781E3D1A2BDB6400F4B44B /* gcd-channel.swift */,
 				032384271A1C1A8500F4B44B /* chan-blocks.swift */,
 			);
 			name = blocks;
@@ -449,7 +458,9 @@
 				039FF96E1A1E95D300F4B44B /* chan-sender.swift in Sources */,
 				039FF9711A1E95D300F4B44B /* queue.swift in Sources */,
 				030A900E19B5A28C00F4B44B /* main.swift in Sources */,
+				03781E411A2BDF0500F4B44B /* chan-blocks.swift in Sources */,
 				030A901A19B5A2A800F4B44B /* logging.swift in Sources */,
+				03781E431A2BDF0D00F4B44B /* gcd-channel.swift in Sources */,
 				03C0D0751A1EA2D400F4B44B /* chan-pthreads.swift in Sources */,
 				039FF9691A1E95D300F4B44B /* channel.swift in Sources */,
 				0361AD8F1A25B4A300F4B44B /* chan-bufferedN-ringbuffer.swift in Sources */,
@@ -475,6 +486,7 @@
 				03E284901A172A6100F4B44B /* defer.swift in Sources */,
 				0361AD8E1A25B4A300F4B44B /* chan-bufferedN-ringbuffer.swift in Sources */,
 				0361AD8A1A25B0E400F4B44B /* chan-bufferedN-queue.swift in Sources */,
+				03781E401A2BDF0500F4B44B /* chan-blocks.swift in Sources */,
 				03E2848B1A16E35B00F4B44B /* queue.swift in Sources */,
 				03E284861A16E35B00F4B44B /* chan-protocols.swift in Sources */,
 				032384301A1C1D6100F4B44B /* chan-pthreads.swift in Sources */,
@@ -483,6 +495,7 @@
 				03E10E2619BB6CD800F4B44B /* timing.swift in Sources */,
 				03E284831A16E35B00F4B44B /* channel.swift in Sources */,
 				03E284891A16E35B00F4B44B /* chan-operators.swift in Sources */,
+				03781E421A2BDF0C00F4B44B /* gcd-channel.swift in Sources */,
 				03E10E2719BB6D6A00F4B44B /* logging.swift in Sources */,
 				03A677D71A29356D00F4B44B /* chan-unbuffered.swift in Sources */,
 			);
@@ -493,6 +506,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				03E284741A16E35900F4B44B /* chan-receiver.swift in Sources */,
+				03781E3F1A2BDF0400F4B44B /* chan-blocks.swift in Sources */,
 				03E284731A16E35900F4B44B /* chan-sender.swift in Sources */,
 				033215741A20623C00F4B44B /* chan-buffered1.swift in Sources */,
 				0361AD891A25B0E400F4B44B /* chan-bufferedN-queue.swift in Sources */,
@@ -501,9 +515,11 @@
 				03E284911A17303900F4B44B /* async.swift in Sources */,
 				03A677D61A29336D00F4B44B /* chan-unbuffered.swift in Sources */,
 				03E284771A16E35900F4B44B /* queue.swift in Sources */,
+				03781E3E1A2BDB6400F4B44B /* gcd-channel.swift in Sources */,
 				03E284701A16E35900F4B44B /* chan.swift in Sources */,
 				03E284751A16E35900F4B44B /* chan-operators.swift in Sources */,
 				03B1686D1A1D10E600F4B44B /* chan-singleton.swift in Sources */,
+				03781E441A2BDF9000F4B44B /* logging.swift in Sources */,
 				03E284721A16E35900F4B44B /* chan-protocols.swift in Sources */,
 				03E2846F1A16E35900F4B44B /* channel.swift in Sources */,
 			);

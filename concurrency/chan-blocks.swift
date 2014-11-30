@@ -149,7 +149,7 @@ class gcdChan<T>: Chan<T>
     Determine whether the channel has been closed
   */
 
-  override func isClosedFunc() -> Bool { return closed }
+  final override var isClosed: Bool { return closed }
   
   /**
     Close the channel
@@ -187,7 +187,7 @@ class gcdChan<T>: Chan<T>
   A buffered channel.
 */
 
-class BufferedChan<T>: gcdChan<T>
+class gcdBufferedChan<T>: gcdChan<T>
 {
   /**
     Append an element to the channel
@@ -198,7 +198,7 @@ class BufferedChan<T>: gcdChan<T>
     :param: element the new element to be added to the channel.
   */
 
-  override func write(newElement: T)
+  override func put(newElement: T)
   {
     if self.isClosed { return }
 
@@ -254,7 +254,7 @@ class BufferedChan<T>: gcdChan<T>
     :return: the oldest element from the channel.
   */
 
-  override func read() -> T?
+  override func take() -> T?
   {
 //    let id = readerCount++
 //    self.log("trying to receive #\(id)")
@@ -354,7 +354,7 @@ class BufferedChan<T>: gcdChan<T>
   A buffered channel with an N>1 element queue
 */
 
-class BufferedQChan<T>: BufferedChan<T>
+class gcdBufferedQChan<T>: gcdBufferedChan<T>
 {
   private let count: Int
   private var q: Queue<T>
@@ -370,11 +370,11 @@ class BufferedQChan<T>: BufferedChan<T>
     self.init(1)
   }
 
-  override func capacityFunc() -> Int { return count }
+//  override func capacityFunc() -> Int { return count }
 
-  override func isEmptyFunc() -> Bool { return q.isEmpty }
+  final override var isEmpty: Bool { return q.isEmpty }
 
-  override func isFullFunc() ->  Bool { return q.count >= count }
+  final override var isFull:  Bool { return q.count >= count }
 
   private override func writeElement(newElement: T)
   {
@@ -391,7 +391,7 @@ class BufferedQChan<T>: BufferedChan<T>
   A buffered channel with a one-element backing store.
 */
 
-class Buffered1Chan<T>: BufferedChan<T>
+class gcdBuffered1Chan<T>: gcdBufferedChan<T>
 {
   private var element: T?
 
@@ -400,11 +400,11 @@ class Buffered1Chan<T>: BufferedChan<T>
     element = nil
   }
 
-  override func capacityFunc() -> Int { return 1 }
+//  override func capacityFunc() -> Int { return 1 }
 
-  override func isEmptyFunc() -> Bool { return (element == nil) }
+  final override var isEmpty: Bool { return (element == nil) }
 
-  override func isFullFunc() ->  Bool  { return (element != nil) }
+  final override var isFull: Bool  { return (element != nil) }
 
   private override func writeElement(newElement: T)
   {
@@ -427,7 +427,7 @@ class Buffered1Chan<T>: BufferedChan<T>
   The first successful write operation immediately closes the channel.
 */
 
-public class SingletonChan<T>: Buffered1Chan<T>
+public class gcdSingletonChan<T>: gcdBuffered1Chan<T>
 {
   public override init()
   {
@@ -481,7 +481,7 @@ public class SingletonChan<T>: Buffered1Chan<T>
   Conversely, receive operations block until a sender is ready.
 */
 
-class UnbufferedChan<T>: gcdChan<T>
+class gcdUnbufferedChan<T>: gcdChan<T>
 {
   private var element: T?
   private var blockedReaders: Int32 = 0
@@ -492,7 +492,7 @@ class UnbufferedChan<T>: gcdChan<T>
     element = nil
   }
 
-  override func capacityFunc() -> Int  { return 0 }
+//  final override var capacity: Int  { return 0 }
 
   /**
   isEmpty is meaningless when capacity equals zero.
@@ -501,7 +501,7 @@ class UnbufferedChan<T>: gcdChan<T>
   :return: true
   */
 
-  override func isEmptyFunc() -> Bool { return true }
+  final override var isEmpty: Bool { return true }
 
   /**
   isFull is meaningless when capacity equals zero.
@@ -510,7 +510,7 @@ class UnbufferedChan<T>: gcdChan<T>
   :return: true
   */
 
-  override func isFullFunc() -> Bool  { return true }
+  final override var isFull: Bool  { return true }
 
   /**
     Tell whether the channel is ready to transfer data.
@@ -542,7 +542,7 @@ class UnbufferedChan<T>: gcdChan<T>
     :param: element the new element to be added to the channel.
   */
 
-  override func write(newElement: T)
+  override func put(newElement: T)
   {
     if self.isClosed { return }
 
@@ -602,7 +602,7 @@ class UnbufferedChan<T>: gcdChan<T>
     :return: the oldest element from the channel.
   */
 
-  override func read() -> T?
+  override func take() -> T?
   {
 //    let id = readerCount++
 //    self.log("reader \(id) is trying to receive")
