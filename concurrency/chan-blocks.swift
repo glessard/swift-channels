@@ -14,10 +14,43 @@ import Dispatch
   so we have to do this ourselves.
 */
 
-private enum QueueState
+private let Suspended: Int32 = 1
+private let Running: Int32   = 0
+
+final class QueueWrapper
 {
-  case Suspended
-  case Running
+  private let queue: dispatch_queue_t
+  private var state: Int32 = 0
+
+  init(name: String)
+  {
+    queue = dispatch_queue_create(name, DISPATCH_QUEUE_SERIAL)
+  }
+
+  final func suspend()
+  {
+    if OSAtomicCompareAndSwap32Barrier(Running, Suspended, &state)
+    {
+      dispatch_suspend(queue)
+    }
+  }
+
+  final func resume()
+  {
+    if OSAtomicCompareAndSwap32Barrier(Suspended, Running, &state)
+    {
+      dispatch_resume(queue)
+    }
+  }
+
+  // a pseudo-keyword shortcut for Grand Central Dispatch
+
+  final func mutex(action: () -> ())
+  {
+    dispatch_sync(queue) { action() }
+  }
+
+  final var isRunning: Bool { return (state == Running) }
 }
 
 /**
@@ -31,116 +64,19 @@ class gcdChan<T>: Chan<T>
 {
   // instance variables
 
-  private var closed: Bool = false
+  var closed: Bool = false
 
-  private let mutex:   dispatch_queue_t
-  private let readers: dispatch_queue_t
-  private let writers: dispatch_queue_t
-
-  private var readerState: QueueState = .Running
-  private var writerState: QueueState = .Running
+  let mutex:   QueueWrapper
+  let readers: QueueWrapper
+  let writers: QueueWrapper
 
   // Initialization
 
-  private override init()
+  override init()
   {
-    mutex   = dispatch_queue_create("channelmutex", DISPATCH_QUEUE_SERIAL)
-    readers = dispatch_queue_create("channelreadq", DISPATCH_QUEUE_SERIAL)
-    writers = dispatch_queue_create("channelwritq", DISPATCH_QUEUE_SERIAL)
-  }
-
-  // pseudo-keyword shortcuts for Grand Central Dispatch
-
-  final private func channelMutex(action: () -> ())
-  {
-    dispatch_sync(mutex)   { action() }
-  }
-
-  final private func readerMutex(action: () -> ())
-  {
-    dispatch_sync(readers) { action() }
-  }
-
-  final private func writerMutex(action: () -> ())
-  {
-    dispatch_sync(writers) { action() }
-  }
-
-  /**
-    Suspend either the readers or the writers queue, and
-    resume the other queue in the process.
-
-    By *definition*, this method is called while a mutex is locked.
-  
-    :param: queue either the readers or the writers queue.
-  */
-
-  final private func suspend(queue: dispatch_queue_t)
-  {
-    if queue === readers
-    {
-      if readerState == .Running
-      {
-        dispatch_suspend(readers)
-        readerState = .Suspended
-        resume(writers)
-      }
-      return
-    }
-
-    if queue === writers
-    {
-      if writerState == .Running
-      {
-        dispatch_suspend(writers)
-        writerState = .Suspended
-        resume(readers)
-      }
-      return
-    }
-
-    assert(false, "Attempted to suspend an invalid queue")
-  }
-
-  /**
-    Resume either the readers or the writers queue.
-
-    By *definition*, this method is called while a mutex is locked.
-
-    :param: queue either the readers or the writers queue.
-  */
-
-  final private func resume(queue: dispatch_queue_t)
-  {
-    if queue === readers
-    {
-      if readerState == .Suspended
-      {
-        dispatch_resume(readers)
-        readerState = .Running
-      }
-      return
-    }
-
-    if queue === writers
-    {
-      if writerState == .Suspended
-      {
-        dispatch_resume(writers)
-        writerState = .Running
-      }
-      return
-    }
-
-    assert(false, "Attempted to resume an invalid queue")
-  }
-
-  // Logging
-
-  private let logging = true
-  private func log<PT>(object: PT) -> ()
-  {
-    if logging { syncprint(object) }
+    mutex   = QueueWrapper(name: "channelmutex")
+    readers = QueueWrapper(name: "channelreadq")
+    writers = QueueWrapper(name: "channelwritq")
   }
 
   // Computed properties
@@ -165,21 +101,11 @@ class gcdChan<T>: Chan<T>
   {
     if closed { return }
 
-    channelMutex {
-      self.doClose()
-      self.resume(self.readers)
-      self.resume(self.writers)
-    }
-  }
+//    syncprint("closing channel")
 
-  /**
-    Close the channel, specific implementation. This is used within close().
-    By *definition*, this method is called while a mutex is locked.
-  */
-
-  private func doClose()
-  {
     closed = true
+    readers.resume()
+    writers.resume()
   }
 }
 
@@ -202,16 +128,16 @@ class gcdBufferedChan<T>: gcdChan<T>
   {
     if self.isClosed { return }
 
-//    self.log("trying to send: \(newElement)")
+//    syncprint("trying to send: \(newElement)")
 
     var hasSent = false
     while !hasSent
     {
-      writerMutex { // A suspended writer queue will block here.
-        self.channelMutex {
+      writers.mutex { // A suspended writer queue will block here.
+        self.mutex.mutex {
           if self.isFull && !self.isClosed
           {
-            self.suspend(self.writers)
+            self.writers.suspend()
             return // to the top of the while loop and be suspended
           }
 
@@ -220,15 +146,15 @@ class gcdBufferedChan<T>: gcdChan<T>
           if !self.isFull { self.writeElement(newElement) }
           hasSent = true
 
-//          self.log("sent element: \(newElement)")
+//          syncprint("sent element: \(newElement)")
 
           if self.isFull && !self.isClosed
           { // Preemptively suspend writers queue when channel is full
-            self.suspend(self.writers)
+            self.writers.suspend()
           }
           else
           { // Channel is not empty; resume the readers queue.
-            self.resume(self.readers)
+            self.readers.resume()
           }
         }
       }
@@ -257,32 +183,32 @@ class gcdBufferedChan<T>: gcdChan<T>
   override func take() -> T?
   {
 //    let id = readerCount++
-//    self.log("trying to receive #\(id)")
+//    syncprint("trying to receive #\(id)")
 
     var oldElement: T?
     var hasRead = false
     while !hasRead
     {
-      readerMutex { // A suspended reader queue will block here.
-        self.channelMutex {
+      readers.mutex { // A suspended reader queue will block here.
+        self.mutex.mutex {
           if self.isEmpty && !self.isClosed
           {
-            self.suspend(self.readers)
+            self.readers.suspend()
             return // to the top of the while loop and be suspended
           }
 
           oldElement = self.readElement()
           hasRead = true
 
-//          self.log("reader \(id) received \(oldElement)")
+//          syncprint("reader \(id) received \(oldElement)")
 
           if self.isEmpty && !self.isClosed
           { // Preemptively suspend readers on empty channel
-            self.suspend(self.readers)
+            self.readers.suspend()
           }
           else
           { // Channel is not full; resume the writers queue.
-            self.resume(self.writers)
+            self.writers.resume()
           }
         }
       }
@@ -391,55 +317,36 @@ class gcdBufferedQChan<T>: gcdBufferedChan<T>
   A buffered channel with a one-element backing store.
 */
 
-class gcdBuffered1Chan<T>: gcdBufferedChan<T>
-{
-  private var element: T?
-
-  override init()
-  {
-    element = nil
-  }
-
-//  override func capacityFunc() -> Int { return 1 }
-
-  final override var isEmpty: Bool { return (element == nil) }
-
-  final override var isFull: Bool  { return (element != nil) }
-
-  private override func writeElement(newElement: T)
-  {
-    element = newElement
-  }
-
-  private override func readElement() ->T?
-  {
-    if let oldElement = self.element
-    {
-      self.element = nil
-      return oldElement
-    }
-    return nil
-  }
-}
-
-/**
-  A one-element, buffered channel which will only ever transmit one message.
-  The first successful write operation immediately closes the channel.
-*/
-
-public class gcdSingletonChan<T>: gcdBuffered1Chan<T>
-{
-  public override init()
-  {
-    super.init()
-  }
-
-  private override func writeElement(newElement: T)
-  {
-    super.writeElement(newElement)
-    doClose()
-  }
-}
+//class gcdBuffered1Chan<T>: gcdBufferedChan<T>
+//{
+//  private var element: T?
+//
+//  override init()
+//  {
+//    element = nil
+//  }
+//
+////  override func capacityFunc() -> Int { return 1 }
+//
+//  final override var isEmpty: Bool { return (element == nil) }
+//
+//  final override var isFull: Bool  { return (element != nil) }
+//
+//  private override func writeElement(newElement: T)
+//  {
+//    element = newElement
+//  }
+//
+//  private override func readElement() ->T?
+//  {
+//    if let oldElement = self.element
+//    {
+//      self.element = nil
+//      return oldElement
+//    }
+//    return nil
+//  }
+//}
 
 /**
   The SelectionChannel methods for SelectChan
@@ -524,16 +431,6 @@ class gcdUnbufferedChan<T>: gcdChan<T>
   final var isReady: Bool { return (element != nil) }
 
   /**
-    Close the channel
-  */
-
-  private override func doClose()
-  {
-//    self.log("closing 0-channel")
-    super.doClose()
-  }
-
-  /**
     Write an element to the channel
 
     If no reader is ready to receive, this call will block.
@@ -546,7 +443,7 @@ class gcdUnbufferedChan<T>: gcdChan<T>
   {
     if self.isClosed { return }
 
-//    self.log("writer \(newElement) is trying to send")
+//    syncprint("writer \(newElement) is trying to send")
 
     var hasSent = false
     while !hasSent
@@ -554,15 +451,15 @@ class gcdUnbufferedChan<T>: gcdChan<T>
       // self.blockedWriters += 1 -- atomically
       OSAtomicIncrement32Barrier(&self.blockedWriters)
 
-      writerMutex {        // A suspended writer queue will block here.
-        self.channelMutex {
+      writers.mutex {        // A suspended writer queue will block here.
+        self.mutex.mutex {
           OSAtomicDecrement32Barrier(&self.blockedWriters)
 
-          self.suspend(self.writers) // will also resume readers
+          self.writers.suspend() // will also resume readers
 
           if (self.blockedReaders < 1 || self.isReady) && !self.isClosed
           {
-//            self.log("writer \(newElement) thinks there are \(self.blockedReaders) blocked readers")
+//            syncprint("writer \(newElement) thinks there are \(self.blockedReaders) blocked readers")
             return // to the top of the loop and be suspended
           }
 
@@ -574,9 +471,9 @@ class gcdUnbufferedChan<T>: gcdChan<T>
           // Surely there is a reader waiting
           assert(self.blockedReaders > 0 || self.isClosed, "No receiver available!")
 
-          if self.isClosed { self.resume(self.writers) }
+          if self.isClosed { self.writers.resume() }
 
-//          self.log("writer \(newElement) has successfully sent")
+//          syncprint("writer \(newElement) has successfully sent")
         }
       }
     }
@@ -605,7 +502,7 @@ class gcdUnbufferedChan<T>: gcdChan<T>
   override func take() -> T?
   {
 //    let id = readerCount++
-//    self.log("reader \(id) is trying to receive")
+//    syncprint("reader \(id) is trying to receive")
 
     var oldElement: T?
     var hasRead = false
@@ -614,14 +511,14 @@ class gcdUnbufferedChan<T>: gcdChan<T>
       // self.blockedReaders += 1 -- atomically
       OSAtomicIncrement32Barrier(&self.blockedReaders)
 
-      readerMutex {        // A suspended reader queue will block here.
-        self.channelMutex {
+      readers.mutex {        // A suspended reader queue will block here.
+        self.mutex.mutex {
           OSAtomicDecrement32Barrier(&self.blockedReaders)
 
           if !self.isReady && !self.isClosed
           {
-            self.suspend(self.readers) // will also resume writers
-//            self.log("reader \(id) thinks there are \(self.blockedWriters) blocked writers")
+            self.readers.suspend() // will also resume writers
+//            syncprint("reader \(id) thinks there are \(self.blockedWriters) blocked writers")
             return // to the top of the loop and be suspended
           }
 
@@ -630,13 +527,13 @@ class gcdUnbufferedChan<T>: gcdChan<T>
 
           if self.blockedReaders > 0
           { // If other readers are waiting, wait for next writer.
-            self.suspend(self.readers)
+            self.readers.suspend()
           }
           else if self.blockedWriters == 0 && self.blockedReaders == 0
           { // If both queues are empty, none should be suspended
-            self.resume(self.writers)
+            self.writers.resume()
           }
-//          self.log("reader \(id) received \(oldElement)")
+//          syncprint("reader \(id) received \(oldElement)")
         }
       }
     }
