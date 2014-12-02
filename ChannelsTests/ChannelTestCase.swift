@@ -16,9 +16,9 @@ class ChannelTestCase: XCTestCase
 {
   var id: String { return "" }
 
-  let iterations = 100_000
+  let iterations = 10_000
 
-  var buflen: Int { return iterations/iterations }
+  var buflen: Int { return 1 }
 
   func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
   {
@@ -33,9 +33,10 @@ class ChannelTestCase: XCTestCase
   {
     let (tx, rx) = InstantiateTestChannel(UInt32)
 
-    let value =  arc4random()
+    let value = arc4random()
     tx <- value
     let result = <-rx
+    rx.close()
 
     XCTAssert(value == result, "Wrong value received from channel " + id)
   }
@@ -66,26 +67,34 @@ class ChannelTestCase: XCTestCase
       tx.close()
     }
 
-    waitForExpectationsWithTimeout(2.0) { _ = $0; tx.close() }
+    waitForExpectationsWithTimeout(2.0) { _ in tx.close() }
   }
 
   /**
-    Launch an asynchronous receive task ahead of launching a send task,
+    Launch asynchronous receive tasks ahead of launching a send task,
     then verify the data was transmitted unchanged.
   */
 
   func ChannelTestBlockedReceive()
   {
     let (tx, rx) = InstantiateTestChannel(UInt32)
-    let expectation = expectationWithDescription(id + " blocked Receive, verified reception")
+    var expectations: [XCTestExpectation!] = Array<XCTestExpectation!>(count: 3, repeatedValue: nil)
+    for i in 0..<expectations.count
+    {
+      expectations[i] = expectationWithDescription(id + " blocked Receive #\(i), verified reception")
+    }
 
     var valrecd = arc4random()
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-      while let v = <-rx
-      {
-        valrecd = v
+    for i in 0..<expectations.count
+    {
+      dispatch_after(dispatch_time(DISPATCH_TIME_NOW, Int64(arc4random_uniform(50_000))),
+                     dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+        while let v = <-rx
+        {
+          valrecd = v
+        }
+        expectations[i].fulfill()
       }
-      expectation.fulfill()
     }
 
     var valsent = arc4random()
@@ -97,7 +106,7 @@ class ChannelTestCase: XCTestCase
       tx.close()
     }
 
-    waitForExpectationsWithTimeout(2.0) { _ = $0; tx.close() }
+    waitForExpectationsWithTimeout(2.0) { _ in tx.close() }
     XCTAssert(valsent == valrecd, "\(valsent) ≠ \(valrecd) in " + id)
   }
   
@@ -127,7 +136,7 @@ class ChannelTestCase: XCTestCase
       }
     }
 
-    waitForExpectationsWithTimeout(2.0) { _ = $0; tx.close() }
+    waitForExpectationsWithTimeout(2.0) { _ in tx.close() }
 }
 
   /**
@@ -137,31 +146,34 @@ class ChannelTestCase: XCTestCase
   func ChannelTestBlockedSend()
   {
     let (tx, rx) = InstantiateTestChannel(UInt32)
-    let expectation = expectationWithDescription(id + "blocked Send, verified reception")
+    let expectation = expectationWithDescription(id + " blocked Send, verified reception")
 
     var valsent = arc4random()
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-      valsent = arc4random()
+      var bogus: UInt32 = 0
       for i in 0..<self.buflen
       {
-        tx <- arc4random()
+        tx <- bogus++
       }
+      valsent = arc4random()
       tx <- valsent
       tx.close()
+//      syncprint("tx is closed")
     }
 
     var valrecd = arc4random()
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 500_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
       XCTAssert(tx.isClosed == false, self.id + " should not be closed")
 
-      while let v = <-rx
+      for (i,v) in enumerate(rx)
       {
+//        syncprint("received \(v) as received element \(i)")
         valrecd = v
       }
       expectation.fulfill()
     }
 
-    waitForExpectationsWithTimeout(2.0) { _ = $0; tx.close() }
+    waitForExpectationsWithTimeout(2.0) { _ in tx.close() }
     XCTAssert(valsent == valrecd, "\(valsent) ≠ \(valrecd) in " + id)
   }
 
@@ -187,7 +199,7 @@ class ChannelTestCase: XCTestCase
       rx.close()
     }
 
-    waitForExpectationsWithTimeout(2.0) { _ = $0; rx.close() }
+    waitForExpectationsWithTimeout(2.0) { _ in rx.close() }
   }
 
   /**
@@ -212,7 +224,7 @@ class ChannelTestCase: XCTestCase
       tx.close()
     }
 
-    waitForExpectationsWithTimeout(2.0) { _ = $0; tx.close() }
+    waitForExpectationsWithTimeout(2.0) { _ in tx.close() }
   }
 
   /**

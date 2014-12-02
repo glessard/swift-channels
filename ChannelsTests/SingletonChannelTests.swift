@@ -26,9 +26,7 @@ class SingletonChannelTests: ChannelTestCase
 
   func testSendReceive()
   {
-    var (tx,rx) = SingletonChan<UInt32>.Make()
-
-    ChannelTestSendReceive() //tx, rx)
+    ChannelTestSendReceive()
   }
 
   /**
@@ -37,7 +35,7 @@ class SingletonChannelTests: ChannelTestCase
 
   func testSendReceiveTwice()
   {
-    var (tx,rx) = SingletonChan<UInt32>.Make()
+    var (tx,rx) = InstantiateTestChannel(UInt32)
 
     let value =  arc4random()
     tx <- value <- value
@@ -54,7 +52,7 @@ class SingletonChannelTests: ChannelTestCase
 
   func testMultipleSend()
   {
-    var (tx,rx) = SingletonChan<Int>.Make()
+    var (tx,rx) = InstantiateTestChannel(Int)
 
     for i in 1...10
     {
@@ -108,7 +106,7 @@ class SingletonChannelTests: ChannelTestCase
   func testNoReceiver()
   {
     let expectation = expectationWithDescription(id + " Channel Send, no Receiver")
-    var (tx, _) = Channel<()>.MakeSingleton()
+    var (tx, _) = InstantiateTestChannel(Void)
 
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
       XCTAssert(tx.isClosed == false, self.id + " channel should be open")

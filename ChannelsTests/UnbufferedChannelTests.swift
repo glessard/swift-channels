@@ -15,6 +15,7 @@ import Channels
 class UnbufferedChannelTests: ChannelTestCase
 {
   override var id: String { return "Unbuffered" }
+  override var buflen: Int { return 0 }
 
   override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
   {

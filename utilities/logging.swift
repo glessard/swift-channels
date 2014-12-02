@@ -27,19 +27,19 @@ private var PrintGroup: dispatch_group_t! = dispatch_group_create()
   :param: object the item to be printed
 */
 
-func syncprint<T>(object: T)
+public func syncprint<T>(object: T)
 {
   var message = NSThread.currentThread().isMainThread ? "[main] " : "[back] "
 
   assert(PrintQueue != nil && PrintGroup != nil, "Init failure in logging.swift")
-  dispatch_group_async(PrintGroup, PrintQueue) { println(object, &message); print(message) }
+  dispatch_group_async(PrintGroup, PrintQueue) { print(object, &message); println(message) }
 }
 
 /**
   Block until all tasks created by syncprint() have completed.
 */
 
-func syncprintwait()
+public func syncprintwait()
 {
   // Wait at most 100ms for the last messages to print out.
   let res = dispatch_group_wait(PrintGroup, dispatch_time(DISPATCH_TIME_NOW, 100_000_000))

@@ -27,9 +27,7 @@ class Buffered1ChannelTests: ChannelTestCase
 
   func testSendReceive()
   {
-    var (tx,rx) = Channel<UInt32>.Make(1)
-
-    ChannelTestSendReceive()//tx, rx)
+    ChannelTestSendReceive()
   }
 
   /**
