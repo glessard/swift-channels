@@ -5,10 +5,9 @@
 //  Copyright (c) 2014 Guillaume Lessard. All rights reserved.
 //
 
-private typealias Task = () -> ()
-
 private class TaskList
 {
+  private typealias Task = () -> ()
   var list = [Task]()
 
   func append(task: Task)

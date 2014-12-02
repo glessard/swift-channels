@@ -17,6 +17,10 @@
 		032384311A1C1D6100F4B44B /* chan-pthreads.swift in Sources */ = {isa = PBXBuildFile; fileRef = 036000DD19B4B11D00F4B44B /* chan-pthreads.swift */; };
 		032E6B8519BD23B500F4B44B /* Channels.h in Headers */ = {isa = PBXBuildFile; fileRef = 032E6B8419BD23B500F4B44B /* Channels.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		033215741A20623C00F4B44B /* chan-buffered1.swift in Sources */ = {isa = PBXBuildFile; fileRef = 033215731A20623C00F4B44B /* chan-buffered1.swift */; };
+		034976EB1A2E156F00F4B44B /* chan-gcd-singleton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0397FC821A2C09C100F4B44B /* chan-gcd-singleton.swift */; };
+		034976EC1A2E156F00F4B44B /* chan-gcd-buffered1.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0322FB6D1A2D232C00F4B44B /* chan-gcd-buffered1.swift */; };
+		034976ED1A2E156F00F4B44B /* chan-gcd-singleton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0397FC821A2C09C100F4B44B /* chan-gcd-singleton.swift */; };
+		034976EE1A2E156F00F4B44B /* chan-gcd-buffered1.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0322FB6D1A2D232C00F4B44B /* chan-gcd-buffered1.swift */; };
 		034A69FD1A2D885700F4B44B /* ChannelTestCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 036D686B1A250C0D00F4B44B /* ChannelTestCase.swift */; };
 		035DE14D19BEF47A00F4B44B /* BufferedNChannelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035DE14C19BEF47A00F4B44B /* BufferedNChannelTests.swift */; };
 		035DE14F19BEF6BC00F4B44B /* Buffered1ChannelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035DE14E19BEF6BC00F4B44B /* Buffered1ChannelTests.swift */; };
@@ -215,9 +219,9 @@
 			isa = PBXGroup;
 			children = (
 				036D686B1A250C0D00F4B44B /* ChannelTestCase.swift */,
-				035DE14E19BEF6BC00F4B44B /* Buffered1ChannelTests.swift */,
 				03B168701A1D743500F4B44B /* SingletonChannelTests.swift */,
 				03D070FC19BEEF5200F4B44B /* UnbufferedChannelTests.swift */,
+				035DE14E19BEF6BC00F4B44B /* Buffered1ChannelTests.swift */,
 				035DE14C19BEF47A00F4B44B /* BufferedNChannelTests.swift */,
 				03781E451A2BE59100F4B44B /* GCDBuffered1ChannelTests.swift */,
 				03781E471A2BE96300F4B44B /* GCDSingletonChannelTests.swift */,
@@ -465,6 +469,7 @@
 			files = (
 				03A677D81A29356D00F4B44B /* chan-unbuffered.swift in Sources */,
 				039FF9681A1E95D300F4B44B /* async.swift in Sources */,
+				034976EE1A2E156F00F4B44B /* chan-gcd-buffered1.swift in Sources */,
 				039FF96A1A1E95D300F4B44B /* chan.swift in Sources */,
 				03C0D0761A1EA2DE00F4B44B /* chan-singleton.swift in Sources */,
 				039FF96E1A1E95D300F4B44B /* chan-sender.swift in Sources */,
@@ -475,6 +480,7 @@
 				03781E431A2BDF0D00F4B44B /* gcd-channel.swift in Sources */,
 				03C0D0751A1EA2D400F4B44B /* chan-pthreads.swift in Sources */,
 				039FF9691A1E95D300F4B44B /* channel.swift in Sources */,
+				034976ED1A2E156F00F4B44B /* chan-gcd-singleton.swift in Sources */,
 				0361AD8F1A25B4A300F4B44B /* chan-bufferedN-ringbuffer.swift in Sources */,
 				030A901919B5A2A800F4B44B /* timing.swift in Sources */,
 				03C566351A20655800F4B44B /* chan-buffered1.swift in Sources */,
@@ -491,6 +497,7 @@
 			files = (
 				03E284821A16E35B00F4B44B /* async.swift in Sources */,
 				03E2848F1A172A5900F4B44B /* future.swift in Sources */,
+				034976EB1A2E156F00F4B44B /* chan-gcd-singleton.swift in Sources */,
 				03B1686F1A1D111100F4B44B /* chan-singleton.swift in Sources */,
 				03E284841A16E35B00F4B44B /* chan.swift in Sources */,
 				03E284871A16E35B00F4B44B /* chan-sender.swift in Sources */,
@@ -501,6 +508,7 @@
 				03781E401A2BDF0500F4B44B /* chan-blocks.swift in Sources */,
 				03E2848B1A16E35B00F4B44B /* queue.swift in Sources */,
 				03E284861A16E35B00F4B44B /* chan-protocols.swift in Sources */,
+				034976EC1A2E156F00F4B44B /* chan-gcd-buffered1.swift in Sources */,
 				032384301A1C1D6100F4B44B /* chan-pthreads.swift in Sources */,
 				03C566341A20655700F4B44B /* chan-buffered1.swift in Sources */,
 				032066A819AC04D800F4B44B /* main.swift in Sources */,

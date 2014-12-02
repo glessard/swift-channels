@@ -6,6 +6,8 @@
 //  Copyright (c) 2014 Guillaume Lessard. All rights reserved.
 //
 
+import Darwin
+
 /**
   A one-element, buffered channel which will only ever transmit one message.
   The first successful write operation immediately closes the channel.

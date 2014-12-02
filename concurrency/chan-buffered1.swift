@@ -103,13 +103,9 @@ final class Buffered1Chan<T>: pthreadChan<T>
       blockedReaders -= 1
     }
 
-    if self.closed && (elementsWritten <= elementsRead)
+    if self.closed && (elementsWritten == elementsRead)
     {
       self.element = nil
-    }
-    else
-    {
-      assert(elementsRead < elementsWritten, "Inconsistent state in Buffered1Chan<T>")
     }
 
     let oldElement = self.element

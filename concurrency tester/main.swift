@@ -37,7 +37,7 @@ func worker(inputChannel: Receiver<Int>, outputChannel: Sender<(Int,Int,Int)>)
   outputChannel.close()
 }
 
-var workChan = Channel<Int>.Make(1)
+var workChan = gcdChannel<Int>.Make(1)
 var outChan  = Channel.Make(type: (0,0,0), 0)
 
 for w in 1...5

@@ -15,7 +15,7 @@ public class gcdChannel<T>
   /**
     Factory function to obtain a new, unbuffered Chan<T> object (channel capacity = 0).
 
-    :return: a newly-created, empty Sender<T>/Receiver<T> pair. It wraps one ChannelType implementor whole ElementType is T.
+    :return: a newly-created, empty Sender<T>/Receiver<T> pair. It wraps one ChannelType implementor whose ElementType is T.
   */
 
   public class func Make() -> (tx: Sender<T>, rx: Receiver<T>)
@@ -28,7 +28,7 @@ public class gcdChannel<T>
   
     :param: capacity the buffer capacity of the channel. If capacity is 0, then an unbuffered channel will be created.
   
-    :return: a newly-created, empty Sender<T>/Receiver<T> pair. It wraps one ChannelType implementor whole ElementType is T.
+    :return: a newly-created, empty Sender<T>/Receiver<T> pair. It wraps one ChannelType implementor whose ElementType is T.
   */
 
   public class func Make(capacity: Int) -> (tx: Sender<T>, rx: Receiver<T>)
@@ -50,12 +50,12 @@ public class gcdChannel<T>
   }
 
   /**
-    Factory function to obtain a new Chan<T> object, using a sample element to determine the type.
+    Factory function to obtain a new Chan<T> object, from a type T passed in as a parameter.
 
-    :param: type a sample object whose type will be used for the channel's element type. The object is not retained.
+    :param: type     the type to be used for the channel's element type.
     :param: capacity the buffer capacity of the channel. Default is 0, meaning an unbuffered channel.
 
-    :return: a newly-created, empty Sender<T>/Receiver<T> pair. It wraps one ChannelType implementor whole ElementType is T.
+    :return: a newly-created, empty Sender<T>/Receiver<T> pair. It wraps one ChannelType implementor whose ElementType is T.
   */
 
   public class func Make(#type: T, _ capacity: Int = 0) -> (tx: Sender<T>, rx: Receiver<T>)
@@ -74,16 +74,16 @@ public class gcdChannel<T>
     return Channel.Wrap(gcdSingletonChan<T>())
   }
 
-//  /**
-//    Factory function to obtain a new Chan<T> object, using a sample element to determine the type.
-//
-//    :param: type a sample object whose type will be used for the channel's element type. The object is not retained.
-//
-//    :return: a newly-created, empty Sender<T>/Receiver<T> pair.
-//  */
-//
-//  public class func MakeSingleton(#type: T) -> (tx: Sender<T>, rx: Receiver<T>)
-//  {
-//    return MakeSingleton()
-//  }
+  /**
+    Factory function to obtain a new Chan<T> object, from a type T passed in as a parameter.
+
+    :param: type the type to be used for the channel's element type.
+
+    :return: a newly-created, empty Sender<T>/Receiver<T> pair.
+  */
+
+  public class func MakeSingleton(#type: T) -> (tx: Sender<T>, rx: Receiver<T>)
+  {
+    return MakeSingleton()
+  }
 }

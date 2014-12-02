@@ -36,7 +36,6 @@ class ChannelTestCase: XCTestCase
     let value = arc4random()
     tx <- value
     let result = <-rx
-    rx.close()
 
     XCTAssert(value == result, "Wrong value received from channel " + id)
   }
@@ -158,7 +157,6 @@ class ChannelTestCase: XCTestCase
       valsent = arc4random()
       tx <- valsent
       tx.close()
-//      syncprint("tx is closed")
     }
 
     var valrecd = arc4random()
@@ -167,7 +165,6 @@ class ChannelTestCase: XCTestCase
 
       for (i,v) in enumerate(rx)
       {
-//        syncprint("received \(v) as received element \(i)")
         valrecd = v
       }
       expectation.fulfill()
@@ -276,7 +273,7 @@ class ChannelTestCase: XCTestCase
       let (tx, rx) = self.InstantiateTestChannel(Int)
 
       async {
-        for i in 1...self.iterations
+        for i in 0..<self.iterations
         {
           tx <- i
         }

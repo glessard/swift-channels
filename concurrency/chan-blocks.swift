@@ -20,11 +20,17 @@ private let Running: Int32   = 0
 final class QueueWrapper
 {
   private let queue: dispatch_queue_t
-  private var state: Int32 = 0
+  private var state: Int32 = Running
 
   init(name: String)
   {
     queue = dispatch_queue_create(name, DISPATCH_QUEUE_SERIAL)
+  }
+
+  deinit
+  {
+    // If we get here with a suspended queue, GCD will trigger a crash.
+    resume()
   }
 
   final func suspend()
@@ -45,9 +51,9 @@ final class QueueWrapper
 
   // a pseudo-keyword shortcut for Grand Central Dispatch
 
-  final func mutex(action: () -> ())
+  final func mutex(task: () -> ())
   {
-    dispatch_sync(queue) { action() }
+    dispatch_sync(queue) { task() }
   }
 
   final var isRunning: Bool { return (state == Running) }
@@ -75,8 +81,8 @@ class gcdChan<T>: Chan<T>
   override init()
   {
     mutex   = QueueWrapper(name: "channelmutex")
-    readers = QueueWrapper(name: "channelreadq")
-    writers = QueueWrapper(name: "channelwritq")
+    readers = QueueWrapper(name: "channelreaderq")
+    writers = QueueWrapper(name: "channelwriterq")
   }
 
   // Computed properties
