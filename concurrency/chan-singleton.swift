@@ -101,6 +101,8 @@ public final class SingletonChan<T>: pthreadChan<T>
 
   override func take() -> T?
   {
+    let reader = OSAtomicIncrement64Barrier(&readerCount)
+
     if (elementsWritten < 0) && !self.isClosed
     {
       pthread_mutex_lock(channelMutex)
@@ -114,8 +116,8 @@ public final class SingletonChan<T>: pthreadChan<T>
       pthread_mutex_unlock(channelMutex)
     }
 
-    let reader = OSAtomicIncrement64Barrier(&readerCount)
     let oldElement: T? = readElement(reader)
+    OSAtomicIncrement64Barrier(&elementsRead)
 
     if blockedReaders > 0
     {
@@ -132,7 +134,6 @@ public final class SingletonChan<T>: pthreadChan<T>
     if reader == 0
     {
       let oldElement = self.element
-      OSAtomicIncrement64Barrier(&elementsRead)
       // Whether to set self.element to nil is an interesting question.
       // If T is a reference type (or otherwise contains a reference), then
       // nulling is desirable to in order to avoid unnecessarily extending the
@@ -143,6 +144,7 @@ public final class SingletonChan<T>: pthreadChan<T>
       self.element = nil
       return oldElement
     }
+
     return nil
   }
 }

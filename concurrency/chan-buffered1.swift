@@ -21,6 +21,9 @@ final class Buffered1Chan<T>: pthreadChan<T>
   private var elementsWritten: Int64 = -1
   private var elementsRead: Int64 = -1
 
+  // Used to elucidate/troubleshoot message arrival order
+  // private var readerCount: Int32 = -1
+
   // Initialization and destruction
 
   override init()
@@ -68,13 +71,12 @@ final class Buffered1Chan<T>: pthreadChan<T>
       elementsWritten += 1
     }
 
-    // Channel is not empty; signal if appropriate
     if self.closed && blockedWriters > 0
-    {
+    { // No reason to block
       pthread_cond_signal(writeCondition)
     }
     if blockedReaders > 0
-    {
+    { // Channel is not empty
       pthread_cond_signal(readCondition)
     }
 
@@ -123,11 +125,11 @@ final class Buffered1Chan<T>: pthreadChan<T>
     // Also, setting self.element to nil at this point would be slow. Somehow.
 
     if self.closed && blockedReaders > 0
-    {
+    { // No reason to block
       pthread_cond_signal(readCondition)
     }
     if blockedWriters > 0
-    {
+    { // Channel isn't full
       pthread_cond_signal(writeCondition)
     }
     pthread_mutex_unlock(channelMutex)
