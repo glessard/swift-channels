@@ -6,6 +6,8 @@
 //  Copyright (c) 2014 Guillaume Lessard. All rights reserved.
 //
 
+import Darwin
+
 /**
   A buffered channel.
 */
@@ -64,6 +66,7 @@ class gcdBuffered1Chan<T>: gcdChan<T>
         if (self.elementsWritten > self.elementsRead) && !self.closed
         { // suspend writers queue when channel is full
           self.writers.suspend()
+          self.readers.resume()
           return
         }
 
@@ -80,12 +83,9 @@ class gcdBuffered1Chan<T>: gcdChan<T>
         { // suspend writers queue when channel is full
           self.writers.suspend()
         }
+        self.readers.resume()
       }
     }
-
-    // Channel is not empty; resume the readers queue.
-    // syncprint("resuming readers after sending \(newElement)")
-    readers.resume()
   }
 
   /**
@@ -99,8 +99,8 @@ class gcdBuffered1Chan<T>: gcdChan<T>
 
   override func take() -> T?
   {
-//    let id = OSAtomicIncrement32Barrier(&readerCount)
-//    syncprint("trying to receive #\(id)")
+    // let id = OSAtomicIncrement32Barrier(&readerCount)
+    // syncprint("trying to receive #\(id)")
 
     var oldElement: T?
     var hasRead = false
@@ -110,6 +110,7 @@ class gcdBuffered1Chan<T>: gcdChan<T>
         if (self.elementsWritten <= self.elementsRead) && !self.closed
         { // suspend while channel is empty
           self.readers.suspend()
+          self.writers.resume()
           return
         }
 
@@ -122,18 +123,16 @@ class gcdBuffered1Chan<T>: gcdChan<T>
         OSAtomicIncrement64Barrier(&self.elementsRead)
         hasRead = true
 
-//        syncprint("reader \(id) received \(oldElement)")
+        // syncprint("reader \(id) received \(oldElement)")
 
         if (self.elementsWritten <= self.elementsRead) && !self.closed
         { // suspend while channel is empty
           self.readers.suspend()
         }
+        self.writers.resume()
       }
     }
 
-    writers.resume()
-
-    assert(self.closed || oldElement != nil)
     return oldElement
   }
 
