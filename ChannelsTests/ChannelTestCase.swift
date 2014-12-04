@@ -16,7 +16,7 @@ class ChannelTestCase: XCTestCase
 {
   var id: String { return "" }
 
-  let iterations = 10_000
+  let performanceTestIterations = 10_000_0
 
   var buflen: Int { return 1 }
 
@@ -233,7 +233,7 @@ class ChannelTestCase: XCTestCase
     self.measureBlock() {
       let (tx, rx) = self.InstantiateTestChannel(Int)
 
-      for i in 0..<self.iterations
+      for i in 0..<self.performanceTestIterations
       {
         tx <- i
         _ = <-rx
@@ -251,7 +251,7 @@ class ChannelTestCase: XCTestCase
     self.measureBlock() {
       let (tx, rx) = self.InstantiateTestChannel(Int)
 
-      for j in 0..<(self.iterations/self.buflen)
+      for j in 0..<(self.performanceTestIterations/self.buflen)
       {
         for i in 0..<self.buflen { tx <- i }
         for i in 0..<self.buflen { _ = <-rx }
@@ -273,7 +273,7 @@ class ChannelTestCase: XCTestCase
       let (tx, rx) = self.InstantiateTestChannel(Int)
 
       async {
-        for i in 0..<self.iterations
+        for i in 0..<self.performanceTestIterations
         {
           tx <- i
         }

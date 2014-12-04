@@ -20,7 +20,7 @@ import Channels
 class BufferedNChannelTests: ChannelTestCase
 {
   override var id: String  { return "Buffered(N)" }
-  override var buflen: Int { return iterations / 1000 }
+  override var buflen: Int { return performanceTestIterations / 1000 }
 
   override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
   {
