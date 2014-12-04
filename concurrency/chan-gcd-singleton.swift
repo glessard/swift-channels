@@ -68,11 +68,7 @@ public class gcdSingletonChan<T>: gcdChan<T>
     OSAtomicIncrement64Barrier(&elementsWritten)
     close()
 
-    // Channel is not empty; unblock any waiting thread.
-    if readerCount > elementsRead
-    {
-      readers.resume()
-    }
+    readers.resume()
   }
 
   /**
@@ -99,32 +95,21 @@ public class gcdSingletonChan<T>: gcdChan<T>
       }
     }
 
-    let oldElement: T? = {
+    let element: T? = {
       if reader == 0
       {
-        let oldElement = self.element
-        OSAtomicIncrement64Barrier(&self.elementsRead)
-        return oldElement
+        if let e = self.element
+        {
+          OSAtomicIncrement64Barrier(&self.elementsRead)
+          self.element = nil
+          return e
+        }
       }
       return nil
     }()
 
-    cleanup()
     readers.resume()
 
-    return oldElement
-  }
-
-  private final func cleanup()
-  {
-    writers.async { [weak self] in
-      if let c = self
-      {
-        if c.closed && c.elementsRead == c.elementsWritten
-        {
-          c.element = nil
-        }
-      }
-    }
+    return element
   }
 }

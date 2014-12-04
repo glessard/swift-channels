@@ -103,11 +103,11 @@ public final class SingletonChan<T>: pthreadChan<T>
   {
     let reader = OSAtomicIncrement64Barrier(&readerCount)
 
-    if (elementsWritten < 0) && !self.isClosed
+    if (elementsWritten < 0) && !self.closed
     {
       pthread_mutex_lock(channelMutex)
       // block until the channel is no longer empty
-      while (elementsWritten < 0) && !self.isClosed
+      while (elementsWritten < 0) && !self.closed
       {
         blockedReaders += 1
         pthread_cond_wait(readCondition, channelMutex)
@@ -116,8 +116,18 @@ public final class SingletonChan<T>: pthreadChan<T>
       pthread_mutex_unlock(channelMutex)
     }
 
-    let oldElement: T? = readElement(reader)
-    OSAtomicIncrement64Barrier(&elementsRead)
+    let element: T? = {
+      if reader == 0
+      {
+        if let e = self.element
+        {
+          OSAtomicIncrement64Barrier(&self.elementsRead)
+          self.element = nil
+          return e
+        }
+      }
+      return nil
+    }()
 
     if blockedReaders > 0
     {
@@ -126,25 +136,6 @@ public final class SingletonChan<T>: pthreadChan<T>
       pthread_mutex_unlock(channelMutex)
     }
 
-    return oldElement
-  }
-
-  private final func readElement(reader: Int64) -> T?
-  {
-    if reader == 0
-    {
-      let oldElement = self.element
-      // Whether to set self.element to nil is an interesting question.
-      // If T is a reference type (or otherwise contains a reference), then
-      // nulling is desirable to in order to avoid unnecessarily extending the
-      // lifetime of the referred-to element.
-      // In the case of SingletonChan, there is no contention at this point
-      // when writing to self.element, nor is there the possibility of a 
-      // flurry of messages. In other implementations, this will be different.
-      self.element = nil
-      return oldElement
-    }
-
-    return nil
+    return element
   }
 }
