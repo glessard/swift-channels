@@ -99,34 +99,32 @@ public class gcdSingletonChan<T>: gcdChan<T>
       }
     }
 
-    let oldElement: T? = readElement(reader)
-    OSAtomicIncrement64Barrier(&elementsRead)
+    let oldElement: T? = {
+      if reader == 0
+      {
+        let oldElement = self.element
+        OSAtomicIncrement64Barrier(&self.elementsRead)
+        return oldElement
+      }
+      return nil
+    }()
 
-    if readerCount > elementsRead
-    {
-      readers.resume()
-    }
+    cleanup()
+    readers.resume()
 
     return oldElement
   }
 
-  private final func readElement(reader: Int64) -> T?
+  private final func cleanup()
   {
-    if reader == 0
-    {
-      let oldElement = self.element
-      // Whether to set self.element to nil is an interesting question.
-      // If T is a reference type (or otherwise contains a reference), then
-      // nulling is desirable to in order to avoid unnecessarily extending the
-      // lifetime of the referred-to element.
-      // In the case of SingletonChan, there is no contention at this point
-      // when writing to self.element, nor is there the possibility of a
-      // flurry of messages. In other implementations, this will be different.
-      self.element = nil
-      return oldElement
+    writers.async { [weak self] in
+      if let c = self
+      {
+        if c.closed && c.elementsRead == c.elementsWritten
+        {
+          c.element = nil
+        }
+      }
     }
-
-    return nil
   }
 }
-

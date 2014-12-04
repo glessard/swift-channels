@@ -59,8 +59,8 @@ class gcdBuffered1Chan<T>: gcdChan<T>
 
     // syncprint("trying to send: \(newElement)")
 
-    var hasWritten = false
-    while !hasWritten
+    var hasSent = false
+    while !hasSent
     {
       writers.mutex { // A suspended writer queue will block here.
         if (self.elementsWritten > self.elementsRead) && !self.closed
@@ -74,12 +74,11 @@ class gcdBuffered1Chan<T>: gcdChan<T>
         {
           self.element = newElement
           OSAtomicIncrement64Barrier(&self.elementsWritten)
+          // syncprint("sent \(self.element) as element \(self.elementsWritten)")
         }
-        hasWritten = true
+        hasSent = true
 
-        // syncprint("sent \(self.element) as element \(self.elementsWritten)")
-
-        if (self.elementsWritten > self.elementsRead) && !self.closed
+        if !self.closed && (self.elementsWritten > self.elementsRead)
         { // suspend writers queue when channel is full
           self.writers.suspend()
         }
@@ -114,12 +113,15 @@ class gcdBuffered1Chan<T>: gcdChan<T>
           return
         }
 
-        if self.closed && (self.elementsWritten == self.elementsRead)
+        if self.closed && (self.elementsWritten <= self.elementsRead)
         {
-          self.element = nil
+          oldElement = nil
+          if (self.elementsWritten == self.elementsRead) { self.cleanup() }
         }
-
-        oldElement = self.element
+        else
+        {
+          oldElement = self.element
+        }
         OSAtomicIncrement64Barrier(&self.elementsRead)
         hasRead = true
 
@@ -134,6 +136,19 @@ class gcdBuffered1Chan<T>: gcdChan<T>
     }
 
     return oldElement
+  }
+
+  private final func cleanup()
+  {
+    writers.async { [weak self] in
+      if let c = self
+      {
+        if c.closed && c.elementsRead == c.elementsWritten
+        {
+          c.element = nil
+        }
+      }
+    }
   }
 
 //  /**

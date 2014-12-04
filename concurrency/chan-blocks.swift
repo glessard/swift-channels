@@ -6,16 +6,17 @@
 //  Copyright (c) 2014 Guillaume Lessard. All rights reserved.
 //
 
+import Foundation
 import Dispatch
 
 /**
   Housekeeping help for dispatch_queue_t objects.
   For some reason they don't expose their state at all,
-  so we have to do this ourselves.
+  so we have to do some of it ourselves.
 */
 
 private let Suspended: Int32 = 1
-private let Running: Int32   = 0
+private let Running:   Int32 = 0
 
 final class QueueWrapper
 {
@@ -24,7 +25,7 @@ final class QueueWrapper
 
   init(name: String)
   {
-    queue = dispatch_queue_create(name, DISPATCH_QUEUE_SERIAL)
+    queue = dispatch_queue_create(name+String(arc4random()), DISPATCH_QUEUE_SERIAL)
   }
 
   deinit
@@ -32,6 +33,16 @@ final class QueueWrapper
     // If we get here with a suspended queue, GCD will trigger a crash.
     resume()
   }
+
+  /**
+    Is the queue running?
+  */
+
+  final var isRunning: Bool { return (state == Running) }
+
+  /**
+    Suspend the queue if it is running
+  */
 
   final func suspend()
   {
@@ -41,6 +52,13 @@ final class QueueWrapper
     }
   }
 
+  /**
+    Resume the queue if it is suspended
+
+    Somehow, despite the (conceptually) bulletproof housekeeping, the embedded call to
+    dispatch_resume() sometimes crashes when used by gcdUnbufferedChan<T>. Mysterious.
+  */
+
   final func resume()
   {
     if OSAtomicCompareAndSwap32Barrier(Suspended, Running, &state)
@@ -49,14 +67,23 @@ final class QueueWrapper
     }
   }
 
-  // a pseudo-keyword shortcut for Grand Central Dispatch
+  /**
+    Synchronously dispatch a block to the queue
+  */
 
   final func mutex(task: () -> ())
   {
     dispatch_sync(queue) { task() }
   }
 
-  final var isRunning: Bool { return (state == Running) }
+  /**
+    Asynchronously dispatch a block to the queue
+  */
+
+  final func async(task: () -> ())
+  {
+    dispatch_async(queue) { task() }
+  }
 }
 
 /**
@@ -81,8 +108,8 @@ class gcdChan<T>: Chan<T>
   override init()
   {
     mutex   = QueueWrapper(name: "channelmutex")
-    readers = QueueWrapper(name: "channelreaderq")
-    writers = QueueWrapper(name: "channelwriterq")
+    readers = QueueWrapper(name: "com.tffenterprises.channelreader")
+    writers = QueueWrapper(name: "com.tffenterprises.channelwriter")
   }
 
   // Computed properties
@@ -107,7 +134,7 @@ class gcdChan<T>: Chan<T>
   {
     if closed { return }
 
-//    syncprint("closing channel")
+    // syncprint("closing channel")
 
     closed = true
     readers.resume()
