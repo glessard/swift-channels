@@ -160,7 +160,7 @@ class ChannelTestCase: XCTestCase
     }
 
     var valrecd = arc4random()
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 500_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
       XCTAssert(tx.isClosed == false, self.id + " should not be closed")
 
       for (i,v) in enumerate(rx)
