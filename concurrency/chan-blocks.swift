@@ -15,8 +15,9 @@ import Dispatch
   so we have to do some of it ourselves.
 */
 
-private let Suspended: Int32 = 1
 private let Running:   Int32 = 0
+private let Suspended: Int32 = 1
+private let Transient: Int32 = -1
 
 final class QueueWrapper
 {
@@ -46,9 +47,10 @@ final class QueueWrapper
 
   final func suspend()
   {
-    if OSAtomicCompareAndSwap32Barrier(Running, Suspended, &state)
+    if OSAtomicCompareAndSwap32Barrier(Running, Transient, &state)
     {
       dispatch_suspend(queue)
+      state = Suspended
     }
   }
 
@@ -61,9 +63,10 @@ final class QueueWrapper
 
   final func resume()
   {
-    if OSAtomicCompareAndSwap32Barrier(Suspended, Running, &state)
+    if OSAtomicCompareAndSwap32Barrier(Suspended, Transient, &state)
     {
       dispatch_resume(queue)
+      state = Running
     }
   }
 

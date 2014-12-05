@@ -17,15 +17,21 @@ import Darwin
 class gcdUnbufferedChan<T>: gcdChan<T>
 {
   private var element: T?
+
   private var blockedReaders: Int32 = 0
   private var blockedWriters: Int32 = 0
+
+  private var elementsWritten: Int64 = -1
+  private var elementsRead: Int64 = -1
+
+  // Used to elucidate/troubleshoot message arrival order
+  // private var readerCount: Int32 = -1
 
   override init()
   {
     element = nil
+    super.init()
   }
-
-  //  final override var capacity: Int  { return 0 }
 
   /**
     isEmpty is meaningless when capacity equals zero.
@@ -46,17 +52,6 @@ class gcdUnbufferedChan<T>: gcdChan<T>
   final override var isFull: Bool  { return true }
 
   /**
-    Tell whether the channel is ready to transfer data.
-
-    An unbuffered channel should always look empty to an external observer.
-    What is relevant internally is whether the data "is ready" to be transferred to a receiver.
-
-    :return: whether the data is ready for a receive operation.
-  */
-
-  final var isReady: Bool { return (element != nil) }
-
-  /**
     Write an element to the channel
 
     If no reader is ready to receive, this call will block.
@@ -67,54 +62,40 @@ class gcdUnbufferedChan<T>: gcdChan<T>
 
   override func put(newElement: T)
   {
-    if self.isClosed { return }
+    if self.closed { return }
 
     // syncprint("writer \(newElement) is trying to send")
 
     var hasSent = false
     while !hasSent
     {
-      // self.blockedWriters += 1 -- atomically
       OSAtomicIncrement32Barrier(&self.blockedWriters)
-
       writers.mutex { // A suspended writer queue will block here.
-        self.mutex.mutex {
-          OSAtomicDecrement32Barrier(&self.blockedWriters)
+        OSAtomicDecrement32Barrier(&self.blockedWriters)
 
+        if (self.blockedReaders < 1 || self.elementsWritten > self.elementsRead) && !self.closed
+        {
           self.writers.suspend()
           self.readers.resume()
-
-          if (self.blockedReaders < 1 || self.isReady) && !self.isClosed
-          {
-            // syncprint("writer \(newElement) thinks there are \(self.blockedReaders) blocked readers")
-            return // to the top of the loop and be suspended
-          }
-
-          assert(!self.isReady || self.isClosed, "Messed up an unbuffered send")
-
-          self.writeElement(newElement)
-          hasSent = true
-
-          // Surely there is a reader waiting
-          assert(self.blockedReaders > 0 || self.isClosed, "No receiver available!")
-
-          if self.isClosed { self.writers.resume() }
-
-          // syncprint("writer \(newElement) has successfully sent")
+          // syncprint("writer \(newElement) thinks there are \(self.blockedReaders) blocked readers")
+          return // to the top of the loop and be suspended
         }
+
+        if !self.closed
+        {
+          self.element = newElement
+          OSAtomicIncrement64Barrier(&self.elementsWritten)
+          // syncprint("sent \(self.element) as element \(self.elementsWritten)")
+        }
+        hasSent = true
+
+        if !self.closed && self.blockedWriters > 0
+        {
+          self.writers.suspend()
+        }
+        self.readers.resume()
       }
     }
-  }
-
-  /**
-    Write an element to the channel buffer, specific implementation.
-    This is used within send(newElement: T).
-    By *definition*, this method is called while a mutex is locked.
-  */
-
-  private func writeElement(newElement: T)
-  {
-    element = newElement
   }
 
   /**
@@ -128,58 +109,61 @@ class gcdUnbufferedChan<T>: gcdChan<T>
 
   override func take() -> T?
   {
-    // let id = readerCount++
+    // let id = OSAtomicIncrement32Barrier(&readerCount)
     // syncprint("reader \(id) is trying to receive")
 
     var oldElement: T?
     var hasRead = false
     while !hasRead
     {
-      // self.blockedReaders += 1 -- atomically
       OSAtomicIncrement32Barrier(&self.blockedReaders)
+      readers.mutex { // A suspended reader will block here.
+        OSAtomicDecrement32Barrier(&self.blockedReaders)
 
-      readers.mutex {        // A suspended reader queue will block here.
-        self.mutex.mutex {
-          OSAtomicDecrement32Barrier(&self.blockedReaders)
-
-          if !self.isReady && !self.isClosed
-          {
-            self.readers.suspend()
-            self.writers.resume()
-            // syncprint("reader \(id) thinks there are \(self.blockedWriters) blocked writers")
-            return // to the top of the loop and be suspended
-          }
-
-          oldElement = self.readElement()
-          hasRead = true
-
-          if !self.closed && self.blockedReaders > 0
-          { // If other readers are waiting, wait for next writer.
-            self.readers.suspend()
-          }
+        if self.elementsWritten <= self.elementsRead && !self.closed
+        {
+          self.readers.suspend()
           self.writers.resume()
-          // syncprint("reader \(id) received \(oldElement)")
+          // syncprint("reader \(id) thinks there are \(self.blockedWriters) blocked writers")
+          return // to the top of the loop and be suspended
         }
+
+        if self.closed && (self.elementsWritten <= self.elementsRead)
+        {
+          oldElement = nil
+          if (self.elementsWritten == self.elementsRead) { self.cleanup() }
+        }
+        else
+        {
+          oldElement = self.element
+        }
+        OSAtomicIncrement64Barrier(&self.elementsRead)
+        hasRead = true
+
+        // syncprint("reader \(id) received \(oldElement)")
+
+        if !self.closed && self.blockedReaders > 0
+        {
+          self.readers.suspend()
+        }
+        self.writers.resume()
       }
     }
 
     return oldElement
   }
 
-  /**
-    Read an from the channel buffer, specific implementation.
-    This is used within receive() ->T?
-    By *definition*, this method is called while a mutex is locked.
-  */
-
-  private func readElement() ->T?
+  private final func cleanup()
   {
-    if let oldElement = self.element
-    {
-      self.element = nil
-      return oldElement
+    writers.async { [weak self] in
+      if let c = self
+      {
+        if c.closed && c.elementsRead == c.elementsWritten
+        {
+          c.element = nil
+        }
+      }
     }
-    return nil
   }
 
 //  /**
@@ -204,7 +188,7 @@ class gcdUnbufferedChan<T>: gcdChan<T>
 //          self.channelMutex {
 //            OSAtomicDecrement32Barrier(&self.blockedReaders)
 //
-//            if !self.isReady && !self.isClosed
+//            if (self.elementsWritten <= self.elementsRead) && !self.closed
 //            {
 //              self.suspend(self.readers) // will also resume writers
 //              return // to the top of the loop and be suspended
