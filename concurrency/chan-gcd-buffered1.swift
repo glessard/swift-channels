@@ -12,7 +12,7 @@ import Darwin
   A buffered channel.
 */
 
-class gcdBuffered1Chan<T>: gcdChan<T>
+final class gcdBuffered1Chan<T>: gcdChan<T>
 {
   private var element: T?
 
@@ -20,6 +20,8 @@ class gcdBuffered1Chan<T>: gcdChan<T>
 
   private var elementsWritten: Int64 = -1
   private var elementsRead: Int64 = -1
+
+  private var lastCleanup: Int64 = -1
 
   // Used to elucidate/troubleshoot message arrival order
   // private var readerCount: Int32 = -1
@@ -63,6 +65,7 @@ class gcdBuffered1Chan<T>: gcdChan<T>
     while !hasSent
     {
       writers.mutex { // A suspended writer queue will block here.
+
         if (self.elementsWritten > self.elementsRead) && !self.closed
         { // suspend writers queue when channel is full
           self.writers.suspend()
@@ -106,6 +109,7 @@ class gcdBuffered1Chan<T>: gcdChan<T>
     while !hasRead
     {
       readers.mutex { // A suspended reader queue will block here.
+
         if (self.elementsWritten <= self.elementsRead) && !self.closed
         { // suspend while channel is empty
           self.readers.suspend()
@@ -121,8 +125,8 @@ class gcdBuffered1Chan<T>: gcdChan<T>
         else
         {
           oldElement = self.element
+          OSAtomicIncrement64Barrier(&self.elementsRead)
         }
-        OSAtomicIncrement64Barrier(&self.elementsRead)
         hasRead = true
 
         // syncprint("reader \(id) received \(oldElement)")
@@ -131,6 +135,10 @@ class gcdBuffered1Chan<T>: gcdChan<T>
         { // suspend while channel is empty
           self.readers.suspend()
         }
+//        if self.writers.Blocked == 0 && (self.elementsWritten > self.lastCleanup)
+//        {
+//          self.cleanup()
+//        }
         self.writers.resume()
       }
     }
@@ -143,9 +151,11 @@ class gcdBuffered1Chan<T>: gcdChan<T>
     writers.async { [weak self] in
       if let c = self
       {
-        if c.closed && c.elementsRead == c.elementsWritten
+        let r = c.elementsRead
+        if r == c.elementsWritten && r > c.lastCleanup
         {
           c.element = nil
+          c.lastCleanup = c.elementsWritten
         }
       }
     }

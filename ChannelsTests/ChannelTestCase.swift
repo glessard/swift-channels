@@ -236,7 +236,8 @@ class ChannelTestCase: XCTestCase
       for i in 0..<self.performanceTestIterations
       {
         tx <- i
-        _ = <-rx
+        let r = <-rx
+        // XCTAssert(i == r, "bad transmission in " + self.id)
       }
       tx.close()
     }

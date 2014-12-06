@@ -13,7 +13,7 @@ import Darwin
   The first successful write operation immediately closes the channel.
 */
 
-public class gcdSingletonChan<T>: gcdChan<T>
+final public class gcdSingletonChan<T>: gcdChan<T>
 {
   private var element: T?
 
@@ -107,8 +107,6 @@ public class gcdSingletonChan<T>: gcdChan<T>
       }
       return nil
     }()
-
-    readers.resume()
 
     return element
   }

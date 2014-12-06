@@ -14,15 +14,14 @@ import Darwin
   Conversely, receive operations block until a sender is ready.
 */
 
-class gcdUnbufferedChan<T>: gcdChan<T>
+final class gcdUnbufferedChan<T>: gcdChan<T>
 {
   private var element: T?
 
-  private var blockedReaders: Int32 = 0
-  private var blockedWriters: Int32 = 0
-
   private var elementsWritten: Int64 = -1
   private var elementsRead: Int64 = -1
+
+  private var lastCleanup: Int64 = -1
 
   // Used to elucidate/troubleshoot message arrival order
   // private var readerCount: Int32 = -1
@@ -69,11 +68,9 @@ class gcdUnbufferedChan<T>: gcdChan<T>
     var hasSent = false
     while !hasSent
     {
-      OSAtomicIncrement32Barrier(&self.blockedWriters)
       writers.mutex { // A suspended writer queue will block here.
-        OSAtomicDecrement32Barrier(&self.blockedWriters)
 
-        if (self.blockedReaders < 1 || self.elementsWritten > self.elementsRead) && !self.closed
+        if (self.readers.Blocked < 1 || self.elementsWritten > self.elementsRead) && !self.closed
         {
           self.writers.suspend()
           self.readers.resume()
@@ -89,7 +86,7 @@ class gcdUnbufferedChan<T>: gcdChan<T>
         }
         hasSent = true
 
-        if !self.closed && self.blockedWriters > 0
+        if !self.closed && self.writers.Blocked > 0
         {
           self.writers.suspend()
         }
@@ -116,9 +113,7 @@ class gcdUnbufferedChan<T>: gcdChan<T>
     var hasRead = false
     while !hasRead
     {
-      OSAtomicIncrement32Barrier(&self.blockedReaders)
       readers.mutex { // A suspended reader will block here.
-        OSAtomicDecrement32Barrier(&self.blockedReaders)
 
         if self.elementsWritten <= self.elementsRead && !self.closed
         {
@@ -136,16 +131,20 @@ class gcdUnbufferedChan<T>: gcdChan<T>
         else
         {
           oldElement = self.element
+          OSAtomicIncrement64Barrier(&self.elementsRead)
         }
-        OSAtomicIncrement64Barrier(&self.elementsRead)
         hasRead = true
 
         // syncprint("reader \(id) received \(oldElement)")
 
-        if !self.closed && self.blockedReaders > 0
+        if !self.closed && self.readers.Blocked > 0
         {
           self.readers.suspend()
         }
+//        if self.writers.Blocked == 0 && (self.elementsWritten > self.lastCleanup)
+//        {
+//          self.cleanup()
+//        }
         self.writers.resume()
       }
     }
@@ -158,9 +157,11 @@ class gcdUnbufferedChan<T>: gcdChan<T>
     writers.async { [weak self] in
       if let c = self
       {
-        if c.closed && c.elementsRead == c.elementsWritten
+        let r = c.elementsRead
+        if r == c.elementsWritten && r > c.lastCleanup
         {
           c.element = nil
+          c.lastCleanup = c.elementsWritten
         }
       }
     }
