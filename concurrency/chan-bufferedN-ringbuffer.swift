@@ -12,7 +12,7 @@ import Darwin
   A channel that uses an array as a backing store.
 */
 
-final class BufferedAChan<T>: pthreadChan<T>
+public final class BufferedAChan<T>: pthreadChan<T>
 {
   private final let capacity: Int
 

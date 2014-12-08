@@ -43,7 +43,7 @@ public class gcdChannel<T>
         channel = gcdBuffered1Chan<T>()
 
       default:
-        channel = gcdBufferedQChan<T>(capacity)
+        channel = gcdBufferedAChan<T>(capacity)
     }
 
     return Channel.Wrap(channel)

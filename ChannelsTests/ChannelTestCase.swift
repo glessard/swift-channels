@@ -16,7 +16,7 @@ class ChannelTestCase: XCTestCase
 {
   var id: String { return "" }
 
-  let performanceTestIterations = 10_000
+  let performanceTestIterations = 12_000
 
   var buflen: Int { return 1 }
 
@@ -38,6 +38,36 @@ class ChannelTestCase: XCTestCase
     let result = <-rx
 
     XCTAssert(value == result, "Wrong value received from channel " + id)
+  }
+
+  /**
+    Sequential sends and receives on the same thread.
+  */
+
+  func ChannelTestSendReceiveN()
+  {
+    var values = Array<UInt32>()
+    for i in 0..<buflen
+    {
+      values.append(arc4random_uniform(UInt32.max/2))
+    }
+
+    var (tx, rx) = InstantiateTestChannel(UInt32)
+    for v in values
+    {
+      tx <- v
+    }
+
+    let selectedValue = Int(arc4random_uniform(UInt32(buflen)))
+    var testedValue: UInt32 = UInt32.max
+
+    for i in 0..<buflen
+    {
+      if let e = <-rx
+      {
+        XCTAssert(e == values[i], id)
+      }
+    }
   }
 
   /**
@@ -144,22 +174,21 @@ class ChannelTestCase: XCTestCase
 
   func ChannelTestBlockedSend()
   {
-    let (tx, rx) = InstantiateTestChannel(UInt32)
+    let (tx, rx) = InstantiateTestChannel(Int)
     let expectation = expectationWithDescription(id + " blocked Send, verified reception")
 
-    var valsent = arc4random()
+    var valsent = Int(arc4random())
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-      var bogus: UInt32 = 0
       for i in 0..<self.buflen
       {
-        tx <- bogus++
+        tx <- i
       }
-      valsent = arc4random()
+      valsent = Int(arc4random())
       tx <- valsent
       tx.close()
     }
 
-    var valrecd = arc4random()
+    var valrecd = Int(arc4random())
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
       XCTAssert(tx.isClosed == false, self.id + " should not be closed")
 

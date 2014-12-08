@@ -1,5 +1,5 @@
 //
-//  BufferedNChannelTests.swift
+//  GCDBufferedNChannelTests.swift
 //  concurrency
 //
 //  Created by Guillaume Lessard on 2014-09-07.
@@ -17,14 +17,14 @@ import Channels
   since Buffered1Chan and BufferedNChan use most of the same logic.
 */
 
-class BufferedNChannelTests: ChannelTestCase
+class GCDBufferedNChannelTests: ChannelTestCase
 {
-  override var id: String  { return "Buffered(N)" }
+  override var id: String  { return "GCD Buffered(N)" }
   override var buflen: Int { return performanceTestIterations / 1000 }
 
   override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
   {
-    return Channel<T>.Make(buflen)
+    return gcdChannel<T>.Make(buflen)
   }
 
   /**
@@ -46,7 +46,7 @@ class BufferedNChannelTests: ChannelTestCase
   }
 
   /**
-  Fulfill an asynchronous 'expectation' after its reference has transited through the channel.
+    Fulfill an asynchronous 'expectation' after its reference has transited through the channel.
   */
 
   func testReceiveFirst()
@@ -55,7 +55,7 @@ class BufferedNChannelTests: ChannelTestCase
   }
 
   /**
-  Fulfill an asynchronous 'expectation' after its reference has transited through the channel.
+    Fulfill an asynchronous 'expectation' after its reference has transited through the channel.
   */
 
   func testSendFirst()
@@ -110,8 +110,8 @@ class BufferedNChannelTests: ChannelTestCase
     ChannelPerformanceLoopNoContention()
   }
   
-  func testPerformanceWithContention()
-  {
-    ChannelPerformanceWithContention()
-  }
+//  func testPerformanceWithContention()
+//  {
+//    ChannelPerformanceWithContention()
+//  }
 }
