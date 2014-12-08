@@ -21,8 +21,8 @@ public class Receiver<T>: ReceiverType, GeneratorType, SequenceType
 
     If c is a (subclass of) Receiver, c will be returned directly.
 
-    If c is any other kind of ReceiverType, c will be wrapped in an
-    EnclosedReadChan, which uses closures to wrap the interface of c.
+    If c is any other kind of ReceiverType, c will be wrapped in a
+    WrappedReceiver, a generic wrapper for ReceiverTypes.
 
     :param: c A ReceiverType implementor to be wrapped by a Receiver object.
   
@@ -36,7 +36,6 @@ public class Receiver<T>: ReceiverType, GeneratorType, SequenceType
       return c
     }
 
-//    return EnclosedReceiver(c)
     return WrappedReceiver(c)
   }
 
@@ -129,7 +128,7 @@ class ChanReceiver<T>: Receiver<T>
 }
 
 /**
-  ChanReceiver<T> wraps a ChannelType to become its receiving endpoint.
+  ChannelReceiver<T> wraps a ChannelType to become its receiving endpoint.
 */
 
 class ChannelReceiver<T, C: ChannelType where C.ElementType == T>: Receiver<T>
@@ -156,62 +155,6 @@ class ChannelReceiver<T, C: ChannelType where C.ElementType == T>: Receiver<T>
 }
 
 /**
-  EnclosedReceiver<T> wraps an object that implements ReceiverType and makes it
-  looks like a Receiver<T> subclass.
-
-  This is accomplished in wrapping its entire ReceiverType interface in a series of closures.
-  While that is probably memory-heavy, it works.
-*/
-
-class EnclosedReceiver<T>: Receiver<T>
-{
-  init<C: ReceiverType where C.ReceivedElement == T>(_ c: C)
-  {
-    enclosedGetClosed = { c.isClosed }
-    enclosedCloseFunc = { c.close() }
-
-    enclosedGetEmpty =    { c.isEmpty }
-    enclosedReceiveFunc = { c.receive() }
-
-//    enclosedIsSelectable =  { c.invalidSelection }
-//    enclosedSelectReceive = { c.selectReceive($0, messageID: $1) }
-//    enclosedExtractFunc =   { c.extract($0) }
-  }
-
-  // ReceiverType implementation
-
-  private var  enclosedGetClosed: () -> Bool
-  override var isClosed: Bool { return enclosedGetClosed() }
-
-  private var  enclosedCloseFunc: () -> ()
-  override func close() { enclosedCloseFunc() }
-
-  private var  enclosedGetEmpty: () -> Bool
-  override var isEmpty: Bool { return enclosedGetEmpty() }
-
-  private var  enclosedReceiveFunc: () -> T?
-  override func receive() -> T?
-  {
-    return enclosedReceiveFunc()
-  }
-
-//  private var enclosedIsSelectable: () -> Bool
-//  override var invalidSelection: Bool { return enclosedIsSelectable() }
-//
-//  private var enclosedSelectReceive: (SelectChan<Selection>, Selectable) -> Signal
-//  override func selectReceive(channel: SelectChan<Selection>, messageID: Selectable) -> Signal
-//  {
-//    return enclosedSelectReceive(channel, messageID)
-//  }
-//
-//  private var enclosedExtractFunc: (Selection) -> T?
-//  override func extract(selection: Selection) -> T?
-//  {
-//    return enclosedExtractFunc(selection)
-//  }
-}
-
-/**
   WrappedReceiver<T,C> wraps an instance of any type C that implements ReceiverType,
   and makes it look like a subclass of Receiver<T>.
 */
@@ -220,9 +163,9 @@ class WrappedReceiver<T, C: ReceiverType where C.ReceivedElement == T>: Receiver
 {
   private var wrapped: C
 
-  init(_ channel: C)
+  init(_ receiver: C)
   {
-    wrapped = channel
+    wrapped = receiver
   }
 
   // ReceiverType wrappers

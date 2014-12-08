@@ -86,7 +86,7 @@ public protocol SenderType: class, BasicChannelType
   Interface that any channel needs. Not useful by itself.
 */
 
-public protocol BasicChannelType: class
+public protocol BasicChannelType
 {
   /**
     Report whether the channel has been closed
@@ -104,7 +104,7 @@ public protocol BasicChannelType: class
     The actual reaction shall be implementation-dependent.
   */
 
-  func close()
+  mutating func close()
 }
 
 /**
@@ -136,7 +136,7 @@ protocol ChannelType: BasicChannelType
     :param: element the new element to be added to the channel.
   */
 
-  func put(newElement: ElementType)
+  mutating func put(newElement: ElementType)
 
   /**
     Obtain the oldest element from the channel.
@@ -147,5 +147,5 @@ protocol ChannelType: BasicChannelType
     :return: the oldest element from the channel.
   */
 
-  func take() -> ElementType?
+  mutating func take() -> ElementType?
 }

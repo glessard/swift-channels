@@ -31,7 +31,6 @@ public class Sender<T>: SenderType
       return c
     }
 
-//    return EnclosedSender(c)
     return WrappedSender(c)
   }
 
@@ -126,41 +125,6 @@ class ChannelSender<T, C: ChannelType where C.ElementType == T>: Sender<T>
   override func send(newElement: T)
   {
     wrapped.put(newElement)
-  }
-}
-
-/**
-  EnclosedSender<T> wraps an object that implements SenderType and makes it
-  looks like a Sender<T> subclass.
-
-  This is accomplished in wrapping its entire SenderType interface in a series of closures.
-  While that is probably memory-heavy, it works. WrappedSender uses a generic approach.
-*/
-
-class EnclosedSender<T>: Sender<T>
-{
-  init<C: SenderType where C.SentElement == T>(_ c: C)
-  {
-    enclosedGetClosed = { c.isClosed }
-    enclosedCloseFunc = { c.close() }
-
-    enclosedGetFull =   { c.isFull }
-    enclosedWriteFunc = { c.send($0) }
-  }
-
-  private var  enclosedGetClosed: () -> Bool
-  override var isClosed: Bool { return enclosedGetClosed() }
-
-  private var  enclosedGetFull: () -> Bool
-  override var isFull: Bool { return enclosedGetFull() }
-
-  private var  enclosedCloseFunc: () -> ()
-  override func close() { enclosedCloseFunc() }
-
-  private var  enclosedWriteFunc: (T) -> ()
-  override func send(newElement: T)
-  {
-    enclosedWriteFunc(newElement)
   }
 }
 
