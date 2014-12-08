@@ -121,7 +121,7 @@ class GCDSingletonChannelTests: ChannelTestCase
       expectation.fulfill()
     }
 
-    waitForExpectationsWithTimeout(2.0) { _ = $0; tx.close() }
+    waitForExpectationsWithTimeout(2.0) { _ in tx.close() }
   }
 
   /**
