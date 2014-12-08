@@ -26,15 +26,23 @@ final class DispatchQueueWrapper
 
   private var waiting: Int32 = 0
 
+  private var busy: Int64 = 0
+
   init(name: String)
   {
-    queue = dispatch_queue_create(name+String(arc4random()), DISPATCH_QUEUE_SERIAL)
+    let qname = name // +String(Int(arc4random())+Int(1e9))
+    queue = dispatch_queue_create(qname, DISPATCH_QUEUE_SERIAL)
   }
 
   deinit
   {
     // If we get here with a suspended queue, GCD will trigger a crash.
     resume()
+
+//    if let name = String.fromCString(dispatch_queue_get_label(queue))
+//    {
+//      println(name + ": \(busy)")
+//    }
   }
 
   /**
@@ -59,22 +67,31 @@ final class DispatchQueueWrapper
     {
       dispatch_suspend(queue)
       state = Suspended
+      OSMemoryBarrier()
     }
   }
 
   /**
     Resume the queue if it is suspended
-
-    Somehow, despite the (conceptually) bulletproof housekeeping, the embedded call to
-    dispatch_resume() sometimes crashes when used by gcdUnbufferedChan<T>. Mysterious.
   */
 
   final func resume()
   {
-    if OSAtomicCompareAndSwap32Barrier(Suspended, Transient, &state)
+    if state != Running
     {
-      dispatch_resume(queue)
-      state = Running
+      while state == Transient
+      {
+        // Busy-wait for a very short time
+        // A resume() call must succeed in order to avoid deadlocks.
+        // A suspend() call can fail: the queue will get another chance
+        OSAtomicIncrement64Barrier(&busy) // OSMemoryBarrier()
+      }
+      if OSAtomicCompareAndSwap32Barrier(Suspended, Transient, &state)
+      {
+        dispatch_resume(queue)
+        state = Running
+        OSMemoryBarrier()
+      }
     }
   }
 
@@ -87,6 +104,7 @@ final class DispatchQueueWrapper
       OSAtomicIncrement32Barrier(&self.waiting)
 
     dispatch_sync(queue) {
+
       OSAtomicDecrement32Barrier(&self.waiting)
       task()
     }
@@ -101,6 +119,7 @@ final class DispatchQueueWrapper
       OSAtomicIncrement32Barrier(&self.waiting)
 
     dispatch_async(queue) {
+
       OSAtomicDecrement32Barrier(&self.waiting)
       task()
     }
