@@ -10,6 +10,7 @@
 		030A900E19B5A28C00F4B44B /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 030A900D19B5A28C00F4B44B /* main.swift */; };
 		030A901919B5A2A800F4B44B /* timing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035FDFE419A17E8B00F4B44B /* timing.swift */; };
 		030A901A19B5A2A800F4B44B /* logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E44D1419A7A71200F4B44B /* logging.swift */; };
+		030BBCF61A36435600F4B44B /* SillyChannel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 030BBCF51A36435600F4B44B /* SillyChannel.swift */; };
 		031DFD2E1A30C8E800F4B44B /* chan-gcd-unbuffered.swift in Sources */ = {isa = PBXBuildFile; fileRef = 031DFD2D1A30C8E800F4B44B /* chan-gcd-unbuffered.swift */; };
 		031DFD2F1A30C8E800F4B44B /* chan-gcd-unbuffered.swift in Sources */ = {isa = PBXBuildFile; fileRef = 031DFD2D1A30C8E800F4B44B /* chan-gcd-unbuffered.swift */; };
 		031DFD301A30C8E800F4B44B /* chan-gcd-unbuffered.swift in Sources */ = {isa = PBXBuildFile; fileRef = 031DFD2D1A30C8E800F4B44B /* chan-gcd-unbuffered.swift */; };
@@ -119,6 +120,7 @@
 /* Begin PBXFileReference section */
 		030A900B19B5A28C00F4B44B /* chan-benchmark */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "chan-benchmark"; sourceTree = BUILT_PRODUCTS_DIR; };
 		030A900D19B5A28C00F4B44B /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		030BBCF51A36435600F4B44B /* SillyChannel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SillyChannel.swift; sourceTree = "<group>"; };
 		0310D0F919A8627800F4B44B /* chan-protocols.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = "chan-protocols.swift"; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
 		031DFD2D1A30C8E800F4B44B /* chan-gcd-unbuffered.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "chan-gcd-unbuffered.swift"; sourceTree = "<group>"; };
 		031DFD311A30C92800F4B44B /* GCDUnbufferedChannelTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GCDUnbufferedChannelTests.swift; sourceTree = "<group>"; };
@@ -202,6 +204,7 @@
 			isa = PBXGroup;
 			children = (
 				030A900D19B5A28C00F4B44B /* main.swift */,
+				030BBCF51A36435600F4B44B /* SillyChannel.swift */,
 			);
 			path = "chan-benchmark";
 			sourceTree = "<group>";
@@ -499,6 +502,7 @@
 				039FF9711A1E95D300F4B44B /* queue.swift in Sources */,
 				030A900E19B5A28C00F4B44B /* main.swift in Sources */,
 				03781E411A2BDF0500F4B44B /* chan-blocks.swift in Sources */,
+				030BBCF61A36435600F4B44B /* SillyChannel.swift in Sources */,
 				030A901A19B5A2A800F4B44B /* logging.swift in Sources */,
 				03781E431A2BDF0D00F4B44B /* gcd-channel.swift in Sources */,
 				03C0D0751A1EA2D400F4B44B /* chan-pthreads.swift in Sources */,

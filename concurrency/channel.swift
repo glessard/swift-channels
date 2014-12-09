@@ -92,7 +92,7 @@ public class Channel<T>
     return (Sender.Wrap(c), Receiver.Wrap(c))
   }
 
-  class func Wrap<T, C: ChannelType where C.ElementType == T>(c: C) -> (tx: Sender<T>, rx: Receiver<T>)
+  class func Wrap<C: ChannelType where C.ElementType == T>(c: C) -> (tx: Sender<T>, rx: Receiver<T>)
   {
     return (Sender.Wrap(c), Receiver.Wrap(c))
   }

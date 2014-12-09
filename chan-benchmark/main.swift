@@ -12,6 +12,22 @@ import Darwin
 let iterations = 100_000
 var tic: Time
 
+
+var sc = Channel.Wrap(SillyChannel())
+
+tic = Time()
+
+for i in 0..<iterations
+{
+  sc.tx <- i
+  if let r = <-sc.rx
+  {
+    _ = r
+  }
+}
+
+println(tic.toc)
+
 var buffered = Channel.Wrap(Buffered1Chan<Int>())
 
 tic = Time()
@@ -21,7 +37,7 @@ for i in 0..<iterations
   buffered.tx <- i
   if let r = <-buffered.rx
   {
-    assert(r == i)
+    _ = r
   }
 }
 buffered.tx.close()
@@ -46,42 +62,58 @@ while let a = <-buffered.rx { _ = a }
 println(tic.toc)
 
 
-let unbuffered = Channel.Wrap(UnbufferedChan<Int>())
+var bufferedRaw = Buffered1Chan<Int>()
+
+tic = Time()
+
+for i in 0..<iterations
+{
+  bufferedRaw.put(i)
+  if let r = bufferedRaw.take()
+  {
+    assert(r == i)
+  }
+}
+bufferedRaw.close()
+
+println(tic.toc)
+
+
+bufferedRaw = Buffered1Chan<Int>()
 
 tic = Time()
 
 async {
   for i in 0..<iterations
   {
-    unbuffered.tx <- i
+    bufferedRaw.put(i)
   }
-  unbuffered.tx.close()
+  bufferedRaw.close()
 }
 
-while let a = <-unbuffered.rx { _ = a }
+while let a = bufferedRaw.take() { _ = a }
 
 println(tic.toc)
+
+
+//let unbuffered = Channel.Wrap(UnbufferedChan<Int>())
+//
+//tic = Time()
+//
+//async {
+//  for i in 0..<iterations
+//  {
+//    unbuffered.tx <- i
+//  }
+//  unbuffered.tx.close()
+//}
+//
+//while let a = <-unbuffered.rx { _ = a }
+//
+//println(tic.toc)
+
 
 let buflen = iterations/1000
-let bufferedA = Channel.Wrap(BufferedAChan<Int>(buflen))
-
-tic = Time()
-
-for j in 0..<(iterations/buflen)
-{
-  for i in 0..<buflen
-  {
-    bufferedA.tx <- i
-  }
-
-  for i in 0..<buflen
-  {
-    _ = <-bufferedA.rx
-  }
-}
-bufferedA.tx.close()
-
-println(tic.toc)
 
 let bufferedQ = Channel.Wrap(BufferedQChan<Int>(buflen))
 
@@ -97,6 +129,27 @@ for j in 0..<(iterations/buflen)
   for i in 0..<buflen
   {
     _ = <-bufferedQ.rx
+  }
+}
+bufferedQ.tx.close()
+
+println(tic.toc)
+
+
+let bufferedQRaw = BufferedQChan<Int>(buflen)
+
+tic = Time()
+
+for j in 0..<(iterations/buflen)
+{
+  for i in 0..<buflen
+  {
+    bufferedQRaw.put(i)
+  }
+
+  for i in 0..<buflen
+  {
+    _ = bufferedQRaw.take()
   }
 }
 bufferedQ.tx.close()
