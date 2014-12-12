@@ -72,7 +72,7 @@ class Chan<T>: ChannelType
     :return: the oldest element from the channel.
   */
 
-  func take() -> T?
+  func get() -> T?
   {
     return nil
   }

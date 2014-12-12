@@ -69,7 +69,7 @@ tic = Time()
 for i in 0..<iterations
 {
   bufferedRaw.put(i)
-  if let r = bufferedRaw.take()
+  if let r = bufferedRaw.get()
   {
     assert(r == i)
   }
@@ -91,7 +91,7 @@ async {
   bufferedRaw.close()
 }
 
-while let a = bufferedRaw.take() { _ = a }
+while let a = bufferedRaw.get() { _ = a }
 
 println(tic.toc)
 
@@ -149,7 +149,7 @@ for j in 0..<(iterations/buflen)
 
   for i in 0..<buflen
   {
-    _ = bufferedQRaw.take()
+    _ = bufferedQRaw.get()
   }
 }
 bufferedQ.tx.close()

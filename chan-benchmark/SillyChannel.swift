@@ -40,7 +40,7 @@ final class SillyChannel: ChannelType
     }
   }
 
-  final func take() -> Int?
+  final func get() -> Int?
   {
     if (elementsWritten > elementsRead)
     {

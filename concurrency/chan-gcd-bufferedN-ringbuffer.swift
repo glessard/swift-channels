@@ -113,7 +113,7 @@ final class gcdBufferedAChan<T>: gcdChan<T>
     :return: the oldest element from the channel.
   */
 
-  override func take() -> T?
+  override func get() -> T?
   {
     // let id = OSAtomicIncrement32Barrier(&readerCount)
     // syncprint("trying to receive #\(id)")

@@ -123,7 +123,7 @@ class ChanReceiver<T>: Receiver<T>
 
   override func receive() -> T?
   {
-    return wrapped.take()
+    return wrapped.get()
   }
 }
 
@@ -150,7 +150,7 @@ class ChannelReceiver<T, C: ChannelType where C.ElementType == T>: Receiver<T>
 
   override func receive() -> T?
   {
-    return wrapped.take()
+    return wrapped.get()
   }
 }
 

@@ -147,5 +147,5 @@ protocol ChannelType: BasicChannelType
     :return: the oldest element from the channel.
   */
 
-  mutating func take() -> ElementType?
+  mutating func get() -> ElementType?
 }

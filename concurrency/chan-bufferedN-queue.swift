@@ -100,7 +100,7 @@ final class BufferedQChan<T>: pthreadChan<T>
     :return: the oldest element from the channel.
   */
 
-  override func take() -> T?
+  override func get() -> T?
   {
     pthread_mutex_lock(channelMutex)
 
