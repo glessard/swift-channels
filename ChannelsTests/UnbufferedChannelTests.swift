@@ -10,9 +10,7 @@ import Darwin
 import Foundation
 import XCTest
 
-import Channels
-
-class UnbufferedChannelTests: ChannelTestCase
+class UnbufferedChannelTests: ChannelsTests
 {
   override var id: String { return "Unbuffered" }
   override var buflen: Int { return 0 }

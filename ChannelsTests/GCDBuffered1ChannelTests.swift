@@ -10,9 +10,7 @@ import Darwin
 import Foundation
 import XCTest
 
-import Channels
-
-class GCDBuffered1ChannelTests: ChannelTestCase
+class GCDBuffered1ChannelTests: ChannelsTests
 {
   override var id: String { return "GCD Buffered(1)" }
 

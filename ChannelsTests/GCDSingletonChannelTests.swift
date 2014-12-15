@@ -9,9 +9,7 @@
 import Darwin
 import XCTest
 
-import Channels
-
-class GCDSingletonChannelTests: ChannelTestCase
+class GCDSingletonChannelTests: ChannelsTests
 {
   override var id: String { return "GCD Singleton" }
 

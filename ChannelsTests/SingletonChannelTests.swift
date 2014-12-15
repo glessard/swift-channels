@@ -7,11 +7,10 @@
 //
 
 import Darwin
+import Foundation
 import XCTest
 
-import Channels
-
-class SingletonChannelTests: ChannelTestCase
+class SingletonChannelTests: ChannelsTests
 {
   override var id: String { return "Singleton" }
 

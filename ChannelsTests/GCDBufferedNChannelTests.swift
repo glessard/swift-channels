@@ -10,14 +10,7 @@ import Darwin
 import Foundation
 import XCTest
 
-import Channels
-
-/**
-  Most of the tests in Buffered1ChannelTests cover the N-element case as well,
-  since Buffered1Chan and BufferedNChan use most of the same logic.
-*/
-
-class GCDBufferedNChannelTests: ChannelTestCase
+class GCDBufferedNChannelTests: ChannelsTests
 {
   override var id: String  { return "GCD Buffered(N)" }
   override var buflen: Int { return performanceTestIterations / 1000 }

@@ -7,11 +7,9 @@
 //
 
 import Darwin
-//import Channels
 
 let iterations = 100_000
 var tic: Time
-
 
 var sc = Channel.Wrap(SillyChannel())
 

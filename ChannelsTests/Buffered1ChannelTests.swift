@@ -12,7 +12,7 @@ import XCTest
 
 import Channels
 
-class Buffered1ChannelTests: ChannelTestCase
+class Buffered1ChannelTests: ChannelsTests
 {
   override var id: String { return "Buffered(1)" }
 
