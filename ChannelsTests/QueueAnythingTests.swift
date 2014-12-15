@@ -1,5 +1,5 @@
 //
-//  QueueTests.swift
+//  QueueAnythingTests.swift
 //  concurrency
 //
 //  Created by Guillaume Lessard on 2014-09-09.
@@ -12,11 +12,11 @@ import XCTest
 
 import Channels
 
-class QueueTests: XCTestCase
+class QueueAnythingTests: XCTestCase
 {
   func testQueue()
   {
-    var q = Queue<Int>()
+    var q = AnythingQueue<Int>()
 
     for i in 1...10_000
     {
@@ -60,7 +60,7 @@ class QueueTests: XCTestCase
 
   func testPerformanceQueue()
   {
-    var q = Queue<Int>()
+    var q = AnythingQueue<Int>()
 
     self.measureBlock() {
       for i in 1...100_000

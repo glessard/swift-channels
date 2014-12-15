@@ -1,5 +1,5 @@
 //
-//  QueueTests.swift
+//  QueueObjectTests.swift
 //  concurrency
 //
 //  Created by Guillaume Lessard on 2014-09-09.
@@ -12,11 +12,12 @@ import XCTest
 
 import Channels
 
-class QueueTests: XCTestCase
+class QueueObjectTests: XCTestCase
 {
   func testQueue()
   {
-    var q = Queue<Int>()
+    let payload = dispatch_semaphore_create(1)!
+    var q = ObjectQueue<dispatch_semaphore_t>()
 
     for i in 1...10_000
     {
@@ -27,7 +28,7 @@ class QueueTests: XCTestCase
       if r == 0
       {
         let b = q.count
-        q.enqueue(b)
+        q.enqueue(payload)
         let a = q.count
         XCTAssert(a-b == 1, "element count improperly incremented upon enqueuing")
       }
@@ -60,12 +61,13 @@ class QueueTests: XCTestCase
 
   func testPerformanceQueue()
   {
-    var q = Queue<Int>()
+    let payload = dispatch_semaphore_create(1)!
+    var q = ObjectQueue<dispatch_semaphore_t>()
 
     self.measureBlock() {
       for i in 1...100_000
       {
-        q.enqueue(i)
+        q.enqueue(payload)
       }
 
       for e in q
