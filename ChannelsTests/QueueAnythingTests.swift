@@ -60,12 +60,13 @@ class QueueAnythingTests: XCTestCase
 
   func testPerformanceQueue()
   {
-    var q = AnythingQueue<Int>()
+    let payload = dispatch_semaphore_create(1)!
+    var q = AnythingQueue<dispatch_semaphore_t>()
 
     self.measureBlock() {
       for i in 1...100_000
       {
-        q.enqueue(i)
+        q.enqueue(payload)
       }
 
       for e in q
