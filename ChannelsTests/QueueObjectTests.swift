@@ -14,6 +14,8 @@ import Channels
 
 class QueueObjectTests: XCTestCase
 {
+  let performanceTestIterations=100_000
+
   func testQueue()
   {
     let payload = dispatch_semaphore_create(1)!
@@ -53,7 +55,7 @@ class QueueObjectTests: XCTestCase
       }
     }
 
-    for e in q
+    while let e = q.dequeue()
     {
       _ = e
     }
@@ -65,14 +67,40 @@ class QueueObjectTests: XCTestCase
     var q = ObjectQueue<dispatch_semaphore_t>()
 
     self.measureBlock() {
-      for i in 1...100_000
+      for i in 1...self.performanceTestIterations
       {
         q.enqueue(payload)
       }
 
-      for e in q
+      while let e = q.dequeue()
       {
         _ = e
+      }
+    }
+  }
+
+  func testPerformanceQueue2()
+  {
+    let payload = dispatch_semaphore_create(1)!
+    var q = ObjectQueue<dispatch_semaphore_t>()
+
+    self.measureBlock() {
+      for i in 1...self.performanceTestIterations
+      {
+        q.enqueue(payload)
+        _ = q.dequeue()
+      }
+    }
+  }
+
+  func testPerformanceQueue3()
+  {
+    var q = ObjectQueue<dispatch_semaphore_t>()
+
+    self.measureBlock() {
+      for i in 1...self.performanceTestIterations
+      {
+        _ = q.dequeue()
       }
     }
   }

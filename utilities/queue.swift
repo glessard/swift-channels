@@ -15,7 +15,7 @@ public class Queue<T>: SequenceType, GeneratorType
   final private var head: Node<T>?
   final private var tail: Node<T>!
 
-  final private var size: Int = 0
+  final private var size: Int64
 
   public init()
   {
@@ -34,11 +34,11 @@ public class Queue<T>: SequenceType, GeneratorType
 
   final public var isEmpty: Bool { return size == 0 }
 
-  final public var count: Int { return size }
+  final public var count: Int { return Int(size) }
 
   public func realCount() -> Int
   {
-    var i: Int = 0
+    var i: Int64 = 0
     var node = head
 
     while let n = node
@@ -47,30 +47,21 @@ public class Queue<T>: SequenceType, GeneratorType
       i++
     }
 
-//    assert(i == size, "Queue might have lost data")
+    assert(i == size, "Queue might have lost data")
 
-    return i
+    return Int(i)
   }
 
   public func enqueue(newElement: T)
   {
     let newNode = Node<T>(newElement)
 
-    if (size == 0)
+    if OSAtomicIncrement64(&size) == 1
     {
-//      assert(tail == nil, "Queue has a tail but no head")
-
-      size = 1
       head = newNode
       tail = newNode
       return
     }
-
-    size += 1
-
-    // tail can only be nil when head is nil.
-//    assert(tail != nil, "Queue is missing its tail while not missing its head")
-//    assert(tail.next == nil, "Queue tail is not the actual tail")
 
     tail.next = newNode
     tail = newNode
@@ -78,10 +69,10 @@ public class Queue<T>: SequenceType, GeneratorType
 
   public func dequeue() -> T?
   {
-    if let oldhead = head
+    if OSAtomicDecrement64(&size) >= 0
     {
-      size -= 1
-      
+      let oldhead = head!
+
       // Promote the 2nd item to 1st
       head = oldhead.next
 
@@ -92,6 +83,7 @@ public class Queue<T>: SequenceType, GeneratorType
     }
 
     // queue is empty
+    OSAtomicIncrement64(&size)
     return nil
   }
 

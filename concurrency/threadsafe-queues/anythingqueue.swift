@@ -8,25 +8,54 @@
 
 final public class AnythingQueue<T>: SequenceType, GeneratorType
 {
-  private let q = ObjectQueue<Box<T>>()
+  private let head: COpaquePointer
 
-  public var isEmpty: Bool { return q.isEmpty }
+  private var size: Int32 = 0
 
-  public var count: Int { return q.count }
+  init()
+  {
+    head = AtomicQueueInit()
+  }
+
+  deinit
+  {
+    // first, empty the queue
+    while size > 0
+    {
+      _ = dequeue()
+    }
+
+    // then release the queue head structure
+    AtomicQueueRelease(head)
+  }
+
+  public var isEmpty: Bool { return size < 1 }
+
+  public var count: Int { return Int(size) }
 
   public func realCount() -> Int
   {
-    return q.realCount()
+    return AtomicQueueRealCount(head)
   }
 
   public func enqueue(item: T)
   {
-    q.enqueue(Box(item))
+    AtomicQueueEnqueue(head, Box(item))
+    OSAtomicIncrement32Barrier(&size)
   }
 
   public func dequeue() -> T?
   {
-    return q.dequeue()?.element
+    if OSAtomicDecrement32Barrier(&size) >= 0
+    {
+      let b = AtomicQueueDequeue(head) as Box<T>
+      return b.element
+    }
+    else
+    { // We decremented once too many; increment once to correct.
+      OSAtomicIncrement32Barrier(&size)
+      return nil
+    }
   }
 
   // Implementation of GeneratorType
