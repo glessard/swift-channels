@@ -8,21 +8,24 @@
 
 import Darwin
 
-private let semaphorePool = ObjectQueue<dispatch_semaphore_t>()
-
-private func poolEnqueue(s: dispatch_semaphore_t)
+private struct SemaphorePool
 {
-  semaphorePool.enqueue(s)
-}
+  static let poolq = ObjectQueue<dispatch_semaphore_t>()
 
-private func poolDequeue() -> dispatch_semaphore_t
-{
-  if let s = semaphorePool.dequeue()
+  static func enqueue(s: dispatch_semaphore_t)
   {
-    return s
+    poolq.enqueue(s)
   }
 
-  return dispatch_semaphore_create(0)!
+  static func dequeue() -> dispatch_semaphore_t
+  {
+    if let s = poolq.dequeue()
+    {
+      return s
+    }
+
+    return dispatch_semaphore_create(0)!
+  }
 }
 
 /**
@@ -35,13 +38,13 @@ final class QBuffered1Chan<T>: Chan<T>
 
   // housekeeping variables
 
-  private var elementsWritten: Int64 = -1
-  private var elementsRead: Int64 = -1
+  private let capacity: Int32 = 1
+  private var elements: Int32 = 0
 
   private let readerQueue = ObjectQueue<dispatch_semaphore_t>()
   private let writerQueue = ObjectQueue<dispatch_semaphore_t>()
 
-  private let semap = dispatch_semaphore_create(1)!
+  private let mutex = dispatch_semaphore_create(1)!
 
   private var closed = false
 
@@ -52,12 +55,12 @@ final class QBuffered1Chan<T>: Chan<T>
 
   final override var isEmpty: Bool
   {
-    return elementsWritten <= elementsRead
+    return elements <= 0
   }
 
   final override var isFull: Bool
   {
-    return elementsWritten > elementsRead
+    return elements >= capacity
   }
 
   /**
@@ -80,26 +83,28 @@ final class QBuffered1Chan<T>: Chan<T>
   {
     if closed { return }
 
+    dispatch_semaphore_wait(mutex, DISPATCH_TIME_FOREVER)
     closed = true
 
     // Unblock the threads waiting on our conditions.
-    if let s = readerQueue.dequeue()
+    while let rs = readerQueue.dequeue()
     {
-      dispatch_semaphore_signal(s)
+      dispatch_semaphore_signal(rs)
     }
-    if let s = writerQueue.dequeue()
+    while let ws = writerQueue.dequeue()
     {
-      dispatch_semaphore_signal(s)
+      dispatch_semaphore_signal(ws)
     }
+    dispatch_semaphore_signal(mutex)
   }
 
-  final func wait(#lock: dispatch_semaphore_t, queue: ObjectQueue<dispatch_semaphore_t>)
+  final func wait(#mutex: dispatch_semaphore_t, queue: ObjectQueue<dispatch_semaphore_t>)
   {
-    let threadLock = poolDequeue()
+    let threadLock = SemaphorePool.dequeue()
     queue.enqueue(threadLock)
-    dispatch_semaphore_signal(lock)
+    dispatch_semaphore_signal(mutex)
     dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
-    poolEnqueue(threadLock)
+    SemaphorePool.enqueue(threadLock)
   }
 
   /**
@@ -115,35 +120,40 @@ final class QBuffered1Chan<T>: Chan<T>
   {
     if self.closed { return }
 
-    dispatch_semaphore_wait(semap, DISPATCH_TIME_FOREVER)
-    while !self.closed && elementsWritten > elementsRead
+    dispatch_semaphore_wait(mutex, DISPATCH_TIME_FOREVER)
+
+    while !self.closed &&  elements >= capacity
     {
-      wait(lock: semap, queue: writerQueue)
-      dispatch_semaphore_wait(semap, DISPATCH_TIME_FOREVER)
+      wait(mutex: mutex, queue: writerQueue)
+      dispatch_semaphore_wait(mutex, DISPATCH_TIME_FOREVER)
     }
 
-    if !self.closed
+    if self.closed
     {
-      self.element = newElement
-      elementsWritten += 1
+      dispatch_semaphore_signal(mutex)
+      return
     }
 
-    if elementsWritten <= elementsRead || self.closed
-    {
-      if let s = writerQueue.dequeue()
-      {
-        dispatch_semaphore_signal(s)
-      }
-    }
-    dispatch_semaphore_signal(semap)
+    element = newElement
+    elements += 1
 
     if readerQueue.count > 0
     {
-      if let s = readerQueue.dequeue()
+      if let rs = readerQueue.dequeue()
       {
-        dispatch_semaphore_signal(s)
+        dispatch_semaphore_signal(rs)
       }
     }
+
+    if elements < capacity && writerQueue.count > 0
+    {
+      if let ws = writerQueue.dequeue()
+      {
+        dispatch_semaphore_signal(ws)
+      }
+    }
+
+    dispatch_semaphore_signal(mutex)
   }
 
   /**
@@ -157,49 +167,48 @@ final class QBuffered1Chan<T>: Chan<T>
 
   override func get() -> T?
   {
-    dispatch_semaphore_wait(semap, DISPATCH_TIME_FOREVER)
-    while !self.closed && elementsWritten <= elementsRead
+    if self.closed && elements <= 0 { return nil }
+
+    dispatch_semaphore_wait(mutex, DISPATCH_TIME_FOREVER)
+
+    while !self.closed && elements <= 0
     {
-      wait(lock: semap, queue: readerQueue)
-      dispatch_semaphore_wait(semap, DISPATCH_TIME_FOREVER)
+      wait(mutex: mutex, queue: readerQueue)
+      dispatch_semaphore_wait(mutex, DISPATCH_TIME_FOREVER)
     }
 
-    if self.closed && (elementsWritten == elementsRead)
+    if self.closed && elements <= 0
     {
-      self.element = nil
+      dispatch_semaphore_signal(mutex)
+      return nil
     }
 
-    let oldElement = self.element
-    elementsRead += 1
+    let oldElement = element
+//    element = nil
+    elements -= 1
 
     // Whether to set self.element to nil is an interesting question.
-    // If T is a reference type (or otherwise contains a reference), then
-    // nulling is desirable to in order to avoid unnecessarily extending the
-    // lifetime of the referred-to element.
-    // In the case of a potentially long-lived buffered channel, there is a
-    // potential for contention at this point. This implementation is
-    // choosing to take the risk of extending the life of its messages.
-    // Also, setting self.element to nil at this point would be slow. Somehow.
-
-    if elementsWritten > elementsRead || self.closed
-    {
-      if readerQueue.count > 0
-      {
-        if let s = readerQueue.dequeue()
-        {
-          dispatch_semaphore_signal(s)
-        }
-      }
-    }
-    dispatch_semaphore_signal(semap)
+    // When T is a reference type (or otherwise contains a reference),
+    // nulling is desirable.
+    // But somehow setting an optional class member to nil is slow, so we won't do it.
 
     if writerQueue.count > 0
     {
-      if let s = writerQueue.dequeue()
+      if let ws = writerQueue.dequeue()
       {
-        dispatch_semaphore_signal(s)
+        dispatch_semaphore_signal(ws)
       }
     }
+
+    if elements > 0 && readerQueue.count > 0
+    {
+      if let rs = readerQueue.dequeue()
+      {
+        dispatch_semaphore_signal(rs)
+      }
+    }
+
+    dispatch_semaphore_signal(mutex)
 
     return oldElement
   }
