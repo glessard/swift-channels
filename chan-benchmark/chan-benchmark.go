@@ -4,7 +4,7 @@ import "fmt"
 import "time"
 
 func main() {
-	iterations := 100000
+	iterations := 120000
 
 	buffered := make(chan int, 1)
 

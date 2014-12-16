@@ -346,10 +346,10 @@
 		035029EE1A3EAAAD00F4B44B /* pthread-mutex */ = {
 			isa = PBXGroup;
 			children = (
+				035029F21A3EAAAD00F4B44B /* chan-pthreads.swift */,
 				035029EF1A3EAAAD00F4B44B /* chan-buffered1.swift */,
 				035029F01A3EAAAD00F4B44B /* chan-bufferedN-queue.swift */,
 				035029F11A3EAAAD00F4B44B /* chan-bufferedN-ringbuffer.swift */,
-				035029F21A3EAAAD00F4B44B /* chan-pthreads.swift */,
 				035029F31A3EAAAD00F4B44B /* chan-singleton.swift */,
 				035029F41A3EAAAD00F4B44B /* chan-unbuffered.swift */,
 			);

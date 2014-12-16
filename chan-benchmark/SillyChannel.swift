@@ -9,11 +9,11 @@
 import Darwin
 import Swift
 
-final class SillyChannel: ChannelType
+struct SillyChannel: ChannelType
 {
   typealias ElementType = Int
 
-  var element: Int? = nil
+  var element: Int = 0
 
   private var elementsWritten: Int64 = 0
   private var elementsRead: Int64    = 0
@@ -26,31 +26,28 @@ final class SillyChannel: ChannelType
 
   var isFull: Bool { return elementsWritten > elementsRead }
 
-  func close()
+  mutating func close()
   {
     closed = true
   }
 
-  final func put(newElement: Int)
+  mutating func put(newElement: Int)
   {
     if (elementsWritten <= elementsRead)
     {
       element = newElement
-      OSAtomicIncrement64Barrier(&elementsWritten)
+      elementsWritten++
     }
   }
 
-  final func get() -> Int?
+  mutating func get() -> Int?
   {
     if (elementsWritten > elementsRead)
     {
-      OSAtomicIncrement64Barrier(&elementsRead)
+      elementsRead++
       return element
     }
-    else if closed
-    {
-      element = nil
-    }
+
     return nil
   }
 }
