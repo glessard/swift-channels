@@ -7,12 +7,9 @@
 //
 
 import Darwin
-import Foundation
 import XCTest
 
-import Channels
-
-class BufferedNChannelTests: ChannelsTests
+class BufferedNChannelTests: Buffered1ChannelTests
 {
   override var id: String  { return "Buffered(N)" }
   override var buflen: Int { return performanceTestIterations / 1000 }
@@ -23,90 +20,50 @@ class BufferedNChannelTests: ChannelsTests
   }
 
   /**
-    Sequential send, then receive on the same thread.
-  */
-
-  func testSendReceive()
-  {
-    ChannelTestSendReceive()
-  }
-
-  /**
     Sequential sends and receives on the same thread.
   */
 
   func testSendReceiveN()
   {
-    ChannelTestSendReceiveN()
-  }
+    var values = Array<UInt32>()
+    for i in 0..<buflen
+    {
+      values.append(arc4random_uniform(UInt32.max/2))
+    }
 
-  /**
-  Fulfill an asynchronous 'expectation' after its reference has transited through the channel.
-  */
+    var (tx, rx) = InstantiateTestChannel(UInt32)
+    for v in values
+    {
+      tx <- v
+    }
 
-  func testReceiveFirst()
-  {
-    ChannelTestReceiveFirst()
-  }
+    let selectedValue = Int(arc4random_uniform(UInt32(buflen)))
+    var testedValue: UInt32 = UInt32.max
 
-  /**
-  Fulfill an asynchronous 'expectation' after its reference has transited through the channel.
-  */
-
-  func testSendFirst()
-  {
-    ChannelTestSendFirst()
-  }
-
-  /**
-    Block on send, then verify the data was transmitted unchanged.
-  */
-
-  func testBlockedSend()
-  {
-    ChannelTestBlockedSend()
-  }
-
-  /**
-    Block on receive, then verify the data was transmitted unchanged.
-  */
-
-  func testBlockedReceive()
-  {
-    ChannelTestBlockedReceive()
-  }
-
-  /**
-    Block on send, unblock on channel close
-  */
-
-  func testNoReceiver()
-  {
-    ChannelTestNoReceiver()
-  }
-
-  /**
-    Block on receive, unblock on channel close
-  */
-
-  func testNoSender()
-  {
-    ChannelTestNoSender()
-  }
-
-
-  func testPerformanceNoContention()
-  {
-    ChannelPerformanceNoContention()
+    for i in 0..<buflen
+    {
+      if let e = <-rx
+      {
+        XCTAssert(e == values[i], id)
+      }
+    }
   }
   
+  /**
+    Performance test when avoiding thread contention. This one fills then empties the channel buffer.
+  */
+
   func testPerformanceLoopNoContention()
   {
-    ChannelPerformanceLoopNoContention()
-  }
-  
-  func testPerformanceWithContention()
-  {
-    ChannelPerformanceWithContention()
+    self.measureBlock() {
+      let (tx, rx) = self.InstantiateTestChannel(Int)
+
+      for j in 0..<(self.performanceTestIterations/self.buflen)
+      {
+        for i in 0..<self.buflen { tx <- i }
+        for i in 0..<self.buflen { _ = <-rx }
+      }
+      tx.close()
+    }
   }
 }

@@ -7,7 +7,6 @@
 //
 
 import Darwin
-import Foundation
 import XCTest
 
 class UnbufferedChannelTests: ChannelsTests

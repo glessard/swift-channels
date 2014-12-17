@@ -7,75 +7,14 @@
 //
 
 import Darwin
-import Foundation
 import XCTest
 
-class GCDUnbufferedChannelTests: ChannelsTests
+class GCDUnbufferedChannelTests: UnbufferedChannelTests
 {
-  override var id: String { return "Unbuffered" }
-  override var buflen: Int { return 0 }
+  override var id: String { return "GCD Unbuffered" }
 
   override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
   {
-    return gcdChannel<T>.Make(0)
-  }
-
-  /**
-    Fulfill the asynchronous 'expectation' after its reference has transited through the channel.
-  */
-
-  func testReceiveFirst()
-  {
-    ChannelTestReceiveFirst()
-  }
-
-  /**
-    Fulfill the asynchronous 'expectation' after its reference has transited through the channel.
-  */
-
-  func testSendFirst()
-  {
-    ChannelTestSendFirst()
-  }
-
-  /**
-    Block on send, then verify the data was transmitted unchanged.
-  */
-
-  func testBlockedSend()
-  {
-    ChannelTestBlockedSend()
-  }
-
-  /**
-    Block on receive, then verify the data was transmitted unchanged.
-  */
-
-  func testBlockedReceive()
-  {
-    ChannelTestBlockedReceive()
-  }
-
-  /**
-    Block on send, unblock on channel close
-  */
-
-  func testNoReceiver()
-  {
-    ChannelTestNoReceiver()
-  }
-
-  /**
-    Block on receive, unblock on channel close
-  */
-
-  func testNoSender()
-  {
-    ChannelTestNoSender()
-  }
-
-  func testPerformanceWithContention()
-  {
-    ChannelPerformanceWithContention()
+    return Channel.Wrap(gcdUnbufferedChan<T>())
   }
 }

@@ -7,7 +7,6 @@
 //
 
 import Darwin
-import Foundation
 import XCTest
 
 class SingletonChannelTests: ChannelsTests
@@ -41,8 +40,8 @@ class SingletonChannelTests: ChannelsTests
     let result1 = <-rx
     let result2 = <-rx
 
-    XCTAssert(result1 == value, "Incorrect value obtained from channel.")
-    XCTAssert(result2 == nil, "Non-nil value incorrectly obtained from channel.")
+    XCTAssert(result1 == value, "Incorrect value obtained from \(id) channel.")
+    XCTAssert(result2 == nil, "Non-nil value incorrectly obtained from \(id) channel.")
   }
 
   /**
@@ -67,7 +66,7 @@ class SingletonChannelTests: ChannelsTests
       last = i
     }
 
-    XCTAssert(last == 0, "Incorrect number of messages received from channel")
+    XCTAssert(last == 0, "Incorrect number of messages received from \(id) channel")
   }
   
   /**

@@ -7,10 +7,9 @@
 //
 
 import Darwin
-import Foundation
 import XCTest
 
-class GCDBufferedNChannelTests: ChannelsTests
+class GCDBufferedNChannelTests: BufferedNChannelTests
 {
   override var id: String  { return "GCD Buffered(N)" }
   override var buflen: Int { return performanceTestIterations / 1000 }
@@ -20,91 +19,8 @@ class GCDBufferedNChannelTests: ChannelsTests
     return gcdChannel<T>.Make(buflen)
   }
 
-  /**
-    Sequential send, then receive on the same thread.
-  */
-
-  func testSendReceive()
+  override func testPerformanceWithContention()
   {
-    ChannelTestSendReceive()
+    // Just silence this one, since it crashes on a memory access.
   }
-
-  /**
-    Sequential sends and receives on the same thread.
-  */
-
-  func testSendReceiveN()
-  {
-    ChannelTestSendReceiveN()
-  }
-
-  /**
-    Fulfill an asynchronous 'expectation' after its reference has transited through the channel.
-  */
-
-  func testReceiveFirst()
-  {
-    ChannelTestReceiveFirst()
-  }
-
-  /**
-    Fulfill an asynchronous 'expectation' after its reference has transited through the channel.
-  */
-
-  func testSendFirst()
-  {
-    ChannelTestSendFirst()
-  }
-
-  /**
-    Block on send, then verify the data was transmitted unchanged.
-  */
-
-  func testBlockedSend()
-  {
-    ChannelTestBlockedSend()
-  }
-
-  /**
-    Block on receive, then verify the data was transmitted unchanged.
-  */
-
-  func testBlockedReceive()
-  {
-    ChannelTestBlockedReceive()
-  }
-
-  /**
-    Block on send, unblock on channel close
-  */
-
-  func testNoReceiver()
-  {
-    ChannelTestNoReceiver()
-  }
-
-  /**
-    Block on receive, unblock on channel close
-  */
-
-  func testNoSender()
-  {
-    ChannelTestNoSender()
-  }
-
-
-  func testPerformanceNoContention()
-  {
-    ChannelPerformanceNoContention()
-  }
-  
-  func testPerformanceLoopNoContention()
-  {
-    ChannelPerformanceLoopNoContention()
-  }
-  
-//  func testPerformanceWithContention()
-//  {
-//    ChannelPerformanceWithContention()
-//  }
 }

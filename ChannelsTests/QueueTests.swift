@@ -10,8 +10,6 @@ import Darwin
 import Foundation
 import XCTest
 
-import Channels
-
 class QueueTests: XCTestCase
 {
   let performanceTestIterations=100_000

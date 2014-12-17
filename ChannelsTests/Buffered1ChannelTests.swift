@@ -7,18 +7,35 @@
 //
 
 import Darwin
-import Foundation
 import XCTest
 
-import Channels
-
-class Buffered1ChannelTests: ChannelsTests
+class Buffered1ChannelTests: UnbufferedChannelTests
 {
   override var id: String { return "Buffered(1)" }
+  override var buflen: Int { return 1 }
 
   override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
   {
     return Channel<T>.Make(1)
+  }
+
+  /**
+    Performance test when avoiding thread contention, while keeping the channel at never more than 1 item full.
+  */
+
+  func testPerformanceNoContention()
+  {
+    self.measureBlock() {
+      let (tx, rx) = self.InstantiateTestChannel(Int)
+
+      for i in 0..<self.performanceTestIterations
+      {
+        tx <- i
+        let r = <-rx
+        // XCTAssert(i == r, "bad transmission in " + self.id)
+      }
+      tx.close()
+    }
   }
 
   /**
@@ -27,70 +44,12 @@ class Buffered1ChannelTests: ChannelsTests
 
   func testSendReceive()
   {
-    ChannelTestSendReceive()
-  }
+    let (tx, rx) = InstantiateTestChannel(UInt32)
 
-  /**
-    Fulfill an asynchronous 'expectation' after its reference has transited through the channel.
-  */
+    let value = arc4random()
+    tx <- value
+    let result = <-rx
 
-  func testReceiveFirst()
-  {
-    ChannelTestReceiveFirst()
-  }
-
-  /**
-    Fulfill an asynchronous 'expectation' after its reference has transited through the channel.
-  */
-
-  func testSendFirst()
-  {
-    ChannelTestSendFirst()
-  }
-
-  /**
-    Block on send, then verify the data was transmitted unchanged.
-  */
-
-  func testBlockedSend()
-  {
-    ChannelTestBlockedSend()
-  }
-
-  /**
-    Block on receive, then verify the data was transmitted unchanged.
-  */
-
-  func testBlockedReceive()
-  {
-    ChannelTestBlockedReceive()
-  }
-
-  /**
-    Block on send, unblock on channel close
-  */
-
-  func testNoReceiver()
-  {
-    ChannelTestNoReceiver()
-  }
-
-  /**
-    Block on receive, unblock on channel close
-  */
-
-  func testNoSender()
-  {
-    ChannelTestNoSender()
-  }
-
-  func testPerformanceNoContention()
-  {
-    ChannelPerformanceNoContention()
-  }
-
-  func testPerformanceWithContention()
-  {
-    ChannelPerformanceWithContention()
+    XCTAssert(value == result, "Wrong value received from channel " + id)
   }
 }
