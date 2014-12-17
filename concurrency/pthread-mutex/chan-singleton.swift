@@ -13,7 +13,7 @@ import Darwin
   the first successful write operation closes the channel.
 */
 
-public final class SingletonChan<T>: pthreadChan<T>
+final public class SingletonChan<T>: Chan<T>
 {
   public class func Make() -> (tx: Sender<T>, rx: Receiver<T>)
   {
@@ -26,34 +26,52 @@ public final class SingletonChan<T>: pthreadChan<T>
     return Make()
   }
 
-  private var element: T?
+  private var element: T? = nil
 
   // housekeeping variables
 
-  private var writerCount: Int64 = -1
-  private var readerCount: Int64 = -1
+  private var writerCount: Int64 = 0
+  private var readerCount: Int64 = 0
 
-  private var elementsWritten: Int64 = -1
-  private var elementsRead: Int64 = -1
+  private var barrier = dispatch_semaphore_create(0)!
 
-  // Initialization and destruction
-
-  public override init()
-  {
-    element = nil
-    super.init()
-  }
+  private var closed = false
 
   // Computed property accessors
 
   final override var isEmpty: Bool
   {
-    return elementsWritten <= elementsRead
+    return element == nil
   }
 
   final override var isFull: Bool
   {
-    return elementsWritten > elementsRead
+    return element != nil
+  }
+
+  /**
+    Determine whether the channel has been closed
+  */
+
+  final override var isClosed: Bool { return closed }
+
+  /**
+    Close the channel
+
+    Any items still in the channel remain and can be retrieved.
+    New items cannot be added to a closed channel.
+
+    It could be considered an error to close a channel that has already
+    been closed. The actual reaction shall be implementation-dependent.
+  */
+
+  override func close()
+  {
+    if closed { return }
+
+    closed = true
+
+    dispatch_semaphore_signal(barrier)
   }
 
   /**
@@ -72,70 +90,45 @@ public final class SingletonChan<T>: pthreadChan<T>
   {
     let writer = OSAtomicIncrement64Barrier(&writerCount)
 
-    if writer != 0
-    { // if writer is not 0, this call is happening too late.
+    if writer > 1
+    { // if this is not the first writer, the call is happening too late.
       return
     }
 
     element = newElement
-    OSAtomicIncrement64Barrier(&elementsWritten)
-    close()
-
-    // Channel is not empty; unblock any waiting thread.
-    if blockedReaders > 0
-    {
-      pthread_mutex_lock(channelMutex)
-      pthread_cond_signal(readCondition)
-      pthread_mutex_unlock(channelMutex)
-    }
+    close() // also increments the 'barrier' semaphore
   }
 
   /**
-    Return the oldest element from the channel.
+    Return the element from the channel.
 
     If the channel is empty, this call will block.
     If the channel is empty and closed, this will return nil.
 
-    :return: the oldest element from the channel.
+    :return: the element transmitted through the channel.
   */
 
   override func get() -> T?
   {
+    if !closed
+    {
+      dispatch_semaphore_wait(barrier, DISPATCH_TIME_FOREVER)
+    }
+
     let reader = OSAtomicIncrement64Barrier(&readerCount)
 
-    if (elementsWritten < 0) && !self.closed
+    if reader == 1
     {
-      pthread_mutex_lock(channelMutex)
-      // block until the channel is no longer empty
-      while (elementsWritten < 0) && !self.closed
+      if let e = element
       {
-        blockedReaders += 1
-        pthread_cond_wait(readCondition, channelMutex)
-        blockedReaders -= 1
+        element = nil
+        dispatch_semaphore_signal(barrier)
+        return e
       }
-      pthread_mutex_unlock(channelMutex)
     }
 
-    let element: T? = {
-      if reader == 0
-      {
-        if let e = self.element
-        {
-          OSAtomicIncrement64Barrier(&self.elementsRead)
-          self.element = nil
-          return e
-        }
-      }
-      return nil
-    }()
-
-    if blockedReaders > 0
-    {
-      pthread_mutex_lock(channelMutex)
-      pthread_cond_signal(readCondition)
-      pthread_mutex_unlock(channelMutex)
-    }
-
-    return element
+    // if this is not the first reader, too late.
+    dispatch_semaphore_signal(barrier)
+    return nil
   }
 }
