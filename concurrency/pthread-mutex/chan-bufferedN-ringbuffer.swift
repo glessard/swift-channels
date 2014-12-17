@@ -14,10 +14,10 @@ import Darwin
 
 final class BufferedAChan<T>: pthreadChan<T>
 {
-  private final let capacity: Int
-
   private final var buffer: Array<T?>
-  private final let bufmsk: Int
+
+  private final let capacity: Int
+  private final let mask: Int
 
   // housekeeping variables
 
@@ -39,8 +39,8 @@ final class BufferedAChan<T>: pthreadChan<T>
     v |= v >> 16
     v |= v >> 32
 
-    bufmsk = v
-    buffer = Array<T?>(count: bufmsk+1, repeatedValue: nil)
+    mask = v
+    buffer = Array<T?>(count: v+1, repeatedValue: nil)
 
     super.init()
   }
@@ -83,19 +83,18 @@ final class BufferedAChan<T>: pthreadChan<T>
       blockedWriters -= 1
     }
 
-    if !self.closed
+    if !closed
     {
-      buffer[tail&bufmsk] = newElement
+      buffer[tail&mask] = newElement
       tail += 1
     }
 
-    // Channel is not empty; signal if appropriate
     if self.closed && blockedWriters > 0
-    {
+    { // No reason to block
       pthread_cond_signal(writeCondition)
     }
     if blockedReaders > 0
-    {
+    { // Channel is not empty
       pthread_cond_signal(readCondition)
     }
 
@@ -113,6 +112,8 @@ final class BufferedAChan<T>: pthreadChan<T>
 
   override func get() -> T?
   {
+    if self.closed && head >= tail { return nil }
+
     pthread_mutex_lock(channelMutex)
 
     while (head >= tail) && !self.closed
@@ -124,26 +125,27 @@ final class BufferedAChan<T>: pthreadChan<T>
 
     if self.closed && (head >= tail)
     {
-      buffer[head&bufmsk] = nil
+      buffer[head&mask] = nil
     }
     else
     {
       assert(head < tail, "Inconsistent state in BufferedAChan<T>")
     }
 
-    let oldElement = buffer[head&bufmsk]
+    let oldElement = buffer[head&mask]
     head += 1
 
     if self.closed && blockedReaders > 0
-    {
+    { // No reason to block
       pthread_cond_signal(readCondition)
     }
     if blockedWriters > 0
-    {
+    { // Channel isn't full
       pthread_cond_signal(writeCondition)
     }
 
     pthread_mutex_unlock(channelMutex)
+
     return oldElement
   }
 }

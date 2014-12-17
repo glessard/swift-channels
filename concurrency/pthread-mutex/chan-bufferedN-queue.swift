@@ -14,12 +14,12 @@ import Darwin
 
 final class BufferedQChan<T>: pthreadChan<T>
 {
-  private final let capacity: Int
-  private final var q = AnythingQueue<T>()
+  private var q = AnythingQueue<T>()
 
   // housekeeping variables
 
-  private final var elements = 0
+  private let capacity: Int
+  private var elements = 0
 
   // Initialization
 
@@ -39,13 +39,11 @@ final class BufferedQChan<T>: pthreadChan<T>
   final override var isEmpty: Bool
   {
     return elements <= 0
-//     return q.isEmpty
   }
 
   final override var isFull: Bool
   {
     return elements >= capacity
-//     return q.count >= capacity
   }
 
   /**
@@ -75,13 +73,12 @@ final class BufferedQChan<T>: pthreadChan<T>
       elements += 1
     }
 
-    // Channel is not empty; signal if appropriate
     if self.closed && blockedWriters > 0
-    {
+    { // No reason to block
       pthread_cond_signal(writeCondition)
     }
     if blockedReaders > 0
-    {
+    { // Channel is not empty
       pthread_cond_signal(readCondition)
     }
 
@@ -99,6 +96,8 @@ final class BufferedQChan<T>: pthreadChan<T>
 
   override func get() -> T?
   {
+    if self.closed && elements <= 0 { return nil }
+
     pthread_mutex_lock(channelMutex)
 
     while (elements <= 0) && !self.closed
@@ -112,15 +111,16 @@ final class BufferedQChan<T>: pthreadChan<T>
     elements -= 1
 
     if self.closed && blockedReaders > 0
-    {
+    { // No reason to block
       pthread_cond_signal(readCondition)
     }
     if blockedWriters > 0
-    {
+    { // Channel isn't full
       pthread_cond_signal(writeCondition)
     }
 
     pthread_mutex_unlock(channelMutex)
+
     return oldElement
   }
 }

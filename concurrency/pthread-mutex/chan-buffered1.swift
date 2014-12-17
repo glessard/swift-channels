@@ -14,34 +14,26 @@ import Darwin
 
 final class Buffered1Chan<T>: pthreadChan<T>
 {
-  private var element: T?
+  private var element: T? = nil
 
   // housekeeping variables
 
-  private var elementsWritten: Int64 = -1
-  private var elementsRead: Int64 = -1
+  private let capacity = 1
+  private var elements = 0
 
   // Used to elucidate/troubleshoot message arrival order
   // private var readerCount: Int32 = -1
-
-  // Initialization and destruction
-
-  override init()
-  {
-    element = nil
-    super.init()
-  }
 
   // Computed property accessors
 
   final override var isEmpty: Bool
   {
-    return elementsWritten <= elementsRead
+    return elements <= 0
   }
 
   final override var isFull: Bool
   {
-    return elementsWritten > elementsRead
+    return elements >= capacity
   }
 
   /**
@@ -58,17 +50,17 @@ final class Buffered1Chan<T>: pthreadChan<T>
     if self.closed { return }
 
     pthread_mutex_lock(channelMutex)
-    while (elementsWritten > elementsRead) && !self.closed
+    while (elements >= capacity) && !self.closed
     { // block while channel is full
       blockedWriters += 1
       pthread_cond_wait(writeCondition, channelMutex)
       blockedWriters -= 1
     }
 
-    if !self.closed
+    if !closed
     {
-      self.element = newElement
-      elementsWritten += 1
+      element = newElement
+      elements += 1
     }
 
     if self.closed && blockedWriters > 0
@@ -94,31 +86,29 @@ final class Buffered1Chan<T>: pthreadChan<T>
 
   override func get() -> T?
   {
+    if self.closed && elements <= 0 { return nil }
+
     pthread_mutex_lock(channelMutex)
 
-    while (elementsWritten <= elementsRead) && !self.closed
+    while (elements <= 0) && !self.closed
     { // block while channel is empty
       blockedReaders += 1
       pthread_cond_wait(readCondition, channelMutex)
       blockedReaders -= 1
     }
 
-    if self.closed && (elementsWritten == elementsRead)
+    if self.closed && elements == 0
     {
-      self.element = nil
+      element = nil
     }
 
-    let oldElement = self.element
-    elementsRead += 1
+    let oldElement = element
+    elements -= 1
 
-    // Whether to set self.element to nil is an interesting question.
-    // If T is a reference type (or otherwise contains a reference), then
-    // nulling is desirable to in order to avoid unnecessarily extending the
-    // lifetime of the referred-to element.
-    // In the case of a potentially long-lived buffered channel, there is a
-    // potential for contention at this point. This implementation is
-    // choosing to take the risk of extending the life of its messages.
-    // Also, setting self.element to nil at this point would be slow. Somehow.
+    // When T is a reference type (or otherwise contains a reference),
+    // nulling is desirable.
+    // But somehow setting an optional class member to nil is slow,
+    // so we won't do it right away.
 
     if self.closed && blockedReaders > 0
     { // No reason to block
@@ -128,6 +118,7 @@ final class Buffered1Chan<T>: pthreadChan<T>
     { // Channel isn't full
       pthread_cond_signal(writeCondition)
     }
+
     pthread_mutex_unlock(channelMutex)
 
     return oldElement
