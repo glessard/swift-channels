@@ -5,15 +5,10 @@
 //  Copyright (c) 2014 Guillaume Lessard. All rights reserved.
 //
 
-private class TaskList
+private class DeferredTasks
 {
   private typealias Task = () -> ()
   var list = [Task]()
-
-  func append(task: Task)
-  {
-    list.append(task)
-  }
 
   deinit
   {
@@ -24,25 +19,37 @@ private class TaskList
   }
 }
 
-struct DeferredTaskList
+struct Deferred
 {
-  private var tasklist = TaskList()
+  private var d = DeferredTasks()
+
+  init() { }
+
+  init(_ task: () -> ())
+  {
+    d.list.append(task)
+  }
+
+  init<IgnoredType>(task: () -> IgnoredType)
+  {
+    d.list.append { _ = task() }
+  }
 
   func defer(task: () -> ())
   {
-    tasklist.append(task)
+    d.list.append(task)
   }
 
   func defer<IgnoredType>(task: () -> IgnoredType)
   {
-    tasklist.append { _ = task() }
+    d.list.append { _ = task() }
   }
 }
 
 
 private func test()
 {
-  var T = DeferredTaskList()
+  var T = Deferred {println("last thing to happen.")}
 
   var f1 = "fileref 1"
   T.defer {println("close " + f1)}
