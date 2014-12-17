@@ -21,10 +21,9 @@ final class SBufferedNChan<T>: Chan<T>
   // housekeeping variables
 
   private let capacity: Int
-  private var elements = 0
 
-  private let avail: dispatch_semaphore_t
-  private let empty: dispatch_semaphore_t
+  private let filled: dispatch_semaphore_t
+  private let empty:  dispatch_semaphore_t
 
   private let mutex = dispatch_semaphore_create(1)!
 
@@ -37,8 +36,8 @@ final class SBufferedNChan<T>: Chan<T>
   {
     self.capacity = (capacity < 1) ? 1 : capacity
 
-    avail = dispatch_semaphore_create(0)
-    empty = dispatch_semaphore_create(capacity)
+    filled = dispatch_semaphore_create(0)!
+    empty =  dispatch_semaphore_create(capacity)!
 
     super.init()
   }
@@ -52,12 +51,12 @@ final class SBufferedNChan<T>: Chan<T>
 
   final override var isEmpty: Bool
   {
-    return elements <= 0
+    return q.count <= 0
   }
 
   final override var isFull: Bool
   {
-    return elements >= capacity
+    return q.count >= capacity
   }
 
   /**
@@ -84,7 +83,7 @@ final class SBufferedNChan<T>: Chan<T>
     closed = true
     dispatch_semaphore_signal(mutex)
 
-    dispatch_semaphore_signal(avail)
+    dispatch_semaphore_signal(filled)
     dispatch_semaphore_signal(empty)
   }
 
@@ -107,11 +106,10 @@ final class SBufferedNChan<T>: Chan<T>
     if !closed
     {
       q.enqueue(newElement)
-      elements += 1
     }
 
     dispatch_semaphore_signal(mutex)
-    dispatch_semaphore_signal(avail)
+    dispatch_semaphore_signal(filled)
   }
 
   /**
@@ -125,20 +123,19 @@ final class SBufferedNChan<T>: Chan<T>
 
   final override func get() -> T?
   {
-    if self.closed && elements <= 0 { return nil }
+    if self.closed && q.count <= 0 { return nil }
 
-    dispatch_semaphore_wait(avail, DISPATCH_TIME_FOREVER)
+    dispatch_semaphore_wait(filled, DISPATCH_TIME_FOREVER)
     dispatch_semaphore_wait(mutex, DISPATCH_TIME_FOREVER)
 
-    if closed && elements <= 0
+    if closed && q.count <= 0
     {
-      dispatch_semaphore_signal(avail)
+      dispatch_semaphore_signal(filled)
       dispatch_semaphore_signal(mutex)
       return nil
     }
 
     let oldElement = q.dequeue()
-    elements -= 1
 
     dispatch_semaphore_signal(mutex)
     dispatch_semaphore_signal(empty)
