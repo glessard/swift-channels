@@ -8,26 +8,6 @@
 
 import Darwin
 
-private struct SemaphorePool
-{
-  static let poolq = ObjectQueue<dispatch_semaphore_t>()
-
-  static func enqueue(s: dispatch_semaphore_t)
-  {
-    poolq.enqueue(s)
-  }
-
-  static func dequeue() -> dispatch_semaphore_t
-  {
-    if let s = poolq.dequeue()
-    {
-      return s
-    }
-
-    return dispatch_semaphore_create(0)!
-  }
-}
-
 /**
   A channel that uses a 1-element buffer.
 */
@@ -87,16 +67,26 @@ final class QBuffered1Chan<T>: Chan<T>
     closed = true
 
     // Unblock the threads waiting on our conditions.
-    while let rs = readerQueue.dequeue()
+    while readerQueue.count > 0
     {
-      dispatch_semaphore_signal(rs)
+      dispatch_semaphore_signal(readerQueue.dequeue()!)
     }
-    while let ws = writerQueue.dequeue()
+    while writerQueue.count > 0
     {
-      dispatch_semaphore_signal(ws)
+      dispatch_semaphore_signal(writerQueue.dequeue()!)
     }
     dispatch_semaphore_signal(mutex)
   }
+
+  /**
+    Stop the thread on a new semaphore obtained from the SemaphorePool
+
+    The new semaphore is enqueued to readerQueue or writerQueue, and
+    will be used as a signal to resume the thread at a later time.
+
+    :param: mutex a semaphore that is currently held by the calling thread.
+    :param: queue the queue to which the signal should be appended
+  */
 
   final func wait(#mutex: dispatch_semaphore_t, queue: ObjectQueue<dispatch_semaphore_t>)
   {
@@ -139,18 +129,12 @@ final class QBuffered1Chan<T>: Chan<T>
 
     if readerQueue.count > 0
     {
-      if let rs = readerQueue.dequeue()
-      {
-        dispatch_semaphore_signal(rs)
-      }
+      dispatch_semaphore_signal(readerQueue.dequeue()!)
     }
 
     if elements < capacity && writerQueue.count > 0
     {
-      if let ws = writerQueue.dequeue()
-      {
-        dispatch_semaphore_signal(ws)
-      }
+      dispatch_semaphore_signal(writerQueue.dequeue()!)
     }
 
     dispatch_semaphore_signal(mutex)
@@ -184,28 +168,20 @@ final class QBuffered1Chan<T>: Chan<T>
     }
 
     let oldElement = element
-//    element = nil
     elements -= 1
 
-    // Whether to set self.element to nil is an interesting question.
     // When T is a reference type (or otherwise contains a reference),
     // nulling is desirable.
     // But somehow setting an optional class member to nil is slow, so we won't do it.
 
     if writerQueue.count > 0
     {
-      if let ws = writerQueue.dequeue()
-      {
-        dispatch_semaphore_signal(ws)
-      }
+      dispatch_semaphore_signal(writerQueue.dequeue()!)
     }
 
     if elements > 0 && readerQueue.count > 0
     {
-      if let rs = readerQueue.dequeue()
-      {
-        dispatch_semaphore_signal(rs)
-      }
+      dispatch_semaphore_signal(readerQueue.dequeue()!)
     }
 
     dispatch_semaphore_signal(mutex)
