@@ -1,5 +1,5 @@
 //
-//  qchan.swift
+//  semaphorepool.swift
 //  Channels
 //
 //  Created by Guillaume Lessard on 2014-12-16.

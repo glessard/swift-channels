@@ -21,3 +21,13 @@ class QBuffered1ChannelTests: PBuffered1ChannelTests
     return Channel.Wrap(QBuffered1Chan<T>())
   }
 }
+
+class QBufferedNChannelTests: PQBufferedNChannelTests
+{
+  override var id: String  { return "Queue Buffered(N)" }
+
+  override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
+  {
+    return Channel.Wrap(QBufferedNChan<T>(buflen))
+  }
+}

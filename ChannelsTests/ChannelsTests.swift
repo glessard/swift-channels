@@ -308,9 +308,11 @@ class ChannelsTests: XCTestCase
         tx.close()
       }
       
+      var i = 0
       for m in rx {
-        _ = m
+        i++
       }
+      XCTAssert(i == self.performanceTestIterations, "Too few (\(i)) iterations completed by " + self.id)
     }
   }
 }
