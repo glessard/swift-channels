@@ -12,12 +12,12 @@ import Darwin
   A channel that uses an array as a backing store.
 */
 
-public final class BufferedAChan<T>: pthreadChan<T>
+final class BufferedAChan<T>: pthreadChan<T>
 {
   private final let capacity: Int
 
   private final var buffer: Array<T?>
-  private final let buflen: Int
+  private final let bufmsk: Int
 
   // housekeeping variables
 
@@ -30,8 +30,17 @@ public final class BufferedAChan<T>: pthreadChan<T>
   {
     self.capacity = (capacity < 1) ? 1 : capacity
 
-    buflen = capacity // restrict this to powers of two for potentially better speed.
-    buffer = Array<T?>(count: buflen, repeatedValue: nil)
+    // find the next higher power of 2
+    var v = self.capacity - 1
+    v |= v >> 1
+    v |= v >> 2
+    v |= v >> 4
+    v |= v >> 8
+    v |= v >> 16
+    v |= v >> 32
+
+    bufmsk = v
+    buffer = Array<T?>(count: bufmsk+1, repeatedValue: nil)
 
     super.init()
   }
@@ -76,7 +85,7 @@ public final class BufferedAChan<T>: pthreadChan<T>
 
     if !self.closed
     {
-      buffer[tail%buflen] = newElement
+      buffer[tail&bufmsk] = newElement
       tail += 1
     }
 
@@ -115,14 +124,14 @@ public final class BufferedAChan<T>: pthreadChan<T>
 
     if self.closed && (head >= tail)
     {
-      buffer[head%buflen] = nil
+      buffer[head&bufmsk] = nil
     }
     else
     {
       assert(head < tail, "Inconsistent state in BufferedAChan<T>")
     }
 
-    let oldElement = buffer[head%buflen]
+    let oldElement = buffer[head&bufmsk]
     head += 1
 
     if self.closed && blockedReaders > 0

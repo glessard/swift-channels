@@ -15,20 +15,17 @@ import Darwin
 final class BufferedQChan<T>: pthreadChan<T>
 {
   private final let capacity: Int
-  private final var q: Queue<T>
+  private final var q = AnythingQueue<T>()
 
   // housekeeping variables
 
-  private final var elementsWritten: Int64 = -1
-  private final var elementsRead: Int64 = -1
+  private final var elements = 0
 
   // Initialization
 
   init(_ capacity: Int)
   {
     self.capacity = (capacity < 1) ? 1 : capacity
-    self.q = Queue<T>()
-
     super.init()
   }
 
@@ -41,13 +38,13 @@ final class BufferedQChan<T>: pthreadChan<T>
 
   final override var isEmpty: Bool
   {
-    return elementsWritten <= elementsRead
+    return elements <= 0
 //     return q.isEmpty
   }
 
   final override var isFull: Bool
   {
-    return (elementsWritten - elementsRead >= capacity)
+    return elements >= capacity
 //     return q.count >= capacity
   }
 
@@ -65,7 +62,7 @@ final class BufferedQChan<T>: pthreadChan<T>
     if self.closed { return }
 
     pthread_mutex_lock(channelMutex)
-    while (elementsWritten - elementsRead >= capacity) && !self.closed
+    while (elements >= capacity) && !self.closed
     { // block while channel is full
       blockedWriters += 1
       pthread_cond_wait(writeCondition, channelMutex)
@@ -75,7 +72,7 @@ final class BufferedQChan<T>: pthreadChan<T>
     if !self.closed
     {
       q.enqueue(newElement)
-      elementsWritten += 1
+      elements += 1
     }
 
     // Channel is not empty; signal if appropriate
@@ -104,7 +101,7 @@ final class BufferedQChan<T>: pthreadChan<T>
   {
     pthread_mutex_lock(channelMutex)
 
-    while (elementsWritten <= elementsRead) && !self.closed
+    while (elements <= 0) && !self.closed
     { // block while channel is empty
       blockedReaders += 1
       pthread_cond_wait(readCondition, channelMutex)
@@ -112,7 +109,7 @@ final class BufferedQChan<T>: pthreadChan<T>
     }
 
     let oldElement = q.dequeue()
-    elementsRead += 1
+    elements -= 1
 
     if self.closed && blockedReaders > 0
     {
