@@ -35,7 +35,7 @@ final class SBufferedNChan<T>: Chan<T>
 
   init(_ capacity: Int)
   {
-    self.capacity = Int32(capacity)
+    self.capacity = (capacity < 1) ? 1 : Int32(capacity)
 
     avail = dispatch_semaphore_create(0)
     empty = dispatch_semaphore_create(capacity)

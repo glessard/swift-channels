@@ -59,7 +59,7 @@ class QueueObjectTests: XCTestCase
     }
   }
 
-  func testPerformanceQueue()
+  func testPerformanceQueue1()
   {
     let payload = dispatch_semaphore_create(1)!
     var q = ObjectQueue<dispatch_semaphore_t>()

@@ -23,8 +23,8 @@ final class SBuffered1Chan<T>: Chan<T>
   private let capacity: Int32 = 1
   private var elements: Int32 = 0
 
-  private let avail = dispatch_semaphore_create(0)
-  private let empty = dispatch_semaphore_create(1)
+  private let avail = dispatch_semaphore_create(0)!
+  private let empty = dispatch_semaphore_create(1)!
 
   private let mutex = dispatch_semaphore_create(1)!
 

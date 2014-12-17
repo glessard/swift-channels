@@ -58,7 +58,7 @@ class QueueAnythingTests: XCTestCase
     }
   }
 
-  func testPerformanceQueue()
+  func testPerformanceQueue1()
   {
     let payload = dispatch_semaphore_create(1)!
     var q = AnythingQueue<dispatch_semaphore_t>()
