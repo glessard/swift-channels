@@ -1,6 +1,8 @@
 //
-//  Buffered1ChannelTests.swift
+//  SChannelsTests.swift
 //  concurrency
+//
+//  Tests for channels based on semaphores
 //
 //  Created by Guillaume Lessard on 2014-09-09.
 //  Copyright (c) 2014 Guillaume Lessard. All rights reserved.
@@ -17,5 +19,15 @@ class SBuffered1ChannelTests: PBuffered1ChannelTests
   override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
   {
     return Channel.Wrap(SBuffered1Chan<T>())
+  }
+}
+
+class SBufferedNChannelTests: PQBufferedNChannelTests
+{
+  override var id: String  { return "Semaphore Buffered(N)" }
+
+  override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
+  {
+    return Channel.Wrap(SBufferedNChan<T>(buflen))
   }
 }

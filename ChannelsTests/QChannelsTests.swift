@@ -1,6 +1,8 @@
 //
-//  Buffered1ChannelTests.swift
+//  QChannelsTests.swift
 //  concurrency
+//
+//  Tests for channels based on semaphores and "atomic" queues.
 //
 //  Created by Guillaume Lessard on 2014-09-09.
 //  Copyright (c) 2014 Guillaume Lessard. All rights reserved.
