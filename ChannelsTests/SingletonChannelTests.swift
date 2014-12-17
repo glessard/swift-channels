@@ -12,6 +12,7 @@ import XCTest
 class SingletonChannelTests: ChannelsTests
 {
   override var id: String { return "Singleton" }
+  override var buflen: Int { return 1 }
 
   override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
   {

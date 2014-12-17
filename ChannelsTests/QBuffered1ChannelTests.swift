@@ -9,9 +9,10 @@
 import Darwin
 import XCTest
 
-class QBuffered1ChannelTests: Buffered1ChannelTests
+class QBuffered1ChannelTests: PBuffered1ChannelTests
 {
   override var id: String { return "Queue Buffered(1)" }
+  override var buflen: Int { return 1 }
 
   override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
   {

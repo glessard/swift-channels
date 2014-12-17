@@ -9,14 +9,14 @@
 import Darwin
 import XCTest
 
-class UnbufferedChannelTests: ChannelsTests
+class PUnbufferedChannelTests: ChannelsTests
 {
-  override var id: String { return "Unbuffered" }
+  override var id: String { return "pthreads Unbuffered" }
   override var buflen: Int { return 0 }
 
   override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
   {
-    return Channel<T>.Make(0)
+    return Channel.Wrap(UnbufferedChan<T>())
   }
 
   /**

@@ -9,7 +9,7 @@
 import Darwin
 import XCTest
 
-class GCDUnbufferedChannelTests: UnbufferedChannelTests
+class GCDUnbufferedChannelTests: PUnbufferedChannelTests
 {
   override var id: String { return "GCD Unbuffered" }
 

@@ -9,14 +9,14 @@
 import Darwin
 import XCTest
 
-class BufferedNChannelTests: Buffered1ChannelTests
+class PQBufferedNChannelTests: PBuffered1ChannelTests
 {
-  override var id: String  { return "Buffered(N)" }
+  override var id: String  { return "pthreads Buffered(N-Queue)" }
   override var buflen: Int { return performanceTestIterations / 1000 }
 
   override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
   {
-    return Channel<T>.Make(buflen)
+    return Channel.Wrap(BufferedQChan<T>(buflen))
   }
 
   /**
@@ -25,28 +25,7 @@ class BufferedNChannelTests: Buffered1ChannelTests
 
   func testSendReceiveN()
   {
-    var values = Array<UInt32>()
-    for i in 0..<buflen
-    {
-      values.append(arc4random_uniform(UInt32.max/2))
-    }
-
-    var (tx, rx) = InstantiateTestChannel(UInt32)
-    for v in values
-    {
-      tx <- v
-    }
-
-    let selectedValue = Int(arc4random_uniform(UInt32(buflen)))
-    var testedValue: UInt32 = UInt32.max
-
-    for i in 0..<buflen
-    {
-      if let e = <-rx
-      {
-        XCTAssert(e == values[i], id)
-      }
-    }
+    ChannelTestSendReceiveN()
   }
   
   /**
@@ -55,15 +34,16 @@ class BufferedNChannelTests: Buffered1ChannelTests
 
   func testPerformanceLoopNoContention()
   {
-    self.measureBlock() {
-      let (tx, rx) = self.InstantiateTestChannel(Int)
+    ChannelPerformanceLoopNoContention()
+  }
+}
 
-      for j in 0..<(self.performanceTestIterations/self.buflen)
-      {
-        for i in 0..<self.buflen { tx <- i }
-        for i in 0..<self.buflen { _ = <-rx }
-      }
-      tx.close()
-    }
+class PABufferedNChannelTests: PQBufferedNChannelTests
+{
+  override var id: String { return "pthreads Buffered(N-Array)" }
+
+  override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
+  {
+    return Channel.Wrap(BufferedAChan<T>(buflen))
   }
 }

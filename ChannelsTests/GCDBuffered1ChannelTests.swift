@@ -9,7 +9,7 @@
 import Darwin
 import XCTest
 
-class GCDBuffered1ChannelTests: Buffered1ChannelTests
+class GCDBuffered1ChannelTests: PBuffered1ChannelTests
 {
   override var id: String { return "GCD Buffered(1)" }
 

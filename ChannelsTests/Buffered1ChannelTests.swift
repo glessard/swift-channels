@@ -9,14 +9,14 @@
 import Darwin
 import XCTest
 
-class Buffered1ChannelTests: UnbufferedChannelTests
+class PBuffered1ChannelTests: PUnbufferedChannelTests
 {
-  override var id: String { return "Buffered(1)" }
+  override var id: String { return "pthreads Buffered(1)" }
   override var buflen: Int { return 1 }
 
   override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
   {
-    return Channel<T>.Make(1)
+    return Channel.Wrap(Buffered1Chan<T>())
   }
 
   /**
@@ -25,17 +25,7 @@ class Buffered1ChannelTests: UnbufferedChannelTests
 
   func testPerformanceNoContention()
   {
-    self.measureBlock() {
-      let (tx, rx) = self.InstantiateTestChannel(Int)
-
-      for i in 0..<self.performanceTestIterations
-      {
-        tx <- i
-        let r = <-rx
-        // XCTAssert(i == r, "bad transmission in " + self.id)
-      }
-      tx.close()
-    }
+    ChannelPerformanceNoContention()
   }
 
   /**
@@ -44,12 +34,6 @@ class Buffered1ChannelTests: UnbufferedChannelTests
 
   func testSendReceive()
   {
-    let (tx, rx) = InstantiateTestChannel(UInt32)
-
-    let value = arc4random()
-    tx <- value
-    let result = <-rx
-
-    XCTAssert(value == result, "Wrong value received from channel " + id)
+    ChannelTestSendReceive()
   }
 }
