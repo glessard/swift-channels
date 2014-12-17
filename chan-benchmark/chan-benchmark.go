@@ -68,5 +68,20 @@ func main() {
 	}
 	close(bufferedN)
 	fmt.Println(time.Since(then))
+
+
+	bufferedN = make(chan int, buflen)
+
+	then = time.Now()
+	go func() {
+		for i:=0; i<iterations; i++ {
+			bufferedN <- i
+		}
+		close(bufferedN)
+	}()
+
+	for a := range(bufferedN) { _ = a}
+
+	fmt.Println(time.Since(then))
 }
 
