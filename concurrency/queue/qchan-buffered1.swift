@@ -1,5 +1,5 @@
 //
-//  chan-buffered1.swift
+//  qchan-buffered1.swift
 //  concurrency
 //
 //  Created by Guillaume Lessard on 2014-11-19.
@@ -18,8 +18,8 @@ final class QBuffered1Chan<T>: Chan<T>
 
   // housekeeping variables
 
-  private let capacity: Int32 = 1
-  private var elements: Int32 = 0
+  private let capacity = 1
+  private var elements = 0
 
   private let readerQueue = ObjectQueue<dispatch_semaphore_t>()
   private let writerQueue = ObjectQueue<dispatch_semaphore_t>()

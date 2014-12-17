@@ -20,8 +20,8 @@ final class SBufferedNChan<T>: Chan<T>
 
   // housekeeping variables
 
-  private let capacity: Int32
-  private var elements: Int32 = 0
+  private let capacity: Int
+  private var elements = 0
 
   private let avail: dispatch_semaphore_t
   private let empty: dispatch_semaphore_t
@@ -35,7 +35,7 @@ final class SBufferedNChan<T>: Chan<T>
 
   init(_ capacity: Int)
   {
-    self.capacity = (capacity < 1) ? 1 : Int32(capacity)
+    self.capacity = (capacity < 1) ? 1 : capacity
 
     avail = dispatch_semaphore_create(0)
     empty = dispatch_semaphore_create(capacity)
