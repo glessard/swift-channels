@@ -19,6 +19,11 @@ class GCDUnbufferedChannelTests: PUnbufferedChannelTests
   {
     return Channel.Wrap(gcdUnbufferedChan<T>())
   }
+
+  override func testPerformanceWithContention()
+  {
+    // Performance is so bad, this test is disabled
+  }
 }
 
 class GCDBuffered1ChannelTests: PBuffered1ChannelTests
@@ -28,6 +33,16 @@ class GCDBuffered1ChannelTests: PBuffered1ChannelTests
   override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
   {
     return Channel.Wrap(gcdBuffered1Chan<T>())
+  }
+
+  override func testPerformanceWithContention()
+  {
+    // Performance is so bad, this test is disabled
+  }
+
+  override func testPerformanceNoContention()
+  {
+    // Performance is so bad, this test is disabled
   }
 }
 
