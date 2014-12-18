@@ -46,7 +46,7 @@ while let a = <-buffered.rx { _ = a }
 syncprint(tic.toc)
 
 
-let unbuffered = Channel.Wrap(UnbufferedChan<Int>())
+let unbuffered = Channel.Wrap(QUnbufferedChan<Int>())
 
 tic = Time()
 

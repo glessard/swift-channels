@@ -38,12 +38,12 @@ public class Channel<T>
     switch capacity
     {
       case let c where c < 1:
-        channel = UnbufferedChan<T>()
+        channel = QUnbufferedChan<T>()
       case 1:
-        channel = Buffered1Chan<T>()
+        channel = SBuffered1Chan<T>()
 
       default:
-        channel = BufferedQChan<T>(capacity)
+        channel = SBufferedNChan<T>(capacity)
     }
 
     return Wrap(channel)
