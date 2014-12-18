@@ -11,7 +11,7 @@ import XCTest
 
 class ShuffleTests: XCTestCase
 {
-  let a = Array(stride(from: -5.0, to: 1e4, by: 0.8))
+  let a = Array(stride(from: -5.0, to: 1e3, by: 0.8))
 
   func testPerformanceShuffle()
   {
