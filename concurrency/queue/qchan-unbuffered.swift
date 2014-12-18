@@ -107,36 +107,37 @@ final class QUnbufferedChan<T>: Chan<T>
 
     dispatch_semaphore_wait(mutex, DISPATCH_TIME_FOREVER)
 
-    if closed { return }
-
     let pointer = UnsafeMutablePointer<T>.alloc(1)
     pointer.initialize(newElement)
 
-    if readerQueue.count < 1
-    {
-      // enqueue a new semaphore along with our data
-      let threadLock = SemaphorePool.dequeue()
-      dispatch_set_context(threadLock, pointer)
-      writerQueue.enqueue(threadLock)
+    if readerQueue.count > 0
+    { // there is already an interested reader
+      let rs = readerQueue.dequeue()!
       dispatch_semaphore_signal(mutex)
-      dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
-
-      let context = dispatch_get_context(threadLock)
-      if context == pointer
-      { // thread was awoken by close(), not a reader
-        pointer.destroy()
-        pointer.dealloc(1)
-        dispatch_set_context(threadLock, nil)
-      }
-      SemaphorePool.enqueue(threadLock)
-
+      dispatch_set_context(rs, pointer)
+      dispatch_semaphore_signal(rs)
       return
     }
 
-    let rs = readerQueue.dequeue()!
-    dispatch_set_context(rs, pointer)
-    dispatch_semaphore_signal(rs)
+    // enqueue a new semaphore along with our data
+    let threadLock = SemaphorePool.dequeue()
+    dispatch_set_context(threadLock, pointer)
+    writerQueue.enqueue(threadLock)
     dispatch_semaphore_signal(mutex)
+    dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
+
+    // got awoken by a reader (or the channel was closed)
+    let context = dispatch_get_context(threadLock)
+    if context == pointer
+    { // thread was awoken by close(), not a reader
+      pointer.destroy()
+      pointer.dealloc(1)
+      dispatch_set_context(threadLock, nil)
+    }
+    else { assert(context == UnsafeMutablePointer.null(), "Memory leak at \(__FILE__), \(__LINE__)") }
+    SemaphorePool.enqueue(threadLock)
+
+    return
   }
 
   /**
@@ -154,43 +155,39 @@ final class QUnbufferedChan<T>: Chan<T>
 
     dispatch_semaphore_wait(mutex, DISPATCH_TIME_FOREVER)
 
-    if closed { return nil }
-
-    if writerQueue.count < 1
-    {
-      // wait for data from a writer
-      let threadLock = SemaphorePool.dequeue()
-      readerQueue.enqueue(threadLock)
+    if writerQueue.count > 0
+    { // data is already available
+      let ws = writerQueue.dequeue()!
       dispatch_semaphore_signal(mutex)
-      dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
 
-      // got awoken by a writer (or the channel was closed)
       var element: T? = nil
-      let context = dispatch_get_context(threadLock)
+      let context = UnsafeMutablePointer<T>(dispatch_get_context(ws))
       if context != UnsafeMutablePointer.null()
-      { // thread was awoken by a writer, not close()
-        let data = UnsafeMutablePointer<T>(context)
-        element = data.move()
-        data.dealloc(1)
-        dispatch_set_context(threadLock, nil)
+      {
+        element = context.move()
+        context.dealloc(1)
+        dispatch_set_context(ws, nil)
       }
-      SemaphorePool.enqueue(threadLock)
-
+      dispatch_semaphore_signal(ws)
       return element
     }
 
-    var element: T? = nil
-    let ws = writerQueue.dequeue()!
-    let context = dispatch_get_context(ws)
-    if context != UnsafeMutablePointer.null()
-    {
-      let data = UnsafeMutablePointer<T>(context)
-      element = data.move()
-      data.dealloc(1)
-      dispatch_set_context(ws, nil)
-    }
-    dispatch_semaphore_signal(ws)
+    // wait for data from a writer
+    let threadLock = SemaphorePool.dequeue()
+    readerQueue.enqueue(threadLock)
     dispatch_semaphore_signal(mutex)
+    dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
+
+    // got awoken by a writer (or the channel was closed)
+    var element: T? = nil
+    let context = UnsafeMutablePointer<T>(dispatch_get_context(threadLock))
+    if context != UnsafeMutablePointer.null()
+    { // thread was awoken by a writer, not close()
+      element = context.move()
+      context.dealloc(1)
+      dispatch_set_context(threadLock, nil)
+    }
+    SemaphorePool.enqueue(threadLock)
     return element
   }
 }
