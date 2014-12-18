@@ -16,7 +16,7 @@ import Darwin
 
 final class SBuffered1Chan<T>: Chan<T>
 {
-  private var element: T? = nil
+  private var e = UnsafeMutablePointer<T>.alloc(1)
 
   // housekeeping variables
 
@@ -32,6 +32,15 @@ final class SBuffered1Chan<T>: Chan<T>
 
   // Used to elucidate/troubleshoot message arrival order
   // private var readerCount: Int32 = -1
+
+  deinit
+  {
+    if elements > 0
+    {
+      e.destroy()
+    }
+    e.dealloc(1)
+  }
 
   // Computed property accessors
 
@@ -91,7 +100,7 @@ final class SBuffered1Chan<T>: Chan<T>
 
     if !closed
     {
-      element = newElement
+      e.initialize(newElement)
       elements += 1
     }
 
@@ -122,7 +131,7 @@ final class SBuffered1Chan<T>: Chan<T>
       return nil
     }
 
-    let oldElement = element
+    let element = e.move()
     elements -= 1
 
     // When T is a reference type (or otherwise contains a reference),
@@ -132,6 +141,6 @@ final class SBuffered1Chan<T>: Chan<T>
     dispatch_semaphore_signal(mutex)
     dispatch_semaphore_signal(empty)
 
-    return oldElement
+    return element
   }
 }

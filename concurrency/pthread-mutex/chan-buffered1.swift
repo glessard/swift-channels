@@ -14,7 +14,7 @@ import Darwin
 
 final class Buffered1Chan<T>: pthreadChan<T>
 {
-  private var element: T? = nil
+  private var e = UnsafeMutablePointer<T>.alloc(1)
 
   // housekeeping variables
 
@@ -23,6 +23,15 @@ final class Buffered1Chan<T>: pthreadChan<T>
 
   // Used to elucidate/troubleshoot message arrival order
   // private var readerCount: Int32 = -1
+
+  deinit
+  {
+    if elements > 0
+    {
+      e.destroy()
+    }
+    e.dealloc(1)
+  }
 
   // Computed property accessors
 
@@ -59,7 +68,7 @@ final class Buffered1Chan<T>: pthreadChan<T>
 
     if !closed
     {
-      element = newElement
+      e.initialize(newElement)
       elements += 1
     }
 
@@ -97,12 +106,14 @@ final class Buffered1Chan<T>: pthreadChan<T>
       blockedReaders -= 1
     }
 
-    if self.closed && elements == 0
+    if self.closed && elements <= 0
     {
-      element = nil
+      pthread_cond_signal(readCondition)
+      pthread_mutex_unlock(channelMutex)
+      return nil
     }
 
-    let oldElement = element
+    let element = e.move()
     elements -= 1
 
     // When T is a reference type (or otherwise contains a reference),
@@ -121,6 +132,6 @@ final class Buffered1Chan<T>: pthreadChan<T>
 
     pthread_mutex_unlock(channelMutex)
 
-    return oldElement
+    return element
   }
 }

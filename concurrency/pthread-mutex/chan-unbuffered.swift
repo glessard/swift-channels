@@ -16,15 +16,17 @@ import Darwin
 
 class UnbufferedChan<T>: pthreadChan<T>
 {
-  private var element: T?
+  private var e = UnsafeMutablePointer<T>.alloc(1)
 
-  private var elementsWritten: Int64 = -1
-  private var elementsRead: Int64 = -1
+  private var elements = 0
 
-  override init()
+  deinit
   {
-    element = nil
-    super.init()
+    if elements > 0
+    {
+      e.destroy()
+    }
+    e.dealloc(1)
   }
 
   // Computed property accessors
@@ -56,19 +58,19 @@ class UnbufferedChan<T>: pthreadChan<T>
 
 //    syncprint("writer \(newElement) is trying to send")
 
-    while ( blockedReaders == 0 || elementsWritten > elementsRead ) && !self.closed
+    while ( blockedReaders == 0 || elements > 0 ) && !self.closed
     { // block while no reader is ready.
       blockedWriters += 1
       pthread_cond_wait(writeCondition, channelMutex)
       blockedWriters -= 1
     }
 
-    assert(elementsWritten <= elementsRead || self.closed, "Messed up an unbuffered send")
+    assert(elements <= 0 || self.closed, "Messed up an unbuffered send")
 
     if !self.closed
     {
-      self.element = newElement
-      elementsWritten += 1
+      e.initialize(newElement)
+      elements += 1
       //    syncprint("writer \(newElement) has successfully sent")
     }
 
@@ -98,7 +100,7 @@ class UnbufferedChan<T>: pthreadChan<T>
 //    let id = readerCount++
 //    syncprint("reader \(id) is trying to receive")
 
-    while elementsWritten <= elementsRead && !self.closed
+    while elements <= 0 && !self.closed
     {
       if blockedWriters > 0
       { // Maybe we can interest a writer
@@ -110,17 +112,15 @@ class UnbufferedChan<T>: pthreadChan<T>
       blockedReaders -= 1
     }
 
-    if self.closed && (elementsWritten <= elementsRead)
+    if self.closed && (elements <= 0)
     {
-      self.element = nil
-    }
-    else
-    {
-      assert(elementsRead < elementsWritten, "Inconsistent unbuffered channel state")
+      pthread_cond_signal(readCondition)
+      pthread_mutex_unlock(channelMutex)
+      return nil
     }
 
-    let oldElement = self.element
-    elementsRead += 1
+    let element = e.move()
+    elements -= 1
 
 //    syncprint("reader \(id) received \(oldElement)")
 
@@ -138,7 +138,7 @@ class UnbufferedChan<T>: pthreadChan<T>
     }
     pthread_mutex_unlock(channelMutex)
 
-    return oldElement
+    return element
   }
 
 //  /**
