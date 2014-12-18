@@ -10,28 +10,35 @@
   A simple queue, implemented as a linked list.
 */
 
-public class Queue<T>: SequenceType, GeneratorType
+public class FastQueue<T>: SequenceType, GeneratorType
 {
-  final private var head: Node<T>?
-  final private var tail: Node<T>!
+  final private var head = UnsafeMutablePointer<Node<T>>.null()
+  final private var tail = UnsafeMutablePointer<Node<T>>.null()
 
-  final private var size: Int
+  final private var size = 0
 
   final private var mutex = dispatch_semaphore_create(1)!
 
   public init()
   {
-    head = nil
-    tail = nil
-    size = 0
   }
 
-  public init(newElement: T)
+  convenience public init(newElement: T)
   {
-    let newNode = Node<T>(newElement)
-    head = newNode
-    tail = newNode
+    self.init()
+
+    head = UnsafeMutablePointer<Node<T>>.alloc(1)
+    head.initialize(Node<T>(newElement))
+    tail = head
     size = 1
+  }
+
+  deinit
+  {
+    while size > 0
+    {
+      _ = dequeue()
+    }
   }
 
   final public var isEmpty: Bool { return size == 0 }
@@ -40,21 +47,26 @@ public class Queue<T>: SequenceType, GeneratorType
 
   public func realCount() -> Int
   {
+    dispatch_semaphore_wait(mutex, DISPATCH_TIME_FOREVER)
+
     var i = 0
-    var node = head
-    while let n = node
+    var nptr = head
+    while nptr != UnsafeMutablePointer.null()
     { // Iterate along the linked nodes while counting
-      node = n.next
+      nptr = nptr.memory.next
       i++
     }
     assert(i == size, "Queue might have lost data")
 
-    return Int(i)
+    dispatch_semaphore_signal(mutex)
+
+    return i
   }
 
   public func enqueue(newElement: T)
   {
-    let newNode = Node<T>(newElement)
+    let newNode = UnsafeMutablePointer<Node<T>>.alloc(1)
+    newNode.initialize(Node<T>(newElement))
 
     dispatch_semaphore_wait(mutex, DISPATCH_TIME_FOREVER)
 
@@ -67,7 +79,7 @@ public class Queue<T>: SequenceType, GeneratorType
       return
     }
 
-    tail.next = newNode
+    tail.memory.next = newNode
     tail = newNode
     size += 1
     dispatch_semaphore_signal(mutex)
@@ -79,19 +91,24 @@ public class Queue<T>: SequenceType, GeneratorType
 
     if size > 0
     {
-      let oldhead = head!
+      let oldhead = head
 
       // Promote the 2nd item to 1st
-      head = oldhead.next
-
+      head = head.memory.next
       size -= 1
 
       // Logical housekeeping
-      if size == 0 { tail = nil }
+      if size == 0 { tail = UnsafeMutablePointer.null() }
 
       dispatch_semaphore_signal(mutex)
 
-      return oldhead.element
+      let element = oldhead.memory.eptr.move()
+
+      oldhead.memory.eptr.dealloc(1)
+      oldhead.destroy()
+      oldhead.dealloc(1)
+
+      return element
     }
 
     // queue is empty
@@ -119,10 +136,10 @@ public class Queue<T>: SequenceType, GeneratorType
   Clearly an implementation detail.
 */
 
-private class Node<T>
+private struct Node<T>
 {
-  let element: T
-  var next: Node<T>? = nil
+  let eptr: UnsafeMutablePointer<T>
+  var next: UnsafeMutablePointer<Node<T>>
 
   /**
     The purpose of a new Node<T> is to become last in a Queue<T>.
@@ -130,6 +147,8 @@ private class Node<T>
 
   init(_ e: T)
   {
-    element = e
+    eptr = UnsafeMutablePointer<T>.alloc(1)
+    eptr.initialize(e)
+    next = UnsafeMutablePointer.null()
   }
 }

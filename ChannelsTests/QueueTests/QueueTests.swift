@@ -1,5 +1,5 @@
 //
-//  QueueObjectTests.swift
+//  QueueTests.swift
 //  concurrency
 //
 //  Created by Guillaume Lessard on 2014-09-09.
@@ -10,14 +10,13 @@ import Darwin
 import Foundation
 import XCTest
 
-class QueueObjectTests: XCTestCase
+class QueueTests: XCTestCase
 {
-  let performanceTestIterations=100_000
+  let performanceQTestIterations=100_000
 
   func testQueue()
   {
-    let payload = dispatch_semaphore_create(1)!
-    var q = ObjectQueue<dispatch_semaphore_t>()
+    var q = Queue<Int>()
 
     for i in 1...10_000
     {
@@ -28,7 +27,7 @@ class QueueObjectTests: XCTestCase
       if r == 0
       {
         let b = q.count
-        q.enqueue(payload)
+        q.enqueue(b)
         let a = q.count
         XCTAssert(a-b == 1, "element count improperly incremented upon enqueuing")
       }
@@ -62,10 +61,10 @@ class QueueObjectTests: XCTestCase
   func testPerformanceQueue1()
   {
     let payload = dispatch_semaphore_create(1)!
-    var q = ObjectQueue<dispatch_semaphore_t>()
 
     self.measureBlock() {
-      for i in 1...self.performanceTestIterations
+      var q = Queue<dispatch_semaphore_t>()
+      for i in 1...self.performanceQTestIterations
       {
         q.enqueue(payload)
       }
@@ -80,10 +79,10 @@ class QueueObjectTests: XCTestCase
   func testPerformanceQueue2()
   {
     let payload = dispatch_semaphore_create(1)!
-    var q = ObjectQueue<dispatch_semaphore_t>()
 
     self.measureBlock() {
-      for i in 1...self.performanceTestIterations
+      var q = Queue<dispatch_semaphore_t>()
+      for i in 1...self.performanceQTestIterations
       {
         q.enqueue(payload)
         _ = q.dequeue()
@@ -93,10 +92,9 @@ class QueueObjectTests: XCTestCase
 
   func testPerformanceQueue3()
   {
-    var q = ObjectQueue<dispatch_semaphore_t>()
-
     self.measureBlock() {
-      for i in 1...self.performanceTestIterations
+      var q = Queue<dispatch_semaphore_t>()
+      for i in 1...self.performanceQTestIterations
       {
         _ = q.dequeue()
       }

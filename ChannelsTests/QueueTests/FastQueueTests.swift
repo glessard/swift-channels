@@ -10,13 +10,13 @@ import Darwin
 import Foundation
 import XCTest
 
-class QueuePointerTests: XCTestCase
+class QQFastQueueTests: XCTestCase
 {
-  let performanceTestIterations=100_000
+  let performanceQTestIterations=100_000
 
   func testQueue()
   {
-    var q = PointerQueue<Int>()
+    var q = FastQueue<Int>()
 
     for i in 1...10_000
     {
@@ -61,10 +61,10 @@ class QueuePointerTests: XCTestCase
   func testPerformanceQueue1()
   {
     let payload = dispatch_semaphore_create(1)!
-    var q = PointerQueue<dispatch_semaphore_t>()
 
     self.measureBlock() {
-      for i in 1...self.performanceTestIterations
+      var q = FastQueue<dispatch_semaphore_t>()
+      for i in 1...self.performanceQTestIterations
       {
         q.enqueue(payload)
       }
@@ -79,10 +79,10 @@ class QueuePointerTests: XCTestCase
   func testPerformanceQueue2()
   {
     let payload = dispatch_semaphore_create(1)!
-    var q = PointerQueue<dispatch_semaphore_t>()
 
     self.measureBlock() {
-      for i in 1...self.performanceTestIterations
+      var q = FastQueue<dispatch_semaphore_t>()
+      for i in 1...self.performanceQTestIterations
       {
         q.enqueue(payload)
         _ = q.dequeue()
@@ -92,10 +92,9 @@ class QueuePointerTests: XCTestCase
 
   func testPerformanceQueue3()
   {
-    var q = PointerQueue<dispatch_semaphore_t>()
-
     self.measureBlock() {
-      for i in 1...self.performanceTestIterations
+      var q = FastQueue<dispatch_semaphore_t>()
+      for i in 1...self.performanceQTestIterations
       {
         _ = q.dequeue()
       }

@@ -12,9 +12,15 @@ final public class PointerQueue<T>: SequenceType, GeneratorType
 
   private var size: Int32 = 0
 
-  init()
+  public init()
   {
     head = AtomicQueueInit()
+  }
+
+  convenience init(newElement: T)
+  {
+    self.init()
+    enqueue(newElement)
   }
 
   deinit

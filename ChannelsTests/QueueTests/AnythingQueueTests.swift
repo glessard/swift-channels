@@ -1,5 +1,5 @@
 //
-//  QueueTests.swift
+//  QueueAnythingTests.swift
 //  concurrency
 //
 //  Created by Guillaume Lessard on 2014-09-09.
@@ -10,13 +10,13 @@ import Darwin
 import Foundation
 import XCTest
 
-class QueueTests: XCTestCase
+class QQAnythingQueueTests: XCTestCase
 {
-  let performanceTestIterations=100_000
+  let performanceQTestIterations=100_000
 
   func testQueue()
   {
-    var q = Queue<Int>()
+    var q = AnythingQueue<Int>()
 
     for i in 1...10_000
     {
@@ -61,10 +61,10 @@ class QueueTests: XCTestCase
   func testPerformanceQueue1()
   {
     let payload = dispatch_semaphore_create(1)!
-    var q = Queue<dispatch_semaphore_t>()
 
     self.measureBlock() {
-      for i in 1...self.performanceTestIterations
+      var q = AnythingQueue<dispatch_semaphore_t>()
+      for i in 1...self.performanceQTestIterations
       {
         q.enqueue(payload)
       }
@@ -79,10 +79,10 @@ class QueueTests: XCTestCase
   func testPerformanceQueue2()
   {
     let payload = dispatch_semaphore_create(1)!
-    var q = Queue<dispatch_semaphore_t>()
 
     self.measureBlock() {
-      for i in 1...self.performanceTestIterations
+      var q = AnythingQueue<dispatch_semaphore_t>()
+      for i in 1...self.performanceQTestIterations
       {
         q.enqueue(payload)
         _ = q.dequeue()
@@ -92,10 +92,9 @@ class QueueTests: XCTestCase
 
   func testPerformanceQueue3()
   {
-    var q = Queue<dispatch_semaphore_t>()
-
     self.measureBlock() {
-      for i in 1...self.performanceTestIterations
+      var q = AnythingQueue<dispatch_semaphore_t>()
+      for i in 1...self.performanceQTestIterations
       {
         _ = q.dequeue()
       }

@@ -17,6 +17,12 @@ final public class AnythingQueue<T>: SequenceType, GeneratorType
     head = AtomicQueueInit()
   }
 
+  convenience init(newElement: T)
+  {
+    self.init()
+    enqueue(newElement)
+  }
+
   deinit
   {
     // first, empty the queue
