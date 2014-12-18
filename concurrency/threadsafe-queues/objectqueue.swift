@@ -35,12 +35,12 @@ final public class ObjectQueue<T: AnyObject>: SequenceType, GeneratorType
 
   public func realCount() -> Int
   {
-    return AtomicQueueRealCount(head)
+    return idQueueRealCount(head)
   }
 
   public func enqueue(item: T)
   {
-    AtomicQueueEnqueue(head, item)
+    idEnqueue(head, item)
     OSAtomicIncrement32Barrier(&size)
   }
 
@@ -48,7 +48,7 @@ final public class ObjectQueue<T: AnyObject>: SequenceType, GeneratorType
   {
     if OSAtomicDecrement32Barrier(&size) >= 0
     {
-      return AtomicQueueDequeue(head) as? T
+      return idDequeue(head) as? T
     }
     else
     { // We decremented once too many; increment once to correct.

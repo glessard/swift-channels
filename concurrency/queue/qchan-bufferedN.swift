@@ -14,13 +14,13 @@ import Darwin
 
 final class QBufferedNChan<T>: Chan<T>
 {
-  private let q = AnythingQueue<T>()
+  private let q = PointerQueue<T>()
 
   // housekeeping variables
 
   private let capacity: Int
 
-  // AnythingQueue keeps count of its stored elements. Unfortunately, calling
+  // PointerQueue keeps count of its stored elements. Unfortunately, calling
   // q.count repeatedly ends up degrading performance noticeably (~50ns/iteration).
   // Keep track locally instead.
 

@@ -14,7 +14,7 @@ import Darwin
 
 final class BufferedQChan<T>: pthreadChan<T>
 {
-  private var q = AnythingQueue<T>()
+  private var q = PointerQueue<T>()
 
   // housekeeping variables
 

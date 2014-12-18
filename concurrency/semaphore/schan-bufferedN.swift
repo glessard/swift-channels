@@ -16,7 +16,7 @@ import Darwin
 
 final class SBufferedNChan<T>: Chan<T>
 {
-  private var q = AnythingQueue<T>()
+  private var q = PointerQueue<T>()
 
   // housekeeping variables
 

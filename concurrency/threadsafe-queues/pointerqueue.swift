@@ -1,12 +1,12 @@
 //
-//  anythingqueue.swift
+//  pointerqueue.swift
 //  concurrency
 //
 //  Created by Guillaume Lessard on 2014-12-13.
 //  Copyright (c) 2014 Guillaume Lessard. All rights reserved.
 //
 
-final public class AnythingQueue<T>: SequenceType, GeneratorType
+final public class PointerQueue<T>: SequenceType, GeneratorType
 {
   private let head: COpaquePointer
 
@@ -35,12 +35,14 @@ final public class AnythingQueue<T>: SequenceType, GeneratorType
 
   public func realCount() -> Int
   {
-    return idQueueRealCount(head)
+    return ptrQueueRealCount(head)
   }
 
   public func enqueue(item: T)
   {
-    idEnqueue(head, Box(item))
+    let p = UnsafeMutablePointer<T>.alloc(1)
+    p.initialize(item)
+    ptrEnqueue(head, p)
     OSAtomicIncrement32Barrier(&size)
   }
 
@@ -48,8 +50,10 @@ final public class AnythingQueue<T>: SequenceType, GeneratorType
   {
     if OSAtomicDecrement32Barrier(&size) >= 0
     {
-      let b = idDequeue(head) as Box<T>
-      return b.element
+      let p = UnsafeMutablePointer<T>(ptrDequeue(head))
+      let item = p.move()
+      p.dealloc(1)
+      return item
     }
     else
     { // We decremented once too many; increment once to correct.
@@ -70,21 +74,5 @@ final public class AnythingQueue<T>: SequenceType, GeneratorType
   public func generate() -> Self
   {
     return self
-  }
-}
-
-
-/**
-  A simple Box for the Queue implemented above.
-  Clearly an implementation detail.
-*/
-
-private class Box<T>
-{
-  let element: T
-
-  init(_ e: T)
-  {
-    element = e
   }
 }
