@@ -15,7 +15,7 @@ class GCDUnbufferedChannelTests: PUnbufferedChannelTests
 {
   override var id: String { return "GCD Unbuffered" }
 
-  override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
+  override func Instantiate<T>(_ bufferLength: Int = -1) -> (Sender<T>, Receiver<T>)
   {
     return Channel.Wrap(gcdUnbufferedChan<T>())
   }
@@ -30,7 +30,7 @@ class GCDBuffered1ChannelTests: PBuffered1ChannelTests
 {
   override var id: String { return "GCD Buffered(1)" }
 
-  override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
+  override func Instantiate<T>(_ bufferLength: Int = -1) -> (Sender<T>, Receiver<T>)
   {
     return Channel.Wrap(gcdBuffered1Chan<T>())
   }
@@ -50,7 +50,7 @@ class GCDSingletonChannelTests: SingletonChannelTests
 {
   override var id: String { return "GCD Singleton" }
 
-  override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
+  override func Instantiate<T>(_ bufferLength: Int = -1) -> (Sender<T>, Receiver<T>)
   {
     return Channel.Wrap(gcdSingletonChan<T>())
   }

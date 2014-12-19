@@ -18,9 +18,14 @@ class ChannelsTests: XCTestCase
 
   var buflen: Int { return 1 }
 
-  func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
+  func InstantiateTestChannel<T>(_: T.Type, bufferLength: Int = -1) -> (Sender<T>, Receiver<T>)
   {
-    return Channel<T>.Make(1)
+    return Instantiate(bufferLength)
+  }
+
+  func Instantiate<T>(bufferLength: Int) -> (Sender<T>, Receiver<T>)
+  {
+    return Channel<T>.Make(bufferLength)
   }
 
   /**
@@ -295,11 +300,11 @@ class ChannelsTests: XCTestCase
     Eventually, the 2 threads start to wait for eath other.
   */
   
-  func ChannelPerformanceWithContention()
+  func ChannelPerformanceWithContention(bufferLength: Int = -1)
   {
     self.measureBlock() {
-      let (tx, rx) = self.InstantiateTestChannel(Int)
-      
+      let (tx: Sender<Int>, rx: Receiver<Int>) = self.Instantiate(bufferLength)
+
       async {
         for i in 0..<self.performanceTestIterations
         {

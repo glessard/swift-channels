@@ -1,5 +1,5 @@
 //
-//  chan-buffered1.swift
+//  schan-buffered1.swift
 //  concurrency
 //
 //  Created by Guillaume Lessard on 2014-11-19.
@@ -133,10 +133,6 @@ final class SBuffered1Chan<T>: Chan<T>
 
     let element = e.move()
     elements -= 1
-
-    // When T is a reference type (or otherwise contains a reference),
-    // nulling is desirable.
-    // But somehow setting an optional class member to nil is slow, so we won't do it.
 
     dispatch_semaphore_signal(mutex)
     dispatch_semaphore_signal(empty)
