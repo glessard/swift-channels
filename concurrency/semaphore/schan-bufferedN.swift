@@ -1,5 +1,5 @@
 //
-//  chan-bufferedN.swift
+//  schan-bufferedN.swift
 //  concurrency
 //
 //  Created by Guillaume Lessard on 2014-11-19.
@@ -16,11 +16,20 @@ import Darwin
 
 final class SBufferedNChan<T>: Chan<T>
 {
-  private var q = PointerQueue<T>()
+  private var buffer: UnsafeMutablePointer<T>
 
   // housekeeping variables
 
-  private let capacity: Int
+  private final let capacity: Int
+  private final let mask: Int
+
+  // housekeeping variables
+
+  private final var head = 0
+  private final var tail = 0
+
+  private final var headptr: UnsafeMutablePointer<T>
+  private final var tailptr: UnsafeMutablePointer<T>
 
   private let filled: dispatch_semaphore_t
   private let empty:  dispatch_semaphore_t
@@ -39,6 +48,20 @@ final class SBufferedNChan<T>: Chan<T>
     filled = dispatch_semaphore_create(0)!
     empty =  dispatch_semaphore_create(capacity)!
 
+    // find the next higher power of 2
+    var v = self.capacity - 1
+    v |= v >> 1
+    v |= v >> 2
+    v |= v >> 4
+    v |= v >> 8
+    v |= v >> 16
+    v |= v >> 32
+
+    mask = v // buffer size -1
+    buffer = UnsafeMutablePointer.alloc(mask+1)
+    headptr = buffer
+    tailptr = buffer
+
     super.init()
   }
 
@@ -47,18 +70,30 @@ final class SBufferedNChan<T>: Chan<T>
     self.init(1)
   }
 
+  deinit
+  {
+    for i in head..<tail
+    {
+      if (i&mask == 0) { headptr = buffer }
+      headptr.destroy()
+      headptr.successor()
+    }
+
+    buffer.dealloc(mask+1)
+  }
+
   // Computed property accessors
 
   final override var isEmpty: Bool
   {
-    return q.count <= 0
+      return head >= tail
   }
 
   final override var isFull: Bool
   {
-    return q.count >= capacity
+      return head+capacity <= tail
   }
-
+  
   /**
     Determine whether the channel has been closed
   */
@@ -105,7 +140,10 @@ final class SBufferedNChan<T>: Chan<T>
 
     if !closed
     {
-      q.enqueue(newElement)
+      tailptr.initialize(newElement)
+      tailptr = tailptr.successor()
+      tail += 1
+      if (tail&mask == 0) { tailptr = buffer }
     }
 
     dispatch_semaphore_signal(mutex)
@@ -123,23 +161,26 @@ final class SBufferedNChan<T>: Chan<T>
 
   final override func get() -> T?
   {
-    if self.closed && q.count <= 0 { return nil }
+    if self.closed && head >= tail { return nil }
 
     dispatch_semaphore_wait(filled, DISPATCH_TIME_FOREVER)
     dispatch_semaphore_wait(mutex, DISPATCH_TIME_FOREVER)
 
-    if closed && q.count <= 0
+    if closed && tail <= head
     {
       dispatch_semaphore_signal(filled)
       dispatch_semaphore_signal(mutex)
       return nil
     }
 
-    let oldElement = q.dequeue()
+    let element = headptr.move()
+    headptr = headptr.successor()
+    head += 1
+    if (head&mask == 0) { headptr = buffer }
 
     dispatch_semaphore_signal(mutex)
     dispatch_semaphore_signal(empty)
 
-    return oldElement
+    return element
   }
 }
