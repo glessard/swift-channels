@@ -1,5 +1,5 @@
 //
-//  SillyChannel.swift
+//  SimpleChannel.swift
 //  concurrency
 //
 //  Created by Guillaume Lessard on 2014-12-08.

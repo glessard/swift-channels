@@ -5,6 +5,7 @@ import "time"
 
 func main() {
 	iterations := 120000
+	buflen := iterations/1000
 
 	buffered := make(chan int, 1)
 
@@ -52,7 +53,6 @@ func main() {
 	fmt.Println(time.Since(then))
 
 
-	buflen := iterations/100
 	bufferedN := make(chan int, buflen)
 
 	then = time.Now()
