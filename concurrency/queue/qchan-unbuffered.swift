@@ -73,24 +73,6 @@ final class QUnbufferedChan<T>: Chan<T>
     dispatch_semaphore_signal(mutex)
   }
 
-  /**
-    Stop the thread on a new semaphore obtained from the SemaphorePool
-
-    The new semaphore is enqueued to readerQueue or writerQueue, and
-    will be used as a signal to resume the thread at a later time.
-
-    :param: mutex a semaphore that is currently held by the calling thread.
-    :param: queue the queue to which the signal should be appended
-  */
-
-  final func wait(#mutex: dispatch_semaphore_t, queue: ObjectQueue<dispatch_semaphore_t>)
-  {
-    let threadLock = SemaphorePool.dequeue()
-    queue.enqueue(threadLock)
-    dispatch_semaphore_signal(mutex)
-    dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
-    SemaphorePool.enqueue(threadLock)
-  }
 
   /**
     Append an element to the channel
@@ -110,10 +92,10 @@ final class QUnbufferedChan<T>: Chan<T>
     let pointer = UnsafeMutablePointer<T>.alloc(1)
     pointer.initialize(newElement)
 
-    if readerQueue.count > 0
+    if let rs = readerQueue.dequeue()
     { // there is already an interested reader
-      let rs = readerQueue.dequeue()!
       dispatch_semaphore_signal(mutex)
+      // attach the data to the reader's semaphore
       dispatch_set_context(rs, pointer)
       dispatch_semaphore_signal(rs)
       return true
@@ -158,21 +140,21 @@ final class QUnbufferedChan<T>: Chan<T>
 
     dispatch_semaphore_wait(mutex, DISPATCH_TIME_FOREVER)
 
-    if writerQueue.count > 0
+    if let ws = writerQueue.dequeue()
     { // data is already available
-      let ws = writerQueue.dequeue()!
       dispatch_semaphore_signal(mutex)
 
-      var element: T? = nil
       let context = UnsafeMutablePointer<T>(dispatch_get_context(ws))
       if context != UnsafeMutablePointer.null()
       {
-        element = context.move()
+        let element = context.move()
         context.dealloc(1)
         dispatch_set_context(ws, nil)
+        dispatch_semaphore_signal(ws)
+        return element
       }
       dispatch_semaphore_signal(ws)
-      return element
+      return nil
     }
 
     // wait for data from a writer
@@ -182,15 +164,16 @@ final class QUnbufferedChan<T>: Chan<T>
     dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
 
     // got awoken by a writer (or the channel was closed)
-    var element: T? = nil
     let context = UnsafeMutablePointer<T>(dispatch_get_context(threadLock))
     if context != UnsafeMutablePointer.null()
     { // thread was awoken by a writer, not close()
-      element = context.move()
+      let element = context.move()
       context.dealloc(1)
       dispatch_set_context(threadLock, nil)
+      SemaphorePool.enqueue(threadLock)
+      return element
     }
     SemaphorePool.enqueue(threadLock)
-    return element
+    return nil
   }
 }

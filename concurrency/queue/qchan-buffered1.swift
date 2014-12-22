@@ -103,6 +103,7 @@ final class QBuffered1Chan<T>: Chan<T>
     queue.enqueue(threadLock)
     dispatch_semaphore_signal(mutex)
     dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
+    dispatch_semaphore_wait(mutex, DISPATCH_TIME_FOREVER)
     SemaphorePool.enqueue(threadLock)
   }
 
@@ -124,7 +125,6 @@ final class QBuffered1Chan<T>: Chan<T>
     while !self.closed &&  elements >= capacity
     {
       wait(mutex: mutex, queue: writerQueue)
-      dispatch_semaphore_wait(mutex, DISPATCH_TIME_FOREVER)
     }
 
     if self.closed
@@ -168,7 +168,6 @@ final class QBuffered1Chan<T>: Chan<T>
     while !self.closed && elements <= 0
     {
       wait(mutex: mutex, queue: readerQueue)
-      dispatch_semaphore_wait(mutex, DISPATCH_TIME_FOREVER)
     }
 
     if self.closed && elements <= 0
@@ -179,10 +178,6 @@ final class QBuffered1Chan<T>: Chan<T>
 
     let element = e.move()
     elements -= 1
-
-    // When T is a reference type (or otherwise contains a reference),
-    // nulling is desirable.
-    // But somehow setting an optional class member to nil is slow, so we won't do it.
 
     if writerQueue.count > 0
     {
