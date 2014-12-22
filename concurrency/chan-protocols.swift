@@ -77,6 +77,8 @@ public protocol SenderType: BasicChannelType
     If the channel has been closed, no action will be taken.
 
     :param: element the new element to be sent to the channel.
+
+    :return: whether newElement was succesfully sent to the channel.
   */
 
   func send(newElement: SentElement) -> Bool
@@ -134,6 +136,8 @@ protocol ChannelType: class, BasicChannelType
     If the channel has been closed, no action will be taken.
 
     :param: element the new element to be added to the channel.
+
+    :return: whether newElement was succesfully inserted in the channel
   */
 
   func put(newElement: Element) -> Bool

@@ -17,9 +17,13 @@ infix operator <- { associativity left precedence 90}
   Channel send operator: send a new element to the channel
 
   If the channel is full, this call will block.
-  If the channel has been closed, an assertion may fail.
+  If the channel has been closed, sending will fail silently.
 
-  This is the equivalent of Sender<T>.send(T)
+  The ideal situation when the channel has been closed
+  would involve some error-handling, such as a panic() call.
+  Unfortunately there is no such thing in Swift, so a silent failure it is.
+
+  Using this operator is equivalent to '_ = Sender<T>.send(T)'
 
   The SenderType 'chan' is passed as inout because that's slightly faster.
 
