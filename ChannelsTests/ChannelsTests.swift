@@ -105,22 +105,19 @@ class ChannelsTests: XCTestCase
   func ChannelTestBlockedReceive()
   {
     var (tx, rx) = InstantiateTestChannel(UInt32)
-    var expectations: [XCTestExpectation!] = Array<XCTestExpectation!>(count: 3, repeatedValue: nil)
-    for i in 0..<expectations.count
-    {
-      expectations[i] = expectationWithDescription(id + " blocked Receive #\(i), verified reception")
-    }
+    let expectations = 3
 
     var valrecd = arc4random()
-    for i in 0..<expectations.count
+    for i in 0..<expectations
     {
+      let expectation = expectationWithDescription(id + " blocked Receive #\(i), verified reception")
       dispatch_after(dispatch_time(DISPATCH_TIME_NOW, Int64(arc4random_uniform(50_000))),
         dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
           while let v = <-rx
           {
             valrecd = v
           }
-          expectations[i].fulfill()
+          expectation.fulfill()
       }
     }
 
