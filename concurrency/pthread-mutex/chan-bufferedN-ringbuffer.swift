@@ -61,7 +61,7 @@ final class BufferedAChan<T>: pthreadChan<T>
     {
       if (i&mask == 0) { headptr = buffer }
       headptr.destroy()
-      headptr.successor()
+      headptr = headptr.successor()
     }
 
     buffer.dealloc(mask+1)

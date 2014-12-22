@@ -76,7 +76,7 @@ final class SBufferedNChan<T>: Chan<T>
     {
       if (i&mask == 0) { headptr = buffer }
       headptr.destroy()
-      headptr.successor()
+      headptr = headptr.successor()
     }
 
     buffer.dealloc(mask+1)
@@ -172,7 +172,7 @@ final class SBufferedNChan<T>: Chan<T>
     dispatch_semaphore_wait(filled, DISPATCH_TIME_FOREVER)
     dispatch_semaphore_wait(mutex, DISPATCH_TIME_FOREVER)
 
-    if closed && tail <= head
+    if closed && head >= tail
     {
       dispatch_semaphore_signal(filled)
       dispatch_semaphore_signal(mutex)
