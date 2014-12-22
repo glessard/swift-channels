@@ -88,9 +88,9 @@ final class BufferedAChan<T>: pthreadChan<T>
     :param: element the new element to be added to the channel.
   */
 
-  override func put(newElement: T)
+  override func put(newElement: T) -> Bool
   {
-    if self.closed { return }
+    if self.closed { return false }
 
     pthread_mutex_lock(channelMutex)
     while (head+capacity <= tail) && !self.closed
@@ -100,12 +100,14 @@ final class BufferedAChan<T>: pthreadChan<T>
       blockedWriters -= 1
     }
 
+    var success = false
     if !closed
     {
       tailptr.initialize(newElement)
       tailptr = tailptr.successor()
       tail += 1
       if (tail&mask == 0) { tailptr = buffer }
+      success = true
     }
 
     if self.closed && blockedWriters > 0
@@ -118,6 +120,7 @@ final class BufferedAChan<T>: pthreadChan<T>
     }
 
     pthread_mutex_unlock(channelMutex)
+    return success
   }
 
   /**

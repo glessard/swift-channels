@@ -37,7 +37,8 @@ class SingletonChannelTests: ChannelsTests
     var (tx,rx) = InstantiateTestChannel(UInt32)
 
     let value =  arc4random()
-    tx <- value <- value
+    tx <- value
+    tx <- value
     let result1 = <-rx
     let result2 = <-rx
 
@@ -110,7 +111,8 @@ class SingletonChannelTests: ChannelsTests
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
       XCTAssert(tx.isClosed == false, self.id + " channel should be open")
 
-      tx <- () <- ()
+      tx <- ()
+      tx <- ()
 
       XCTAssert(tx.isClosed, self.id + " channel should be closed")
     }

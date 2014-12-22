@@ -53,7 +53,7 @@ public class Sender<T>: SenderType
     :return:  A Sender<T> object that will send elements to c
   */
 
-  class func Wrap<C: ChannelType where C.ElementType == T>(c: C) -> Sender<T>
+  class func Wrap<C: ChannelType where C.Element == T>(c: C) -> Sender<T>
   {
     return ChannelSender(c)
   }
@@ -70,9 +70,9 @@ public class Sender<T>: SenderType
 
   public func close() { }
 
-  public func send(newElement: T)
+  public func send(newElement: T) -> Bool
   {
-    _ = newElement
+    return false
   }
 }
 
@@ -96,9 +96,9 @@ class ChanSender<T>: Sender<T>
 
   override func close() { wrapped.close() }
 
-  override func send(newElement: T)
+  override func send(newElement: T) -> Bool
   {
-    wrapped.put(newElement)
+    return wrapped.put(newElement)
   }
 }
 
@@ -107,7 +107,7 @@ class ChanSender<T>: Sender<T>
   via a SenderType interface.
 */
 
-class ChannelSender<T, C: ChannelType where C.ElementType == T>: Sender<T>
+class ChannelSender<T, C: ChannelType where C.Element == T>: Sender<T>
 {
   private var wrapped: C
 
@@ -122,9 +122,9 @@ class ChannelSender<T, C: ChannelType where C.ElementType == T>: Sender<T>
 
   override func close() { wrapped.close() }
 
-  override func send(newElement: T)
+  override func send(newElement: T) -> Bool
   {
-    wrapped.put(newElement)
+    return wrapped.put(newElement)
   }
 }
 
@@ -151,8 +151,8 @@ class WrappedSender<T, C: SenderType where C.SentElement == T>: Sender<T>
 
   override func close() { wrapped.close() }
 
-  override func send(newElement: T)
+  override func send(newElement: T) -> Bool
   {
-    wrapped.send(newElement)
+    return wrapped.send(newElement)
   }
 }

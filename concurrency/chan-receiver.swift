@@ -58,7 +58,7 @@ public class Receiver<T>: ReceiverType, GeneratorType, SequenceType
     :return:  A Receiver<T> object that will receive elements from c
   */
 
-  class func Wrap<C: ChannelType where C.ElementType == T>(c: C) -> Receiver<T>
+  class func Wrap<C: ChannelType where C.Element == T>(c: C) -> Receiver<T>
   {
     return ChannelReceiver(c)
   }
@@ -131,7 +131,7 @@ class ChanReceiver<T>: Receiver<T>
   ChannelReceiver<T> wraps a ChannelType to become its receiving endpoint.
 */
 
-class ChannelReceiver<T, C: ChannelType where C.ElementType == T>: Receiver<T>
+class ChannelReceiver<T, C: ChannelType where C.Element == T>: Receiver<T>
 {
   private var wrapped: C
 

@@ -29,7 +29,7 @@ class ChannelsTests: XCTestCase
 
   func ChannelTestSendReceive()
   {
-    let (tx, rx) = InstantiateTestChannel(UInt32)
+    var (tx, rx) = InstantiateTestChannel(UInt32)
 
     let value = arc4random()
     tx <- value
@@ -75,7 +75,7 @@ class ChannelsTests: XCTestCase
 
   func ChannelTestReceiveFirst()
   {
-    let (tx, rx) = InstantiateTestChannel(XCTestExpectation)
+    var (tx, rx) = InstantiateTestChannel(XCTestExpectation)
     let expectation = expectationWithDescription(id + " Receive then Send")!
 
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
@@ -104,7 +104,7 @@ class ChannelsTests: XCTestCase
 
   func ChannelTestBlockedReceive()
   {
-    let (tx, rx) = InstantiateTestChannel(UInt32)
+    var (tx, rx) = InstantiateTestChannel(UInt32)
     var expectations: [XCTestExpectation!] = Array<XCTestExpectation!>(count: 3, repeatedValue: nil)
     for i in 0..<expectations.count
     {
@@ -144,7 +144,7 @@ class ChannelsTests: XCTestCase
 
   func ChannelTestSendFirst()
   {
-    let (tx, rx) = InstantiateTestChannel(XCTestExpectation)
+    var (tx, rx) = InstantiateTestChannel(XCTestExpectation)
     let expectation = expectationWithDescription(id + " Send then Receive")!
 
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
@@ -172,7 +172,7 @@ class ChannelsTests: XCTestCase
 
   func ChannelTestBlockedSend()
   {
-    let (tx, rx) = InstantiateTestChannel(Int)
+    var (tx, rx) = InstantiateTestChannel(Int)
     let expectation = expectationWithDescription(id + " blocked Send, verified reception")
 
     var valsent = Int(arc4random())
@@ -207,7 +207,7 @@ class ChannelsTests: XCTestCase
 
   func ChannelTestNoSender()
   {
-    let (_, rx) = InstantiateTestChannel(Int)
+    var (_, rx) = InstantiateTestChannel(Int)
     let expectation = expectationWithDescription(id + " Receive, no Sender")
 
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
@@ -232,7 +232,7 @@ class ChannelsTests: XCTestCase
 
   func ChannelTestNoReceiver()
   {
-    let (tx, _) = InstantiateTestChannel(Void)
+    var (tx, _) = InstantiateTestChannel(Void)
     let expectation = expectationWithDescription(id + " Send, no Receiver")
 
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
@@ -258,7 +258,7 @@ class ChannelsTests: XCTestCase
   func ChannelPerformanceNoContention()
   {
     self.measureBlock() {
-      let (tx, rx) = self.InstantiateTestChannel(Int)
+      var (tx, rx) = self.InstantiateTestChannel(Int)
 
       for i in 0..<self.performanceTestIterations
       {
@@ -277,7 +277,7 @@ class ChannelsTests: XCTestCase
   func ChannelPerformanceLoopNoContention()
   {
     self.measureBlock() {
-      let (tx, rx) = self.InstantiateTestChannel(Int)
+      var (tx, rx) = self.InstantiateTestChannel(Int)
 
       for j in 0..<(self.performanceTestIterations/self.buflen)
       {
@@ -298,7 +298,7 @@ class ChannelsTests: XCTestCase
   func ChannelPerformanceWithContention()
   {
     self.measureBlock() {
-      let (tx, rx) = self.InstantiateTestChannel(Int)
+      var (tx, rx) = self.InstantiateTestChannel(Int)
       
       async {
         for i in 0..<self.performanceTestIterations

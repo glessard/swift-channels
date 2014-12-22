@@ -39,12 +39,12 @@ final public class SingletonChan<T>: Chan<T>
 
   // Computed property accessors
 
-  final override var isEmpty: Bool
+  final public override var isEmpty: Bool
   {
     return element == nil
   }
 
-  final override var isFull: Bool
+  final public override var isFull: Bool
   {
     return element != nil
   }
@@ -53,7 +53,7 @@ final public class SingletonChan<T>: Chan<T>
     Determine whether the channel has been closed
   */
 
-  final override var isClosed: Bool { return closed }
+  final public override var isClosed: Bool { return closed }
 
   /**
     Close the channel
@@ -65,7 +65,7 @@ final public class SingletonChan<T>: Chan<T>
     been closed. The actual reaction shall be implementation-dependent.
   */
 
-  override func close()
+  public override func close()
   {
     if closed { return }
 
@@ -86,17 +86,18 @@ final public class SingletonChan<T>: Chan<T>
     :param: element the new element to be added to the channel.
   */
 
-  override func put(newElement: T)
+  public override func put(newElement: T) -> Bool
   {
     let writer = OSAtomicIncrement64Barrier(&writerCount)
 
     if writer > 1
     { // if this is not the first writer, the call is happening too late.
-      return
+      return false
     }
 
     element = newElement
     close() // also increments the 'barrier' semaphore
+    return true
   }
 
   /**
@@ -108,7 +109,7 @@ final public class SingletonChan<T>: Chan<T>
     :return: the element transmitted through the channel.
   */
 
-  override func get() -> T?
+  public override func get() -> T?
   {
     if !closed
     {

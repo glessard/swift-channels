@@ -33,12 +33,12 @@ final public class gcdSingletonChan<T>: gcdChan<T>
 
   // Computed property accessors
 
-  final override var isEmpty: Bool
+  final public override var isEmpty: Bool
   {
     return elementsWritten <= elementsRead
   }
 
-  final override var isFull: Bool
+  final public override var isFull: Bool
   {
     return elementsWritten > elementsRead
   }
@@ -55,13 +55,13 @@ final public class gcdSingletonChan<T>: gcdChan<T>
     :param: element the new element to be added to the channel.
   */
 
-  override func put(newElement: T)
+  public override func put(newElement: T) -> Bool
   {
     let writer = OSAtomicIncrement64Barrier(&writerCount)
 
     if writer != 0
     { // if writer is not 0, this call is happening too late.
-      return
+      return false
     }
 
     element = newElement
@@ -69,6 +69,7 @@ final public class gcdSingletonChan<T>: gcdChan<T>
     close()
 
     readers.resume()
+    return true
   }
 
   /**
@@ -80,7 +81,7 @@ final public class gcdSingletonChan<T>: gcdChan<T>
     :return: the oldest element from the channel.
   */
 
-  override func get() -> T?
+  public override func get() -> T?
   {
     let reader = OSAtomicIncrement64Barrier(&readerCount)
 

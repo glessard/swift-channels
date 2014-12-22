@@ -50,9 +50,9 @@ class UnbufferedChan<T>: pthreadChan<T>
     :param: element the new element to be added to the channel.
   */
 
-  override func put(newElement: T)
+  override func put(newElement: T) -> Bool
   {
-    if self.closed { return }
+    if self.closed { return false }
 
     pthread_mutex_lock(channelMutex)
 
@@ -67,10 +67,12 @@ class UnbufferedChan<T>: pthreadChan<T>
 
     assert(elements <= 0 || self.closed, "Messed up an unbuffered send")
 
+    var success = false
     if !self.closed
     {
       e.initialize(newElement)
       elements += 1
+      success = true
       //    syncprint("writer \(newElement) has successfully sent")
     }
 
@@ -82,6 +84,8 @@ class UnbufferedChan<T>: pthreadChan<T>
       pthread_cond_signal(writeCondition)
     }
     pthread_mutex_unlock(channelMutex)
+
+    return success
   }
 
   /**

@@ -15,7 +15,7 @@
   of the factory function returns an unbuffered channel.
 */
 
-class Chan<T>: ChannelType
+public class Chan<T>: ChannelType
 {
   // Computed properties
 
@@ -23,19 +23,19 @@ class Chan<T>: ChannelType
     Determine whether the channel is empty (and therefore can't be received from)
   */
 
-  var isEmpty: Bool { return true }
+  public var isEmpty: Bool { return true }
 
   /**
     Determine whether the channel is full (and can't be written to)
   */
 
-  var isFull: Bool { return true }
+  public var isFull: Bool { return true }
 
   /**
     Determine whether the channel has been closed
   */
 
-  var isClosed: Bool { return true }
+  public var isClosed: Bool { return true }
 
   /**
     Close the channel
@@ -47,7 +47,7 @@ class Chan<T>: ChannelType
     The actual reaction shall be implementation-dependent.
   */
 
-  func close() { }
+  public func close() { }
 
   /**
     Put a new element in the channel
@@ -58,9 +58,9 @@ class Chan<T>: ChannelType
     :param: element the new element to be added to the channel.
   */
 
-  func put(newElement: T)
+  public func put(newElement: T) -> Bool
   {
-    _ = newElement
+    return false
   }
 
   /**
@@ -72,8 +72,60 @@ class Chan<T>: ChannelType
     :return: the oldest element from the channel.
   */
 
-  func get() -> T?
+  public func get() -> T?
   {
     return nil
+  }
+
+
+  // Factory functions.
+
+  /**
+    Factory function to obtain a new Chan<T> of the desired channel capacity.
+    If capacity is 0, then an unbuffered channel will be created.
+
+    :param: capacity the buffer capacity of the channel.
+
+    :return: a newly-created, empty Chan<T>
+  */
+
+  class func Make(capacity: Int) -> Chan<T>
+  {
+    switch capacity
+    {
+    case let c where c < 1:
+      return QUnbufferedChan<T>()
+
+    case 1:
+      return SBuffered1Chan<T>()
+
+    default:
+      return SBufferedNChan<T>(capacity)
+    }
+  }
+
+  /**
+    Factory function to obtain a new, unbuffered Chan<T> object (channel capacity = 0).
+
+    :return: a newly-created, empty Chan<T>
+  */
+
+  class func Make() -> Chan<T>
+  {
+    return Make(0)
+  }
+
+  /**
+    Factory function to obtain a new Chan<T> object, using a sample element to determine the type.
+
+    :param: type a sample object whose type will be used for the channel's element type. The object is not retained.
+    :param: capacity the buffer capacity of the channel. Default is 0, meaning an unbuffered channel.
+
+    :return: a newly-created, empty Chan<T>
+  */
+
+  class func Make(#type: T, _ capacity: Int = 0) -> Chan<T>
+  {
+    return Make(capacity)
   }
 }

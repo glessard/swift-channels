@@ -59,13 +59,14 @@ final class gcdUnbufferedChan<T>: gcdChan<T>
     :param: element the new element to be added to the channel.
   */
 
-  override func put(newElement: T)
+  override func put(newElement: T) -> Bool
   {
-    if self.closed { return }
+    if self.closed { return false }
 
     // syncprint("writer \(newElement) is trying to send")
 
     var hasSent = false
+    var success = false
     while !hasSent
     {
       writers.mutex { // A suspended writer queue will block here.
@@ -81,6 +82,7 @@ final class gcdUnbufferedChan<T>: gcdChan<T>
         if !self.closed
         {
           self.element = newElement
+          success = true
           OSAtomicIncrement64Barrier(&self.elementsWritten)
           // syncprint("sent \(self.element) as element \(self.elementsWritten)")
         }
@@ -93,6 +95,7 @@ final class gcdUnbufferedChan<T>: gcdChan<T>
         self.readers.resume()
       }
     }
+    return success
   }
 
   /**

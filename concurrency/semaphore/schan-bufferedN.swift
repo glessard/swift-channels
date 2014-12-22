@@ -131,23 +131,29 @@ final class SBufferedNChan<T>: Chan<T>
     :param: element the new element to be added to the channel.
   */
 
-  final override func put(newElement: T)
+  final override func put(newElement: T) -> Bool
   {
-    if self.closed { return }
+    if closed { return false }
 
     dispatch_semaphore_wait(empty, DISPATCH_TIME_FOREVER)
     dispatch_semaphore_wait(mutex, DISPATCH_TIME_FOREVER)
 
-    if !closed
+    if closed
     {
-      tailptr.initialize(newElement)
-      tailptr = tailptr.successor()
-      tail += 1
-      if (tail&mask == 0) { tailptr = buffer }
+      dispatch_semaphore_signal(empty)
+      dispatch_semaphore_signal(mutex)
+      return false
     }
+
+    tailptr.initialize(newElement)
+    tailptr = tailptr.successor()
+    tail += 1
+    if (tail&mask == 0) { tailptr = buffer }
 
     dispatch_semaphore_signal(mutex)
     dispatch_semaphore_signal(filled)
+
+    return true
   }
 
   /**

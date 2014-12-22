@@ -13,9 +13,10 @@
 public class Channel<T>
 {
   /**
-    Factory function to obtain a new, unbuffered Chan<T> object (channel capacity = 0).
+    Factory function to obtain a new, unbuffered Chan<T> object (channel capacity = 0),
+    wrapped by a Sender<T>/Receiver<T> pair.
 
-    :return: a newly-created, empty Sender<T>/Receiver<T> pair. It wraps one ChannelType implementor whole ElementType is T.
+    :return: a newly-created, empty Sender<T>/Receiver<T> pair.
   */
 
   public class func Make() -> (tx: Sender<T>, rx: Receiver<T>)
@@ -24,38 +25,25 @@ public class Channel<T>
   }
 
   /**
-    Factory function to obtain a new Chan<T> object.
+    Factory function to obtain a new Chan<T> object, wrapped by a Sender<T>/Receiver<T> pair.
+
+    :param: capacity the buffer capacity of the channel. If capacity is 0, an unbuffered channel will be created.
   
-    :param: capacity the buffer capacity of the channel. If capacity is 0, then an unbuffered channel will be created.
-  
-    :return: a newly-created, empty Sender<T>/Receiver<T> pair. It wraps one ChannelType implementor whole ElementType is T.
+    :return: a newly-created, empty Sender<T>/Receiver<T> pair.
   */
 
   public class func Make(capacity: Int) -> (tx: Sender<T>, rx: Receiver<T>)
   {
-    var channel: Chan<T>
-
-    switch capacity
-    {
-      case let c where c < 1:
-        channel = QUnbufferedChan<T>()
-      case 1:
-        channel = SBuffered1Chan<T>()
-
-      default:
-        channel = SBufferedNChan<T>(capacity)
-    }
-
-    return Wrap(channel)
+    return Wrap(Chan<T>.Make(capacity))
   }
 
   /**
-    Factory function to obtain a new Chan<T> object, using a sample element to determine the type.
+    Factory function to obtain a new Chan<T> object, wrapped by a Sender<T>/Receiver<T> pair.
 
-    :param: type a sample object whose type will be used for the channel's element type. The object is not retained.
-    :param: capacity the buffer capacity of the channel. Default is 0, meaning an unbuffered channel.
+    :param: type a sample variable whose type will be used for the channel's element type. The variable is not used.
+    :param: capacity the buffer capacity of the channel. The default is 0 for an unbuffered channel.
 
-    :return: a newly-created, empty Sender<T>/Receiver<T> pair. It wraps one ChannelType implementor whole ElementType is T.
+    :return: a newly-created, empty Sender<T>/Receiver<T> pair.
   */
 
   public class func Make(#type: T, _ capacity: Int = 0) -> (tx: Sender<T>, rx: Receiver<T>)
@@ -64,7 +52,7 @@ public class Channel<T>
   }
 
   /**
-    Factory function to obtain a new, single-message channel.
+    Factory function to obtain a single-message channel, wrapped by a Sender<T>/Receiver<T> pair.
 
     :return: a newly-created, empty Sender<T>/Receiver<T> pair.
   */
@@ -75,9 +63,9 @@ public class Channel<T>
   }
 
   /**
-    Factory function to obtain a new Chan<T> object, using a sample element to determine the type.
+    Factory function to obtain a single-message channel, wrapped by a Sender<T>/Receiver<T> pair.
 
-    :param: type a sample object whose type will be used for the channel's element type. The object is not retained.
+    :param: type a sample variable whose type will be used for the channel's element type. The variable is not used.
 
     :return: a newly-created, empty Sender<T>/Receiver<T> pair.
   */
@@ -87,12 +75,28 @@ public class Channel<T>
     return MakeSingleton()
   }
 
+  /**
+    Wrap a Chan<T> in a Sender<T>/Receiver<T> pair.
+
+    :param:  c the Chan<T>
+
+    :return: a new Sender<T>/Receiver<T> pair.
+  */
+
   class func Wrap(c: Chan<T>) -> (tx: Sender<T>, rx: Receiver<T>)
   {
     return (Sender.Wrap(c), Receiver.Wrap(c))
   }
 
-  class func Wrap<C: ChannelType where C.ElementType == T>(c: C) -> (tx: Sender<T>, rx: Receiver<T>)
+  /**
+    Wrap a ChannelType in a Sender/Receiver pair.
+
+    :param:  c the ChannelType object
+
+    :return: a new Sender/Receiver pair.
+  */
+
+  class func Wrap<C: ChannelType where C.Element == T>(c: C) -> (tx: Sender<T>, rx: Receiver<T>)
   {
     return (Sender.Wrap(c), Receiver.Wrap(c))
   }

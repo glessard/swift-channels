@@ -11,7 +11,7 @@ import Swift
 
 struct SillyChannel: ChannelType
 {
-  typealias ElementType = Int
+  typealias Element = Int
 
   var element: Int = 0
 

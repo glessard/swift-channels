@@ -101,9 +101,9 @@ final class QUnbufferedChan<T>: Chan<T>
     :param: element the new element to be added to the channel.
   */
 
-  override func put(newElement: T)
+  override func put(newElement: T) -> Bool
   {
-    if closed { return }
+    if closed { return false }
 
     dispatch_semaphore_wait(mutex, DISPATCH_TIME_FOREVER)
 
@@ -116,7 +116,7 @@ final class QUnbufferedChan<T>: Chan<T>
       dispatch_semaphore_signal(mutex)
       dispatch_set_context(rs, pointer)
       dispatch_semaphore_signal(rs)
-      return
+      return true
     }
 
     // enqueue a new semaphore along with our data
@@ -133,11 +133,14 @@ final class QUnbufferedChan<T>: Chan<T>
       pointer.destroy()
       pointer.dealloc(1)
       dispatch_set_context(threadLock, nil)
+      SemaphorePool.enqueue(threadLock)
+      return false
     }
-    else { assert(context == UnsafeMutablePointer.null(), "Memory leak at \(__FILE__), \(__LINE__)") }
-    SemaphorePool.enqueue(threadLock)
 
-    return
+    assert(context == UnsafeMutablePointer.null(), "Memory leak at \(__FILE__), \(__LINE__)")
+
+    SemaphorePool.enqueue(threadLock)
+    return true
   }
 
   /**

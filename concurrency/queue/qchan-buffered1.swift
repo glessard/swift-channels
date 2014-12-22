@@ -115,9 +115,9 @@ final class QBuffered1Chan<T>: Chan<T>
     :param: element the new element to be added to the channel.
   */
 
-  override func put(newElement: T)
+  override func put(newElement: T) -> Bool
   {
-    if self.closed { return }
+    if self.closed { return false }
 
     dispatch_semaphore_wait(mutex, DISPATCH_TIME_FOREVER)
 
@@ -130,7 +130,7 @@ final class QBuffered1Chan<T>: Chan<T>
     if self.closed
     {
       dispatch_semaphore_signal(mutex)
-      return
+      return false
     }
 
     e.initialize(newElement)
@@ -147,6 +147,7 @@ final class QBuffered1Chan<T>: Chan<T>
     }
 
     dispatch_semaphore_signal(mutex)
+    return true
   }
 
   /**

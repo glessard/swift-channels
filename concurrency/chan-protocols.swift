@@ -10,7 +10,7 @@
   The interface required for the receiving end of a channel.
 */
 
-public protocol ReceiverType: class, BasicChannelType, GeneratorType, SequenceType
+public protocol ReceiverType: BasicChannelType, GeneratorType, SequenceType
 {
   typealias ReceivedElement
 
@@ -59,7 +59,7 @@ public protocol ReceiverType: class, BasicChannelType, GeneratorType, SequenceTy
   The interface required for the sending end of a channel.
 */
 
-public protocol SenderType: class, BasicChannelType
+public protocol SenderType: BasicChannelType
 {
   typealias SentElement
 
@@ -79,7 +79,7 @@ public protocol SenderType: class, BasicChannelType
     :param: element the new element to be sent to the channel.
   */
 
-  func send(newElement: SentElement)
+  func send(newElement: SentElement) -> Bool
 }
 
 /**
@@ -111,9 +111,9 @@ public protocol BasicChannelType
   ChannelType is the connection between a SenderType and  ReceiverType.
 */
 
-protocol ChannelType: BasicChannelType
+protocol ChannelType: class, BasicChannelType
 {
-  typealias ElementType
+  typealias Element
 
   /**
     Determine whether the channel is empty (and can't be received from at the moment)
@@ -136,7 +136,7 @@ protocol ChannelType: BasicChannelType
     :param: element the new element to be added to the channel.
   */
 
-  mutating func put(newElement: ElementType)
+  func put(newElement: Element) -> Bool
 
   /**
     Obtain the oldest element from the channel.
@@ -147,5 +147,5 @@ protocol ChannelType: BasicChannelType
     :return: the oldest element from the channel.
   */
 
-  mutating func get() -> ElementType?
+  func get() -> Element?
 }

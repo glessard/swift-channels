@@ -54,9 +54,9 @@ final class Buffered1Chan<T>: pthreadChan<T>
     :param: element the new element to be added to the channel.
   */
 
-  override func put(newElement: T)
+  override func put(newElement: T) -> Bool
   {
-    if self.closed { return }
+    if self.closed { return false }
 
     pthread_mutex_lock(channelMutex)
     while (elements >= capacity) && !self.closed
@@ -66,10 +66,12 @@ final class Buffered1Chan<T>: pthreadChan<T>
       blockedWriters -= 1
     }
 
+    var success = false
     if !closed
     {
       e.initialize(newElement)
       elements += 1
+      success = true
     }
 
     if self.closed && blockedWriters > 0
@@ -82,6 +84,7 @@ final class Buffered1Chan<T>: pthreadChan<T>
     }
 
     pthread_mutex_unlock(channelMutex)
+    return success
   }
 
   /**
