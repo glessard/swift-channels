@@ -25,6 +25,8 @@ final class SBuffered1Chan<T>: Chan<T>
   private let filled = dispatch_semaphore_create(0)!
   private let empty =  dispatch_semaphore_create(1)!
 
+  private let mutex = dispatch_semaphore_create(1)!
+
   private var closed = false
 
   // Used to elucidate/troubleshoot message arrival order
@@ -71,7 +73,9 @@ final class SBuffered1Chan<T>: Chan<T>
   {
     if closed { return }
 
+    dispatch_semaphore_wait(mutex, DISPATCH_TIME_FOREVER)
     closed = true
+    dispatch_semaphore_signal(mutex)
 
     dispatch_semaphore_signal(filled)
     dispatch_semaphore_signal(empty)
@@ -91,10 +95,12 @@ final class SBuffered1Chan<T>: Chan<T>
     if closed { return false }
 
     dispatch_semaphore_wait(empty, DISPATCH_TIME_FOREVER)
+    dispatch_semaphore_wait(mutex, DISPATCH_TIME_FOREVER)
 
     if closed
     {
       dispatch_semaphore_signal(empty)
+      dispatch_semaphore_signal(mutex)
       return false
     }
 
@@ -102,6 +108,7 @@ final class SBuffered1Chan<T>: Chan<T>
     elements += 1
 
     dispatch_semaphore_signal(filled)
+    dispatch_semaphore_signal(mutex)
 
     return true
   }
@@ -120,10 +127,12 @@ final class SBuffered1Chan<T>: Chan<T>
     if closed && elements <= 0 { return nil }
 
     dispatch_semaphore_wait(filled, DISPATCH_TIME_FOREVER)
+    dispatch_semaphore_wait(mutex, DISPATCH_TIME_FOREVER)
 
     if closed && elements <= 0
     {
       dispatch_semaphore_signal(filled)
+      dispatch_semaphore_signal(mutex)
       return nil
     }
 
@@ -131,6 +140,7 @@ final class SBuffered1Chan<T>: Chan<T>
     elements -= 1
 
     dispatch_semaphore_signal(empty)
+    dispatch_semaphore_signal(mutex)
 
     return element
   }
