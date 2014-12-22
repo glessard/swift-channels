@@ -7,13 +7,42 @@
 //
 
 /**
-  Sender<T> exposes the sending end of a channel.
+  Sender<T> is the sending endpoint for a ChannelType.
 */
 
-public class Sender<T>: SenderType
+extension Sender
 {
   /**
-    Return a new Sender<T> to stand in for SendingChannel c.
+    Return a new Sender<T> to act as the sending enpoint for a Chan<T>.
+
+    :param: c A Chan<T> object
+    :return:  A Sender<T> object that will send elements to the Chan<T>
+  */
+
+  public static func Wrap(c: Chan<T>) -> Sender<T>
+  {
+    return Sender(c)
+  }
+
+  /**
+    Return a new Sender<T> to act as the sending enpoint for a ChannelType
+
+    :param: c An object that implements ChannelType
+    :return:  A Sender<T> object that will send elements to c
+  */
+
+  static func Wrap<C: ChannelType where C.Element == T>(c: C) -> Sender<T>
+  {
+    if let c = c as? Chan<T>
+    {
+      return Sender(c)
+    }
+
+    return Sender(ChannelTypeAsChan(c))
+  }
+
+  /**
+    Return a new Sender<T> to stand in for SenderType c.
 
     If c is a (subclass of) Sender, c will be returned directly.
 
@@ -24,135 +53,73 @@ public class Sender<T>: SenderType
     :return:  A Sender object that will pass along the elements to c.
   */
 
-  public class func Wrap<C: SenderType where C.SentElement == T>(c: C) -> Sender<T>
+  public static func Wrap<C: SenderType where C.SentElement == T>(c: C) -> Sender<T>
   {
     if let c = c as? Sender<T>
     {
       return c
     }
 
-    return WrappedSender(c)
-  }
-
-  /**
-    Return a new Sender<T> to act as the sending enpoint for a Chan<T>.
-
-    :param: c A Chan<T> object
-    :return:  A Sender<T> object that will send elements to the Chan<T>
-  */
-
-  class func Wrap(c: Chan<T>) -> Sender<T>
-  {
-    return ChanSender(c)
-  }
-
-  /**
-    Return a new Sender<T> to act as the sending enpoint for a ChannelType
-
-    :param: c An object that implements ChannelType
-    :return:  A Sender<T> object that will send elements to c
-  */
-
-  class func Wrap<C: ChannelType where C.Element == T>(c: C) -> Sender<T>
-  {
-    return ChannelSender(c)
-  }
-
-  // Make sure this doesn't get instantiated lightly.
-
-  private init() { }
-
-  // SenderType interface (abstract)
-
-  public var isClosed: Bool { return true }
-
-  public var isFull:  Bool { return false }
-
-  public func close() { }
-
-  public func send(newElement: T) -> Bool
-  {
-    return false
+    return Sender(SenderTypeAsChan(c))
   }
 }
 
-/**
-  ChanSender<T> wraps a Chan<T> and allows sending through it
-  via a SenderType interface.
-*/
-
-class ChanSender<T>: Sender<T>
+public struct Sender<T>: SenderType
 {
-  private var wrapped: Chan<T>
+  private let wrapped: Chan<T>
 
-  init(_ channel: Chan<T>)
+  public init(_ c: Chan<T>)
   {
-    wrapped = channel
+    wrapped = c
   }
 
-  override var isClosed: Bool { return wrapped.isClosed }
+  // SenderType implementation
 
-  override var isFull:  Bool { return wrapped.isFull }
+  public var isClosed: Bool { return wrapped.isClosed }
+  public var isFull:   Bool { return wrapped.isFull }
+  public func close()  { wrapped.close() }
 
-  override func close() { wrapped.close() }
-
-  override func send(newElement: T) -> Bool
-  {
-    return wrapped.put(newElement)
-  }
+  public func send(newElement: T) -> Bool { return wrapped.put(newElement) }
 }
 
 /**
-  ChannelSender<T,C> wraps a ChannelType (as C) and allows sending through it
-  via a SenderType interface.
+  ChannelTypeAsChan<T> disguises any ChannelType as a Chan<T>,
+  for use by Sender<T>
 */
 
-class ChannelSender<T, C: ChannelType where C.Element == T>: Sender<T>
+private class ChannelTypeAsChan<T, C: ChannelType where C.Element == T>: Chan<T>
 {
   private var wrapped: C
 
-  init(_ channel: C)
+  init(_ c: C)
   {
-    wrapped = channel
+    wrapped = c
   }
 
   override var isClosed: Bool { return wrapped.isClosed }
+  override var isFull:   Bool { return wrapped.isFull }
+  override func close()  { wrapped.close() }
 
-  override var isFull:  Bool { return wrapped.isFull }
-
-  override func close() { wrapped.close() }
-
-  override func send(newElement: T) -> Bool
-  {
-    return wrapped.put(newElement)
-  }
+  override func put(newElement: T) -> Bool { return wrapped.put(newElement) }
 }
 
 /**
-  WrappedSender<T,C> wraps an instance of any type C that implements SenderType,
-  and makes it looks like a Sender<T> subclass.
-
-  WrappedSender uses a generic approach, unlike EnclosedSender.
-  The choice is probably a matter of larger binary code vs. larger memory use.
+  SenderTypeAsChan<T,C> disguises any SenderType as a Chan<T>,
+  for use by Sender<T>
 */
 
-class WrappedSender<T, C: SenderType where C.SentElement == T>: Sender<T>
+private class SenderTypeAsChan<T, C: SenderType where C.SentElement == T>: Chan<T>
 {
   private var wrapped: C
 
-  init(_ channel: C)
+  init(_ sender: C)
   {
-    wrapped = channel
+    wrapped = sender
   }
 
   override var isClosed: Bool { return wrapped.isClosed }
+  override var isFull:   Bool { return wrapped.isFull }
+  override func close()  { wrapped.close() }
 
-  override var isFull:  Bool { return wrapped.isFull }
-
-  override func close() { wrapped.close() }
-
-  override func send(newElement: T) -> Bool
-  {
-    return wrapped.send(newElement)
-  }
+  override func put(newElement: T) -> Bool { return wrapped.send(newElement) }
 }

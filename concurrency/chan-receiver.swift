@@ -7,77 +7,81 @@
 //
 
 /**
-  ReadChan<T> is a wrapper for a SelectableChannel implementor.
-  If it had a SendingChannel implementation, it becomes inaccessible,
-  effectively making the channel one-way only.
-
-  This could be useful to clarify the intentions of an API.
+  Receiver<T> is the receiving endpoint for a ChannelType.
 */
 
-public class Receiver<T>: ReceiverType, GeneratorType, SequenceType
+extension Receiver
 {
+  /**
+    Return a new Receiver<T> to act as the receiving endpoint for a Chan<T>.
+
+    :param: c A Chan<T> object
+    :return:  A Receiver<T> object that will receive elements from the Chan<T>
+  */
+
+  public static func Wrap(c: Chan<T>) -> Receiver<T>
+  {
+    return Receiver(c)
+  }
+
+  /**
+    Return a new Receiver<T> to act as the receiving endpoint for a ChannelType.
+
+    :param: c An object that implements ChannelType
+    :return:  A Receiver<T> object that will receive elements from the ChannelType
+  */
+
+  static func Wrap<C: ChannelType where C.Element == T>(c: C) -> Receiver<T>
+  {
+    if let c = c as? Chan<T>
+    {
+      return Receiver(c)
+    }
+
+    return Receiver(ChannelTypeAsChan(c))
+  }
+
   /**
     Return a new Receiver<T> to stand in for ReceiverType c.
 
-    If c is a (subclass of) Receiver, c will be returned directly.
+    If c is a Receiver, c will be returned directly.
 
-    If c is any other kind of ReceiverType, c will be wrapped in a
-    WrappedReceiver, a generic wrapper for ReceiverTypes.
+    If c is any other kind of ReceiverType, c will be type-obscured and
+    wrapped in a new Receiver.
 
-    :param: c A ReceiverType implementor to be wrapped by a Receiver object.
-  
+    :param: c An object that implements ReceiverType.
     :return:  A Receiver object that will pass along the elements from c.
   */
 
-  public class func Wrap<C: ReceiverType where C.ReceivedElement == T>(c: C) -> Receiver<T>
+  public static func Wrap<C: ReceiverType where C.ReceivedElement == T>(c: C) -> Receiver<T>
   {
     if let c = c as? Receiver<T>
     {
       return c
     }
 
-    return WrappedReceiver(c)
+    return Receiver(ReceiverTypeAsChan(c))
   }
+}
 
-  /**
-    Return a new Receiver<T> to act as the receiving enpoint for a Chan<T>.
-  
-    :param: c A Chan<T> object
-    :return:  A Receiver<T> object that will receive elements from the Chan<T>
-  */
+public struct Receiver<T>: ReceiverType, GeneratorType, SequenceType
+{
+  private let wrapped: Chan<T>
 
-  class func Wrap(c: Chan<T>) -> Receiver<T>
+  public init(_ c: Chan<T>)
   {
-    return ChanReceiver(c)
+    wrapped = c
   }
 
-  /**
-    Return a new Receiver<T> to act as the receiving enpoint for a ChannelType.
+  // ReceiverType implementation
 
-    :param: c A object that implements ChannelType
-    :return:  A Receiver<T> object that will receive elements from c
-  */
-
-  class func Wrap<C: ChannelType where C.Element == T>(c: C) -> Receiver<T>
-  {
-    return ChannelReceiver(c)
-  }
-
-  // Make sure this doesn't get instantiated lightly.
-
-  private init() { }
-
-  // ReceiverType interface (abstract)
-
-  public var isClosed: Bool { return true }
-
-  public var isEmpty:  Bool { return false }
-
-  public func close() { }
+  public var isClosed: Bool { return wrapped.isClosed }
+  public var isEmpty:  Bool { return wrapped.isEmpty }
+  public func close()  { wrapped.close() }
 
   public func receive() -> T?
   {
-    return nil
+    return wrapped.get()
   }
 
   // GeneratorType implementation
@@ -85,53 +89,28 @@ public class Receiver<T>: ReceiverType, GeneratorType, SequenceType
   /**
     If all elements are exhausted, return `nil`.  Otherwise, advance
     to the next element and return it.
+    This is a synonym for receive()
   */
 
   public func next() -> T?
   {
-    return receive()
+    return wrapped.get()
   }
 
   // SequenceType implementation
 
-  public func generate() -> Self
+  public func generate() -> Receiver
   {
     return self
   }
 }
 
 /**
-  ChanReceiver<T> wraps a Chan<T> to become its receiving endpoint.
+  ChannelTypeAsChan<T> disguises any ChannelType as a Chan<T>,
+  for use by Receiver<T>
 */
 
-class ChanReceiver<T>: Receiver<T>
-{
-  private var wrapped: Chan<T>
-
-  init(_ c: Chan<T>)
-  {
-    wrapped = c
-  }
-
-  // ReceiverType implementation
-
-  override var isClosed: Bool { return wrapped.isClosed }
-
-  override var isEmpty:  Bool { return wrapped.isEmpty }
-
-  override func close() { wrapped.close() }
-
-  override func receive() -> T?
-  {
-    return wrapped.get()
-  }
-}
-
-/**
-  ChannelReceiver<T> wraps a ChannelType to become its receiving endpoint.
-*/
-
-class ChannelReceiver<T, C: ChannelType where C.Element == T>: Receiver<T>
+private class ChannelTypeAsChan<T, C: ChannelType where C.Element == T>: Chan<T>
 {
   private var wrapped: C
 
@@ -140,26 +119,19 @@ class ChannelReceiver<T, C: ChannelType where C.Element == T>: Receiver<T>
     wrapped = c
   }
 
-  // ReceiverType implementation
-
   override var isClosed: Bool { return wrapped.isClosed }
-
   override var isEmpty:  Bool { return wrapped.isEmpty }
+  override func close()  { wrapped.close() }
 
-  override func close() { wrapped.close() }
-
-  override func receive() -> T?
-  {
-    return wrapped.get()
-  }
+  override func get() -> T? { return wrapped.get() }
 }
 
 /**
-  WrappedReceiver<T,C> wraps an instance of any type C that implements ReceiverType,
-  and makes it look like a subclass of Receiver<T>.
+  ReceiverTypeAsChan<T,C> disguises any ReceiverType as a Chan<T>,
+  for use by Receiver<T>
 */
 
-class WrappedReceiver<T, C: ReceiverType where C.ReceivedElement == T>: Receiver<T>
+private class ReceiverTypeAsChan<T, C: ReceiverType where C.ReceivedElement == T>: Chan<T>
 {
   private var wrapped: C
 
@@ -168,30 +140,9 @@ class WrappedReceiver<T, C: ReceiverType where C.ReceivedElement == T>: Receiver
     wrapped = receiver
   }
 
-  // ReceiverType wrappers
-
   override var isClosed: Bool { return wrapped.isClosed }
-
   override var isEmpty:  Bool { return wrapped.isEmpty }
+  override func close()  { wrapped.close() }
 
-  override func close() { wrapped.close() }
-
-  override func receive() -> T?
-  {
-    return wrapped.receive()
-  }
-
-//  // SelectableChannel wrappers
-//
-//  public var invalidSelection: Bool { return wrapped.invalidSelection }
-//
-//  public func selectReceive(channel: SelectChan<Selection>, messageID: Selectable) -> Signal
-//  {
-//    return wrapped.selectReceive(channel, messageID: messageID)
-//  }
-//
-//  public func extract(item: Selection) -> C.ReceivedElement?
-//  {
-//    return wrapped.extract(item)
-//  }
+  override func get() -> T? { return wrapped.receive() }
 }
