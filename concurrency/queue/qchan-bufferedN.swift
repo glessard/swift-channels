@@ -14,17 +14,18 @@ import Darwin
 
 final class QBufferedNChan<T>: Chan<T>
 {
-  private let q = PointerQueue<T>()
+  private var buffer: UnsafeMutablePointer<T>
 
   // housekeeping variables
 
   private let capacity: Int
+  private let mask: Int
 
-  // PointerQueue keeps count of its stored elements. Unfortunately, calling
-  // q.count repeatedly ends up degrading performance noticeably (~50ns/iteration).
-  // Keep track locally instead.
+  private var head = 0
+  private var tail = 0
 
-  private var elements = 0
+  private var headptr: UnsafeMutablePointer<T>
+  private var tailptr: UnsafeMutablePointer<T>
 
   private let readerQueue = ObjectQueue<dispatch_semaphore_t>()
   private let writerQueue = ObjectQueue<dispatch_semaphore_t>()
@@ -40,19 +41,50 @@ final class QBufferedNChan<T>: Chan<T>
   {
     self.capacity = (capacity < 1) ? 1 : capacity
 
+    // find the next higher power of 2
+    var v = self.capacity - 1
+    v |= v >> 1
+    v |= v >> 2
+    v |= v >> 4
+    v |= v >> 8
+    v |= v >> 16
+    v |= v >> 32
+
+    mask = v // buffer size -1
+    buffer = UnsafeMutablePointer.alloc(mask+1)
+    headptr = buffer
+    tailptr = buffer
+
     super.init()
+  }
+
+  convenience override init()
+  {
+    self.init(1)
+  }
+
+  deinit
+  {
+    for i in head..<tail
+    {
+      if (i&mask == 0) { headptr = buffer }
+      headptr.destroy()
+      headptr = headptr.successor()
+    }
+
+    buffer.dealloc(mask+1)
   }
 
   // Computed property accessors
 
   final override var isEmpty: Bool
   {
-    return elements <= 0
+    return head >= tail
   }
 
   final override var isFull: Bool
   {
-    return elements >= capacity
+    return head+capacity <= tail
   }
 
   /**
@@ -106,6 +138,7 @@ final class QBufferedNChan<T>: Chan<T>
     queue.enqueue(threadLock)
     dispatch_semaphore_signal(mutex)
     dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
+    dispatch_semaphore_wait(mutex, DISPATCH_TIME_FOREVER)
     SemaphorePool.enqueue(threadLock)
   }
 
@@ -124,10 +157,9 @@ final class QBufferedNChan<T>: Chan<T>
 
     dispatch_semaphore_wait(mutex, DISPATCH_TIME_FOREVER)
 
-    while !self.closed &&  elements >= capacity
+    while !self.closed && head+capacity <= tail
     {
       wait(mutex: mutex, queue: writerQueue)
-      dispatch_semaphore_wait(mutex, DISPATCH_TIME_FOREVER)
     }
 
     if self.closed
@@ -136,15 +168,17 @@ final class QBufferedNChan<T>: Chan<T>
       return false
     }
 
-    q.enqueue(newElement)
-    elements += 1
+    tailptr.initialize(newElement)
+    tailptr = tailptr.successor()
+    tail += 1
+    if (tail&mask == 0) { tailptr = buffer }
 
     if readerQueue.count > 0
     {
       dispatch_semaphore_signal(readerQueue.dequeue()!)
     }
 
-    if elements < capacity && writerQueue.count > 0
+    if head+capacity < tail && writerQueue.count > 0
     {
       dispatch_semaphore_signal(writerQueue.dequeue()!)
     }
@@ -164,37 +198,38 @@ final class QBufferedNChan<T>: Chan<T>
 
   override func get() -> T?
   {
-    if self.closed && elements <= 0 { return nil }
+    if self.closed && head >= tail { return nil }
 
     dispatch_semaphore_wait(mutex, DISPATCH_TIME_FOREVER)
 
-    while !self.closed && elements <= 0
+    while !self.closed && head >= tail
     {
       wait(mutex: mutex, queue: readerQueue)
-      dispatch_semaphore_wait(mutex, DISPATCH_TIME_FOREVER)
     }
 
-    if self.closed && elements <= 0
+    if self.closed && head >= tail
     {
       dispatch_semaphore_signal(mutex)
       return nil
     }
 
-    let oldElement = q.dequeue()
-    elements -= 1
+    let element = headptr.move()
+    headptr = headptr.successor()
+    head += 1
+    if (head&mask == 0) { headptr = buffer }
 
     if writerQueue.count > 0
     {
       dispatch_semaphore_signal(writerQueue.dequeue()!)
     }
 
-    if elements > 0 && readerQueue.count > 0
+    if head < tail && readerQueue.count > 0
     {
       dispatch_semaphore_signal(readerQueue.dequeue()!)
     }
 
     dispatch_semaphore_signal(mutex)
 
-    return oldElement
+    return element
   }
 }
