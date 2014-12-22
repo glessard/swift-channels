@@ -123,7 +123,7 @@
 		03BBA23D1A3EC09400F4B44B /* chan-gcd-singleton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035029FF1A3EAABB00F4B44B /* chan-gcd-singleton.swift */; };
 		03BBA23E1A3EC09400F4B44B /* chan-gcd-unbuffered.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03502A001A3EAABB00F4B44B /* chan-gcd-unbuffered.swift */; };
 		03BBA23F1A3EC09400F4B44B /* dispatchQueueWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03502A011A3EAABB00F4B44B /* dispatchQueueWrapper.swift */; };
-		03BBA2421A3EC0C900F4B44B /* SillyChannel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03BBA2411A3EC0C900F4B44B /* SillyChannel.swift */; };
+		03BBA2421A3EC0C900F4B44B /* SimpleChannel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03BBA2411A3EC0C900F4B44B /* SimpleChannel.swift */; };
 		03D176431A47C1E800F4B44B /* chan-singleton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D176421A47C1E800F4B44B /* chan-singleton.swift */; };
 		03D176441A47C1E800F4B44B /* chan-singleton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D176421A47C1E800F4B44B /* chan-singleton.swift */; };
 		03D176451A47C1E800F4B44B /* chan-singleton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D176421A47C1E800F4B44B /* chan-singleton.swift */; };
@@ -229,7 +229,7 @@
 		03BBA1FC1A3EBF9100F4B44B /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		03BBA2201A3EC05D00F4B44B /* chan-benchmark */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "chan-benchmark"; sourceTree = BUILT_PRODUCTS_DIR; };
 		03BBA2221A3EC05D00F4B44B /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
-		03BBA2411A3EC0C900F4B44B /* SillyChannel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SillyChannel.swift; sourceTree = "<group>"; };
+		03BBA2411A3EC0C900F4B44B /* SimpleChannel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SimpleChannel.swift; sourceTree = "<group>"; };
 		03D176421A47C1E800F4B44B /* chan-singleton.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "chan-singleton.swift"; sourceTree = "<group>"; };
 		03D822B61A414F8D00F4B44B /* semaphorepool.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = semaphorepool.swift; path = queue/semaphorepool.swift; sourceTree = "<group>"; };
 		03E4D3C71A42460B00F4B44B /* qchan-unbuffered.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "qchan-unbuffered.swift"; path = "queue/qchan-unbuffered.swift"; sourceTree = "<group>"; };
@@ -442,7 +442,7 @@
 			isa = PBXGroup;
 			children = (
 				03BBA2221A3EC05D00F4B44B /* main.swift */,
-				03BBA2411A3EC0C900F4B44B /* SillyChannel.swift */,
+				03BBA2411A3EC0C900F4B44B /* SimpleChannel.swift */,
 			);
 			name = "Channel Benchmark";
 			path = "chan-benchmark";
@@ -739,7 +739,7 @@
 				03BBA22E1A3EC09400F4B44B /* chan-operators.swift in Sources */,
 				03D822B91A414F8D00F4B44B /* semaphorepool.swift in Sources */,
 				03AC054E1A43746100F4B44B /* anythingqueue.swift in Sources */,
-				03BBA2421A3EC0C900F4B44B /* SillyChannel.swift in Sources */,
+				03BBA2421A3EC0C900F4B44B /* SimpleChannel.swift in Sources */,
 				03BBA22D1A3EC09400F4B44B /* async.swift in Sources */,
 				03BBA2281A3EC08700F4B44B /* queue.swift in Sources */,
 				0309B6861A4126B100F4B44B /* schan-buffered1.swift in Sources */,
