@@ -21,16 +21,15 @@ infix operator <- { associativity left precedence 90}
 
   This is the equivalent of Sender<T>.send(T)
 
-  :param:  chan
-  :param:  element the new element to be added to the channel.
+  The SenderType 'chan' is passed as inout because that's slightly faster.
 
-  :return: the channel just written to, enabling multiple sends in one line.
+  :param: chan
+  :param: element the new element to be added to the channel.
 */
 
-public func <-<C: SenderType>(chan: C, element: C.SentElement) -> C
+public func <-<C: SenderType>(inout chan: C, element: C.SentElement)
 {
   chan.send(element)
-  return chan
 }
 
 
@@ -47,11 +46,15 @@ prefix operator <- {}
   If the channel is empty and closed, this will return nil.
 
   This is the equivalent of Receiver<T>.receive() -> T?
+  
+  The ReceiverType 'chan' is passed as inout because that's slightly faster.
+
+  :param:  chan
 
   :return: the oldest element from the channel
 */
 
-public prefix func <-<C: ReceiverType>(var chan: C) -> C.ReceivedElement?
+public prefix func <-<C: ReceiverType>(inout chan: C) -> C.ReceivedElement?
 {
   return chan.receive()
 }
