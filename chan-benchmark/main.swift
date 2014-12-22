@@ -11,7 +11,6 @@ import Darwin
 let iterations = 120_000
 var tic: Time
 
-let buflen = iterations/1000
 
 var buffered = Channel.Wrap(SBuffered1Chan<Int>())
 
@@ -63,6 +62,8 @@ while let a = <-unbuffered.rx { _ = a }
 
 syncprint(tic.toc)
 
+
+let buflen = iterations/1000
 
 var bufferedN = Channel.Wrap(SBufferedNChan<Int>(buflen))
 

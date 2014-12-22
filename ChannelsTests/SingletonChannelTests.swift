@@ -14,7 +14,7 @@ class SingletonChannelTests: ChannelsTests
   override var id: String { return "Singleton" }
   override var buflen: Int { return 1 }
 
-  override func Instantiate<T>(_ bufferLength: Int = -1) -> (Sender<T>, Receiver<T>)
+  override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
   {
     return Channel<T>.MakeSingleton()
   }
