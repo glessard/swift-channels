@@ -14,7 +14,7 @@ let buflen = iterations/1000
 var tic: Time
 
 
-var buffered = Channel.Wrap(SBuffered1Chan<Int>())
+var buffered = Channel.Wrap(SBufferedChan<Int>())
 
 tic = Time()
 
@@ -31,7 +31,7 @@ buffered.tx.close()
 syncprint(tic.toc)
 
 
-buffered = Channel.Wrap(SBuffered1Chan<Int>())
+buffered = Channel.Wrap(SBufferedChan<Int>())
 
 tic = Time()
 
@@ -65,7 +65,7 @@ while let a = <-unbuffered.rx { _ = a }
 syncprint(tic.toc)
 
 
-var bufferedN = Channel.Wrap(SBufferedNChan<Int>(buflen))
+var bufferedN = Channel.Wrap(SBufferedChan<Int>(buflen))
 
 tic = Time()
 
@@ -86,7 +86,7 @@ bufferedN.tx.close()
 syncprint(tic.toc)
 
 
-bufferedN = Channel.Wrap(SBufferedNChan<Int>(buflen))
+bufferedN = Channel.Wrap(SBufferedChan<Int>(buflen))
 
 tic = Time()
 

@@ -91,16 +91,13 @@ public class Chan<T>: ChannelType
 
   class func Make(capacity: Int) -> Chan<T>
   {
-    switch capacity
+    switch capacity < 1
     {
-    case let c where c < 1:
+    case true:
       return QUnbufferedChan<T>()
 
-    case 1:
-      return SBuffered1Chan<T>()
-
     default:
-      return SBufferedNChan<T>(capacity)
+      return SBufferedChan<T>(capacity)
     }
   }
 

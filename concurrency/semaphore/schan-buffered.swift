@@ -1,5 +1,5 @@
 //
-//  chan-buffered1.swift
+//  schan-bufferedN.swift
 //  concurrency
 //
 //  Created by Guillaume Lessard on 2014-11-19.
@@ -14,16 +14,25 @@ import Darwin
   http://docs.oracle.com/cd/E19455-01/806-5257/6je9h032s/index.html
 */
 
-final class SBuffered1Chan<T>: Chan<T>
+final class SBufferedChan<T>: Chan<T>
 {
-  private var e = UnsafeMutablePointer<T>.alloc(1)
+  private var buffer: UnsafeMutablePointer<T>
 
   // housekeeping variables
 
-  private var elements = 0
+  private final let capacity: Int
+  private final let mask: Int
 
-  private let filled = dispatch_semaphore_create(0)!
-  private let empty =  dispatch_semaphore_create(1)!
+  // housekeeping variables
+
+  private final var head = 0
+  private final var tail = 0
+
+  private final var headptr: UnsafeMutablePointer<T>
+  private final var tailptr: UnsafeMutablePointer<T>
+
+  private let filled: dispatch_semaphore_t
+  private let empty:  dispatch_semaphore_t
 
   private let mutex = dispatch_semaphore_create(1)!
 
@@ -32,27 +41,58 @@ final class SBuffered1Chan<T>: Chan<T>
   // Used to elucidate/troubleshoot message arrival order
   // private var readerCount: Int32 = -1
 
+  init(_ capacity: Int)
+  {
+    self.capacity = (capacity < 1) ? 1 : capacity
+
+    filled = dispatch_semaphore_create(0)!
+    empty =  dispatch_semaphore_create(capacity)!
+
+    // find the next power of 2 that is >= self.capacity
+    var v = self.capacity - 1
+    v |= v >> 1
+    v |= v >> 2
+    v |= v >> 4
+    v |= v >> 8
+    v |= v >> 16
+    v |= v >> 32
+    // the answer is v+1
+
+    mask = v // buffer size -1
+    buffer = UnsafeMutablePointer.alloc(mask+1)
+    headptr = buffer
+    tailptr = buffer
+  }
+
+  convenience override init()
+  {
+    self.init(1)
+  }
+
   deinit
   {
-    if elements > 0
+    for i in head..<tail
     {
-      e.destroy()
+      if (i&mask == 0) { headptr = buffer }
+      headptr.destroy()
+      headptr = headptr.successor()
     }
-    e.dealloc(1)
+
+    buffer.dealloc(mask+1)
   }
 
   // Computed property accessors
 
   final override var isEmpty: Bool
   {
-    return elements <= 0
+      return head >= tail
   }
 
   final override var isFull: Bool
   {
-    return elements >= 1
+      return head+capacity <= tail
   }
-
+  
   /**
     Determine whether the channel has been closed
   */
@@ -104,8 +144,13 @@ final class SBuffered1Chan<T>: Chan<T>
       return false
     }
 
-    e.initialize(newElement)
-    elements += 1
+    tailptr.initialize(newElement)
+    tail += 1
+    switch tail&mask
+    {
+    case 0:  tailptr = buffer
+    default: tailptr = tailptr.successor()
+    }
 
     dispatch_semaphore_signal(filled)
     dispatch_semaphore_signal(mutex)
@@ -124,20 +169,25 @@ final class SBuffered1Chan<T>: Chan<T>
 
   final override func get() -> T?
   {
-    if closed && elements <= 0 { return nil }
+    if closed && head >= tail { return nil }
 
     dispatch_semaphore_wait(filled, DISPATCH_TIME_FOREVER)
     dispatch_semaphore_wait(mutex, DISPATCH_TIME_FOREVER)
 
-    if closed && elements <= 0
+    if closed && head >= tail
     {
       dispatch_semaphore_signal(filled)
       dispatch_semaphore_signal(mutex)
       return nil
     }
 
-    let element = e.move()
-    elements -= 1
+    let element = headptr.move()
+    head += 1
+    switch head&mask
+    {
+    case 0:  headptr = buffer
+    default: headptr = headptr.successor()
+    }
 
     dispatch_semaphore_signal(empty)
     dispatch_semaphore_signal(mutex)

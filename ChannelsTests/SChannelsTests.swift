@@ -11,23 +11,12 @@
 import Darwin
 import XCTest
 
-class SBuffered1ChannelTests: PBuffered1ChannelTests
-{
-  override var id: String { return "Semaphore Buffered(1)" }
-  override var buflen: Int { return 1 }
-
-  override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
-  {
-    return Channel.Wrap(SBuffered1Chan<T>())
-  }
-}
-
-class SBufferedNChannelTests: PQBufferedNChannelTests
+class SBufferedChannelTests: PQBufferedNChannelTests
 {
   override var id: String  { return "Semaphore Buffered(N)" }
 
   override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
   {
-    return Channel.Wrap(SBufferedNChan<T>(buflen))
+    return Channel.Wrap(SBufferedChan<T>(buflen))
   }
 }

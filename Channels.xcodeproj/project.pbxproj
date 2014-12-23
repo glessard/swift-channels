@@ -7,12 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0309B6841A4126B100F4B44B /* schan-buffered1.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0309B6821A4126B100F4B44B /* schan-buffered1.swift */; };
-		0309B6851A4126B100F4B44B /* schan-buffered1.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0309B6821A4126B100F4B44B /* schan-buffered1.swift */; };
-		0309B6861A4126B100F4B44B /* schan-buffered1.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0309B6821A4126B100F4B44B /* schan-buffered1.swift */; };
-		0309B6871A4126B100F4B44B /* schan-bufferedN.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0309B6831A4126B100F4B44B /* schan-bufferedN.swift */; };
-		0309B6881A4126B100F4B44B /* schan-bufferedN.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0309B6831A4126B100F4B44B /* schan-bufferedN.swift */; };
-		0309B6891A4126B100F4B44B /* schan-bufferedN.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0309B6831A4126B100F4B44B /* schan-bufferedN.swift */; };
+		0309B6871A4126B100F4B44B /* schan-buffered.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0309B6831A4126B100F4B44B /* schan-buffered.swift */; };
+		0309B6881A4126B100F4B44B /* schan-buffered.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0309B6831A4126B100F4B44B /* schan-buffered.swift */; };
+		0309B6891A4126B100F4B44B /* schan-buffered.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0309B6831A4126B100F4B44B /* schan-buffered.swift */; };
 		0324E8C91A47D39300F4B44B /* QueueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AC05351A4367D700F4B44B /* QueueTests.swift */; };
 		0324E8CA1A47D39300F4B44B /* FastQueueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AC05421A43681400F4B44B /* FastQueueTests.swift */; };
 		0324E8CB1A47D39300F4B44B /* ObjectQueueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AC05331A4367D700F4B44B /* ObjectQueueTests.swift */; };
@@ -162,8 +159,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		0309B6821A4126B100F4B44B /* schan-buffered1.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "schan-buffered1.swift"; path = "semaphore/schan-buffered1.swift"; sourceTree = "<group>"; };
-		0309B6831A4126B100F4B44B /* schan-bufferedN.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "schan-bufferedN.swift"; path = "semaphore/schan-bufferedN.swift"; sourceTree = "<group>"; };
+		0309B6831A4126B100F4B44B /* schan-buffered.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "schan-buffered.swift"; path = "semaphore/schan-buffered.swift"; sourceTree = "<group>"; };
 		035029871A3EA98400F4B44B /* Channels.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Channels.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0350298B1A3EA98400F4B44B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		0350298C1A3EA98400F4B44B /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -389,8 +385,7 @@
 		0381B40A1A41020B00F4B44B /* semaphore */ = {
 			isa = PBXGroup;
 			children = (
-				0309B6821A4126B100F4B44B /* schan-buffered1.swift */,
-				0309B6831A4126B100F4B44B /* schan-bufferedN.swift */,
+				0309B6831A4126B100F4B44B /* schan-buffered.swift */,
 			);
 			name = semaphore;
 			sourceTree = "<group>";
@@ -610,13 +605,12 @@
 				03D822B71A414F8D00F4B44B /* semaphorepool.swift in Sources */,
 				03502A201A3EABB200F4B44B /* queue.swift in Sources */,
 				03AC05521A43746100F4B44B /* objectqueue.swift in Sources */,
-				0309B6871A4126B100F4B44B /* schan-bufferedN.swift in Sources */,
+				0309B6871A4126B100F4B44B /* schan-buffered.swift in Sources */,
 				0324E8C91A47D39300F4B44B /* QueueTests.swift in Sources */,
 				035F5FFE1A41D85200F4B44B /* qchan-bufferedN.swift in Sources */,
 				03BBA21B1A3EC01D00F4B44B /* timing.swift in Sources */,
 				03502A111A3EAB6B00F4B44B /* channel.swift in Sources */,
 				03502A171A3EAB7000F4B44B /* dispatchQueueWrapper.swift in Sources */,
-				0309B6841A4126B100F4B44B /* schan-buffered1.swift in Sources */,
 				03502A161A3EAB7000F4B44B /* chan-gcd-unbuffered.swift in Sources */,
 				03BBA1DB1A3EB13400F4B44B /* shuffle.swift in Sources */,
 				03BBA1D51A3EB0EB00F4B44B /* GCDChannelsTests.swift in Sources */,
@@ -661,8 +655,7 @@
 				03BBA2081A3EBFCF00F4B44B /* chan-buffered1.swift in Sources */,
 				03BBA2021A3EBFCF00F4B44B /* chan-operators.swift in Sources */,
 				03BBA20E1A3EBFCF00F4B44B /* chan-blocks.swift in Sources */,
-				0309B6881A4126B100F4B44B /* schan-bufferedN.swift in Sources */,
-				0309B6851A4126B100F4B44B /* schan-buffered1.swift in Sources */,
+				0309B6881A4126B100F4B44B /* schan-buffered.swift in Sources */,
 				03AC052F1A43655C00F4B44B /* fastqueue.swift in Sources */,
 				03BBA2121A3EBFCF00F4B44B /* chan-gcd-unbuffered.swift in Sources */,
 				03E4D3CF1A4253A700F4B44B /* qchan-unbuffered.swift in Sources */,
@@ -708,7 +701,7 @@
 				03BBA2371A3EC09400F4B44B /* chan-pthreads.swift in Sources */,
 				03BBA2321A3EC09400F4B44B /* chan.swift in Sources */,
 				03BBA2391A3EC09400F4B44B /* chan-unbuffered.swift in Sources */,
-				0309B6891A4126B100F4B44B /* schan-bufferedN.swift in Sources */,
+				0309B6891A4126B100F4B44B /* schan-buffered.swift in Sources */,
 				03BBA23B1A3EC09400F4B44B /* chan-gcd-buffered1.swift in Sources */,
 				03E4D3B31A420A4600F4B44B /* defer.swift in Sources */,
 				03BBA2231A3EC05D00F4B44B /* main.swift in Sources */,
@@ -723,7 +716,6 @@
 				03BBA2421A3EC0C900F4B44B /* SimpleChannel.swift in Sources */,
 				03BBA22D1A3EC09400F4B44B /* async.swift in Sources */,
 				03BBA2281A3EC08700F4B44B /* queue.swift in Sources */,
-				0309B6861A4126B100F4B44B /* schan-buffered1.swift in Sources */,
 				03BBA23A1A3EC09400F4B44B /* chan-blocks.swift in Sources */,
 				03BBA2361A3EC09400F4B44B /* chan-bufferedN-ringbuffer.swift in Sources */,
 				03BBA2301A3EC09400F4B44B /* chan-receiver.swift in Sources */,
