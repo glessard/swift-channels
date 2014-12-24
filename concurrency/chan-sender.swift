@@ -83,6 +83,29 @@ public struct Sender<T>: SenderType
 }
 
 /**
+  Channel send operator: send a new element to the channel
+
+  If the channel is full, this call will block.
+  If the channel has been closed, sending will fail silently.
+
+  The ideal situation when the channel has been closed
+  would involve some error-handling, such as a panic() call.
+  Unfortunately there is no such thing in Swift, so a silent failure it is.
+
+  Using this operator is equivalent to '_ = Sender<T>.send(T)'
+
+  The SenderType 's' were passed as inout, this would be slgihtly faster (~15ns)
+
+  :param: s a SenderType
+  :param: element the new element to be added to the channel.
+*/
+
+public func <-<T>(s: Sender<T>, element: T)
+{
+  s.send(element)
+}
+
+/**
   ChannelTypeAsChan<T> disguises any ChannelType as a Chan<T>,
   for use by Sender<T>
 */

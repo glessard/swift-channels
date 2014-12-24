@@ -106,6 +106,26 @@ public struct Receiver<T>: ReceiverType, GeneratorType, SequenceType
 }
 
 /**
+  Channel receive operator: receive the oldest element from the channel.
+
+  If the channel is empty, this call will block.
+  If the channel is empty and closed, this will return nil.
+
+  This is the equivalent of Receiver<T>.receive() -> T?
+
+  If ReceiverType 'r' were passed as inout, this would be slightly faster (~15ns)
+
+  :param:  r a ReceiverType
+
+  :return: the oldest element from the channel
+*/
+
+public prefix func <-<T>(r: Receiver<T>) -> T?
+{
+  return r.receive()
+}
+
+/**
   ChannelTypeAsChan<T> disguises any ChannelType as a Chan<T>,
   for use by Receiver<T>
 */

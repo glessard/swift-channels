@@ -25,15 +25,15 @@ infix operator <- { associativity left precedence 90}
 
   Using this operator is equivalent to '_ = Sender<T>.send(T)'
 
-  The SenderType 'chan' is passed as inout because that's slightly faster.
+  The SenderType 's' were passed as inout, this would be slgihtly faster (~15ns)
 
-  :param: chan
+  :param: s a SenderType
   :param: element the new element to be added to the channel.
 */
 
-public func <-<C: SenderType>(inout chan: C, element: C.SentElement)
+public func <-<C: SenderType>(s: C, element: C.SentElement)
 {
-  chan.send(element)
+  s.send(element)
 }
 
 
@@ -51,14 +51,14 @@ prefix operator <- {}
 
   This is the equivalent of Receiver<T>.receive() -> T?
   
-  The ReceiverType 'chan' is passed as inout because that's slightly faster.
+  If ReceiverType 'r' were passed as inout, this would be slightly faster (~15ns)
 
-  :param:  chan
+  :param:  r a ReceiverType
 
   :return: the oldest element from the channel
 */
 
-public prefix func <-<C: ReceiverType>(inout chan: C) -> C.ReceivedElement?
+public prefix func <-<C: ReceiverType>(r: C) -> C.ReceivedElement?
 {
-  return chan.receive()
+  return r.receive()
 }
