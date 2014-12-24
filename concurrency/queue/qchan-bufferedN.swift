@@ -12,7 +12,7 @@ import Darwin
   A channel that uses a queue to store its elements.
 */
 
-final class QBufferedNChan<T>: Chan<T>
+final class QBufferedChan<T>: Chan<T>
 {
   private var buffer: UnsafeMutablePointer<T>
 

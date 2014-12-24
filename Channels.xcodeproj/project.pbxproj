@@ -44,8 +44,6 @@
 		035F5FFF1A41D85200F4B44B /* qchan-bufferedN.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035F5FFD1A41D85200F4B44B /* qchan-bufferedN.swift */; };
 		035F60001A41D85200F4B44B /* qchan-bufferedN.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035F5FFD1A41D85200F4B44B /* qchan-bufferedN.swift */; };
 		0381B4111A41042300F4B44B /* SChannelsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0381B4101A41042300F4B44B /* SChannelsTests.swift */; };
-		03A7701E1A3ED54C00F4B44B /* qchan-buffered1.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03FBD3281A3EC56100F4B44B /* qchan-buffered1.swift */; };
-		03A7701F1A3ED54C00F4B44B /* qchan-buffered1.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03FBD3281A3EC56100F4B44B /* qchan-buffered1.swift */; };
 		03AC052E1A43655C00F4B44B /* fastqueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AC052D1A43655C00F4B44B /* fastqueue.swift */; };
 		03AC052F1A43655C00F4B44B /* fastqueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AC052D1A43655C00F4B44B /* fastqueue.swift */; };
 		03AC05301A43655C00F4B44B /* fastqueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AC052D1A43655C00F4B44B /* fastqueue.swift */; };
@@ -123,7 +121,6 @@
 		03E4D3CE1A4253A700F4B44B /* qchan-unbuffered.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E4D3C71A42460B00F4B44B /* qchan-unbuffered.swift */; };
 		03E4D3CF1A4253A700F4B44B /* qchan-unbuffered.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E4D3C71A42460B00F4B44B /* qchan-unbuffered.swift */; };
 		03E4D3D01A4253A700F4B44B /* qchan-unbuffered.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E4D3C71A42460B00F4B44B /* qchan-unbuffered.swift */; };
-		03FBD3291A3EC56100F4B44B /* qchan-buffered1.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03FBD3281A3EC56100F4B44B /* qchan-buffered1.swift */; };
 		03FBD32B1A3EC93600F4B44B /* QChannelsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03FBD32A1A3EC93600F4B44B /* QChannelsTests.swift */; };
 /* End PBXBuildFile section */
 
@@ -219,7 +216,6 @@
 		03D176421A47C1E800F4B44B /* chan-singleton.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "chan-singleton.swift"; sourceTree = "<group>"; };
 		03D822B61A414F8D00F4B44B /* semaphorepool.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = semaphorepool.swift; path = queue/semaphorepool.swift; sourceTree = "<group>"; };
 		03E4D3C71A42460B00F4B44B /* qchan-unbuffered.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "qchan-unbuffered.swift"; path = "queue/qchan-unbuffered.swift"; sourceTree = "<group>"; };
-		03FBD3281A3EC56100F4B44B /* qchan-buffered1.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "qchan-buffered1.swift"; path = "queue/qchan-buffered1.swift"; sourceTree = "<group>"; };
 		03FBD32A1A3EC93600F4B44B /* QChannelsTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = QChannelsTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -437,7 +433,6 @@
 			isa = PBXGroup;
 			children = (
 				03D822B61A414F8D00F4B44B /* semaphorepool.swift */,
-				03FBD3281A3EC56100F4B44B /* qchan-buffered1.swift */,
 				035F5FFD1A41D85200F4B44B /* qchan-bufferedN.swift */,
 				03E4D3C71A42460B00F4B44B /* qchan-unbuffered.swift */,
 			);
@@ -599,7 +594,6 @@
 				03502A1A1A3EAB7400F4B44B /* chan-bufferedN-queue.swift in Sources */,
 				03502A151A3EAB7000F4B44B /* chan-gcd-singleton.swift in Sources */,
 				03502A0F1A3EAB6B00F4B44B /* chan-sender.swift in Sources */,
-				03FBD3291A3EC56100F4B44B /* qchan-buffered1.swift in Sources */,
 				03FBD32B1A3EC93600F4B44B /* QChannelsTests.swift in Sources */,
 				03AC054C1A43746100F4B44B /* anythingqueue.swift in Sources */,
 				03D822B71A414F8D00F4B44B /* semaphorepool.swift in Sources */,
@@ -668,7 +662,6 @@
 				03AC05531A43746100F4B44B /* objectqueue.swift in Sources */,
 				03AC054D1A43746100F4B44B /* anythingqueue.swift in Sources */,
 				03BBA2091A3EBFCF00F4B44B /* chan-bufferedN-queue.swift in Sources */,
-				03A7701F1A3ED54C00F4B44B /* qchan-buffered1.swift in Sources */,
 				03BBA2111A3EBFCF00F4B44B /* chan-gcd-singleton.swift in Sources */,
 				03AC05561A43746100F4B44B /* pointerqueue.swift in Sources */,
 				03BBA21A1A3EC01B00F4B44B /* timing.swift in Sources */,
@@ -689,7 +682,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				03AC05511A43746100F4B44B /* atomicqueue.m in Sources */,
-				03A7701E1A3ED54C00F4B44B /* qchan-buffered1.swift in Sources */,
 				03BBA23D1A3EC09400F4B44B /* chan-gcd-singleton.swift in Sources */,
 				03AC05571A43746100F4B44B /* pointerqueue.swift in Sources */,
 				03BBA2311A3EC09400F4B44B /* chan-sender.swift in Sources */,
