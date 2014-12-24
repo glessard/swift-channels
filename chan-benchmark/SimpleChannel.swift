@@ -21,6 +21,8 @@ public class SimpleChannel: ChannelType
   private let filled = dispatch_semaphore_create(0)!
   private let empty =  dispatch_semaphore_create(1)!
 
+  private var mutex = OS_SPINLOCK_INIT
+
   private var closed = false
 
   public var isClosed: Bool { return closed }
@@ -31,7 +33,10 @@ public class SimpleChannel: ChannelType
   {
     if closed { return }
 
+    OSSpinLockLock(&mutex)
     closed = true
+    OSSpinLockUnlock(&mutex)
+
     dispatch_semaphore_signal(empty)
     dispatch_semaphore_signal(filled)
   }
@@ -41,9 +46,11 @@ public class SimpleChannel: ChannelType
     if closed { return false }
 
     dispatch_semaphore_wait(empty, DISPATCH_TIME_FOREVER)
+    OSSpinLockLock(&mutex)
 
     if closed
     {
+      OSSpinLockUnlock(&mutex)
       dispatch_semaphore_signal(empty)
       return false
     }
@@ -51,6 +58,7 @@ public class SimpleChannel: ChannelType
     element = newElement
     elementCount++
 
+    OSSpinLockUnlock(&mutex)
     dispatch_semaphore_signal(filled)
 
     return true
@@ -61,9 +69,11 @@ public class SimpleChannel: ChannelType
     if closed && elementCount <= 0 { return nil }
 
     dispatch_semaphore_wait(filled, DISPATCH_TIME_FOREVER)
+    OSSpinLockLock(&mutex)
 
     if closed && elementCount <= 0
     {
+      OSSpinLockUnlock(&mutex)
       dispatch_semaphore_signal(filled)
       return nil
     }
@@ -71,6 +81,7 @@ public class SimpleChannel: ChannelType
     let e = element
     elementCount--
 
+    OSSpinLockUnlock(&mutex)
     dispatch_semaphore_signal(empty)
 
     return e
