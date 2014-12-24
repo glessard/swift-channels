@@ -30,7 +30,7 @@ final class QBufferedNChan<T>: Chan<T>
   private let readerQueue = ObjectQueue<dispatch_semaphore_t>()
   private let writerQueue = ObjectQueue<dispatch_semaphore_t>()
 
-  private let mutex = dispatch_semaphore_create(1)!
+  private var mutex = OS_SPINLOCK_INIT
 
   private var closed = false
 
@@ -103,11 +103,11 @@ final class QBufferedNChan<T>: Chan<T>
     been closed. The actual reaction shall be implementation-dependent.
   */
 
-  final override func close()
+  override func close()
   {
     if closed { return }
 
-    dispatch_semaphore_wait(mutex, DISPATCH_TIME_FOREVER)
+    OSSpinLockLock(&mutex)
     closed = true
 
     // Unblock the threads waiting on our conditions.
@@ -119,7 +119,7 @@ final class QBufferedNChan<T>: Chan<T>
     {
       dispatch_semaphore_signal(writerQueue.dequeue()!)
     }
-    dispatch_semaphore_signal(mutex)
+    OSSpinLockUnlock(&mutex)
   }
 
   /**
@@ -132,13 +132,13 @@ final class QBufferedNChan<T>: Chan<T>
     :param: queue the queue to which the signal should be appended
   */
 
-  final func wait(#mutex: dispatch_semaphore_t, queue: ObjectQueue<dispatch_semaphore_t>)
+  private func wait(inout #mutex: OSSpinLock, queue: ObjectQueue<dispatch_semaphore_t>)
   {
     let threadLock = SemaphorePool.dequeue()
     queue.enqueue(threadLock)
-    dispatch_semaphore_signal(mutex)
+    OSSpinLockUnlock(&mutex)
     dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
-    dispatch_semaphore_wait(mutex, DISPATCH_TIME_FOREVER)
+    OSSpinLockLock(&mutex)
     SemaphorePool.enqueue(threadLock)
   }
 
@@ -155,23 +155,26 @@ final class QBufferedNChan<T>: Chan<T>
   {
     if self.closed { return false }
 
-    dispatch_semaphore_wait(mutex, DISPATCH_TIME_FOREVER)
+    OSSpinLockLock(&mutex)
 
     while !self.closed && head+capacity <= tail
     {
-      wait(mutex: mutex, queue: writerQueue)
+      wait(mutex: &mutex, queue: writerQueue)
     }
 
     if self.closed
     {
-      dispatch_semaphore_signal(mutex)
+      OSSpinLockUnlock(&mutex)
       return false
     }
 
     tailptr.initialize(newElement)
-    tailptr = tailptr.successor()
     tail += 1
-    if (tail&mask == 0) { tailptr = buffer }
+    switch tail&mask
+    {
+    case 0:  tailptr = buffer
+    default: tailptr = tailptr.successor()
+    }
 
     if readerQueue.count > 0
     {
@@ -183,7 +186,7 @@ final class QBufferedNChan<T>: Chan<T>
       dispatch_semaphore_signal(writerQueue.dequeue()!)
     }
 
-    dispatch_semaphore_signal(mutex)
+    OSSpinLockUnlock(&mutex)
     return true
   }
 
@@ -200,23 +203,26 @@ final class QBufferedNChan<T>: Chan<T>
   {
     if self.closed && head >= tail { return nil }
 
-    dispatch_semaphore_wait(mutex, DISPATCH_TIME_FOREVER)
+    OSSpinLockLock(&mutex)
 
     while !self.closed && head >= tail
     {
-      wait(mutex: mutex, queue: readerQueue)
+      wait(mutex: &mutex, queue: readerQueue)
     }
 
     if self.closed && head >= tail
     {
-      dispatch_semaphore_signal(mutex)
+      OSSpinLockUnlock(&mutex)
       return nil
     }
 
     let element = headptr.move()
-    headptr = headptr.successor()
     head += 1
-    if (head&mask == 0) { headptr = buffer }
+    switch head&mask
+    {
+    case 0:  headptr = buffer
+    default: headptr = headptr.successor()
+    }
 
     if writerQueue.count > 0
     {
@@ -228,7 +234,7 @@ final class QBufferedNChan<T>: Chan<T>
       dispatch_semaphore_signal(readerQueue.dequeue()!)
     }
 
-    dispatch_semaphore_signal(mutex)
+    OSSpinLockUnlock(&mutex)
 
     return element
   }

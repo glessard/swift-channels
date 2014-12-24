@@ -19,7 +19,7 @@ final class QUnbufferedChan<T>: Chan<T>
   private let readerQueue = ObjectQueue<dispatch_semaphore_t>()
   private let writerQueue = ObjectQueue<dispatch_semaphore_t>()
 
-  private let mutex = dispatch_semaphore_create(1)!
+  private var mutex = OS_SPINLOCK_INIT
 
   private var closed = false
 
@@ -54,11 +54,11 @@ final class QUnbufferedChan<T>: Chan<T>
     been closed. The actual reaction shall be implementation-dependent.
   */
 
-  final override func close()
+  override func close()
   {
     if closed { return }
 
-    dispatch_semaphore_wait(mutex, DISPATCH_TIME_FOREVER)
+    OSSpinLockLock(&mutex)
     closed = true
 
     // Unblock the threads waiting on our conditions.
@@ -70,7 +70,7 @@ final class QUnbufferedChan<T>: Chan<T>
     {
       dispatch_semaphore_signal(writerQueue.dequeue()!)
     }
-    dispatch_semaphore_signal(mutex)
+    OSSpinLockUnlock(&mutex)
   }
 
 
@@ -87,14 +87,14 @@ final class QUnbufferedChan<T>: Chan<T>
   {
     if closed { return false }
 
-    dispatch_semaphore_wait(mutex, DISPATCH_TIME_FOREVER)
+    OSSpinLockLock(&mutex)
 
     let pointer = UnsafeMutablePointer<T>.alloc(1)
     pointer.initialize(newElement)
 
     if let rs = readerQueue.dequeue()
     { // there is already an interested reader
-      dispatch_semaphore_signal(mutex)
+      OSSpinLockUnlock(&mutex)
       // attach the data to the reader's semaphore
       dispatch_set_context(rs, pointer)
       dispatch_semaphore_signal(rs)
@@ -105,7 +105,7 @@ final class QUnbufferedChan<T>: Chan<T>
     let threadLock = SemaphorePool.dequeue()
     dispatch_set_context(threadLock, pointer)
     writerQueue.enqueue(threadLock)
-    dispatch_semaphore_signal(mutex)
+    OSSpinLockUnlock(&mutex)
     dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
 
     // got awoken by a reader (or the channel was closed)
@@ -138,11 +138,11 @@ final class QUnbufferedChan<T>: Chan<T>
   {
     if closed { return nil }
 
-    dispatch_semaphore_wait(mutex, DISPATCH_TIME_FOREVER)
+    OSSpinLockLock(&mutex)
 
     if let ws = writerQueue.dequeue()
     { // data is already available
-      dispatch_semaphore_signal(mutex)
+      OSSpinLockUnlock(&mutex)
 
       let context = UnsafeMutablePointer<T>(dispatch_get_context(ws))
       if context != UnsafeMutablePointer.null()
@@ -160,7 +160,7 @@ final class QUnbufferedChan<T>: Chan<T>
     // wait for data from a writer
     let threadLock = SemaphorePool.dequeue()
     readerQueue.enqueue(threadLock)
-    dispatch_semaphore_signal(mutex)
+    OSSpinLockUnlock(&mutex)
     dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
 
     // got awoken by a writer (or the channel was closed)
