@@ -69,9 +69,9 @@ class QQPointerQueueTests: XCTestCase
         q.enqueue(payload)
       }
 
-      while let e = q.dequeue()
+      while q.count > 0
       {
-        _ = e
+        _ = q.dequeue()
       }
     }
   }

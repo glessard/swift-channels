@@ -10,7 +10,7 @@ import Darwin
 import Foundation
 import XCTest
 
-class QueueObjectTests: XCTestCase
+class QQObjectQueueTests: XCTestCase
 {
   let performanceQTestIterations=100_000
 
@@ -70,9 +70,9 @@ class QueueObjectTests: XCTestCase
         q.enqueue(payload)
       }
 
-      while let e = q.dequeue()
+      while q.count > 0
       {
-        _ = e
+        _ = q.dequeue()
       }
     }
   }
