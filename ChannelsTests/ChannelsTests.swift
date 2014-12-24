@@ -14,7 +14,7 @@ class ChannelsTests: XCTestCase
 {
   var id: String { return "" }
 
-  let performanceTestIterations = 12_000
+  var performanceTestIterations: Int { return 12_000 }
 
   var buflen: Int { return 1 }
 
