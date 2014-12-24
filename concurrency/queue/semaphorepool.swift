@@ -19,9 +19,9 @@ struct SemaphorePool
 
   static func dequeue() -> dispatch_semaphore_t
   {
-    if poolq.count > 0
+    if let sem = poolq.dequeue()
     {
-      return poolq.dequeue()!
+      return sem
     }
 
     return dispatch_semaphore_create(0)!
