@@ -20,16 +20,16 @@ final class SBufferedChan<T>: Chan<T>
 
   // housekeeping variables
 
-  private final let capacity: Int
-  private final let mask: Int
+  private let capacity: Int
+  private let mask: Int
 
   // housekeeping variables
 
-  private final var head = 0
-  private final var tail = 0
+  private var head = 0
+  private var tail = 0
 
-  private final var headptr: UnsafeMutablePointer<T>
-  private final var tailptr: UnsafeMutablePointer<T>
+  private var headptr: UnsafeMutablePointer<T>
+  private var tailptr: UnsafeMutablePointer<T>
 
   private let filled: dispatch_semaphore_t
   private let empty:  dispatch_semaphore_t
@@ -109,7 +109,7 @@ final class SBufferedChan<T>: Chan<T>
     been closed. The actual reaction shall be implementation-dependent.
   */
 
-  override func close()
+  final override func close()
   {
     if closed { return }
 
