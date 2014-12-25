@@ -53,7 +53,7 @@ public class FastQueue<T>: SequenceType, GeneratorType
     var nptr = head
     while nptr != UnsafeMutablePointer.null()
     { // Iterate along the linked nodes while counting
-      nptr = nptr.memory.next
+      nptr = UnsafeMutablePointer<Node<T>>(nptr.memory.next)
       i++
     }
     assert(i == size, "Queue might have lost data")
@@ -65,22 +65,22 @@ public class FastQueue<T>: SequenceType, GeneratorType
 
   public func enqueue(newElement: T)
   {
-    let newNode = UnsafeMutablePointer<Node<T>>.alloc(1)
-    newNode.initialize(Node<T>(newElement))
+    let node = UnsafeMutablePointer<Node<T>>.alloc(1)
+    node.initialize(Node(newElement))
 
     dispatch_semaphore_wait(mutex, DISPATCH_TIME_FOREVER)
 
     if size <= 0
     {
-      head = newNode
-      tail = newNode
+      head = node
+      tail = node
       size = 1
       dispatch_semaphore_signal(mutex)
       return
     }
 
-    tail.memory.next = newNode
-    tail = newNode
+    tail.memory.next = UnsafeMutablePointer<Void>(node)
+    tail = node
     size += 1
     dispatch_semaphore_signal(mutex)
   }
@@ -102,9 +102,8 @@ public class FastQueue<T>: SequenceType, GeneratorType
 
       dispatch_semaphore_signal(mutex)
 
-      let element = oldhead.memory.eptr.move()
+      let element = oldhead.memory.element
 
-      oldhead.memory.eptr.dealloc(1)
       oldhead.destroy()
       oldhead.dealloc(1)
 
@@ -138,8 +137,8 @@ public class FastQueue<T>: SequenceType, GeneratorType
 
 private struct Node<T>
 {
-  let eptr: UnsafeMutablePointer<T>
-  var next: UnsafeMutablePointer<Node<T>>
+  var next = UnsafeMutablePointer<Void>.null()
+  let element: T
 
   /**
     The purpose of a new Node<T> is to become last in a Queue<T>.
@@ -147,8 +146,6 @@ private struct Node<T>
 
   init(_ e: T)
   {
-    eptr = UnsafeMutablePointer<T>.alloc(1)
-    eptr.initialize(e)
-    next = UnsafeMutablePointer.null()
+    element  = e
   }
 }
