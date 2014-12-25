@@ -7,79 +7,90 @@
 
 import Foundation.NSDate
 import Foundation.NSThread
+import AppKit.AppKitDefines
 
 /**
   A struct whose purpose is to pretty-print short durations of time.
 */
 
-public struct Milliseconds: Printable
+public struct Interval: Printable
 {
-  var milliseconds: Double = 0.0
+  var ns: Int64
+
+  init(_ nanoseconds: Int64)
+  {
+    ns = nanoseconds
+  }
+
+  init(_ nanoseconds: Int)
+  {
+    ns = Int64(nanoseconds)
+  }
+
+  init(_ nanoseconds: Double)
+  {
+    ns = Int64(nanoseconds)
+  }
+
+  init(seconds: CFTimeInterval)
+  {
+    ns = Int64(seconds*1e9)
+  }
 
   public var description: String
-  {
-    if milliseconds > 5000
-    { // over 5 seconds: just show seconds down to thousandths
-      return (round(milliseconds)/1000).description + " s"
-    }
-    // otherwise round to microseconds
-    return (round(1000*milliseconds)/1000).description + " ms"
+    {
+      if abs(ns) > 5_000_000_000
+      { // over 5 seconds: round to milliseconds, display as seconds
+        return (Double(ns/1_000_000)/1e3).description + " s"
+      }
+      if abs(ns) > 100_000
+      { // round to microseconds, display as milliseconds
+        return (Double(ns/1000)/1e3).description + " ms"
+      }
+      // otherwise display as microseconds
+      return (Double(ns)/1e3).description + " µs"
   }
-
-  init(interval: Double)
+  
+  public var interval: CFTimeInterval
   {
-    milliseconds = abs(interval)
-  }
-
-  // NSTimeInterval is nominally in seconds
-  init(_ nsTimeInterval: NSTimeInterval)
-  {
-    self.init(interval: Double(1000*nsTimeInterval))
-  }
-
-  init(interval: Int)
-  {
-    self.init(interval: Double(interval))
+    return Double(ns)*1e-9
   }
 }
 
-/**
-  Timing-related wrappers for NSDate and NSThread, named for readability.
-*/
-
-public class Time: Printable
+func / (dt: Interval, n: Int) -> Interval
 {
-  var d: NSDate
-
-  public init() { d = NSDate() }
-
-  public class func Now() -> Time { return Time() }
-
-  public var description: String { return d.description }
+  return Interval(dt.ns/Int64(n))
 }
 
 /**
-  Additions to Time to work with Milliseconds, defined above.
+  Timing-related utility based on mach_absolute_time().
 */
 
-extension Time
+public struct Time: Printable
 {
+  private let t: Int64
+
+  public init()
+  {
+    t = Int64(mach_absolute_time())
+  }
+
   /**
-    Readability: Time.Since() returns a Millisecond struct.
-    example:
-    let starttime = Time()
-    println(Time.Since(starttime))
+    offset: offset in seconds between the uptime and a timestamp that can be mapped to a date
+    This is not a constant, strictly speaking. Probably close enough, though.
   */
 
-  public class func Since(a: NSDate) -> Milliseconds
-  {
-    return Milliseconds(a.timeIntervalSinceNow)
-  }
+  private static var offset: CFTimeInterval = { CFAbsoluteTimeGetCurrent() - CACurrentMediaTime() }()
 
-  public class func Since(tic: Time) -> Milliseconds
-  {
-    return tic.toc
-  }
+  /**
+    scale: how to scale from the mach timebase to nanoseconds. See Technical Q&A QA1398
+  */
+
+  private static var scale: mach_timebase_info = {
+    var info = mach_timebase_info(numer: 0, denom: 0)
+    mach_timebase_info(&info)
+    return info
+  }()
 
   /**
     An analog to the MATLAB tic ... toc time measurement function pair.
@@ -88,33 +99,69 @@ extension Time
     println(tic.toc)
   */
 
-  public var toc: Milliseconds { return Milliseconds(d.timeIntervalSinceNow) }
+  public var toc: Interval
+  {
+    let dt = (Time().t - t) * Int64(Time.scale.numer)/Int64(Time.scale.denom)
+    return Interval(dt)
+  }
+
+  public var nanoseconds: Int64
+  {
+    return t * Int64(Time.scale.numer)/Int64(Time.scale.denom)
+  }
+
+  public var absoluteTime: CFAbsoluteTime
+  {
+      return Double(self.nanoseconds)*1e-9 + Time.offset
+  }
+  
+  public var description: String
+  {
+    return NSDate(timeIntervalSinceReferenceDate: absoluteTime).description
+  }
+}
+
+extension Time
+{
+  public static func Now() -> Time { return Time() }
+
+  /**
+    Time.Since(t: Time) returns an Interval.
+    example:
+    let starttime = Time()
+    println(Time.Since(starttime))
+  */
+
+  public static func Since(tic: Time) -> Interval
+  {
+    return tic.toc
+  }
 }
 
 /**
-  Sleep the current thread for a number of milliseconds.
+  Sleep the current thread for an interval of time.
 */
 
 extension Time
 {
-  public class func Wait(interval: Milliseconds)
+  public static func Wait(interval: Interval)
   {
-    Time.Wait(interval.milliseconds)
+    Time.Wait(interval.interval)
   }
 
-  public class func Wait(milliseconds: Int)
+  public static func Wait(#ms: Int)
   {
-    Time.Wait(Double(milliseconds))
+    Time.Wait(Double(ms)/1000)
   }
 
-  public class func Wait(milliseconds: UInt32)
+  public static func Wait(#ms: UInt32)
   {
-    Time.Wait(Double(milliseconds))
+    Time.Wait(Double(ms)/1000)
   }
 
-  public class func Wait(milliseconds: Double)
+  public static func Wait(seconds: CFTimeInterval)
   {
-    if milliseconds > 0
-    { NSThread.sleepForTimeInterval(milliseconds*0.001) }
+    if seconds > 0
+    { NSThread.sleepForTimeInterval(seconds) }
   }
 }

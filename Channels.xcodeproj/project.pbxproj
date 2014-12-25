@@ -349,7 +349,7 @@
 				03FBD3271A3EC4CA00F4B44B /* queue */,
 				0381B40A1A41020B00F4B44B /* semaphore */,
 				03D176421A47C1E800F4B44B /* chan-singleton.swift */,
-				03BBA1E31A3EB37E00F4B44B /* threadsafe-queues */,
+				03BBA1E31A3EB37E00F4B44B /* hybrid-queues */,
 			);
 			path = concurrency;
 			sourceTree = "<group>";
@@ -398,7 +398,7 @@
 			name = QueueTests;
 			sourceTree = "<group>";
 		};
-		03BBA1E31A3EB37E00F4B44B /* threadsafe-queues */ = {
+		03BBA1E31A3EB37E00F4B44B /* hybrid-queues */ = {
 			isa = PBXGroup;
 			children = (
 				03AC05491A43746100F4B44B /* Bridging-Header.h */,
@@ -408,7 +408,7 @@
 				03AC05461A43746100F4B44B /* anythingqueue.swift */,
 				03AC054B1A43746100F4B44B /* pointerqueue.swift */,
 			);
-			name = "threadsafe-queues";
+			name = "hybrid-queues";
 			sourceTree = "<group>";
 		};
 		03BBA1FB1A3EBF9100F4B44B /* Concurrency Tester */ = {

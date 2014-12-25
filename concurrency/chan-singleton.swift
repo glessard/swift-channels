@@ -90,14 +90,15 @@ final public class SingletonChan<T>: Chan<T>
   {
     let writer = OSAtomicIncrement64Barrier(&writerCount)
 
-    if writer > 1
-    { // if this is not the first writer, the call is happening too late.
-      return false
+    if writer == 1
+    {
+      element = newElement
+      close() // also increments the 'barrier' semaphore
+      return true
     }
 
-    element = newElement
-    close() // also increments the 'barrier' semaphore
-    return true
+    // if this is not the first writer, too late.
+    return false
   }
 
   /**
