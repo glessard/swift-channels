@@ -17,7 +17,7 @@ public class Queue<T>: SequenceType, GeneratorType
 
   final private var size: Int
 
-  final private var mutex = dispatch_semaphore_create(1)!
+  final private var lock = OS_SPINLOCK_INIT
 
   public init()
   {
@@ -40,6 +40,8 @@ public class Queue<T>: SequenceType, GeneratorType
 
   public func realCount() -> Int
   {
+    // For testing; don't call this under contention.
+
     var i = 0
     var node = head
     while let n = node
@@ -56,27 +58,25 @@ public class Queue<T>: SequenceType, GeneratorType
   {
     let newNode = Node<T>(newElement)
 
-    dispatch_semaphore_wait(mutex, DISPATCH_TIME_FOREVER)
-
+    OSSpinLockLock(&lock)
     if size <= 0
     {
       head = newNode
       tail = newNode
       size = 1
-      dispatch_semaphore_signal(mutex)
+      OSSpinLockUnlock(&lock)
       return
     }
 
     tail.next = newNode
     tail = newNode
     size += 1
-    dispatch_semaphore_signal(mutex)
+    OSSpinLockUnlock(&lock)
   }
 
   public func dequeue() -> T?
   {
-    dispatch_semaphore_wait(mutex, DISPATCH_TIME_FOREVER)
-
+    OSSpinLockLock(&lock)
     if size > 0
     {
       let oldhead = head!
@@ -89,13 +89,12 @@ public class Queue<T>: SequenceType, GeneratorType
       // Logical housekeeping
       if size == 0 { tail = nil }
 
-      dispatch_semaphore_signal(mutex)
-
+      OSSpinLockUnlock(&lock)
       return oldhead.element
     }
 
     // queue is empty
-    dispatch_semaphore_signal(mutex)
+    OSSpinLockUnlock(&lock)
     return nil
   }
 

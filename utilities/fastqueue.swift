@@ -17,7 +17,7 @@ public class FastQueue<T>: SequenceType, GeneratorType
 
   final private var size = 0
 
-  final private var mutex = dispatch_semaphore_create(1)!
+  final private var lock = OS_SPINLOCK_INIT
 
   public init()
   {
@@ -47,7 +47,7 @@ public class FastQueue<T>: SequenceType, GeneratorType
 
   public func realCount() -> Int
   {
-    dispatch_semaphore_wait(mutex, DISPATCH_TIME_FOREVER)
+    // For testing; don't call this under contention.
 
     var i = 0
     var nptr = head
@@ -58,8 +58,6 @@ public class FastQueue<T>: SequenceType, GeneratorType
     }
     assert(i == size, "Queue might have lost data")
 
-    dispatch_semaphore_signal(mutex)
-
     return i
   }
 
@@ -68,39 +66,39 @@ public class FastQueue<T>: SequenceType, GeneratorType
     let node = UnsafeMutablePointer<Node<T>>.alloc(1)
     node.initialize(Node(newElement))
 
-    dispatch_semaphore_wait(mutex, DISPATCH_TIME_FOREVER)
+    OSSpinLockLock(&lock)
 
     if size <= 0
     {
       head = node
       tail = node
       size = 1
-      dispatch_semaphore_signal(mutex)
+      OSSpinLockUnlock(&lock)
       return
     }
 
     tail.memory.next = UnsafeMutablePointer<Void>(node)
     tail = node
     size += 1
-    dispatch_semaphore_signal(mutex)
+    OSSpinLockUnlock(&lock)
   }
 
   public func dequeue() -> T?
   {
-    dispatch_semaphore_wait(mutex, DISPATCH_TIME_FOREVER)
+    OSSpinLockLock(&lock)
 
     if size > 0
     {
       let oldhead = head
 
       // Promote the 2nd item to 1st
-      head = head.memory.next
+      head = UnsafeMutablePointer<Node<T>>(head.memory.next)
       size -= 1
 
       // Logical housekeeping
       if size == 0 { tail = UnsafeMutablePointer.null() }
 
-      dispatch_semaphore_signal(mutex)
+      OSSpinLockUnlock(&lock)
 
       let element = oldhead.memory.element
 
@@ -111,7 +109,7 @@ public class FastQueue<T>: SequenceType, GeneratorType
     }
 
     // queue is empty
-    dispatch_semaphore_signal(mutex)
+    OSSpinLockUnlock(&lock)
     return nil
   }
 
