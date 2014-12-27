@@ -62,13 +62,13 @@ final class QUnbufferedChan<T>: Chan<T>
     closed = true
 
     // Unblock the threads waiting on our conditions.
-    while readerQueue.count > 0
+    if readerQueue.count > 0
     {
-      dispatch_semaphore_signal(readerQueue.dequeue()!)
+      while let rs = readerQueue.dequeue() { dispatch_semaphore_signal(rs) }
     }
-    while writerQueue.count > 0
+    if writerQueue.count > 0
     {
-      dispatch_semaphore_signal(writerQueue.dequeue()!)
+      while let ws = writerQueue.dequeue() { dispatch_semaphore_signal(ws) }
     }
     OSSpinLockUnlock(&mutex)
   }
@@ -83,43 +83,44 @@ final class QUnbufferedChan<T>: Chan<T>
     :param: element the new element to be added to the channel.
   */
 
-  override func put(newElement: T) -> Bool
+  override func put(var newElement: T) -> Bool
   {
     if closed { return false }
 
     OSSpinLockLock(&mutex)
 
-    let pointer = UnsafeMutablePointer<T>.alloc(1)
-    pointer.initialize(newElement)
-
     if let rs = readerQueue.dequeue()
     { // there is already an interested reader
       OSSpinLockUnlock(&mutex)
-      // attach the data to the reader's semaphore
+      // attach a new copy of our data to the reader's semaphore
+      let pointer = UnsafeMutablePointer<T>.alloc(1)
+      pointer.initialize(newElement)
       dispatch_set_context(rs, pointer)
       dispatch_semaphore_signal(rs)
       return true
     }
 
-    // enqueue a new semaphore along with our data
+    if closed
+    {
+      OSSpinLockUnlock(&mutex)
+      return false
+    }
+
     let threadLock = SemaphorePool.dequeue()
-    dispatch_set_context(threadLock, pointer)
+    // attach a pointer to our data on the stack
+    dispatch_set_context(threadLock, &newElement)
     writerQueue.enqueue(threadLock)
     OSSpinLockUnlock(&mutex)
     dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
 
     // got awoken by a reader (or the channel was closed)
-    let context = dispatch_get_context(threadLock)
-    if context == pointer
+    let context = UnsafePointer<T>(dispatch_get_context(threadLock))
+    if context != UnsafePointer.null()
     { // thread was awoken by close(), not a reader
-      pointer.destroy()
-      pointer.dealloc(1)
       dispatch_set_context(threadLock, nil)
       SemaphorePool.enqueue(threadLock)
       return false
     }
-
-    assert(context == UnsafeMutablePointer.null(), "Memory leak at \(__FILE__), \(__LINE__)")
 
     SemaphorePool.enqueue(threadLock)
     return true
@@ -144,16 +145,22 @@ final class QUnbufferedChan<T>: Chan<T>
     { // data is already available
       OSSpinLockUnlock(&mutex)
 
-      let context = UnsafeMutablePointer<T>(dispatch_get_context(ws))
-      if context != UnsafeMutablePointer.null()
-      {
-        let element = context.move()
-        context.dealloc(1)
-        dispatch_set_context(ws, nil)
-        dispatch_semaphore_signal(ws)
-        return element
+      let context = UnsafePointer<T>(dispatch_get_context(ws))
+      if context == UnsafePointer.null()
+      { // not a normal code path.
+        dispatch_semaphore_signal(nil)
+        return nil
       }
+
+      let element = context.memory
+      dispatch_set_context(ws, nil)
       dispatch_semaphore_signal(ws)
+      return element
+    }
+
+    if closed
+    {
+      OSSpinLockUnlock(&mutex)
       return nil
     }
 
@@ -163,17 +170,18 @@ final class QUnbufferedChan<T>: Chan<T>
     OSSpinLockUnlock(&mutex)
     dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
 
-    // got awoken by a writer (or the channel was closed)
+    // got awoken
     let context = UnsafeMutablePointer<T>(dispatch_get_context(threadLock))
-    if context != UnsafeMutablePointer.null()
-    { // thread was awoken by a writer, not close()
-      let element = context.move()
-      context.dealloc(1)
-      dispatch_set_context(threadLock, nil)
+    if context == UnsafeMutablePointer.null()
+    { // thread was awoken by a close(), not a writer
       SemaphorePool.enqueue(threadLock)
-      return element
+      return nil
     }
+
+    let element = context.move()
+    context.dealloc(1)
+    dispatch_set_context(threadLock, nil)
     SemaphorePool.enqueue(threadLock)
-    return nil
+    return element
   }
 }
