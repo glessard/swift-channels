@@ -18,7 +18,10 @@ func main() {
 
 	close(buffered)
 
-	fmt.Println(time.Since(then))
+	fmt.Print(time.Since(then))
+	fmt.Print("\t(")
+	fmt.Print(time.Since(then)/time.Duration(iterations))
+	fmt.Println(" per message)")
 
 
 	buffered = make(chan int, 1)
@@ -34,7 +37,10 @@ func main() {
 
 	for a := range(buffered) { _ = a }
 
-	fmt.Println(time.Since(then))
+	fmt.Print(time.Since(then))
+	fmt.Print("\t(")
+	fmt.Print(time.Since(then)/time.Duration(iterations))
+	fmt.Println(" per message)")
 
 
 	unbuffered := make(chan int)
@@ -50,7 +56,10 @@ func main() {
 
 	for a := range(unbuffered) { _ = a}
 
-	fmt.Println(time.Since(then))
+	fmt.Print(time.Since(then))
+	fmt.Print("\t(")
+	fmt.Print(time.Since(then)/time.Duration(iterations))
+	fmt.Println(" per message)")
 
 
 	bufferedN := make(chan int, buflen)
@@ -67,7 +76,11 @@ func main() {
 		}
 	}
 	close(bufferedN)
-	fmt.Println(time.Since(then))
+
+	fmt.Print(time.Since(then))
+	fmt.Print("\t(")
+	fmt.Print(time.Since(then)/time.Duration(iterations))
+	fmt.Println(" per message)")
 
 
 	bufferedN = make(chan int, buflen)
@@ -82,6 +95,9 @@ func main() {
 
 	for a := range(bufferedN) { _ = a}
 
-	fmt.Println(time.Since(then))
+	fmt.Print(time.Since(then))
+	fmt.Print("\t(")
+	fmt.Print(time.Since(then)/time.Duration(iterations))
+	fmt.Println(" per message)")
 }
 
