@@ -43,6 +43,10 @@ public struct Interval: Printable
       { // over 5 seconds: round to milliseconds, display as seconds
         return (Double(ns/1_000_000)/1e3).description + " s"
       }
+      if abs(ns) > 1_000_000_000
+      { // over 1 second: round to 10s of µs, display as milliseconds
+        return (Double(ns/10_000)/1e2).description + " ms"
+      }
       if abs(ns) > 100_000
       { // round to microseconds, display as milliseconds
         return (Double(ns/1000)/1e3).description + " ms"

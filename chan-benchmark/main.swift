@@ -11,6 +11,7 @@ import Darwin
 let iterations = 120_000
 let buflen = iterations/1000
 
+var dt: Interval
 var tic: Time
 
 
@@ -28,7 +29,8 @@ for i in 0..<iterations
 }
 buffered.tx.close()
 
-syncprint(tic.toc)
+dt = tic.toc
+syncprint("\(dt)\t\t(\(dt/iterations) per message)")
 
 
 buffered = Channel.Wrap(SBufferedChan<Int>())
@@ -45,7 +47,8 @@ async {
 
 while let a = <-buffered.rx { _ = a }
 
-syncprint(tic.toc)
+dt = tic.toc
+syncprint("\(dt)\t\t(\(dt/iterations) per message)")
 
 
 var unbuffered = Channel.Wrap(QUnbufferedChan<Int>())
@@ -62,7 +65,8 @@ async {
 
 while let a = <-unbuffered.rx { _ = a }
 
-syncprint(tic.toc)
+dt = tic.toc
+syncprint("\(dt)\t\t(\(dt/iterations) per message)")
 
 
 var bufferedN = Channel.Wrap(SBufferedChan<Int>(buflen))
@@ -83,7 +87,8 @@ for j in 0..<(iterations/buflen)
 }
 bufferedN.tx.close()
 
-syncprint(tic.toc)
+dt = tic.toc
+syncprint("\(dt)\t\t(\(dt/iterations) per message)")
 
 
 bufferedN = Channel.Wrap(SBufferedChan<Int>(buflen))
@@ -100,7 +105,8 @@ async {
 
 while let a = <-bufferedN.rx { _ = a }
 
-syncprint(tic.toc)
+dt = tic.toc
+syncprint("\(dt)\t\t(\(dt/iterations) per message)")
 
 
 syncprintwait()
