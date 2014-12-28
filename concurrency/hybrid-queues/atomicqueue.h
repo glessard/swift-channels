@@ -25,6 +25,16 @@ OSFifoQueueHead* AtomicQueueInit();
 void AtomicQueueRelease(OSFifoQueueHead* h);
 
 /**
+ Count the number of nodes attached to a queue head.
+ For verification only. This function depends on the deduced workings
+ of the OSAtomicQueue functions. Bound to fail eventually.
+ Certainly not atomic or threadsafe in any way whatsoever.
+ */
+
+long AtomicQueueCountNodes(OSFifoQueueHead* h, size_t offset);
+
+
+/**
  For an ARC-aware queue, use idEnqueue and idDequeue
  */
 

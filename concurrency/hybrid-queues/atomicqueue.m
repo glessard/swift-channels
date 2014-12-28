@@ -32,6 +32,32 @@ void AtomicQueueRelease(OSFifoQueueHead* h)
 }
 
 /**
+ Count the nodes attached to a queue head.
+ For verification only. This function depends on the deduced workings
+ of the OSAtomicQueue functions. Bound to fail eventually.
+ Certainly not atomic or threadsafe in any way whatsoever.
+ */
+
+long AtomicQueueCountNodes(OSFifoQueueHead* h, size_t offset)
+{
+  long count = 0;
+  void* node = h->opaque1;
+  if (node != NULL)
+  {
+    count++;
+
+    void** x = (node+offset);
+    while (*x != NULL)
+    {
+      count++;
+      x = (*x+offset);
+    }
+  }
+  return count;
+}
+
+
+/**
  Simple linked-list node for an ARC-aware queue based on OSAtomicQueue
  */
 
@@ -77,20 +103,7 @@ id idDequeue(OSFifoQueueHead* h)
 
 long idQueueRealCount(OSFifoQueueHead* h)
 {
-  long count = 0;
-
-  if (h->opaque1 != NULL)
-  {
-    struct idNode* n = (struct idNode*) h->opaque1;
-    count++;
-
-    while (n->next != NULL)
-    {
-      n = n->next;
-      count++;
-    }
-  }
-  return count;
+  return AtomicQueueCountNodes(h, offsetof(struct idNode, next));
 }
 
 
@@ -140,18 +153,5 @@ void* ptrDequeue(OSFifoQueueHead* h)
 
 long ptrQueueRealCount(OSFifoQueueHead* h)
 {
-  long count = 0;
-
-  if (h->opaque1 != NULL)
-  {
-    struct ptrNode* n = (struct ptrNode*) h->opaque1;
-    count++;
-
-    while (n->next != NULL)
-    {
-      n = n->next;
-      count++;
-    }
-  }
-  return count;
+  return AtomicQueueCountNodes(h, offsetof(struct ptrNode, next));
 }

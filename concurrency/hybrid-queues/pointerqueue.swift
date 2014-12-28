@@ -1,23 +1,22 @@
 //
 //  pointerqueue.swift
-//  concurrency
+//  QQ
 //
-//  Created by Guillaume Lessard on 2014-12-13.
+//  Created by Guillaume Lessard on 2014-12-27.
 //  Copyright (c) 2014 Guillaume Lessard. All rights reserved.
 //
 
+import Darwin
+
+private let offset = PointerNodeLinkOffset()
+private let length = PointerNodeSize()
+
 final public class PointerQueue<T>: SequenceType, GeneratorType
 {
-  private let head: COpaquePointer
-
+  private let head = AtomicQueueInit()
   private var size: Int32 = 0
 
-  public init()
-  {
-    head = AtomicQueueInit()
-  }
-
-  convenience init(newElement: T)
+  convenience init(_ newElement: T)
   {
     self.init()
     enqueue(newElement)
@@ -28,7 +27,7 @@ final public class PointerQueue<T>: SequenceType, GeneratorType
     // first, empty the queue
     while size > 0
     {
-      _ = dequeue()
+      dequeue()
     }
 
     // then release the queue head structure
@@ -41,14 +40,17 @@ final public class PointerQueue<T>: SequenceType, GeneratorType
 
   public func realCount() -> Int
   {
-    return ptrQueueRealCount(head)
+    return AtomicQueueCountNodes(head, offset)
   }
 
-  public func enqueue(item: T)
+  public func enqueue(newElement: T)
   {
-    let p = UnsafeMutablePointer<T>.alloc(1)
-    p.initialize(item)
-    ptrEnqueue(head, p)
+    let node = UnsafeMutablePointer<PointerNode>(calloc(1, length))
+    let item = UnsafeMutablePointer<T>.alloc(1)
+    item.initialize(newElement)
+    node.memory.item = UnsafeMutablePointer<Void>(item)
+
+    OSAtomicFifoEnqueue(head, node, offset)
     OSAtomicIncrement32Barrier(&size)
   }
 
@@ -56,10 +58,12 @@ final public class PointerQueue<T>: SequenceType, GeneratorType
   {
     if OSAtomicDecrement32Barrier(&size) >= 0
     {
-      let p = UnsafeMutablePointer<T>(ptrDequeue(head))
-      let item = p.move()
-      p.dealloc(1)
-      return item
+      let node = UnsafeMutablePointer<PointerNode>(OSAtomicFifoDequeue(head, offset))
+      let item = UnsafeMutablePointer<T>(node.memory.item)
+      let element = item.move()
+      item.dealloc(1)
+      free(node)
+      return element
     }
     else
     { // We decremented once too many; increment once to correct.
