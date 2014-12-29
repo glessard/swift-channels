@@ -8,14 +8,8 @@
 
 final public class AnythingQueue<T>: SequenceType, GeneratorType
 {
-  private let head: COpaquePointer
-
+  private let head = AtomicQueueInit()
   private var size: Int32 = 0
-
-  init()
-  {
-    head = AtomicQueueInit()
-  }
 
   convenience init(newElement: T)
   {
@@ -28,7 +22,7 @@ final public class AnythingQueue<T>: SequenceType, GeneratorType
     // first, empty the queue
     while size > 0
     {
-      _ = dequeue()
+      dequeue()
     }
 
     // then release the queue head structure
