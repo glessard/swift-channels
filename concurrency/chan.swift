@@ -125,4 +125,9 @@ public class Chan<T>: ChannelType
   {
     return Make(capacity)
   }
+
+  class func Make(_: T.Type, _ capacity: Int = 0) -> Chan<T>
+  {
+    return Make(capacity)
+  }
 }

@@ -51,6 +51,11 @@ public class Channel<T>
     return Make(capacity)
   }
 
+  public class func Make(_: T.Type, _ capacity: Int = 0) -> (tx: Sender<T>, rx: Receiver<T>)
+  {
+    return Make(capacity)
+  }
+
   /**
     Factory function to obtain a single-message channel, wrapped by a Sender<T>/Receiver<T> pair.
 
