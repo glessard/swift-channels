@@ -122,7 +122,7 @@ public struct Receiver<T>: ReceiverType, GeneratorType, SequenceType
 
 public prefix func <-<T>(r: Receiver<T>) -> T?
 {
-  return r.receive()
+  return r.wrapped.get()
 }
 
 /**

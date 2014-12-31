@@ -102,7 +102,7 @@ public struct Sender<T>: SenderType
 
 public func <-<T>(s: Sender<T>, element: T)
 {
-  s.send(element)
+  s.wrapped.put(element)
 }
 
 /**
