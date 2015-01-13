@@ -10,7 +10,7 @@ import Dispatch
 
 struct SemaphorePool
 {
-  static let poolq = RefFastOSQueue<dispatch_semaphore_t>()
+  static let poolq = SemaphoreOSQueue()
 
   static func enqueue(s: dispatch_semaphore_t)
   {

@@ -16,8 +16,8 @@ final class QUnbufferedChan<T>: Chan<T>
 {
   // housekeeping variables
 
-  private let readerQueue = RefFastOSQueue<dispatch_semaphore_t>()
-  private let writerQueue = RefFastOSQueue<dispatch_semaphore_t>()
+  private let readerQueue = SemaphoreOSQueue()
+  private let writerQueue = SemaphoreOSQueue()
 
   private var mutex = OS_SPINLOCK_INIT
 

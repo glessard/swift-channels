@@ -9,8 +9,10 @@
 
 /*
   Initialize an OSFifoQueueHead struct, even though we don't
-  have the definition of it. See libkern/OSAtomic.h
+  have its definition from Swift. See libkern/OSAtomic.h
 */
+
+#if os(OSX)
 
 typealias QueueHead = COpaquePointer
 
@@ -20,6 +22,7 @@ func AtomicQueueInit() -> QueueHead
   // is aligned on 16-byte boundaries on x64, translating to 32 bytes.
   // As a workaround, we assign a chunk of 4 integers.
 
+  // From libkern/OSAtomic.h:
   //  typedef	volatile struct {
   //    void	*opaque1;
   //    void	*opaque2;
@@ -40,16 +43,18 @@ func AtomicQueueRelease(h: QueueHead)
   UnsafeMutablePointer<Int>(h).dealloc(4)
 }
 
+#endif
 
 /*
   Initialize an OSQueueHead struct, even though we don't
-  have the definition of it. See libkern/OSAtomic.h
+  have its definition from Swift. See libkern/OSAtomic.h
 */
 
 typealias StackHead = COpaquePointer
 
 func AtomicStackInit() -> StackHead
 {
+  // From libkern/OSAtomic.h:
   //  typedef volatile struct {
   //    void	*opaque1;
   //    long	 opaque2;
