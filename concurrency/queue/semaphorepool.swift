@@ -6,11 +6,11 @@
 //  Copyright (c) 2014 Guillaume Lessard. All rights reserved.
 //
 
-import Darwin
+import Dispatch
 
 struct SemaphorePool
 {
-  static let poolq = ObjectQueue<dispatch_semaphore_t>()
+  static let poolq = RefFastOSQueue<dispatch_semaphore_t>()
 
   static func enqueue(s: dispatch_semaphore_t)
   {

@@ -9,6 +9,8 @@
 import Darwin
 import XCTest
 
+import Channels
+
 class PUnbufferedChannelTests: ChannelsTests
 {
   override var id: String { return "pthreads Unbuffered" }

@@ -6,7 +6,7 @@
 //  Copyright (c) 2014 Guillaume Lessard. All rights reserved.
 //
 
-import Darwin
+import Dispatch
 
 /**
   A channel that uses a queue to store its elements.
@@ -27,8 +27,8 @@ final class QBufferedChan<T>: Chan<T>
   private var headptr: UnsafeMutablePointer<T>
   private var tailptr: UnsafeMutablePointer<T>
 
-  private let readerQueue = ObjectQueue<dispatch_semaphore_t>()
-  private let writerQueue = ObjectQueue<dispatch_semaphore_t>()
+  private let readerQueue = RefFastOSQueue<dispatch_semaphore_t>()
+  private let writerQueue = RefFastOSQueue<dispatch_semaphore_t>()
 
   private var mutex = OS_SPINLOCK_INIT
 
@@ -132,7 +132,7 @@ final class QBufferedChan<T>: Chan<T>
     :param: queue the queue to which the signal should be appended
   */
 
-  private func wait(inout #mutex: OSSpinLock, queue: ObjectQueue<dispatch_semaphore_t>)
+  private func wait(inout #mutex: OSSpinLock, queue: RefFastOSQueue<dispatch_semaphore_t>)
   {
     let threadLock = SemaphorePool.dequeue()
     queue.enqueue(threadLock)

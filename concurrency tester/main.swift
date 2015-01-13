@@ -27,7 +27,7 @@ func worker(inputChannel: Receiver<Int>, outputChannel: Sender<(Int,Int,Int)>)
   while let v = <-inputChannel
   {
     messageCount += 1
-    Time.Wait(10) //+arc4random_uniform(25))
+    Time.Wait(ms: 10) //+arc4random_uniform(25))
     // a "complex" calculation
     let s = reduce(0...v, 0, +)
     outputChannel <- (messageCount, v, s)
@@ -37,18 +37,18 @@ func worker(inputChannel: Receiver<Int>, outputChannel: Sender<(Int,Int,Int)>)
   outputChannel.close()
 }
 
-var workChan = gcdChannel<Int>.Make(1)
+var workChan = Channel<Int>.Make(1)
 var outChan  = Channel.Make(type: (0,0,0), 0)
 
 for w in 1...5
 {
-  async { Time.Wait(w*10); worker(workChan.rx, outChan.tx) }
+  async { Time.Wait(ms: w*10); worker(workChan.rx, outChan.tx) }
 }
 
 let workElements = 10;
 for a in 0..<workElements
 {
-  async { Time.Wait(100+100*a); workChan.tx <- a }
+  async { Time.Wait(ms: 100+100*a); workChan.tx <- a }
 }
 // Uncomment the following to close the channel prematurely
 //async { Time.Wait(workElements*70); syncprint("closing work channel"); workChan.tx.close() }
@@ -66,6 +66,6 @@ for (i,(c,v,s)) in enumerate(outChan.rx)
 
 let errors = outputArray.filter { $0 == nil }
 
-Time.Wait(10)
+Time.Wait(ms: 100)
 syncprint("Dropped \(errors.count) elements")
 syncprintwait()

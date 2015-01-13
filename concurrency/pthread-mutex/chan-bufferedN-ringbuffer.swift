@@ -14,7 +14,7 @@ import Darwin
 
 final class BufferedAChan<T>: pthreadChan<T>
 {
-  private final var buffer: UnsafeMutablePointer<T>
+  private final let buffer: UnsafeMutablePointer<T>
 
   private final let capacity: Int
   private final let mask: Int
@@ -23,9 +23,6 @@ final class BufferedAChan<T>: pthreadChan<T>
 
   private final var head = 0
   private final var tail = 0
-
-  private final var headptr: UnsafeMutablePointer<T>
-  private final var tailptr: UnsafeMutablePointer<T>
 
   // Initialization and destruction
 
@@ -44,8 +41,6 @@ final class BufferedAChan<T>: pthreadChan<T>
 
     mask = v // buffer size -1
     buffer = UnsafeMutablePointer.alloc(mask+1)
-    headptr = buffer
-    tailptr = buffer
 
     super.init()
   }
@@ -59,11 +54,8 @@ final class BufferedAChan<T>: pthreadChan<T>
   {
     for i in head..<tail
     {
-      if (i&mask == 0) { headptr = buffer }
-      headptr.destroy()
-      headptr = headptr.successor()
+      buffer.advancedBy(i&mask).destroy()
     }
-
     buffer.dealloc(mask+1)
   }
 
@@ -103,10 +95,8 @@ final class BufferedAChan<T>: pthreadChan<T>
     var success = false
     if !closed
     {
-      tailptr.initialize(newElement)
-      tailptr = tailptr.successor()
+      buffer.advancedBy(tail&mask).initialize(newElement)
       tail += 1
-      if (tail&mask == 0) { tailptr = buffer }
       success = true
     }
 
@@ -152,10 +142,8 @@ final class BufferedAChan<T>: pthreadChan<T>
       return nil
     }
 
-    let element = headptr.move()
-    headptr = headptr.successor()
+    let element = buffer.advancedBy(head&mask).move()
     head += 1
-    if (head&mask == 0) { headptr = buffer }
 
     if self.closed && blockedReaders > 0
     { // No reason to block

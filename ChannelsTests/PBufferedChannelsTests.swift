@@ -11,6 +11,8 @@
 import Darwin
 import XCTest
 
+import Channels
+
 class PBuffered1ChannelTests: PUnbufferedChannelTests
 {
   override var id: String { return "pthreads Buffered(1)" }

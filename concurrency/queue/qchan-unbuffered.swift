@@ -6,7 +6,7 @@
 //  Copyright (c) 2014 Guillaume Lessard. All rights reserved.
 //
 
-import Darwin
+import Dispatch
 
 /**
   A channel that uses a 1-element buffer.
@@ -16,8 +16,8 @@ final class QUnbufferedChan<T>: Chan<T>
 {
   // housekeeping variables
 
-  private let readerQueue = ObjectQueue<dispatch_semaphore_t>()
-  private let writerQueue = ObjectQueue<dispatch_semaphore_t>()
+  private let readerQueue = RefFastOSQueue<dispatch_semaphore_t>()
+  private let writerQueue = RefFastOSQueue<dispatch_semaphore_t>()
 
   private var mutex = OS_SPINLOCK_INIT
 

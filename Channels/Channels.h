@@ -2,8 +2,8 @@
 //  Channels.h
 //  Channels
 //
-//  Created by Guillaume Lessard on 2014-09-07.
-//  Copyright (c) 2014 Guillaume Lessard. All rights reserved.
+//  Created by Guillaume Lessard on 2015-01-12.
+//  Copyright (c) 2015 Guillaume Lessard. All rights reserved.
 //
 
 #import <Cocoa/Cocoa.h>

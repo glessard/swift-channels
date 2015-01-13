@@ -6,7 +6,7 @@
 //  Copyright (c) 2014 Guillaume Lessard. All rights reserved.
 //
 
-import Darwin
+import Dispatch
 
 /**
   A one-element channel which will only ever transmit one message:

@@ -26,9 +26,9 @@ class pthreadChan<T>: Chan<T>
 
   // pthreads variables
 
-  final var channelMutex:   UnsafeMutablePointer<pthread_mutex_t>
-  final var readCondition:  UnsafeMutablePointer<pthread_cond_t>
-  final var writeCondition: UnsafeMutablePointer<pthread_cond_t>
+  final let channelMutex:   UnsafeMutablePointer<pthread_mutex_t>
+  final let readCondition:  UnsafeMutablePointer<pthread_cond_t>
+  final let writeCondition: UnsafeMutablePointer<pthread_cond_t>
 
   // Initialization and destruction
 

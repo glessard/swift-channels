@@ -10,6 +10,8 @@ import Darwin
 import Foundation
 import XCTest
 
+import Channels
+
 class ChannelsTests: XCTestCase
 {
   var id: String { return "" }

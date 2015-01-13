@@ -13,7 +13,7 @@
 extension Sender
 {
   /**
-    Return a new Sender<T> to act as the sending enpoint for a Chan<T>.
+    Return a new Sender<T> to act as the sending endpoint for a Chan<T>.
 
     :param: c A Chan<T> object
     :return:  A Sender<T> object that will send elements to the Chan<T>

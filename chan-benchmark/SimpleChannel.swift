@@ -7,6 +7,7 @@
 //
 
 import Darwin
+import Dispatch
 
 /**
   The simplest single-element buffered channel that can
@@ -21,7 +22,7 @@ public class SimpleChannel: ChannelType
   private let filled = dispatch_semaphore_create(0)!
   private let empty =  dispatch_semaphore_create(1)!
 
-  private var mutex = OS_SPINLOCK_INIT
+  private var lock = OS_SPINLOCK_INIT
 
   private var closed = false
 
@@ -33,9 +34,9 @@ public class SimpleChannel: ChannelType
   {
     if closed { return }
 
-    OSSpinLockLock(&mutex)
+    OSSpinLockLock(&lock)
     closed = true
-    OSSpinLockUnlock(&mutex)
+    OSSpinLockUnlock(&lock)
 
     dispatch_semaphore_signal(empty)
     dispatch_semaphore_signal(filled)
@@ -46,11 +47,11 @@ public class SimpleChannel: ChannelType
     if closed { return false }
 
     dispatch_semaphore_wait(empty, DISPATCH_TIME_FOREVER)
-    OSSpinLockLock(&mutex)
+    OSSpinLockLock(&lock)
 
     if closed
     {
-      OSSpinLockUnlock(&mutex)
+      OSSpinLockUnlock(&lock)
       dispatch_semaphore_signal(empty)
       return false
     }
@@ -58,7 +59,7 @@ public class SimpleChannel: ChannelType
     element = newElement
     elementCount++
 
-    OSSpinLockUnlock(&mutex)
+    OSSpinLockUnlock(&lock)
     dispatch_semaphore_signal(filled)
 
     return true
@@ -69,11 +70,11 @@ public class SimpleChannel: ChannelType
     if closed && elementCount <= 0 { return nil }
 
     dispatch_semaphore_wait(filled, DISPATCH_TIME_FOREVER)
-    OSSpinLockLock(&mutex)
+    OSSpinLockLock(&lock)
 
     if closed && elementCount <= 0
     {
-      OSSpinLockUnlock(&mutex)
+      OSSpinLockUnlock(&lock)
       dispatch_semaphore_signal(filled)
       return nil
     }
@@ -81,7 +82,7 @@ public class SimpleChannel: ChannelType
     let e = element
     elementCount--
 
-    OSSpinLockUnlock(&mutex)
+    OSSpinLockUnlock(&lock)
     dispatch_semaphore_signal(empty)
 
     return e

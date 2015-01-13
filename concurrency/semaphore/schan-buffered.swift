@@ -6,7 +6,7 @@
 //  Copyright (c) 2014 Guillaume Lessard. All rights reserved.
 //
 
-import Darwin
+import Dispatch
 
 /**
   This solution adapted from:
@@ -16,7 +16,7 @@ import Darwin
 
 final class SBufferedChan<T>: Chan<T>
 {
-  private var buffer: UnsafeMutablePointer<T>
+  private let buffer: UnsafeMutablePointer<T>
 
   // housekeeping variables
 
@@ -28,13 +28,10 @@ final class SBufferedChan<T>: Chan<T>
   private var head = 0
   private var tail = 0
 
-  private var headptr: UnsafeMutablePointer<T>
-  private var tailptr: UnsafeMutablePointer<T>
-
   private let filled: dispatch_semaphore_t
   private let empty:  dispatch_semaphore_t
 
-  private var mutex = OS_SPINLOCK_INIT
+  private var lock = OS_SPINLOCK_INIT
 
   private var closed = false
 
@@ -60,8 +57,6 @@ final class SBufferedChan<T>: Chan<T>
 
     mask = v // buffer size -1
     buffer = UnsafeMutablePointer.alloc(mask+1)
-    headptr = buffer
-    tailptr = buffer
   }
 
   convenience override init()
@@ -73,11 +68,8 @@ final class SBufferedChan<T>: Chan<T>
   {
     for i in head..<tail
     {
-      if (i&mask == 0) { headptr = buffer }
-      headptr.destroy()
-      headptr = headptr.successor()
+      buffer.advancedBy(i&mask).destroy()
     }
-
     buffer.dealloc(mask+1)
   }
 
@@ -113,9 +105,9 @@ final class SBufferedChan<T>: Chan<T>
   {
     if closed { return }
 
-    OSSpinLockLock(&mutex)
+    OSSpinLockLock(&lock)
     closed = true
-    OSSpinLockUnlock(&mutex)
+    OSSpinLockUnlock(&lock)
 
     dispatch_semaphore_signal(filled)
     dispatch_semaphore_signal(empty)
@@ -135,24 +127,19 @@ final class SBufferedChan<T>: Chan<T>
     if closed { return false }
 
     dispatch_semaphore_wait(empty, DISPATCH_TIME_FOREVER)
-    OSSpinLockLock(&mutex)
+    OSSpinLockLock(&lock)
 
     if closed
     {
-      OSSpinLockUnlock(&mutex)
+      OSSpinLockUnlock(&lock)
       dispatch_semaphore_signal(empty)
       return false
     }
 
-    tailptr.initialize(newElement)
+    buffer.advancedBy(tail&mask).initialize(newElement)
     tail += 1
-    switch tail&mask
-    {
-    case 0:  tailptr = buffer
-    default: tailptr = tailptr.successor()
-    }
 
-    OSSpinLockUnlock(&mutex)
+    OSSpinLockUnlock(&lock)
     dispatch_semaphore_signal(filled)
 
     return true
@@ -172,24 +159,19 @@ final class SBufferedChan<T>: Chan<T>
     if closed && head >= tail { return nil }
 
     dispatch_semaphore_wait(filled, DISPATCH_TIME_FOREVER)
-    OSSpinLockLock(&mutex)
+    OSSpinLockLock(&lock)
 
     if closed && head >= tail
     {
-      OSSpinLockUnlock(&mutex)
+      OSSpinLockUnlock(&lock)
       dispatch_semaphore_signal(filled)
       return nil
     }
 
-    let element = headptr.move()
+    let element = buffer.advancedBy(head&mask).move()
     head += 1
-    switch head&mask
-    {
-    case 0:  headptr = buffer
-    default: headptr = headptr.successor()
-    }
 
-    OSSpinLockUnlock(&mutex)
+    OSSpinLockUnlock(&lock)
     dispatch_semaphore_signal(empty)
 
     return element

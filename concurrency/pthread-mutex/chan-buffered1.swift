@@ -14,7 +14,7 @@ import Darwin
 
 final class Buffered1Chan<T>: pthreadChan<T>
 {
-  private var e = UnsafeMutablePointer<T>.alloc(1)
+  private let e = UnsafeMutablePointer<T>.alloc(1)
 
   // housekeeping variables
 

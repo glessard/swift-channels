@@ -9,6 +9,8 @@
 import Darwin
 import XCTest
 
+import Channels
+
 class SingletonChannelTests: ChannelsTests
 {
   override var id: String { return "Singleton" }

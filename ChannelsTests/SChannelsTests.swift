@@ -11,6 +11,8 @@
 import Darwin
 import XCTest
 
+import Channels
+
 class SBufferedChannelTests: PQBufferedNChannelTests
 {
   override var id: String  { return "Semaphore Buffered(N)" }
