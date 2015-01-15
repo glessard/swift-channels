@@ -13,6 +13,8 @@ import Channels
 
 class UnbufferedChannelTests: ChannelsTests
 {
+  override var buflen: Int { return 0 }
+
   /**
     Fulfill the asynchronous 'expectation' after its reference has transited through the channel.
   */

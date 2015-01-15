@@ -16,13 +16,13 @@ class ChannelsTests: XCTestCase
 {
   var id: String { return "" }
 
-  var performanceTestIterations: Int { return 12_000 }
+  var performanceTestIterations: Int { return 60_000 }
 
   var buflen: Int { return 1 }
 
   func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
   {
-    return Channel<T>.Make(1)
+    return Channel.Make(buflen)
   }
 
   /**

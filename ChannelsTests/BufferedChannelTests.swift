@@ -13,6 +13,8 @@ import Channels
 
 class Buffered1ChannelTests: UnbufferedChannelTests
 {
+  override var buflen: Int { return 1 }
+
   /**
     Performance test when avoiding thread contention, while keeping the channel at never more than 1 item full.
   */
@@ -59,7 +61,7 @@ class BufferedNChannelTests: Buffered1ChannelTests
     ChannelPerformanceLoopNoContention()
   }
 
-  func testPerformanceSingleElementContention()
+  func testPerformanceSingleElementWithContention()
   {
     singleElementCase = true
     ChannelPerformanceWithContention()

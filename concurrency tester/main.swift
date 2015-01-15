@@ -38,7 +38,7 @@ func worker(inputChannel: Receiver<Int>, outputChannel: Sender<(Int,Int,Int)>)
 }
 
 var workChan = Channel<Int>.Make(1)
-var outChan  = Channel.Make(type: (0,0,0), 0)
+var outChan  = Channel.Make(typeOf: (0,0,0), 0)
 
 for w in 1...5
 {

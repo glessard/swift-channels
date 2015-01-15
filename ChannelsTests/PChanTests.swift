@@ -13,10 +13,9 @@ import XCTest
 
 import Channels
 
-class PBuffered1ChannelTests: BufferedChannelTests
+class PBuffered1ChannelTests: Buffered1ChannelTests
 {
   override var id: String { return "pthreads Buffered(1)" }
-  override var buflen: Int { return 1 }
 
   override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
   {
@@ -30,7 +29,7 @@ class PBufferedQChannelTests: BufferedNChannelTests
 
   override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
   {
-    return Channel.Wrap(BufferedQChan<T>(buflen))
+    return Channel.Wrap(PChan.Make(buflen, queue: true))
   }
 }
 
@@ -40,17 +39,16 @@ class PBufferedAChannelTests: BufferedNChannelTests
 
   override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
   {
-    return Channel.Wrap(BufferedAChan<T>(buflen))
+    return Channel.Wrap(PChan.Make(buflen))
   }
 }
 
 class PUnbufferedChannelTests: UnbufferedChannelTests
 {
   override var id: String { return "pthreads Unbuffered" }
-  override var buflen: Int { return 0 }
 
   override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
   {
-    return Channel.Wrap(UnbufferedChan<T>())
+    return Channel.Wrap(PChan.Make(buflen))
   }
 }
