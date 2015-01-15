@@ -1,44 +1,37 @@
 swift-channels
 ==============
 
-This library contains concurrency constructs for use in Swift, tested on
-Mac OS X.
+This library contains concurrency constructs for use in Swift.
 
 The concurrency model this attempts to achieve is similar to that of
 Go, wherein concurrent threads are encouraged to synchronize and share
-data chiefly through type-constrained channels. This is also somewhat
-similar to the concurrency model of Labview, in that the execution of
-major nodes in the program can be organized around the flow of data
-through channels.
+data chiefly through type-constrained channels.
 
 The main part of this is a channel (`Chan<T>`) class that models
 sending and receiving (strongly typed) messages on a bounded
-queue. Channel creation returns a tuple of objects that model
-the endpoints of the channel (as in Rust).
+queue. By default, Channel creation returns a tuple of objects that act
+as the endpoints of the channel: `Sender<T>` and `Receiver<T>`.
 
 Sending on the channel is achieved with an infix `<-` operator on the
-Sender object; this operation will block whenever the channel is
+`Sender` object; this operation will block whenever the channel is
 full. Receiving from the channel is achieved with an unary prefix `<-`
-operator on the Receiver object; this operation will block whenever
+operator on the `Receiver` object; this operation will block whenever
 the channel is empty.
 
 A channel can be closed by invoking the `close()` method on either the
 Sender or the Receiver, though closing via the Sender should be more
-useful. Further sends on a closed channel have no effect, while
-receive operations continue normally until the channel is
-drained. Receiving from a closed, empty channel returns nil.
+useful. Receive operations on a closed channel continue normally until
+the channel is drained. Receiving from a closed, empty channel returns nil.
 
 Channels can be used in buffered and unbuffered form. In an unbuffered
 channel a receive operation will block until a sender is ready (and
 vice-versa). A buffered channel can store a certain number of
 elements, after which the next send operation will block.
 
-Thread blocking is implemented with pthreads mutex locks and condition
-variables, while threads are spawned with Grand Central Dispatch
-(GCD). Thread blocking can be successfully implemented with GCD, but
-it is slower. A GCD-based channel implementation can be found in the
-file `concurrency/chan-blocks.swift`. It is a drop-in replacement for
-`chan-pthreads.swift`
+Thread blocking and thread spawning is implemented with libdispatch
+(aka GCD); a pthreads-based implementation of thread blocking exists as
+subclasses of `PChan`. The pthreads implementations are not quite as
+fast as the libdispatch semaphore versions.
 
 Along with a channels implementation, this library includes an `async`
 pseudo-keyword, a simple shortcut to launch a closure asynchronously
@@ -46,7 +39,11 @@ in the background with GCD. The only requirement for a closure
 launched via `async` is that it have no parameters. A return value
 will be ignored if it exists.
 
-Example:
+Missing from this is a powerful construct such as the Select keyword
+from Go, which would be quite useful when dealing with multiple
+channels at once.
+
+#### Example:
 ```
 import Darwin
 
@@ -74,9 +71,15 @@ operation. The `while` loop will then exit when the channel becomes
 closed. Receiving from a channel that is both empty and closed returns
 nil, thereby signaling that the channel has become closed.
 
-Missing from this is a powerful construct such as the Select keyword
-from Go, which is quite useful when dealing with multiple channels at
-once. There is an initial implementation that is both unstable and
-slow, on the `channel-select` branch.
+#### Performance
+
+On OS X, the message transmission with no thread contention takes
+about twice as long as it would in Go, e.g. 320 vs. 160 nanoseconds
+on a 2008 Mac Pro. It is possible to narrow the gap, but that would
+require compromises that will probably be eliminated by future compiler
+improvements. With thread contention, this library is *much* slower than
+Go channels, due to the time it takes to swap threads. Message transmission
+through unbuffered channels takes just a bit longer than two thread swaps,
+which is about right.
 
 I welcome questions and suggestions.
