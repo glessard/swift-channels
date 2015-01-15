@@ -26,7 +26,7 @@ class ChannelsTests: XCTestCase
   }
 
   /**
-    Sequential send, then receive on the same thread.
+    Sequentially send, then receive on the same thread.
   */
 
   func ChannelTestSendReceive()
@@ -41,7 +41,7 @@ class ChannelsTests: XCTestCase
   }
 
   /**
-    Sequential sends and receives on the same thread.
+    Sequential sends and receives on the same thread; fill then empty the channel.
   */
 
   func ChannelTestSendReceiveN()

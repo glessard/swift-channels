@@ -9,14 +9,14 @@
 import Darwin
 
 /**
-  The basis for our real channels
+  The basis for our real mutex-based channels
 
   This solution adapted from:
   Oracle Multithreaded Programming Guide, "The Producer/Consumer Problem"
   http://docs.oracle.com/cd/E19455-01/806-5257/sync-31/index.html
 */
 
-class pthreadChan<T>: Chan<T>
+public class PChan<T>: Chan<T>
 {
   // Instance variables
 
@@ -64,7 +64,7 @@ class pthreadChan<T>: Chan<T>
     Determine whether the channel has been closed
   */
 
-  final override var isClosed: Bool { return closed }
+  final override public var isClosed: Bool { return closed }
 
   /**
     Close the channel
@@ -76,7 +76,7 @@ class pthreadChan<T>: Chan<T>
     been closed. The actual reaction shall be implementation-dependent.
   */
 
-  override func close()
+  override public func close()
   {
     if closed { return }
 
@@ -89,6 +89,27 @@ class pthreadChan<T>: Chan<T>
       pthread_cond_signal(writeCondition)
       pthread_cond_signal(readCondition)
       pthread_mutex_unlock(channelMutex)
+    }
+  }
+
+
+  /**
+    Factory method to make pthreads channels.
+  */
+
+  public class func Make(capacity: Int, queue: Bool = false) -> Chan<T>
+  {
+    switch capacity
+    {
+    case let c where c<1:
+      return PUnbufferedChan<T>()
+
+    case 1:
+      return PBuffered1Chan<T>()
+
+    default:
+      if queue { return PBufferedQChan(capacity) }
+      return PBufferedAChan<T>(capacity)
     }
   }
 }

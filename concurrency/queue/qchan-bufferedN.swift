@@ -24,8 +24,13 @@ final class QBufferedChan<T>: Chan<T>
   private var head = 0
   private var tail = 0
 
+  #if os(iOS)
+  private let readerQueue = SemaphoreQueue()
+  private let writerQueue = SemaphoreQueue()
+  #else
   private let readerQueue = SemaphoreOSQueue()
   private let writerQueue = SemaphoreOSQueue()
+  #endif
 
   private var lock = OS_SPINLOCK_INIT
 
@@ -103,15 +108,27 @@ final class QBufferedChan<T>: Chan<T>
     closed = true
 
     // Unblock the threads waiting on our conditions.
-    while readerQueue.count > 0
+    if readerQueue.isEmpty == false
     {
-      dispatch_semaphore_signal(readerQueue.dequeue()!)
+      OSSpinLockUnlock(&lock)
+      while let rs = readerQueue.dequeue()
+      {
+        dispatch_semaphore_signal(rs)
+      }
+      OSSpinLockLock(&lock)
     }
-    while writerQueue.count > 0
+    if writerQueue.isEmpty == false
     {
-      dispatch_semaphore_signal(writerQueue.dequeue()!)
+      OSSpinLockUnlock(&lock)
+      while let ws = writerQueue.dequeue()
+      {
+        dispatch_semaphore_signal(ws)
+      }
     }
-    OSSpinLockUnlock(&lock)
+    else
+    {
+      OSSpinLockUnlock(&lock)
+    }
   }
 
   /**

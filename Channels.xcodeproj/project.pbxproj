@@ -7,8 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		03B5DCC01A64A6C300F4B44B /* QChannelsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B5DCBB1A64A6C300F4B44B /* QChannelsTests.swift */; };
-		03B5DCC11A64A6C300F4B44B /* SChannelsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B5DCBC1A64A6C300F4B44B /* SChannelsTests.swift */; };
+		03B5DCC11A64A6C300F4B44B /* SChanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B5DCBC1A64A6C300F4B44B /* SChanTests.swift */; };
 		03B5DCC21A64A6C300F4B44B /* SingletonChannelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B5DCBD1A64A6C300F4B44B /* SingletonChannelTests.swift */; };
 		03B5DCC31A64A6C300F4B44B /* UnbufferedChannelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B5DCBE1A64A6C300F4B44B /* UnbufferedChannelTests.swift */; };
 		03B5DCCB1A64A9CE00F4B44B /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B5DCCA1A64A9CE00F4B44B /* main.swift */; };
@@ -63,6 +62,19 @@
 		03B5DD0F1A65C33900F4B44B /* semaphorequeue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B5DD0D1A65C33900F4B44B /* semaphorequeue.swift */; };
 		03B5DD101A65C33900F4B44B /* semaphorequeue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B5DD0D1A65C33900F4B44B /* semaphorequeue.swift */; };
 		03B5DD111A65C3CE00F4B44B /* fastqueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E8627E1A649EC400F4B44B /* fastqueue.swift */; };
+		03B5DD131A66F24300F4B44B /* BufferedChannelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B5DD121A66F24300F4B44B /* BufferedChannelTests.swift */; };
+		03B5DD161A67148400F4B44B /* qchan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B5DD141A67145F00F4B44B /* qchan.swift */; };
+		03B5DD171A67148900F4B44B /* qchan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B5DD141A67145F00F4B44B /* qchan.swift */; };
+		03B5DD181A67148A00F4B44B /* qchan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B5DD141A67145F00F4B44B /* qchan.swift */; };
+		03B5DD201A67170300F4B44B /* schan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B5DD1E1A6716F600F4B44B /* schan.swift */; };
+		03B5DD211A67170400F4B44B /* schan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B5DD1E1A6716F600F4B44B /* schan.swift */; };
+		03B5DD221A67170400F4B44B /* schan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B5DD1E1A6716F600F4B44B /* schan.swift */; };
+		03C51D391A6719AA00F4B44B /* chan-pthreads.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E862661A649E8700F4B44B /* chan-pthreads.swift */; };
+		03C51D3A1A6719AA00F4B44B /* chan-buffered1.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E862631A649E8700F4B44B /* chan-buffered1.swift */; };
+		03C51D3B1A6719AA00F4B44B /* chan-bufferedN-queue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E862641A649E8700F4B44B /* chan-bufferedN-queue.swift */; };
+		03C51D3C1A6719AA00F4B44B /* chan-bufferedN-ringbuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E862651A649E8700F4B44B /* chan-bufferedN-ringbuffer.swift */; };
+		03C51D3D1A6719AA00F4B44B /* chan-unbuffered.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E862671A649E8700F4B44B /* chan-unbuffered.swift */; };
+		03C51D3E1A6719C900F4B44B /* QChanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B5DCBB1A64A6C300F4B44B /* QChanTests.swift */; };
 		03E862481A649DF900F4B44B /* ChannelsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E862471A649DF900F4B44B /* ChannelsTests.swift */; };
 		03E8625A1A649E7A00F4B44B /* async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E862521A649E7A00F4B44B /* async.swift */; };
 		03E8625B1A649E7A00F4B44B /* chan-operators.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E862531A649E7A00F4B44B /* chan-operators.swift */; };
@@ -124,9 +136,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		03B5DCBA1A64A6C300F4B44B /* PBufferedChannelsTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PBufferedChannelsTests.swift; sourceTree = "<group>"; };
-		03B5DCBB1A64A6C300F4B44B /* QChannelsTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = QChannelsTests.swift; sourceTree = "<group>"; };
-		03B5DCBC1A64A6C300F4B44B /* SChannelsTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SChannelsTests.swift; sourceTree = "<group>"; };
+		03B5DCBA1A64A6C300F4B44B /* PChanTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PChanTests.swift; sourceTree = "<group>"; };
+		03B5DCBB1A64A6C300F4B44B /* QChanTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = QChanTests.swift; sourceTree = "<group>"; };
+		03B5DCBC1A64A6C300F4B44B /* SChanTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SChanTests.swift; sourceTree = "<group>"; };
 		03B5DCBD1A64A6C300F4B44B /* SingletonChannelTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SingletonChannelTests.swift; sourceTree = "<group>"; };
 		03B5DCBE1A64A6C300F4B44B /* UnbufferedChannelTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UnbufferedChannelTests.swift; sourceTree = "<group>"; };
 		03B5DCC81A64A9CE00F4B44B /* chan-benchmark */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "chan-benchmark"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -136,6 +148,9 @@
 		03B5DCF21A65BC0E00F4B44B /* SimpleChannel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SimpleChannel.swift; sourceTree = "<group>"; };
 		03B5DD091A65C0CD00F4B44B /* semaphoreosqueue.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = semaphoreosqueue.swift; sourceTree = "<group>"; };
 		03B5DD0D1A65C33900F4B44B /* semaphorequeue.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = semaphorequeue.swift; sourceTree = "<group>"; };
+		03B5DD121A66F24300F4B44B /* BufferedChannelTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BufferedChannelTests.swift; sourceTree = "<group>"; };
+		03B5DD141A67145F00F4B44B /* qchan.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = qchan.swift; sourceTree = "<group>"; };
+		03B5DD1E1A6716F600F4B44B /* schan.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = schan.swift; sourceTree = "<group>"; };
 		03E862351A649DF900F4B44B /* Channels.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Channels.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		03E862391A649DF900F4B44B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		03E8623A1A649DF900F4B44B /* Channels.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Channels.h; sourceTree = "<group>"; };
@@ -267,11 +282,12 @@
 			isa = PBXGroup;
 			children = (
 				03E862471A649DF900F4B44B /* ChannelsTests.swift */,
-				03B5DCBA1A64A6C300F4B44B /* PBufferedChannelsTests.swift */,
-				03B5DCBB1A64A6C300F4B44B /* QChannelsTests.swift */,
-				03B5DCBC1A64A6C300F4B44B /* SChannelsTests.swift */,
-				03B5DCBD1A64A6C300F4B44B /* SingletonChannelTests.swift */,
 				03B5DCBE1A64A6C300F4B44B /* UnbufferedChannelTests.swift */,
+				03B5DD121A66F24300F4B44B /* BufferedChannelTests.swift */,
+				03B5DCBD1A64A6C300F4B44B /* SingletonChannelTests.swift */,
+				03B5DCBA1A64A6C300F4B44B /* PChanTests.swift */,
+				03B5DCBB1A64A6C300F4B44B /* QChanTests.swift */,
+				03B5DCBC1A64A6C300F4B44B /* SChanTests.swift */,
 				03E862451A649DF900F4B44B /* Supporting Files */,
 			);
 			path = ChannelsTests;
@@ -319,6 +335,7 @@
 		03E8626D1A649E9200F4B44B /* queue */ = {
 			isa = PBXGroup;
 			children = (
+				03B5DD141A67145F00F4B44B /* qchan.swift */,
 				03E8626E1A649E9200F4B44B /* qchan-bufferedN.swift */,
 				03E8626F1A649E9200F4B44B /* qchan-unbuffered.swift */,
 				03E862701A649E9200F4B44B /* semaphorepool.swift */,
@@ -330,6 +347,7 @@
 		03E862741A649EA400F4B44B /* semaphore */ = {
 			isa = PBXGroup;
 			children = (
+				03B5DD1E1A6716F600F4B44B /* schan.swift */,
 				03E862751A649EA400F4B44B /* schan-buffered.swift */,
 			);
 			name = semaphore;
@@ -355,12 +373,12 @@
 				03E862801A649EC400F4B44B /* queuetype.swift */,
 				03E8627F1A649EC400F4B44B /* linknodes.swift */,
 				03E8627C1A649EC400F4B44B /* atomicqueue.swift */,
-				03E8627D1A649EC400F4B44B /* fastosqueue.swift */,
 				03E8627E1A649EC400F4B44B /* fastqueue.swift */,
-				03E862811A649EC400F4B44B /* reffastosqueue.swift */,
+				03E8627D1A649EC400F4B44B /* fastosqueue.swift */,
 				03E862821A649EC400F4B44B /* reffastqueue.swift */,
-				03B5DD091A65C0CD00F4B44B /* semaphoreosqueue.swift */,
+				03E862811A649EC400F4B44B /* reffastosqueue.swift */,
 				03B5DD0D1A65C33900F4B44B /* semaphorequeue.swift */,
+				03B5DD091A65C0CD00F4B44B /* semaphoreosqueue.swift */,
 			);
 			path = queues;
 			sourceTree = "<group>";
@@ -518,6 +536,7 @@
 				03B5DCD91A64A9FB00F4B44B /* chan-bufferedN-ringbuffer.swift in Sources */,
 				03B5DCD71A64A9FB00F4B44B /* chan-buffered1.swift in Sources */,
 				03B5DCF31A65BC0E00F4B44B /* SimpleChannel.swift in Sources */,
+				03B5DD211A67170400F4B44B /* schan.swift in Sources */,
 				03B5DCD31A64A9FB00F4B44B /* chan-sender.swift in Sources */,
 				03B5DCE61A64AA2200F4B44B /* atomicqueue.swift in Sources */,
 				03B5DCD51A64A9FB00F4B44B /* channel.swift in Sources */,
@@ -539,6 +558,7 @@
 				03B5DCD41A64A9FB00F4B44B /* chan.swift in Sources */,
 				03B5DCD11A64A9FB00F4B44B /* chan-protocols.swift in Sources */,
 				03B5DCD21A64A9FB00F4B44B /* chan-receiver.swift in Sources */,
+				03B5DD171A67148900F4B44B /* qchan.swift in Sources */,
 				03B5DCDD1A64A9FB00F4B44B /* qchan-unbuffered.swift in Sources */,
 				03B5DD0F1A65C33900F4B44B /* semaphorequeue.swift in Sources */,
 			);
@@ -550,7 +570,12 @@
 			files = (
 				03B5DCFF1A65BD1D00F4B44B /* schan-buffered.swift in Sources */,
 				03B5DD041A65BD2900F4B44B /* fastosqueue.swift in Sources */,
+				03C51D3C1A6719AA00F4B44B /* chan-bufferedN-ringbuffer.swift in Sources */,
+				03C51D3A1A6719AA00F4B44B /* chan-buffered1.swift in Sources */,
+				03B5DD221A67170400F4B44B /* schan.swift in Sources */,
+				03C51D3D1A6719AA00F4B44B /* chan-unbuffered.swift in Sources */,
 				03B5DD021A65BD2900F4B44B /* linknodes.swift in Sources */,
+				03B5DD181A67148A00F4B44B /* qchan.swift in Sources */,
 				03B5DCF81A65BD1700F4B44B /* chan-sender.swift in Sources */,
 				03B5DCFD1A65BD1D00F4B44B /* qchan-unbuffered.swift in Sources */,
 				03B5DCFC1A65BD1D00F4B44B /* qchan-bufferedN.swift in Sources */,
@@ -563,10 +588,12 @@
 				03B5DCF51A65BD1700F4B44B /* chan-operators.swift in Sources */,
 				03B5DD051A65BD2900F4B44B /* fastqueue.swift in Sources */,
 				03B5DCF41A65BD1700F4B44B /* async.swift in Sources */,
+				03C51D3B1A6719AA00F4B44B /* chan-bufferedN-queue.swift in Sources */,
 				03B5DCEE1A65BBE500F4B44B /* main.swift in Sources */,
 				03B5DD101A65C33900F4B44B /* semaphorequeue.swift in Sources */,
 				03B5DD001A65BD2200F4B44B /* logging.swift in Sources */,
 				03B5DCFE1A65BD1D00F4B44B /* semaphorepool.swift in Sources */,
+				03C51D391A6719AA00F4B44B /* chan-pthreads.swift in Sources */,
 				03B5DCF91A65BD1700F4B44B /* chan.swift in Sources */,
 				03B5DCF61A65BD1700F4B44B /* chan-protocols.swift in Sources */,
 				03B5DCF71A65BD1700F4B44B /* chan-receiver.swift in Sources */,
@@ -582,6 +609,7 @@
 				03E8628C1A649EC400F4B44B /* queuetype.swift in Sources */,
 				03E862861A649EC400F4B44B /* future.swift in Sources */,
 				03E8625A1A649E7A00F4B44B /* async.swift in Sources */,
+				03B5DD201A67170300F4B44B /* schan.swift in Sources */,
 				03E8628F1A649EC400F4B44B /* shuffle.swift in Sources */,
 				03E8628A1A649EC400F4B44B /* fastqueue.swift in Sources */,
 				03E862611A649E7A00F4B44B /* channel.swift in Sources */,
@@ -603,6 +631,7 @@
 				03E8626B1A649E8700F4B44B /* chan-pthreads.swift in Sources */,
 				03E862731A649E9200F4B44B /* semaphorepool.swift in Sources */,
 				03E8626A1A649E8700F4B44B /* chan-bufferedN-ringbuffer.swift in Sources */,
+				03B5DD161A67148400F4B44B /* qchan.swift in Sources */,
 				03E8625E1A649E7A00F4B44B /* chan-sender.swift in Sources */,
 				03E8625F1A649E7A00F4B44B /* chan-singleton.swift in Sources */,
 			);
@@ -614,9 +643,10 @@
 			files = (
 				03B5DCC21A64A6C300F4B44B /* SingletonChannelTests.swift in Sources */,
 				03E862481A649DF900F4B44B /* ChannelsTests.swift in Sources */,
-				03B5DCC11A64A6C300F4B44B /* SChannelsTests.swift in Sources */,
+				03B5DD131A66F24300F4B44B /* BufferedChannelTests.swift in Sources */,
+				03B5DCC11A64A6C300F4B44B /* SChanTests.swift in Sources */,
 				03B5DCC31A64A6C300F4B44B /* UnbufferedChannelTests.swift in Sources */,
-				03B5DCC01A64A6C300F4B44B /* QChannelsTests.swift in Sources */,
+				03C51D3E1A6719C900F4B44B /* QChanTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -835,6 +865,7 @@
 				03B5DCCE1A64A9CE00F4B44B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		03B5DCEF1A65BBE500F4B44B /* Build configuration list for PBXNativeTarget "concurrency tester" */ = {
 			isa = XCConfigurationList;
@@ -843,6 +874,7 @@
 				03B5DCF11A65BBE500F4B44B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		03E8622F1A649DF900F4B44B /* Build configuration list for PBXProject "Channels" */ = {
 			isa = XCConfigurationList;

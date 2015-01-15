@@ -9,7 +9,7 @@
 import Dispatch
 
 /**
-  A channel that uses a 1-element buffer.
+  An unbuffered channel.
 */
 
 final class QUnbufferedChan<T>: Chan<T>
@@ -19,7 +19,7 @@ final class QUnbufferedChan<T>: Chan<T>
   private let readerQueue = SemaphoreOSQueue()
   private let writerQueue = SemaphoreOSQueue()
 
-  private var mutex = OS_SPINLOCK_INIT
+  private var lock = OS_SPINLOCK_INIT
 
   private var closed = false
 
@@ -58,27 +58,33 @@ final class QUnbufferedChan<T>: Chan<T>
   {
     if closed { return }
 
-    OSSpinLockLock(&mutex)
+    OSSpinLockLock(&lock)
     closed = true
 
     // Unblock the threads waiting on our conditions.
-    if readerQueue.count > 0
+    if readerQueue.isEmpty == false
     {
+      OSSpinLockUnlock(&lock)
       while let rs = readerQueue.dequeue()
       {
         dispatch_set_context(rs, nil)
         dispatch_semaphore_signal(rs)
       }
+      OSSpinLockLock(&lock)
     }
-    if writerQueue.count > 0
+    if writerQueue.isEmpty == false
     {
+      OSSpinLockUnlock(&lock)
       while let ws = writerQueue.dequeue()
       {
         dispatch_set_context(ws, nil)
         dispatch_semaphore_signal(ws)
       }
     }
-    OSSpinLockUnlock(&mutex)
+    else
+    {
+      OSSpinLockUnlock(&lock)
+    }
   }
 
 
@@ -95,11 +101,11 @@ final class QUnbufferedChan<T>: Chan<T>
   {
     if closed { return false }
 
-    OSSpinLockLock(&mutex)
+    OSSpinLockLock(&lock)
 
     if let rs = readerQueue.dequeue()
     { // there is already an interested reader
-      OSSpinLockUnlock(&mutex)
+      OSSpinLockUnlock(&lock)
 
       // attach a new copy of our data to the reader's semaphore
       let pointer = UnsafeMutablePointer<T>(dispatch_get_context(rs))
@@ -116,7 +122,7 @@ final class QUnbufferedChan<T>: Chan<T>
 
     if closed
     {
-      OSSpinLockUnlock(&mutex)
+      OSSpinLockUnlock(&lock)
       return false
     }
 
@@ -125,7 +131,7 @@ final class QUnbufferedChan<T>: Chan<T>
     // attach a pointer to our data on the stack
     dispatch_set_context(threadLock, &newElement)
     writerQueue.enqueue(threadLock)
-    OSSpinLockUnlock(&mutex)
+    OSSpinLockUnlock(&lock)
     dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
 
     // got awoken
@@ -156,11 +162,11 @@ final class QUnbufferedChan<T>: Chan<T>
   {
     if closed { return nil }
 
-    OSSpinLockLock(&mutex)
+    OSSpinLockLock(&lock)
 
     if let ws = writerQueue.dequeue()
     { // data is already available
-      OSSpinLockUnlock(&mutex)
+      OSSpinLockUnlock(&lock)
 
       let context = UnsafePointer<T>(dispatch_get_context(ws))
       if context == UnsafePointer.null()
@@ -176,7 +182,7 @@ final class QUnbufferedChan<T>: Chan<T>
 
     if closed
     {
-      OSSpinLockUnlock(&mutex)
+      OSSpinLockUnlock(&lock)
       return nil
     }
 
@@ -185,7 +191,7 @@ final class QUnbufferedChan<T>: Chan<T>
     let buffer = UnsafeMutablePointer<T>.alloc(1)
     dispatch_set_context(threadLock, buffer)
     readerQueue.enqueue(threadLock)
-    OSSpinLockUnlock(&mutex)
+    OSSpinLockUnlock(&lock)
     dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
 
     // got awoken

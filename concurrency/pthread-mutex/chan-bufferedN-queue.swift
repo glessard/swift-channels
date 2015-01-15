@@ -12,9 +12,13 @@ import Darwin
   A channel that uses a N-element queue as a backing store.
 */
 
-final class BufferedQChan<T>: pthreadChan<T>
+final class PBufferedQChan<T>: PChan<T>
 {
+  #if os(iOS)
+  private let q = FastQueue<T>()
+  #else
   private let q = FastOSQueue<T>()
+  #endif
 
   // housekeeping variables
 

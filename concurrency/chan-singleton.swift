@@ -15,13 +15,17 @@ import Dispatch
 
 final public class SingletonChan<T>: Chan<T>
 {
-  public class func Make() -> (tx: Sender<T>, rx: Receiver<T>)
+  override public class func Make() -> Chan<T>
   {
-    let channel = SingletonChan()
-    return (Sender.Wrap(channel), Receiver.Wrap(channel))
+    return SingletonChan()
   }
 
-  public class func Make(#type: T) -> (tx: Sender<T>, rx: Receiver<T>)
+  public class func Make(#typeOf: T) -> Chan<T>
+  {
+    return Make()
+  }
+
+  public class func Make(_: T.Type) -> Chan<T>
   {
     return Make()
   }

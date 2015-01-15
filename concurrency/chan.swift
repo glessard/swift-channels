@@ -121,7 +121,7 @@ public class Chan<T>: ChannelType
     :return: a newly-created, empty Chan<T>
   */
 
-  class func Make(#type: T, _ capacity: Int = 0) -> Chan<T>
+  class func Make(#typeOf: T, _ capacity: Int = 0) -> Chan<T>
   {
     return Make(capacity)
   }

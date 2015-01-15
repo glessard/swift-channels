@@ -11,22 +11,25 @@
 import Darwin
 import XCTest
 
-class QUnbufferedChannelTests: PUnbufferedChannelTests
+import Channels
+
+class QUnbufferedChannelTests: UnbufferedChannelTests
 {
   override var id: String  { return "Queue Unbuffered" }
+  override var buflen: Int { return 0 }
 
   override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
   {
-    return Channel.Wrap(QUnbufferedChan<T>())
+    return Channel.Wrap(QChan.Make(0))
   }
 }
 
-class QBufferedNChannelTests: PQBufferedNChannelTests
+class QBufferedNChannelTests: BufferedNChannelTests
 {
   override var id: String  { return "Queue Buffered(N)" }
 
   override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
   {
-    return Channel.Wrap(QBufferedChan<T>(buflen))
+    return Channel.Wrap(QChan.Make(buflen))
   }
 }

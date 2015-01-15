@@ -46,7 +46,7 @@ public class Channel<T>
     :return: a newly-created, empty Sender<T>/Receiver<T> pair.
   */
 
-  public class func Make(#type: T, _ capacity: Int = 0) -> (tx: Sender<T>, rx: Receiver<T>)
+  public class func Make(#typeOf: T, _ capacity: Int = 0) -> (tx: Sender<T>, rx: Receiver<T>)
   {
     return Make(capacity)
   }
@@ -75,7 +75,12 @@ public class Channel<T>
     :return: a newly-created, empty Sender<T>/Receiver<T> pair.
   */
 
-  public class func MakeSingleton(#type: T) -> (tx: Sender<T>, rx: Receiver<T>)
+  public class func MakeSingleton(#typeOf: T) -> (tx: Sender<T>, rx: Receiver<T>)
+  {
+    return MakeSingleton()
+  }
+
+  public class func MakeSingleton(_: T.Type) -> (tx: Sender<T>, rx: Receiver<T>)
   {
     return MakeSingleton()
   }
@@ -88,7 +93,7 @@ public class Channel<T>
     :return: a new Sender<T>/Receiver<T> pair.
   */
 
-  class func Wrap(c: Chan<T>) -> (tx: Sender<T>, rx: Receiver<T>)
+  public class func Wrap(c: Chan<T>) -> (tx: Sender<T>, rx: Receiver<T>)
   {
     return (Sender.Wrap(c), Receiver.Wrap(c))
   }

@@ -11,16 +11,8 @@ import XCTest
 
 import Channels
 
-class PUnbufferedChannelTests: ChannelsTests
+class UnbufferedChannelTests: ChannelsTests
 {
-  override var id: String { return "pthreads Unbuffered" }
-  override var buflen: Int { return 0 }
-
-  override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
-  {
-    return Channel.Wrap(UnbufferedChan<T>())
-  }
-
   /**
     Fulfill the asynchronous 'expectation' after its reference has transited through the channel.
   */

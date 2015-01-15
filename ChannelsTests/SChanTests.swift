@@ -13,12 +13,12 @@ import XCTest
 
 import Channels
 
-class SBufferedChannelTests: PQBufferedNChannelTests
+class SBufferedChannelTests: BufferedNChannelTests
 {
   override var id: String  { return "Semaphore Buffered(N)" }
 
   override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
   {
-    return Channel.Wrap(SBufferedChan<T>(buflen))
+    return Channel.Wrap(SChan.Make(buflen))
   }
 }
