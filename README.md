@@ -76,7 +76,7 @@ nil, thereby signaling that the channel has become closed.
 On OS X, the message transmission with no thread contention takes
 about twice as long as it would in Go, e.g. 320 vs. 160 nanoseconds
 on a 2008 Mac Pro. It is possible to narrow the gap, but that would
-require compromises that will probably be eliminated by future compiler
+require compromises that are likely to be obviated by future compiler
 improvements. With thread contention, this library is *much* slower than
 Go channels, due to the time it takes to swap threads. Message transmission
 through unbuffered channels takes just a bit longer than two thread swaps,
