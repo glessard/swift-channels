@@ -41,6 +41,8 @@ final public class SingletonChan<T>: Chan<T>
 
   private var closed = false
 
+  public override init() { }
+
   // Computed property accessors
 
   final public override var isEmpty: Bool

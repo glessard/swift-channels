@@ -18,7 +18,7 @@ class SingletonChannelTests: ChannelsTests
 
   override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
   {
-    return Channel<T>.MakeSingleton()
+    return Channel.Wrap(SingletonChan<T>()) // Channel<T>.MakeSingleton()
   }
 
   /**
