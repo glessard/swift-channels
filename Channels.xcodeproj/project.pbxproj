@@ -101,6 +101,9 @@
 		03AD47A71A6836B800F4B44B /* fastosqueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD473B1A67441A00F4B44B /* fastosqueue.swift */; };
 		03AD47A81A6836B800F4B44B /* semaphorequeue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47421A67441A00F4B44B /* semaphorequeue.swift */; };
 		03AD47A91A6836B800F4B44B /* semaphoreosqueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47411A67441A00F4B44B /* semaphoreosqueue.swift */; };
+		03AD47AB1A688ADF00F4B44B /* future.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47AA1A688ADF00F4B44B /* future.swift */; };
+		03AD47AE1A688BE900F4B44B /* defer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47AC1A688BE900F4B44B /* defer.swift */; };
+		03AD47AF1A688BE900F4B44B /* shuffle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47AD1A688BE900F4B44B /* shuffle.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -182,6 +185,9 @@
 		03AD477A1A6834FE00F4B44B /* logging.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = logging.swift; path = utilities/logging.swift; sourceTree = "<group>"; };
 		03AD47871A68366A00F4B44B /* concurrency tester */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "concurrency tester"; sourceTree = BUILT_PRODUCTS_DIR; };
 		03AD47891A68366A00F4B44B /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		03AD47AA1A688ADF00F4B44B /* future.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = future.swift; sourceTree = "<group>"; };
+		03AD47AC1A688BE900F4B44B /* defer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = defer.swift; path = ../utilities/defer.swift; sourceTree = "<group>"; };
+		03AD47AD1A688BE900F4B44B /* shuffle.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = shuffle.swift; path = ../utilities/shuffle.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -295,6 +301,8 @@
 				03AD470F1A6743E500F4B44B /* pthread-mutex */,
 				03AD47151A6743E500F4B44B /* queue */,
 				03AD471B1A6743E500F4B44B /* semaphore */,
+				03AD47AA1A688ADF00F4B44B /* future.swift */,
+				03AD47B01A688BFF00F4B44B /* utilities */,
 			);
 			path = concurrency;
 			sourceTree = "<group>";
@@ -336,7 +344,6 @@
 			children = (
 				03AD477A1A6834FE00F4B44B /* logging.swift */,
 				03AD47781A6834F500F4B44B /* timing.swift */,
-				03AD47391A67441A00F4B44B /* queues */,
 			);
 			name = utilities;
 			sourceTree = "<group>";
@@ -355,7 +362,7 @@
 				03AD47411A67441A00F4B44B /* semaphoreosqueue.swift */,
 			);
 			name = queues;
-			path = utilities/queues;
+			path = ../utilities/queues;
 			sourceTree = "<group>";
 		};
 		03AD475D1A68346300F4B44B /* chan-benchmark */ = {
@@ -373,6 +380,16 @@
 				03AD47891A68366A00F4B44B /* main.swift */,
 			);
 			path = "concurrency tester";
+			sourceTree = "<group>";
+		};
+		03AD47B01A688BFF00F4B44B /* utilities */ = {
+			isa = PBXGroup;
+			children = (
+				03AD47AC1A688BE900F4B44B /* defer.swift */,
+				03AD47AD1A688BE900F4B44B /* shuffle.swift */,
+				03AD47391A67441A00F4B44B /* queues */,
+			);
+			name = utilities;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -534,6 +551,8 @@
 				03AD474B1A67441A00F4B44B /* semaphorequeue.swift in Sources */,
 				03AD47331A6743E500F4B44B /* qchan.swift in Sources */,
 				03AD47341A6743E500F4B44B /* semaphorepool.swift in Sources */,
+				03AD47AB1A688ADF00F4B44B /* future.swift in Sources */,
+				03AD47AF1A688BE900F4B44B /* shuffle.swift in Sources */,
 				03AD472C1A6743E500F4B44B /* pchan-buffered1.swift in Sources */,
 				03AD471F1A6743E500F4B44B /* chan-operators.swift in Sources */,
 				03AD47321A6743E500F4B44B /* qchan-unbuffered.swift in Sources */,
@@ -543,6 +562,7 @@
 				03AD47461A67441A00F4B44B /* linknodes.swift in Sources */,
 				03AD47241A6743E500F4B44B /* chan.swift in Sources */,
 				03AD47221A6743E500F4B44B /* chan-sender.swift in Sources */,
+				03AD47AE1A688BE900F4B44B /* defer.swift in Sources */,
 				03AD472E1A6743E500F4B44B /* pchan-bufferedN-buffer.swift in Sources */,
 				03AD47231A6743E500F4B44B /* chan-singleton.swift in Sources */,
 				03AD472D1A6743E500F4B44B /* pchan-bufferedN-queue.swift in Sources */,
@@ -876,6 +896,7 @@
 				03AD47621A68346300F4B44B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		03AD478B1A68366A00F4B44B /* Build configuration list for PBXNativeTarget "concurrency tester" */ = {
 			isa = XCConfigurationList;
@@ -884,6 +905,7 @@
 				03AD478D1A68366A00F4B44B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
