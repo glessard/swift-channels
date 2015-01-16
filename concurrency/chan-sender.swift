@@ -7,7 +7,7 @@
 //
 
 /**
-  Sender<T> is the sending endpoint for a ChannelType.
+  Sender<T> is the sending endpoint for a Channel, Chan<T>.
 */
 
 extension Sender
@@ -33,9 +33,9 @@ extension Sender
 
   static func Wrap<C: ChannelType where C.Element == T>(c: C) -> Sender<T>
   {
-    if let c = c as? Chan<T>
+    if let chan = c as? Chan<T>
     {
-      return Sender(c)
+      return Sender(chan)
     }
 
     return Sender(ChannelTypeAsChan(c))
@@ -44,25 +44,27 @@ extension Sender
   /**
     Return a new Sender<T> to stand in for SenderType c.
 
-    If c is a (subclass of) Sender, c will be returned directly.
-
-    If c is any other kind of SenderType, c will be wrapped in a WrappedSender.
+    If c is a Sender, c will be returned directly.
+    If c is any other kind of SenderType, it will be wrapped in a type-hidden way.
 
     :param: c A SenderType implementor to be wrapped by a Sender object.
-
     :return:  A Sender object that will pass along the elements to c.
   */
 
   public static func Wrap<C: SenderType where C.SentElement == T>(c: C) -> Sender<T>
   {
-    if let c = c as? Sender<T>
+    if let s = c as? Sender<T>
     {
-      return c
+      return s
     }
 
     return Sender(SenderTypeAsChan(c))
   }
 }
+
+/**
+  Sender<T> is the sending endpoint for a Channel, Chan<T>.
+*/
 
 public struct Sender<T>: SenderType
 {
@@ -94,10 +96,10 @@ public struct Sender<T>: SenderType
 
   Using this operator is equivalent to '_ = Sender<T>.send(T)'
 
-  The SenderType 's' were passed as inout, this would be slgihtly faster (~15ns)
+  If the Sender 's' were passed as inout, this would be slgihtly faster (~15ns)
 
-  :param: s a SenderType
-  :param: element the new element to be added to the channel.
+  :param: s a Sender<T>
+  :param: element the new T to be added to the channel.
 */
 
 public func <-<T>(s: Sender<T>, element: T)
@@ -106,8 +108,7 @@ public func <-<T>(s: Sender<T>, element: T)
 }
 
 /**
-  ChannelTypeAsChan<T> disguises any ChannelType as a Chan<T>,
-  for use by Sender<T>
+  ChannelTypeAsChan<T> disguises any ChannelType as a Chan<T>, for use by Sender<T>
 */
 
 private class ChannelTypeAsChan<T, C: ChannelType where C.Element == T>: Chan<T>
@@ -127,8 +128,7 @@ private class ChannelTypeAsChan<T, C: ChannelType where C.Element == T>: Chan<T>
 }
 
 /**
-  SenderTypeAsChan<T,C> disguises any SenderType as a Chan<T>,
-  for use by Sender<T>
+  SenderTypeAsChan<T,C> disguises any SenderType as a Chan<T>, for use by Sender<T>
 */
 
 private class SenderTypeAsChan<T, C: SenderType where C.SentElement == T>: Chan<T>

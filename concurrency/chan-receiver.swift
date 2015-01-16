@@ -33,9 +33,9 @@ extension Receiver
 
   static func Wrap<C: ChannelType where C.Element == T>(c: C) -> Receiver<T>
   {
-    if let c = c as? Chan<T>
+    if let chan = c as? Chan<T>
     {
-      return Receiver(c)
+      return Receiver(chan)
     }
 
     return Receiver(ChannelTypeAsChan(c))
@@ -55,14 +55,18 @@ extension Receiver
 
   public static func Wrap<C: ReceiverType where C.ReceivedElement == T>(c: C) -> Receiver<T>
   {
-    if let c = c as? Receiver<T>
+    if let r = c as? Receiver<T>
     {
-      return c
+      return r
     }
 
     return Receiver(ReceiverTypeAsChan(c))
   }
 }
+
+/**
+  Receiver<T> is the receiving endpoint for a ChannelType.
+*/
 
 public struct Receiver<T>: ReceiverType, GeneratorType, SequenceType
 {
