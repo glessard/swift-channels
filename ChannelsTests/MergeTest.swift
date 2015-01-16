@@ -15,7 +15,7 @@ import Channels
 class MergeTests: XCTestCase
 {
   let outerloopcount = 100
-  let innerloopcount = 1000
+  let innerloopcount = 500
 
   func testPerformanceMergeReceiver()
   {
@@ -34,12 +34,38 @@ class MergeTests: XCTestCase
       let c = merge(chans)
 
       var total = 0
-      for (i,_) in enumerate(c)
+      for _ in c
       {
-        total = i
+        total += 1
       }
-      
-      XCTAssert(total == self.outerloopcount*self.innerloopcount-1, "Incorrect merge in \(__FUNCTION__)")
+
+      XCTAssert(total == self.outerloopcount*self.innerloopcount, "Incorrect merge in \(__FUNCTION__)")
+    }
+  }
+
+  func testPerformanceMergeChan()
+  {
+    self.measureBlock() {
+      var chans = [Chan<Int>]()
+      for i in 0..<self.outerloopcount
+      {
+        let c = Chan<Int>.Make(self.innerloopcount)
+        async {
+          for j in 1...self.innerloopcount { c.put(j) }
+          c.close()
+        }
+        chans.append(c)
+      }
+
+      let c = merge(chans)
+
+      var total = 0
+      for _ in c
+      {
+        total += 1
+      }
+
+      XCTAssert(total == self.outerloopcount*self.innerloopcount, "Incorrect merge in \(__FUNCTION__)")
     }
   }
 }
