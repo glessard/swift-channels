@@ -8,6 +8,48 @@
 
 import Darwin
 
+public class PChan<T>
+{
+  /**
+  Factory method to obtain pthreads channels of the desired channel capacity.
+  If capacity is 0, then an unbuffered channel will be created.
+
+  :param: capacity the buffer capacity of the channel.
+  :param: queue    whether a buffered channel should use a queue-based implementation
+
+  :return: a newly-created, empty Chan<T>
+  */
+
+  public class func Make(capacity: Int, useQueue: Bool) -> Chan<T>
+  {
+    switch capacity
+    {
+    case let c where c<1:
+      return PUnbufferedChan()
+
+    default:
+      if useQueue      { return PBufferedQChan(capacity) }
+      if capacity == 1 { return PBuffered1Chan() }
+      return PBufferedAChan(capacity)
+    }
+  }
+
+  /**
+  Factory method to obtain pthreads channels of the desired channel capacity.
+  If capacity is 0, then an unbuffered channel will be created.
+  Buffered channels will use a buffer-based implementation
+
+  :param: capacity the buffer capacity of the channel.
+
+  :return: a newly-created, empty Chan<T>
+  */
+
+  public class func Make(capacity: Int) -> Chan<T>
+  {
+    return Make(capacity, useQueue: false)
+  }
+}
+
 /**
   The basis for our real mutex-based channels
 
@@ -16,7 +58,7 @@ import Darwin
   http://docs.oracle.com/cd/E19455-01/806-5257/sync-31/index.html
 */
 
-public class PChan<T>: Chan<T>
+class pthreadsChan<T>: Chan<T>
 {
   // Instance variables
 
@@ -64,7 +106,7 @@ public class PChan<T>: Chan<T>
     Determine whether the channel has been closed
   */
 
-  final override public var isClosed: Bool { return closed }
+  final override var isClosed: Bool { return closed }
 
   /**
     Close the channel
@@ -76,7 +118,7 @@ public class PChan<T>: Chan<T>
     been closed. The actual reaction shall be implementation-dependent.
   */
 
-  override public func close()
+  override func close()
   {
     if closed { return }
 
@@ -90,31 +132,5 @@ public class PChan<T>: Chan<T>
       pthread_cond_signal(readCondition)
       pthread_mutex_unlock(channelMutex)
     }
-  }
-
-
-  /**
-    Factory method to make pthreads channels.
-  */
-
-  public class func Make(capacity: Int, queue: Bool) -> Chan<T>
-  {
-    switch capacity
-    {
-    case let c where c<1:
-      return PUnbufferedChan<T>()
-
-    case 1:
-      return PBuffered1Chan<T>()
-
-    default:
-      if queue { return PBufferedQChan(capacity) }
-      return PBufferedAChan<T>(capacity)
-    }
-  }
-
-  override public class func Make(capacity: Int) -> Chan<T>
-  {
-    return Make(capacity, queue: false)
   }
 }

@@ -12,7 +12,7 @@ import Darwin
   A channel that uses an array as a backing store.
 */
 
-final class PBufferedAChan<T>: PChan<T>
+final class PBufferedAChan<T>: pthreadsChan<T>
 {
   private final let buffer: UnsafeMutablePointer<T>
 

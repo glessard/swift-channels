@@ -14,7 +14,7 @@ import Darwin
   Conversely, receive operations block until a sender is ready.
 */
 
-final class PUnbufferedChan<T>: PChan<T>
+final class PUnbufferedChan<T>: pthreadsChan<T>
 {
   private var e = UnsafeMutablePointer<T>.alloc(1)
 

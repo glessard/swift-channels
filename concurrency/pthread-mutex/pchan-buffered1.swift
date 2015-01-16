@@ -12,7 +12,7 @@ import Darwin
   A channel that uses a 1-element buffer.
 */
 
-final class PBuffered1Chan<T>: PChan<T>
+final class PBuffered1Chan<T>: pthreadsChan<T>
 {
   private let e = UnsafeMutablePointer<T>.alloc(1)
 
