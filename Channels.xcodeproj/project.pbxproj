@@ -295,13 +295,13 @@
 		03AD46FF1A6743E500F4B44B /* concurrency */ = {
 			isa = PBXGroup;
 			children = (
+				03AD47071A6743E500F4B44B /* channel.swift */,
+				03AD47061A6743E500F4B44B /* chan.swift */,
 				03AD47011A6743E500F4B44B /* chan-operators.swift */,
 				03AD47021A6743E500F4B44B /* chan-protocols.swift */,
 				03AD47031A6743E500F4B44B /* chan-receiver.swift */,
 				03AD47041A6743E500F4B44B /* chan-sender.swift */,
 				03AD47051A6743E500F4B44B /* chan-singleton.swift */,
-				03AD47061A6743E500F4B44B /* chan.swift */,
-				03AD47071A6743E500F4B44B /* channel.swift */,
 				03AD470F1A6743E500F4B44B /* pthread-mutex */,
 				03AD47151A6743E500F4B44B /* queue */,
 				03AD471B1A6743E500F4B44B /* semaphore */,
