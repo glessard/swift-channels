@@ -34,8 +34,8 @@ final public class SingletonChan<T>: Chan<T>
 
   // housekeeping variables
 
-  private var writerCount: Int64 = 0
-  private var readerCount: Int64 = 0
+  private var writerCount: Int32 = 0
+  private var readerCount: Int32 = 0
 
   private var barrier = dispatch_semaphore_create(0)!
 
@@ -92,7 +92,7 @@ final public class SingletonChan<T>: Chan<T>
 
   public override func put(newElement: T) -> Bool
   {
-    let writer = OSAtomicIncrement64Barrier(&writerCount)
+    let writer = OSAtomicIncrement32Barrier(&writerCount)
 
     if writer == 1
     {
@@ -121,7 +121,7 @@ final public class SingletonChan<T>: Chan<T>
       dispatch_semaphore_wait(barrier, DISPATCH_TIME_FOREVER)
     }
 
-    let reader = OSAtomicIncrement64Barrier(&readerCount)
+    let reader = OSAtomicIncrement32Barrier(&readerCount)
 
     if reader == 1
     {
