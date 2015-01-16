@@ -1,5 +1,5 @@
 //
-//  qchan-bufferedN.swift
+//  qchan-buffered.swift
 //  concurrency
 //
 //  Created by Guillaume Lessard on 2014-11-19.

@@ -1,5 +1,5 @@
 //
-//  schan-bufferedN.swift
+//  schan-buffered.swift
 //  concurrency
 //
 //  Created by Guillaume Lessard on 2014-11-19.

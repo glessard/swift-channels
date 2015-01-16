@@ -1,6 +1,6 @@
 //
 //  semaphorepool.swift
-//  Channels
+//  concurrency
 //
 //  Created by Guillaume Lessard on 2014-12-16.
 //  Copyright (c) 2014 Guillaume Lessard. All rights reserved.

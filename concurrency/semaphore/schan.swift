@@ -1,6 +1,6 @@
 //
 //  schan.swift
-//  Channels
+//  concurrency
 //
 //  Created by Guillaume Lessard on 2015-01-14.
 //  Copyright (c) 2015 Guillaume Lessard. All rights reserved.
