@@ -6,7 +6,7 @@
 //  Copyright (c) 2014 Guillaume Lessard. All rights reserved.
 //
 
-public protocol QueueType
+protocol QueueType
 {
   typealias Element
 

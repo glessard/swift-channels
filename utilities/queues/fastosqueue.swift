@@ -8,14 +8,14 @@
 
 import Darwin
 
-final public class FastOSQueue<T>: QueueType, SequenceType, GeneratorType
+final class FastOSQueue<T>: QueueType, SequenceType, GeneratorType
 {
   private let head = AtomicQueueInit()
   private let pool = AtomicStackInit()
 
-  public init() { }
+  init() { }
 
-  public convenience init(_ newElement: T)
+  convenience init(_ newElement: T)
   {
     self.init()
     enqueue(newElement)
@@ -45,15 +45,15 @@ final public class FastOSQueue<T>: QueueType, SequenceType, GeneratorType
     AtomicStackRelease(pool)
   }
 
-  public var isEmpty: Bool {
+  var isEmpty: Bool {
     return UnsafeMutablePointer<COpaquePointer>(head).memory == nil
   }
 
-  public var count: Int {
+  var count: Int {
     return (UnsafeMutablePointer<COpaquePointer>(head).memory == nil) ? 0 : countElements()
   }
 
-  public func countElements() -> Int
+  func countElements() -> Int
   {
     // Not thread safe.
 
@@ -68,7 +68,7 @@ final public class FastOSQueue<T>: QueueType, SequenceType, GeneratorType
     return i
   }
 
-  public func enqueue(newElement: T)
+  func enqueue(newElement: T)
   {
     var node = UnsafeMutablePointer<LinkNode>(OSAtomicDequeue(pool, 0))
     if node == nil
@@ -82,7 +82,7 @@ final public class FastOSQueue<T>: QueueType, SequenceType, GeneratorType
     OSAtomicFifoEnqueue(head, node, 0)
   }
 
-  public func dequeue() -> T?
+  func dequeue() -> T?
   {
     let node = UnsafeMutablePointer<LinkNode>(OSAtomicFifoDequeue(head, 0))
     if node != nil
@@ -95,12 +95,12 @@ final public class FastOSQueue<T>: QueueType, SequenceType, GeneratorType
     return nil
   }
 
-  public func next() -> T?
+  func next() -> T?
   {
     return dequeue()
   }
 
-  public func generate() -> Self
+  func generate() -> Self
   {
     return self
   }

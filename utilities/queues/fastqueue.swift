@@ -8,7 +8,7 @@
 
 import Darwin
 
-final public class FastQueue<T>: QueueType, SequenceType, GeneratorType
+final class FastQueue<T>: QueueType, SequenceType, GeneratorType
 {
   private var head: COpaquePointer = nil
   private var tail: COpaquePointer  = nil
@@ -16,9 +16,9 @@ final public class FastQueue<T>: QueueType, SequenceType, GeneratorType
   private let pool = AtomicStackInit()
   private var lock = OS_SPINLOCK_INIT
 
-  public init() { }
+  init() { }
 
-  public convenience init(_ newElement: T)
+  convenience init(_ newElement: T)
   {
     self.init()
     enqueue(newElement)
@@ -48,13 +48,13 @@ final public class FastQueue<T>: QueueType, SequenceType, GeneratorType
     AtomicStackRelease(pool)
   }
 
-  public var isEmpty: Bool { return head == nil }
+  var isEmpty: Bool { return head == nil }
 
-  public var count: Int {
+  var count: Int {
     return (head == nil) ? 0 : countElements()
   }
 
-  public func countElements() -> Int
+  func countElements() -> Int
   {
     // Not thread safe.
 
@@ -69,7 +69,7 @@ final public class FastQueue<T>: QueueType, SequenceType, GeneratorType
     return i
   }
 
-  public func enqueue(newElement: T)
+  func enqueue(newElement: T)
   {
     var node = UnsafeMutablePointer<LinkNode>(OSAtomicDequeue(pool, 0))
     if node == nil
@@ -95,7 +95,7 @@ final public class FastQueue<T>: QueueType, SequenceType, GeneratorType
     OSSpinLockUnlock(&lock)
   }
 
-  public func dequeue() -> T?
+  func dequeue() -> T?
   {
     OSSpinLockLock(&lock)
 
@@ -121,12 +121,12 @@ final public class FastQueue<T>: QueueType, SequenceType, GeneratorType
     return nil
   }
 
-  public func next() -> T?
+  func next() -> T?
   {
     return dequeue()
   }
 
-  public func generate() -> Self
+  func generate() -> Self
   {
     return self
   }

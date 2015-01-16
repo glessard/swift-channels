@@ -1,5 +1,5 @@
 //
-//  reffastqueue.swift
+//  semaphorequeue.swift
 //  QQ
 //
 //  Created by Guillaume Lessard on 2014-08-16.
@@ -9,7 +9,7 @@
 import Darwin
 import Dispatch
 
-final public class SemaphoreQueue: QueueType, SequenceType, GeneratorType
+final class SemaphoreQueue: QueueType, SequenceType, GeneratorType
 {
   private var head: COpaquePointer = nil
   private var tail: COpaquePointer = nil
@@ -17,9 +17,9 @@ final public class SemaphoreQueue: QueueType, SequenceType, GeneratorType
   private let pool = AtomicStackInit()
   private var lock = OS_SPINLOCK_INIT
 
-  public init() { }
+  init() { }
 
-  public convenience init(_ newElement: dispatch_semaphore_t)
+  convenience init(_ newElement: dispatch_semaphore_t)
   {
     self.init()
     enqueue(newElement)
@@ -43,13 +43,13 @@ final public class SemaphoreQueue: QueueType, SequenceType, GeneratorType
     AtomicStackRelease(pool)
   }
 
-  public var isEmpty: Bool { return head == nil }
+  var isEmpty: Bool { return head == nil }
 
-  public var count: Int {
+  var count: Int {
     return (head == nil) ? 0 : countElements()
   }
 
-  public func countElements() -> Int
+  func countElements() -> Int
   {
     // Not thread safe.
 
@@ -64,7 +64,7 @@ final public class SemaphoreQueue: QueueType, SequenceType, GeneratorType
     return i
   }
 
-  public func enqueue(newElement: dispatch_semaphore_t)
+  func enqueue(newElement: dispatch_semaphore_t)
   {
     var node = UnsafeMutablePointer<SemaphoreNode>(OSAtomicDequeue(pool, 0))
     if node == nil
@@ -88,7 +88,7 @@ final public class SemaphoreQueue: QueueType, SequenceType, GeneratorType
     OSSpinLockUnlock(&lock)
   }
 
-  public func dequeue() -> dispatch_semaphore_t?
+  func dequeue() -> dispatch_semaphore_t?
   {
     OSSpinLockLock(&lock)
 
@@ -117,14 +117,14 @@ final public class SemaphoreQueue: QueueType, SequenceType, GeneratorType
 
   // Implementation of GeneratorType
 
-  public func next() -> dispatch_semaphore_t?
+  func next() -> dispatch_semaphore_t?
   {
     return dequeue()
   }
 
   // Implementation of SequenceType
 
-  public func generate() -> Self
+  func generate() -> Self
   {
     return self
   }

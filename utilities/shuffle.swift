@@ -12,7 +12,7 @@ import Darwin
   The input collection is not modified in any way.
 */
 
-public func shuffle<C: CollectionType>(c: C) -> SequenceOf<C.Generator.Element>
+func shuffle<C: CollectionType>(c: C) -> SequenceOf<C.Generator.Element>
 {
   let shuffledIndices = IndexShuffler(c.startIndex..<c.endIndex)
   return SequenceOf(PermutationGenerator(elements: c, indices: shuffledIndices))
@@ -23,21 +23,21 @@ public func shuffle<C: CollectionType>(c: C) -> SequenceOf<C.Generator.Element>
   The input collection is not modified: the shuffling itself is done using an adjunct array of indices.
 */
 
-public struct ShuffledSequence<C: CollectionType>: SequenceType, GeneratorType
+struct ShuffledSequence<C: CollectionType>: SequenceType, GeneratorType
 {
-  public typealias Element = C.Generator.Element
-  public typealias Index = C.Index
+  typealias Element = C.Generator.Element
+  typealias Index = C.Index
 
   private let collection: C
   private var indexShuffler: IndexShuffler<Range<Index>>
 
-  public init(_ input: C)
+  init(_ input: C)
   {
     collection = input
     indexShuffler = IndexShuffler(collection.startIndex..<collection.endIndex)
   }
 
-  public mutating func next() -> Element?
+  mutating func next() -> Element?
   {
     if let index = indexShuffler.next()
     {
@@ -46,7 +46,7 @@ public struct ShuffledSequence<C: CollectionType>: SequenceType, GeneratorType
     return nil
   }
 
-  public func generate() -> ShuffledSequence
+  func generate() -> ShuffledSequence
   {
     return self
   }
@@ -57,22 +57,22 @@ public struct ShuffledSequence<C: CollectionType>: SequenceType, GeneratorType
   using a sequence of indices for the input.
 */
 
-public struct IndexShuffler<S: SequenceType where
+struct IndexShuffler<S: SequenceType where
                             S.Generator.Element: ForwardIndexType>: SequenceType, GeneratorType
 {
-  public typealias Index = S.Generator.Element
+  typealias Index = S.Generator.Element
 
-  private let count: Int
-  private var step = -1
-  private var i: [Index]
+  let count: Int
+  var step = -1
+  var i: [Index]
 
-  public init(_ input: S)
+  init(_ input: S)
   {
     i = Array(input)
     count = countElements(i) as Int
   }
 
-  public mutating func next() -> Index?
+  mutating func next() -> Index?
   {
     step += 1
 
@@ -91,7 +91,7 @@ public struct IndexShuffler<S: SequenceType where
     return nil
   }
 
-  public func generate() -> IndexShuffler
+  func generate() -> IndexShuffler
   {
     return self
   }
