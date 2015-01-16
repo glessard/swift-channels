@@ -17,6 +17,8 @@
 
 public class Chan<T>: ChannelType
 {
+  init() {}
+
   // Computed properties
 
   /**
