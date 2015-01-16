@@ -29,7 +29,7 @@ class PBufferedQChannelTests: BufferedNChannelTests
 
   override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
   {
-    return Channel.Wrap(PChan.Make(buflen, queue: true))
+    return Channel.Wrap(PChan.Make(buflen, useQueue: true))
   }
 }
 
