@@ -91,7 +91,7 @@ public class Chan<T>: ChannelType
     :return: a newly-created, empty Chan<T>
   */
 
-  class func Make(capacity: Int) -> Chan<T>
+  public class func Make(capacity: Int) -> Chan<T>
   {
     switch capacity < 1
     {
@@ -109,7 +109,7 @@ public class Chan<T>: ChannelType
     :return: a newly-created, empty Chan<T>
   */
 
-  class func Make() -> Chan<T>
+  public class func Make() -> Chan<T>
   {
     return Make(0)
   }
@@ -123,12 +123,12 @@ public class Chan<T>: ChannelType
     :return: a newly-created, empty Chan<T>
   */
 
-  class func Make(#typeOf: T, _ capacity: Int = 0) -> Chan<T>
+  public class func Make(#typeOf: T, _ capacity: Int = 0) -> Chan<T>
   {
     return Make(capacity)
   }
 
-  class func Make(_: T.Type, _ capacity: Int = 0) -> Chan<T>
+  public class func Make(_: T.Type, _ capacity: Int = 0) -> Chan<T>
   {
     return Make(capacity)
   }

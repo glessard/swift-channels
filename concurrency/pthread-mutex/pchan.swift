@@ -97,7 +97,7 @@ public class PChan<T>: Chan<T>
     Factory method to make pthreads channels.
   */
 
-  public class func Make(capacity: Int, queue: Bool = false) -> Chan<T>
+  public class func Make(capacity: Int, queue: Bool) -> Chan<T>
   {
     switch capacity
     {
@@ -111,5 +111,10 @@ public class PChan<T>: Chan<T>
       if queue { return PBufferedQChan(capacity) }
       return PBufferedAChan<T>(capacity)
     }
+  }
+
+  override public class func Make(capacity: Int) -> Chan<T>
+  {
+    return Make(capacity, queue: false)
   }
 }
