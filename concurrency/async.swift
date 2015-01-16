@@ -15,7 +15,7 @@ import Dispatch
   async { println("In the background") }
 
   That is simply a shortcut for
-  dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0) { println("In the background") }
+  dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) { println("In the background") }
 
   Much more economical.
 */
