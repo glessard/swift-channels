@@ -19,7 +19,7 @@ extension Receiver
     :return:  A Receiver<T> object that will receive elements from the Chan<T>
   */
 
-  public static func Wrap(c: Chan<T>) -> Receiver<T>
+  public class func Wrap(c: Chan<T>) -> Receiver<T>
   {
     return Receiver(c)
   }
@@ -31,7 +31,7 @@ extension Receiver
     :return:  A Receiver<T> object that will receive elements from the ChannelType
   */
 
-  static func Wrap<C: ChannelType where C.Element == T>(c: C) -> Receiver<T>
+  class func Wrap<C: ChannelType where C.Element == T>(c: C) -> Receiver<T>
   {
     if let chan = c as? Chan<T>
     {
@@ -53,7 +53,7 @@ extension Receiver
     :return:  A Receiver object that will pass along the elements from c.
   */
 
-  public static func Wrap<C: ReceiverType where C.ReceivedElement == T>(c: C) -> Receiver<T>
+  public class func Wrap<C: ReceiverType where C.ReceivedElement == T>(c: C) -> Receiver<T>
   {
     if let r = c as? Receiver<T>
     {
@@ -68,7 +68,7 @@ extension Receiver
   Receiver<T> is the receiving endpoint for a ChannelType.
 */
 
-public struct Receiver<T>: ReceiverType, GeneratorType, SequenceType
+public final class Receiver<T>: ReceiverType, GeneratorType, SequenceType
 {
   private let wrapped: Chan<T>
 
@@ -103,7 +103,7 @@ public struct Receiver<T>: ReceiverType, GeneratorType, SequenceType
 
   // SequenceType implementation
 
-  public func generate() -> Receiver
+  public func generate() -> Self
   {
     return self
   }

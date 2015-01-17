@@ -19,7 +19,7 @@ extension Sender
     :return:  A Sender<T> object that will send elements to the Chan<T>
   */
 
-  public static func Wrap(c: Chan<T>) -> Sender<T>
+  public class func Wrap(c: Chan<T>) -> Sender<T>
   {
     return Sender(c)
   }
@@ -31,7 +31,7 @@ extension Sender
     :return:  A Sender<T> object that will send elements to c
   */
 
-  static func Wrap<C: ChannelType where C.Element == T>(c: C) -> Sender<T>
+  class func Wrap<C: ChannelType where C.Element == T>(c: C) -> Sender<T>
   {
     if let chan = c as? Chan<T>
     {
@@ -51,7 +51,7 @@ extension Sender
     :return:  A Sender object that will pass along the elements to c.
   */
 
-  public static func Wrap<C: SenderType where C.SentElement == T>(c: C) -> Sender<T>
+  public class func Wrap<C: SenderType where C.SentElement == T>(c: C) -> Sender<T>
   {
     if let s = c as? Sender<T>
     {
@@ -66,7 +66,7 @@ extension Sender
   Sender<T> is the sending endpoint for a Channel, Chan<T>.
 */
 
-public struct Sender<T>: SenderType
+public final class Sender<T>: SenderType
 {
   private let wrapped: Chan<T>
 
