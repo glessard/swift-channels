@@ -43,6 +43,13 @@ final public class SingletonChan<T>: Chan<T>
 
   public override init() { }
 
+  public convenience init(_ element: T)
+  {
+    self.init()
+    self.element = element
+    close()
+  }
+
   // Computed property accessors
 
   final public override var isEmpty: Bool

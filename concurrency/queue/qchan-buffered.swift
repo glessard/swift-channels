@@ -147,8 +147,8 @@ final class QBufferedChan<T>: Chan<T>
     queue.enqueue(threadLock)
     OSSpinLockUnlock(&lock)
     dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
-    OSSpinLockLock(&lock)
     SemaphorePool.enqueue(threadLock)
+    OSSpinLockLock(&lock)
   }
 
   /**

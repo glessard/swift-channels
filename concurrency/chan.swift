@@ -6,6 +6,8 @@
 //  Copyright (c) 2014 Guillaume Lessard. All rights reserved.
 //
 
+import Dispatch
+
 /**
   A channel allows concurrently executing tasks to communicate by sending and
   receiving data of a specific type.
@@ -79,6 +81,17 @@ public class Chan<T>: ChannelType
     return nil
   }
 
+  // Selectable implementation
+
+  public func selectReceive(queue: SingletonChan<dispatch_semaphore_t>, messageID: Selectable) -> Signal
+  {
+    return {}
+  }
+
+  public var validSelection: Bool
+  {
+    return !(isClosed && isEmpty)
+  }
 
   // Factory functions.
 

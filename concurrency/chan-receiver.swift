@@ -68,7 +68,7 @@ extension Receiver
   Receiver<T> is the receiving endpoint for a ChannelType.
 */
 
-public final class Receiver<T>: ReceiverType, GeneratorType, SequenceType
+public final class Receiver<T>: ReceiverType, GeneratorType, SequenceType, Selectable
 {
   private let wrapped: Chan<T>
 
@@ -106,6 +106,13 @@ public final class Receiver<T>: ReceiverType, GeneratorType, SequenceType
   public func generate() -> Self
   {
     return self
+  }
+
+  // Selectable implementation
+
+  public func selectNotify(queue: SingletonChan<dispatch_semaphore_t>, messageID: Selectable) -> Signal
+  {
+    return {}
   }
 }
 

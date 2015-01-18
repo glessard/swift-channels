@@ -1,10 +1,12 @@
 //
-//  chan-select.swift
+//  select-types.swift
 //  concurrency
 //
 //  Created by Guillaume Lessard on 2014-08-28.
 //  Copyright (c) 2014 Guillaume Lessard. All rights reserved.
 //
+
+import Dispatch
 
 /**
   An evocative name for a closure type sent back by a selectReceive() method.
@@ -43,35 +45,35 @@ public protocol Selectable: class
     :return: a closure to be run once, which can unblock a stopped thread if needed.
   */
 
-  func selectReceive(channel: SelectChan<Selection>, messageID: Selectable) -> Signal
+  func selectNotify(queue: SingletonChan<dispatch_semaphore_t>, messageID: Selectable) -> Signal
 
   /**
     If it makes no sense to invoke the selectReceive() method at this time, return false.
     If every Selectable in the list returns false, Select will assume that it should stop.
   */
 
-  var  invalidSelection: Bool { get }
+//  var validSelection: Bool { get }
 }
 
 /**
   A particular kind of Anything.
 */
 
-public protocol SelectionType: class
-{
-//  var selectable: Selectable { get }
-//  func getMessageID() -> Selectable
-}
+//public protocol SelectionType: class
+//{
+////  var selectable: Selectable { get }
+////  func getMessageID() -> Selectable
+//}
 
 /**
   A channel that is Selectable should know how to extract data from one of these.
   After all, it should have created the object in its selectReceive() method.
 */
 
-public protocol SelectableChannel: class, Selectable, ReceivingChannel
-{
-  func extract(item: Selection) -> ReceivedElement?
-}
+//protocol SelectableChannelType: Selectable, ReceiverType
+//{
+//  func extract(item: Selection) -> ReceivedElement?
+//}
 
 /**
   A special kind of SingletonChan for use by Select.
@@ -81,58 +83,63 @@ public protocol SelectableChannel: class, Selectable, ReceivingChannel
   This would be better as an internal type.
 */
 
-public class SelectChan<T>: SingletonChan<T>, SelectingChannel
-{
-  typealias SentElement = T
-
-  override init()
-  {
-    super.init()
-  }
-}
+//public class SelectChan<T>: SingletonChan<T>, SelectingChannel
+//{
+//  typealias SentElement = T
+//
+//  override init()
+//  {
+//    super.init()
+//  }
+//}
 
 /**
   Some extra interface for SelectChan.
   These methods have to be defined alongside the internals of SelectChan's superclass(es)
 */
 
-public protocol SelectingChannel
-{
-  typealias SentElement
-
-  /**
-    selectMutex() must be used to send data to SelectChan in a thread-safe manner
-
-    Actions which must be performed synchronously with the SelectChan should be passed to
-    selectMutex() as a closure. The closure will only be executed if the channel is still open.
-  */
-
-  func selectMutex(action: () -> ())
-
-  /**
-    selectSend() will send data to a SelectChan.
-    It must be called within the closure sent to selectMutex() for thread safety.
-    By definition, this call occurs while the channel's mutex is locked for the current thread.
-  */
-
-  func selectSend(newElement: SentElement)
-}
+//public protocol SelectingChannel
+//{
+//  typealias SentElement
+//
+//  /**
+//    selectMutex() must be used to send data to SelectChan in a thread-safe manner
+//
+//    Actions which must be performed synchronously with the SelectChan should be passed to
+//    selectMutex() as a closure. The closure will only be executed if the channel is still open.
+//  */
+//
+//  func selectMutex(action: () -> ())
+//
+//  /**
+//    selectSend() will send data to a SelectChan.
+//    It must be called within the closure sent to selectMutex() for thread safety.
+//    By definition, this call occurs while the channel's mutex is locked for the current thread.
+//  */
+//
+//  func selectSend(newElement: SentElement)
+//}
 
 /**
-  You can put anything in a Selection<T>.
-  And it has a non-generic type in the form of a protocol.
-  It's like a Bag of Holding. For one thing at a time.
+  You can put anything in a Selection.
+  It has a convenient, non-generic type.
+  And it has a decidedly generic accessor method.
 */
 
 public class Selection
 {
-  let id: Selectable
-  let data: Any?
+  private let id: Selectable
+  private let data: Any?
 
   public init<T>(messageID: Selectable, messageData: T?)
   {
     id = messageID
     data = messageData
+  }
+
+  public func getData<T>() -> T?
+  {
+    return data as? T
   }
 
   public var messageID: Selectable { return id }
