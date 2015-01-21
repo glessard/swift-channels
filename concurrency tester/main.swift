@@ -37,18 +37,27 @@ func worker(inputChannel: Receiver<Int>, outputChannel: Sender<(Int,Int,Int)>)
   outputChannel.close()
 }
 
-var workChan = Channel<Int>.Make(1)
-var outChan  = Channel.Make(typeOf: (0,0,0), 0)
+var workChan = Channel.Wrap(QUnbufferedChan<Int>())
+var outChan  = Channel.Wrap(QUnbufferedChan<(Int,Int,Int)>())
 
-for w in 1...5
+let workers = 5
+let workerTimeInterval = 10
+for w in 1...workers
 {
-  async { Time.Wait(ms: w*10); worker(workChan.rx, outChan.tx) }
+  async {
+    Time.Wait(ms: w*workerTimeInterval)
+    worker(workChan.rx, outChan.tx)
+  }
 }
 
-let workElements = 10;
+let workElements = 10
+let workElementTimeInterval = 10
 for a in 0..<workElements
 {
-  async { Time.Wait(ms: 100+100*a); workChan.tx <- a }
+  async {
+    Time.Wait(ms: workElementTimeInterval*(a+1))
+    workChan.tx <- a
+  }
 }
 // Uncomment the following to close the channel prematurely
 //async { Time.Wait(workElements*70); syncprint("closing work channel"); workChan.tx.close() }
