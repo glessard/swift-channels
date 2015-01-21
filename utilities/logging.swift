@@ -41,8 +41,8 @@ public func syncprint<T>(object: T)
 
 public func syncprintwait()
 {
-  // Wait at most 100ms for the last messages to print out.
-  let res = dispatch_group_wait(PrintGroup, dispatch_time(DISPATCH_TIME_NOW, 100_000_000))
+  // Wait at most 200ms for the last messages to print out.
+  let res = dispatch_group_wait(PrintGroup, dispatch_time(DISPATCH_TIME_NOW, 200_000_000))
   if res != 0
   {
     dispatch_suspend(PrintQueue)

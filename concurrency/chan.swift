@@ -17,7 +17,7 @@ import Dispatch
   of the factory function returns an unbuffered channel.
 */
 
-public class Chan<T>: ChannelType
+public class Chan<T>: ChannelType, SelectableChannelType
 {
   init() {}
 
@@ -81,16 +81,16 @@ public class Chan<T>: ChannelType
     return nil
   }
 
-  // Selectable implementation
+  // SelectableChannelType implementation
 
-  public func selectReceive(queue: SingletonChan<dispatch_semaphore_t>, messageID: Selectable) -> Signal
+  public func selectGet(semaphore: SingletonChan<dispatch_semaphore_t>, selectionID: Selectable) -> Signal
   {
     return {}
   }
 
-  public var validSelection: Bool
+  public func selectPut(semaphore: SingletonChan<dispatch_semaphore_t>, selectionID: Selectable) -> Signal
   {
-    return !(isClosed && isEmpty)
+    return {}
   }
 
   // Factory functions.
@@ -112,7 +112,8 @@ public class Chan<T>: ChannelType
       return QUnbufferedChan<T>()
 
     default:
-      return SBufferedChan<T>(capacity)
+      return QBufferedChan<T>(capacity)
+//      return SBufferedChan<T>(capacity)
     }
   }
 

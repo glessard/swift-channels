@@ -110,9 +110,14 @@ public final class Receiver<T>: ReceiverType, GeneratorType, SequenceType, Selec
 
   // Selectable implementation
 
-  public func selectNotify(queue: SingletonChan<dispatch_semaphore_t>, messageID: Selectable) -> Signal
+  public func selectNotify(semaphore: SingletonChan<dispatch_semaphore_t>, selectionID: Selectable) -> Signal
   {
-    return {}
+    return wrapped.selectGet(semaphore, selectionID: selectionID)
+  }
+
+  public var selectable: Bool
+  {
+    return !(wrapped.isClosed && wrapped.isEmpty)
   }
 }
 

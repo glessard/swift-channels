@@ -237,4 +237,80 @@ final class QBufferedChan<T>: Chan<T>
 
     return element
   }
+
+  // SelectableChannelType overrides
+
+  override func selectGet(semaphore: SingletonChan<dispatch_semaphore_t>, selectionID: Selectable) -> Signal
+  {
+    if self.closed && head >= tail
+    {
+      return {}
+    }
+
+    // We can't use the SemaphorePool here, because we don't know how many times
+    // the semaphore will be incremented and decremented. It will be potentially
+    // be referenced from two different threads, and could end up with
+    // a count of 0 or 1. There is no way to tell.
+    let threadLock = dispatch_semaphore_create(0)!
+    let abortSelect = UnsafeMutablePointer<Void>(bitPattern: 1)
+
+    async {
+      OSSpinLockLock(&self.lock)
+
+      while !self.closed && self.head >= self.tail
+      {
+        self.readerQueue.enqueue(threadLock)
+        OSSpinLockUnlock(&self.lock)
+        dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
+        if dispatch_get_context(threadLock) == abortSelect
+        {
+          // We can't be sure of the semaphore's state at this point,
+          // so we cannot re-enqueue it.
+          return
+        }
+        OSSpinLockLock(&self.lock)
+      }
+
+      if let s = semaphore.get()
+      {
+        var element: T? = nil
+        if self.head < self.tail
+        {
+          element = self.buffer.advancedBy(self.head&self.mask).move()
+          self.head += 1
+        }
+
+        if self.writerQueue.count > 0
+        {
+          dispatch_semaphore_signal(self.writerQueue.dequeue()!)
+        }
+
+        if self.head < self.tail
+        {
+          if let rs = self.readerQueue.dequeue()
+          {
+            dispatch_semaphore_signal(rs)
+          }
+        }
+        OSSpinLockUnlock(&self.lock)
+
+        let selection = Selection(selectionID: selectionID, selectionData: element)
+        let context = UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque())
+        dispatch_set_context(s, context)
+        dispatch_semaphore_signal(s)
+        return
+      }
+
+      OSSpinLockUnlock(&self.lock)
+    }
+
+    return {
+      dispatch_set_context(threadLock, abortSelect)
+      dispatch_semaphore_signal(threadLock)
+      // We can't be sure of the semaphore's state at this point,
+      // so we cannot re-enqueue it.
+    }
+  }
 }
+
+var selectCount: Int32 = 0

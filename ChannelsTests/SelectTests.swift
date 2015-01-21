@@ -16,33 +16,60 @@ class SelectTests: XCTestCase
 {
   func testSelectReceiver()
   {
-    let a = Channel<Int>.Make(1)
-    let b = Channel<Int>.Make(1)
-    let c = Channel<Int>.Make(1)
-    let d = Channel<Int>.Make(2)
-    let e = Channel<Int>.Make(3)
+    let chanCount = 5
+    let iterations = 25
 
-    let senders = [a.tx, b.tx, c.tx, d.tx, e.tx]
+    syncprint(__FUNCTION__)
 
-    for s in senders
+    var senders = [Sender<Int>]()
+    var receivers = [Receiver<Int>]()
+    for _ in 0..<chanCount
     {
-      s.close()
+      let (tx, rx) = Channel<Int>.Make(1)
+      senders.append(tx)
+      receivers.append(rx)
     }
 
-//    async {
-//      for i in 1...1000
-//      {
-//        let index = Int(arc4random_uniform(UInt32(senders.count)))
-//        senders[index] <- index
-//      }
-//    }
+    let group = dispatch_group_create()
+    let queue = dispatch_queue_create(nil, nil)
+    for i in 0..<iterations
+    {
+      let index = Int(arc4random_uniform(UInt32(senders.count)))
+      async(group: group) {
+//        NSThread.sleepForTimeInterval(NSTimeInterval(i)*0.001)
+        senders[index] <- index
+        syncprint("\(i): sent to \(index)")
+      }
+    }
+
+    NSThread.sleepForTimeInterval(0.001)
+//    dispatch_async(queue) {
+    async {
+      dispatch_group_wait(group, DISPATCH_TIME_FOREVER)
+      for s in enumerate(senders)
+      {
+        syncprint("closing sender \(s.index)")
+        s.element.close()
+      }
+    }
 
     var i = 0
-    while let (selected, selection) = select(a.rx, b.rx, c.rx, d.rx, e.rx)
+    while let (selected, selection) = select(receivers)
     {
-      i++
+      if let message: Int = selection.getData()
+      {
+          syncprint("\(i): received from \(message)")
+          i++
+      }
+      else
+      {
+        syncprint("received nil message")
+      }
     }
 
-    println(i)
+    syncprint("\(i) messages received")
+    syncprintwait()
+
+    XCTAssert(i == iterations, "incorrect number of messages received")
   }
 }

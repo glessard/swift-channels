@@ -10,29 +10,36 @@
   Select gets notified of events by the first of a list of Selectable items.
 */
 
-public func select<T>(options: Receiver<T>...) -> (Receiver<T>, Selection)?
+//public func select<T>(options: Receiver<T>...) -> (Receiver<T>, Selection)?
+public func select<T>(options: [Receiver<T>]) -> (Receiver<T>, Selection)?
 {
   if options.count > 0
   {
-    let semaphore = dispatch_semaphore_create(0)!
+    let semaphore = SemaphorePool.dequeue()
     let resultChan = SingletonChan(semaphore)
-    Deferred { dispatch_set_context(semaphore, nil) }
 
     var signals = [Signal]()
-    var done = 0
 
     for option in shuffle(options)
     {
-      done += (option.isClosed && option.isEmpty) ? 1 : 0
-      let signal = option.selectNotify(resultChan, messageID: option)
-      signals.append(signal)
+      if option.selectable
+      {
+        let signal = option.selectNotify(resultChan, selectionID: option)
+        signals.append(signal)
+      }
     }
-    Deferred { for signal in signals { signal() } }
 
-    if done == options.count
+    if signals.count < 1
     {
+      if dispatch_get_context(semaphore) != nil
+      {
+        dispatch_set_context(semaphore, nil)
+      }
+      SemaphorePool.enqueue(semaphore)
       return nil
     }
+
+//    syncprint("\(signals.count) signals")
 
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)
     // We have a result
@@ -42,13 +49,20 @@ public func select<T>(options: Receiver<T>...) -> (Receiver<T>, Selection)?
       let selection = Unmanaged<Selection>.fromOpaque(context).takeRetainedValue()
       if let r = selection.messageID as? Receiver<T>
       {
+        for signal in signals { signal() }
+        dispatch_set_context(semaphore, nil)
+        SemaphorePool.enqueue(semaphore)
         return (r, selection)
       }
     }
+
+    for signal in signals { signal() }
+    dispatch_set_context(semaphore, nil)
+    SemaphorePool.enqueue(semaphore)
   }
 
   let c = Receiver(Chan<T>())
-  return (c, Selection(messageID: c, messageData: ()))
+  return (c, Selection(selectionID: c, selectionData: ()))
 }
 
 

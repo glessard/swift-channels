@@ -45,14 +45,14 @@ public protocol Selectable: class
     :return: a closure to be run once, which can unblock a stopped thread if needed.
   */
 
-  func selectNotify(queue: SingletonChan<dispatch_semaphore_t>, messageID: Selectable) -> Signal
+  func selectNotify(semaphore: SingletonChan<dispatch_semaphore_t>, selectionID: Selectable) -> Signal
 
   /**
     If it makes no sense to invoke the selectReceive() method at this time, return false.
     If every Selectable in the list returns false, Select will assume that it should stop.
   */
 
-//  var validSelection: Bool { get }
+  var selectable: Bool { get }
 }
 
 /**
@@ -70,10 +70,14 @@ public protocol Selectable: class
   After all, it should have created the object in its selectReceive() method.
 */
 
-//protocol SelectableChannelType: Selectable, ReceiverType
-//{
-//  func extract(item: Selection) -> ReceivedElement?
-//}
+protocol SelectableChannelType: ChannelType
+{
+  func selectGet(semaphore: SingletonChan<dispatch_semaphore_t>, selectionID: Selectable) -> Signal
+//  func extract(item: Selection) -> Element?
+
+  func selectPut(semaphore: SingletonChan<dispatch_semaphore_t>, selectionID: Selectable) -> Signal
+//  func insert(item: Selection) -> Bool
+}
 
 /**
   A special kind of SingletonChan for use by Select.
@@ -129,12 +133,15 @@ public protocol Selectable: class
 public class Selection
 {
   private let id: Selectable
-  private let data: Any?
+  private let data: Any? = nil
 
-  public init<T>(messageID: Selectable, messageData: T?)
+  public init<T>(selectionID: Selectable, selectionData: T?)
   {
-    id = messageID
-    data = messageData
+    id = selectionID
+    if let d = selectionData
+    {
+      data = d
+    }
   }
 
   public func getData<T>() -> T?
