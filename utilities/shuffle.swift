@@ -58,7 +58,7 @@ struct ShuffledSequence<C: CollectionType>: SequenceType, GeneratorType
 */
 
 struct IndexShuffler<S: SequenceType where
-                            S.Generator.Element: ForwardIndexType>: SequenceType, GeneratorType
+                     S.Generator.Element: ForwardIndexType>: SequenceType, GeneratorType
 {
   typealias Index = S.Generator.Element
 
