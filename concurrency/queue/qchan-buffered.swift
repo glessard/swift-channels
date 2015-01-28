@@ -24,13 +24,8 @@ final class QBufferedChan<T>: Chan<T>
   private var head = 0
   private var tail = 0
 
-  #if os(iOS)
   private let readerQueue = SemaphoreQueue()
   private let writerQueue = SemaphoreQueue()
-  #else
-  private let readerQueue = SemaphoreOSQueue()
-  private let writerQueue = SemaphoreOSQueue()
-  #endif
 
   private var lock = OS_SPINLOCK_INIT
 
@@ -141,7 +136,7 @@ final class QBufferedChan<T>: Chan<T>
     :param: queue the queue to which the signal should be appended
   */
 
-  private func wait(inout #lock: OSSpinLock, queue: SemaphoreOSQueue)
+  private func wait(inout #lock: OSSpinLock, queue: SemaphoreQueue)
   {
     let threadLock = SemaphorePool.dequeue()
     queue.enqueue(threadLock)
@@ -162,16 +157,21 @@ final class QBufferedChan<T>: Chan<T>
 
   override func put(newElement: T) -> Bool
   {
-    if self.closed { return false }
+    if closed { return false }
 
     OSSpinLockLock(&lock)
 
-    while !self.closed && head+capacity <= tail
+    while !closed && head+capacity <= tail
     {
-      wait(lock: &lock, queue: writerQueue)
+      let threadLock = SemaphorePool.dequeue()
+      writerQueue.enqueue(threadLock)
+      OSSpinLockUnlock(&lock)
+      dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
+      SemaphorePool.enqueue(threadLock)
+      OSSpinLockLock(&lock)
     }
 
-    if self.closed
+    if closed
     {
       OSSpinLockUnlock(&lock)
       return false
@@ -180,14 +180,20 @@ final class QBufferedChan<T>: Chan<T>
     buffer.advancedBy(tail&mask).initialize(newElement)
     tail += 1
 
-    if readerQueue.count > 0
+    if !readerQueue.isEmpty
     {
-      dispatch_semaphore_signal(readerQueue.dequeue()!)
+      if let rs = readerQueue.dequeue()
+      {
+        dispatch_semaphore_signal(rs)
+      }
     }
 
-    if head+capacity < tail && writerQueue.count > 0
+    if head+capacity < tail
     {
-      dispatch_semaphore_signal(writerQueue.dequeue()!)
+      if let ws = writerQueue.dequeue()
+      {
+        dispatch_semaphore_signal(ws)
+      }
     }
 
     OSSpinLockUnlock(&lock)
@@ -205,16 +211,28 @@ final class QBufferedChan<T>: Chan<T>
 
   override func get() -> T?
   {
-    if self.closed && head >= tail { return nil }
+    if closed && head >= tail { return nil }
 
     OSSpinLockLock(&lock)
 
-    while !self.closed && head >= tail
+    if !closed && head >= tail
     {
-      wait(lock: &lock, queue: readerQueue)
+      let threadLock = SemaphorePool.dequeue()
+      readerQueue.enqueue(threadLock)
+      OSSpinLockUnlock(&lock)
+      dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
+      OSSpinLockLock(&lock)
+      while !closed && head >= tail
+      {
+        readerQueue.undequeue(threadLock)
+        OSSpinLockUnlock(&lock)
+        dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
+        OSSpinLockLock(&lock)
+      }
+      SemaphorePool.enqueue(threadLock)
     }
 
-    if self.closed && head >= tail
+    if closed && head >= tail
     {
       OSSpinLockUnlock(&lock)
       return nil
@@ -223,14 +241,20 @@ final class QBufferedChan<T>: Chan<T>
     let element = buffer.advancedBy(head&mask).move()
     head += 1
 
-    if writerQueue.count > 0
+    if !writerQueue.isEmpty
     {
-      dispatch_semaphore_signal(writerQueue.dequeue()!)
+      if let ws = writerQueue.dequeue()
+      {
+        dispatch_semaphore_signal(ws)
+      }
     }
 
-    if head < tail && readerQueue.count > 0
+    if head < tail
     {
-      dispatch_semaphore_signal(readerQueue.dequeue()!)
+      if let rs = readerQueue.dequeue()
+      {
+        dispatch_semaphore_signal(rs)
+      }
     }
 
     OSSpinLockUnlock(&lock)
@@ -258,24 +282,38 @@ final class QBufferedChan<T>: Chan<T>
         dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
         if dispatch_get_context(threadLock) == abortSelect
         {
-          // We can't be sure of the semaphore's state at this point,
-          // so we cannot re-enqueue it.
+          // If readerQueue was dequeued from a place other than the Signal closure,
+          // the next thread in line needs to be awoken.
+          if let rs = self.readerQueue.dequeue()
+          {
+            dispatch_semaphore_signal(rs)
+          }
+          // We can't be sure of threadLock semaphore's state at this point,
+          // therefore we cannot enqueue it to the SemaphorePool.
           return
         }
         OSSpinLockLock(&self.lock)
       }
 
+      if self.closed && self.head >= self.tail
+      {
+        OSSpinLockUnlock(&self.lock)
+        if let s = semaphore.get()
+        {
+//          syncprint("sending nil message")
+          dispatch_set_context(s, nil)
+          dispatch_semaphore_signal(s)
+        }
+        return
+      }
+
       if let s = semaphore.get()
       {
-        var element: T? = nil
-        if self.head < self.tail
-        {
-          element = self.buffer.advancedBy(self.head&self.mask).move()
-          self.head += 1
-        }
+        let element = self.buffer.advancedBy(self.head&self.mask).move()
+        self.head += 1
 
         if !self.writerQueue.isEmpty
-        {
+        { // channel isn't full; dequeue a writer if one exists
           if let ws = self.writerQueue.dequeue()
           {
             dispatch_semaphore_signal(ws)
@@ -283,12 +321,13 @@ final class QBufferedChan<T>: Chan<T>
         }
 
         if self.head < self.tail
-        {
+        { // channel isn't empty; dequeue a reader if one exists
           if let rs = self.readerQueue.dequeue()
           {
             dispatch_semaphore_signal(rs)
           }
         }
+
         OSSpinLockUnlock(&self.lock)
 
         let selection = Selection(selectionID: selectionID, selectionData: element)
@@ -297,8 +336,18 @@ final class QBufferedChan<T>: Chan<T>
         dispatch_semaphore_signal(s)
         return
       }
+      else
+      {
+        if self.head < self.tail
+        { // channel isn't empty; dequeue a reader if one exists
+          if let rs = self.readerQueue.dequeue()
+          {
+            dispatch_semaphore_signal(rs)
+          }
+        }
 
-      OSSpinLockUnlock(&self.lock)
+        OSSpinLockUnlock(&self.lock)
+      }
     }
 
     return {
