@@ -208,14 +208,15 @@ final class SBufferedChan<T>: Chan<T>
           self.head += 1
         }
 
-        OSSpinLockUnlock(&self.lock)
-        if self.closed == false
+        if self.closed
         {
-          dispatch_semaphore_signal(self.empty)
+          OSSpinLockUnlock(&self.lock)
+          dispatch_semaphore_signal(self.filled)
         }
         else
         {
-          dispatch_semaphore_signal(self.filled)
+          OSSpinLockUnlock(&self.lock)
+          dispatch_semaphore_signal(self.empty)
         }
 
         let selection = Selection(selectionID: selectionID, selectionData: element)
@@ -227,7 +228,7 @@ final class SBufferedChan<T>: Chan<T>
       {
         OSSpinLockUnlock(&self.lock)
         dispatch_semaphore_signal(self.filled)
-        syncprint("not selected")
+//        syncprint("not selected")
       }
     }
 
