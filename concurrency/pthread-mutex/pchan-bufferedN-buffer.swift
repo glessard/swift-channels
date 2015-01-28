@@ -68,7 +68,7 @@ final class PBufferedAChan<T>: pthreadsChan<T>
 
   final override var isFull: Bool
   {
-    return head+capacity <= tail
+    return head+capacity >= tail
   }
 
   /**
