@@ -66,9 +66,12 @@ final class SBufferedChan<T>: Chan<T>
 
   deinit
   {
-    for i in head..<tail
+    if head < tail
     {
-      buffer.advancedBy(i&mask).destroy()
+      for i in head..<tail
+      {
+        buffer.advancedBy(i&mask).destroy()
+      }
     }
     buffer.dealloc(mask+1)
   }
@@ -179,11 +182,6 @@ final class SBufferedChan<T>: Chan<T>
 
   override func selectGet(semaphore: SingletonChan<dispatch_semaphore_t>, selectionID: Selectable) -> Signal
   {
-    if closed && head >= tail
-    {
-      return {}
-    }
-
     var k = OS_SPINLOCK_INIT
     let g = dispatch_group_create()!
 

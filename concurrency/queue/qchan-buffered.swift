@@ -242,11 +242,6 @@ final class QBufferedChan<T>: Chan<T>
 
   override func selectGet(semaphore: SingletonChan<dispatch_semaphore_t>, selectionID: Selectable) -> Signal
   {
-    if self.closed && head >= tail
-    {
-      return {}
-    }
-
     // We can't use the SemaphorePool here, because we don't know how many times
     // the semaphore will be incremented and decremented. It will be potentially
     // be referenced from two different threads, and could end up with

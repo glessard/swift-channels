@@ -65,6 +65,7 @@ public func select<T>(options: [Receiver<T>]) -> (Receiver<T>, Selection)?
     SemaphorePool.enqueue(semaphore)
   }
 
+//  syncprint("nil message received?")
   let c = Receiver(Chan<T>())
   return (c, Selection(selectionID: c, selectionData: ()))
 }

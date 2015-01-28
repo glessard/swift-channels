@@ -18,7 +18,7 @@ class SelectTests: XCTestCase
   {
     let chanCount = 5
     // careful with 'iterations': there's a maximum thread count.
-    let iterations = 60
+    let iterations = 50
 
     syncprint(__FUNCTION__)
 
@@ -39,7 +39,7 @@ class SelectTests: XCTestCase
       async(group: group) {
 //        NSThread.sleepForTimeInterval(NSTimeInterval(i)*0.001)
         senders[index] <- index
-        syncprint("\(i): sent to \(index)")
+//        syncprint("\(i): sent to \(index)")
       }
     }
 
@@ -49,7 +49,7 @@ class SelectTests: XCTestCase
       dispatch_group_wait(group, DISPATCH_TIME_FOREVER)
       for s in enumerate(senders)
       {
-        syncprint("closing sender \(s.index)")
+//        syncprint("closing sender \(s.index)")
         s.element.close()
       }
     }
@@ -59,7 +59,7 @@ class SelectTests: XCTestCase
     {
       if let message: Int = selection.getData()
       {
-          syncprint("\(i): received from \(message)")
+//          syncprint("\(i): received from \(message)")
           i++
       }
       else
