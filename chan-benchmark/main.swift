@@ -15,7 +15,7 @@ var dt: Interval
 var tic: Time
 
 
-var buffered = Channel.Wrap(SBufferedChan<Int>())
+var buffered = Channel<Int>.Make(1)
 
 tic = Time()
 
@@ -33,7 +33,7 @@ dt = tic.toc
 syncprint("\(dt)\t\t(\(dt/iterations) per message)")
 
 
-buffered = Channel.Wrap(SBufferedChan<Int>())
+buffered = Channel<Int>.Make(1)
 
 tic = Time()
 
@@ -91,7 +91,7 @@ dt = tic.toc
 syncprint("\(dt)\t\t(\(dt/iterations) per message)")
 
 
-bufferedN = Channel.Wrap(SBufferedChan<Int>(buflen))
+bufferedN = Channel<Int>.Make(buflen)
 
 tic = Time()
 
