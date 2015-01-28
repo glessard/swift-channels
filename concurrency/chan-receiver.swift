@@ -6,6 +6,8 @@
 //  Copyright (c) 2014 Guillaume Lessard. All rights reserved.
 //
 
+import Dispatch
+
 /**
   Receiver<T> is the receiving endpoint for a ChannelType.
 */

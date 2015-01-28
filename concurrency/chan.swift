@@ -112,8 +112,7 @@ public class Chan<T>: ChannelType, SelectableChannelType
       return QUnbufferedChan<T>()
 
     default:
-//      return QBufferedChan<T>(capacity)
-      return SBufferedChan<T>(capacity)
+      return QBufferedChan<T>(capacity)
     }
   }
 
