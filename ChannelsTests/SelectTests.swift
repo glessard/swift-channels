@@ -37,7 +37,7 @@ class SelectTests: XCTestCase
     {
       let index = Int(arc4random_uniform(UInt32(senders.count)))
       async(group: group) {
-//        NSThread.sleepForTimeInterval(NSTimeInterval(i)*0.001)
+        NSThread.sleepForTimeInterval(NSTimeInterval(i)*0.001)
         senders[index] <- index
 //        syncprint("\(i): sent to \(index)")
       }
@@ -72,5 +72,13 @@ class SelectTests: XCTestCase
     syncprintwait()
 
     XCTAssert(i == iterations, "incorrect number of messages received")
+  }
+
+  func testSuperSelectReceiver()
+  {
+    for i in 1...500
+    {
+      testSelectReceiver()
+    }
   }
 }

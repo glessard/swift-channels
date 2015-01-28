@@ -182,18 +182,21 @@ final class SBufferedChan<T>: Chan<T>
 
   override func selectGet(semaphore: SingletonChan<dispatch_semaphore_t>, selectionID: Selectable) -> Signal
   {
+    var j = OS_SPINLOCK_INIT
     var k = OS_SPINLOCK_INIT
     let g = dispatch_group_create()!
 
     async {
-      OSSpinLockLock(&k)
+      OSSpinLockLock(&j)
       dispatch_semaphore_wait(self.filled, DISPATCH_TIME_FOREVER)
-      OSSpinLockUnlock(&k)
+      OSSpinLockLock(&k)
       if dispatch_get_context(g) == abortSelect
       {
 //        syncprint("abort select")
         return
       }
+      OSSpinLockUnlock(&k)
+      OSSpinLockUnlock(&j)
 
       OSSpinLockLock(&self.lock)
 
@@ -231,12 +234,17 @@ final class SBufferedChan<T>: Chan<T>
     }
 
     return {
-      if !OSSpinLockTry(&k)
+      if !OSSpinLockTry(&j)
       {
-        dispatch_set_context(g, abortSelect)
-        dispatch_semaphore_signal(self.filled)
-//        syncprint("aborting")
+        if OSSpinLockTry(&k)
+        {
+          dispatch_set_context(g, abortSelect)
+          dispatch_semaphore_signal(self.filled)
+  //        syncprint("aborting")
+          OSSpinLockUnlock(&k)
+        }
       }
+      OSSpinLockUnlock(&j)
     }
   }
 }
