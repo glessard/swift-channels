@@ -21,6 +21,7 @@ import Dispatch
 */
 
 public typealias Signal = () -> ()
+public let abortSelect = UnsafeMutablePointer<Void>(bitPattern: 1)
 
 /**
   What a type needs to be usable in the Select() function.

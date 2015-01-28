@@ -17,7 +17,8 @@ class SelectTests: XCTestCase
   func testSelectReceiver()
   {
     let chanCount = 5
-    let iterations = 25
+    // careful with 'iterations': there's a maximum thread count.
+    let iterations = 60
 
     syncprint(__FUNCTION__)
 
@@ -63,7 +64,7 @@ class SelectTests: XCTestCase
       }
       else
       {
-        syncprint("received nil message")
+        syncprint("*** received nil message ***")
       }
     }
 

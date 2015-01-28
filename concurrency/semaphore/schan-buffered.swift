@@ -176,4 +176,68 @@ final class SBufferedChan<T>: Chan<T>
 
     return element
   }
+
+  override func selectGet(semaphore: SingletonChan<dispatch_semaphore_t>, selectionID: Selectable) -> Signal
+  {
+    if closed && head >= tail
+    {
+      return {}
+    }
+
+    var k = OS_SPINLOCK_INIT
+    let g = dispatch_group_create()!
+
+    async {
+      OSSpinLockLock(&k)
+      dispatch_semaphore_wait(self.filled, DISPATCH_TIME_FOREVER)
+      OSSpinLockUnlock(&k)
+      if dispatch_get_context(g) == abortSelect
+      {
+//        syncprint("abort select")
+        return
+      }
+
+      OSSpinLockLock(&self.lock)
+
+      if let s = semaphore.get()
+      {
+        var element: T? = nil
+        if self.head < self.tail
+        {
+          element = self.buffer.advancedBy(self.head&self.mask).move()
+          self.head += 1
+        }
+
+        OSSpinLockUnlock(&self.lock)
+        if self.closed == false
+        {
+          dispatch_semaphore_signal(self.empty)
+        }
+        else
+        {
+          dispatch_semaphore_signal(self.filled)
+        }
+
+        let selection = Selection(selectionID: selectionID, selectionData: element)
+        let context = UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque())
+        dispatch_set_context(s, context)
+        dispatch_semaphore_signal(s)
+      }
+      else
+      {
+        OSSpinLockUnlock(&self.lock)
+        dispatch_semaphore_signal(self.filled)
+        syncprint("not selected")
+      }
+    }
+
+    return {
+      if !OSSpinLockTry(&k)
+      {
+        dispatch_set_context(g, abortSelect)
+        dispatch_semaphore_signal(self.filled)
+//        syncprint("aborting")
+      }
+    }
+  }
 }

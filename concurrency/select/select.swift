@@ -10,7 +10,11 @@
   Select gets notified of events by the first of a list of Selectable items.
 */
 
-//public func select<T>(options: Receiver<T>...) -> (Receiver<T>, Selection)?
+public func select<T>(options: Receiver<T>...) -> (Receiver<T>, Selection)?
+{
+  return select(options)
+}
+
 public func select<T>(options: [Receiver<T>]) -> (Receiver<T>, Selection)?
 {
   if options.count > 0

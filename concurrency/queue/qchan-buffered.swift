@@ -252,7 +252,6 @@ final class QBufferedChan<T>: Chan<T>
     // be referenced from two different threads, and could end up with
     // a count of 0 or 1. There is no way to tell.
     let threadLock = dispatch_semaphore_create(0)!
-    let abortSelect = UnsafeMutablePointer<Void>(bitPattern: 1)
 
     async {
       OSSpinLockLock(&self.lock)
@@ -280,9 +279,12 @@ final class QBufferedChan<T>: Chan<T>
           self.head += 1
         }
 
-        if self.writerQueue.count > 0
+        if !self.writerQueue.isEmpty
         {
-          dispatch_semaphore_signal(self.writerQueue.dequeue()!)
+          if let ws = self.writerQueue.dequeue()
+          {
+            dispatch_semaphore_signal(ws)
+          }
         }
 
         if self.head < self.tail
@@ -308,7 +310,7 @@ final class QBufferedChan<T>: Chan<T>
       dispatch_set_context(threadLock, abortSelect)
       dispatch_semaphore_signal(threadLock)
       // We can't be sure of the semaphore's state at this point,
-      // so we cannot re-enqueue it.
+      // so we cannot enqueue it to the SemaphorePool.
     }
   }
 }
