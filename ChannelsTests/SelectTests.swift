@@ -20,10 +20,11 @@ class SelectTests: XCTestCase
     // careful with 'iterations': there's a maximum thread count.
     let iterations = 50
 
-    syncprint(__FUNCTION__)
+//    syncprint(__FUNCTION__)
 
     var senders = [Sender<Int>]()
     var receivers = [Receiver<Int>]()
+//    var receivers = [Selectable]()
     for _ in 0..<chanCount
     {
       let (tx, rx) = Channel<Int>.Make(1)
@@ -37,7 +38,7 @@ class SelectTests: XCTestCase
     {
       let index = Int(arc4random_uniform(UInt32(senders.count)))
       async(group: group) {
-        NSThread.sleepForTimeInterval(NSTimeInterval(i)*0.001)
+        NSThread.sleepForTimeInterval(NSTimeInterval(i)*0.01)
         senders[index] <- index
 //        syncprint("\(i): sent to \(index)")
       }
@@ -62,23 +63,23 @@ class SelectTests: XCTestCase
 //          syncprint("\(i): received from \(message)")
           i++
       }
-      else
-      {
-        syncprint("*** received nil message ***")
-      }
+//      else
+//      {
+//        syncprint("*** received nil message ***")
+//      }
     }
 
-    syncprint("\(i) messages received")
+//    syncprint("\(i) messages received")
     syncprintwait()
 
     XCTAssert(i == iterations, "incorrect number of messages received")
   }
 
-  func testSuperSelectReceiver()
-  {
-    for i in 1...500
-    {
-      testSelectReceiver()
-    }
-  }
+//  func testSuperSelectReceiver()
+//  {
+//    for i in 1...100
+//    {
+//      testSelectReceiver()
+//    }
+//  }
 }

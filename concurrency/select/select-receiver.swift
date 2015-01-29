@@ -1,5 +1,5 @@
 //
-//  select.swift
+//  select-receiver.swift
 //  concurrency
 //
 //  Created by Guillaume Lessard on 2014-08-28.
@@ -12,12 +12,12 @@ import Dispatch
   Select gets notified of events by the first of a list of Selectable items.
 */
 
-public func select(options: Selectable...) -> (Selectable, Selection)?
+public func select<T>(options: Receiver<T>...) -> (Selectable, Selection)?
 {
   return select(options)
 }
 
-public func select(options: [Selectable]) -> (Selectable, Selection)?
+public func select<T>(options: [Receiver<T>]) -> (Selectable, Selection)?
 {
   if options.count > 0
   {
@@ -52,12 +52,13 @@ public func select(options: [Selectable]) -> (Selectable, Selection)?
     if context != nil
     {
       let selection = Unmanaged<Selection>.fromOpaque(context).takeRetainedValue()
-
-      for signal in signals { signal() }
-      dispatch_set_context(semaphore, nil)
-      SemaphorePool.enqueue(semaphore)
-
-      return (selection.messageID, selection)
+      if let r = selection.messageID as? Receiver<T>
+      {
+        for signal in signals { signal() }
+        dispatch_set_context(semaphore, nil)
+        SemaphorePool.enqueue(semaphore)
+        return (r, selection)
+      }
     }
 
     for signal in signals { signal() }
@@ -65,7 +66,7 @@ public func select(options: [Selectable]) -> (Selectable, Selection)?
     SemaphorePool.enqueue(semaphore)
   }
 
-  //  syncprint("nil message received?")
+//  syncprint("nil message received?")
   let c = Receiver(Chan<()>())
   return (c, Selection(selectionID: c, selectionData: Optional<()>.None))
 }
