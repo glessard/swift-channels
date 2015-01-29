@@ -14,8 +14,8 @@ import Channels
 
 class MergeTests: XCTestCase
 {
-  let outerloopcount = 100
-  let innerloopcount = 500
+  let outerloopcount = 10
+  let innerloopcount = 50
 
   func testPerformanceMergeReceiver()
   {
