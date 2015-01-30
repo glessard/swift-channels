@@ -20,8 +20,7 @@
 public func merge<R: ReceiverType>(channels: [R]) -> Receiver<R.ReceivedElement>
 {
   if channels.count == 0
-  { // Not likely to happen, but...
-    // return a closed channel.
+  { // Not likely to happen, but return a closed channel.
     return Receiver(Chan<R.ReceivedElement>())
   }
 
@@ -65,8 +64,7 @@ public func merge<R: ReceiverType>(channels: [R]) -> Receiver<R.ReceivedElement>
 public func merge<T>(channels: [Chan<T>]) -> Receiver<T>
 {
   if channels.count == 0
-  { // Not likely to happen, but...
-    // return a closed channel.
+  { // Not likely to happen, but return a closed channel.
     return Receiver(Chan<T>())
   }
 
