@@ -284,6 +284,9 @@ final class QBufferedChan<T>: Chan<T>
         {
           // If readerQueue was dequeued from a place other than the Signal closure,
           // the next thread in line needs to be awoken.
+          // Now, we don't know whether said next thread *actually* needs to be awoken.
+          // Perhaps better smarts need to exist. As a workaround, a thread that gets
+          // awoken but didn't need to will un-dequeue its semaphore and go back to sleep.
           if let rs = self.readerQueue.dequeue()
           {
             dispatch_semaphore_signal(rs)
@@ -338,6 +341,14 @@ final class QBufferedChan<T>: Chan<T>
       }
       else
       {
+        if self.head+self.capacity < self.tail
+        { // channel isn't full; dequeue a writer if one exists
+          if let ws = self.writerQueue.dequeue()
+          {
+            dispatch_semaphore_signal(ws)
+          }
+        }
+
         if self.head < self.tail
         { // channel isn't empty; dequeue a reader if one exists
           if let rs = self.readerQueue.dequeue()
