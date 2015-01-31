@@ -23,11 +23,11 @@ class SelectTests: XCTestCase
 //    syncprint(__FUNCTION__)
 
     var senders = [Sender<Int>]()
-    var receivers = [Receiver<Int>]()
-//    var receivers = [Selectable]()
+//    var receivers = [Receiver<Int>]()
+    var receivers = [Selectable]()
     for _ in 0..<chanCount
     {
-      let (tx, rx) = Channel<Int>.Make(1)
+      let (tx, rx) = Channel<Int>.Make(0)
       senders.append(tx)
       receivers.append(rx)
     }
