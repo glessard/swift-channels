@@ -64,6 +64,14 @@ public protocol Selectable: class
 
   func selectNotify(semaphore: SingletonChan<dispatch_semaphore_t>, selectionID: Selectable) -> Signal
 
+  /*
+    Select first iterates through its Selectables to find whether at least one of them is ready
+    This is much faster than launching N threads, triggering a race, and then getting all threads to
+    be canceled.
+  */
+
+  func selectObtain(selectionID: Selectable) -> Selection?
+
   /**
     If it makes no sense to invoke the selectNotify() method at this time, return false.
     If every Selectable in the list returns false, Select will stop by returning nil.
@@ -75,9 +83,12 @@ public protocol Selectable: class
 protocol SelectableChannelType: ChannelType
 {
   func selectGet(semaphore: SingletonChan<dispatch_semaphore_t>, selectionID: Selectable) -> Signal
-//  func extract(item: Selection) -> Element?
+  func selectSyncGet(selectionID: Selectable) -> Selection?
 
-  func selectPut(semaphore: SingletonChan<dispatch_semaphore_t>, selectionID: Selectable) -> Signal
+  //  func extract(item: Selection) -> Element?
+
+//  func selectSyncPut(selectionID: Selectable) -> Selection?
+//  func selectPut(semaphore: SingletonChan<dispatch_semaphore_t>, selectionID: Selectable) -> Signal
 //  func insert(item: Selection) -> Bool
 }
 

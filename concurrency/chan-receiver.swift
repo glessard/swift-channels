@@ -117,6 +117,11 @@ public final class Receiver<T>: ReceiverType, GeneratorType, SequenceType, Selec
     return wrapped.selectGet(semaphore, selectionID: selectionID)
   }
 
+  public func selectObtain(selectionID: Selectable) -> Selection?
+  {
+    return wrapped.selectSyncGet(selectionID)
+  }
+
   public var selectable: Bool
   {
     return !(wrapped.isClosed && wrapped.isEmpty)

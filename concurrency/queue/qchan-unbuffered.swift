@@ -211,6 +211,29 @@ final class QUnbufferedChan<T>: Chan<T>
     return element
   }
 
+  override func selectSyncGet(selectionID: Selectable) -> Selection?
+  {
+    OSSpinLockLock(&lock)
+    if let ws = writerQueue.dequeue()
+    {
+      OSSpinLockUnlock(&lock)
+
+      let context = UnsafePointer<T>(dispatch_get_context(ws))
+      if context == nil
+      { // not a normal code path.
+        dispatch_semaphore_signal(nil)
+        return nil
+      }
+      let element = context.memory
+      dispatch_set_context(ws, nil)
+      dispatch_semaphore_signal(ws)
+
+      return Selection(selectionID: selectionID, selectionData: element)
+    }
+    OSSpinLockUnlock(&lock)
+    return nil
+  }
+
   override func selectGet(semaphore: SingletonChan<dispatch_semaphore_t>, selectionID: Selectable) -> Signal
   {
     let threadLock = dispatch_semaphore_create(0)!

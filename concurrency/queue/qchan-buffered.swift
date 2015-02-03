@@ -264,6 +264,21 @@ final class QBufferedChan<T>: Chan<T>
 
   // SelectableChannelType overrides
 
+  override func selectSyncGet(selectionID: Selectable) -> Selection?
+  {
+    OSSpinLockLock(&lock)
+    if !closed && head < tail
+    {
+      let element = buffer.advancedBy(head&mask).move()
+      head += 1
+      OSSpinLockUnlock(&lock)
+
+      return Selection(selectionID: selectionID, selectionData: element)
+    }
+    OSSpinLockUnlock(&lock)
+    return nil
+  }
+
   override func selectGet(semaphore: SingletonChan<dispatch_semaphore_t>, selectionID: Selectable) -> Signal
   {
     // We can't use the SemaphorePool here, because we don't know how many times
