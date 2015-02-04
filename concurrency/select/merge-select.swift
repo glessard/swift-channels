@@ -18,7 +18,7 @@
   :return: a single Receiver provide access to get every message received by the input Receivers.
 */
 
-public func merge<R: ReceiverType where R: Selectable>(channels: [R]) -> Receiver<R.ReceivedElement>
+public func mergeSelect<R: ReceiverType where R: Selectable>(channels: [R]) -> Receiver<R.ReceivedElement>
 {
   if channels.count == 0
   { // Not likely to happen, but return a closed channel.
