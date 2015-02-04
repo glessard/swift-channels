@@ -83,9 +83,11 @@ class SelectTests: XCTestCase
     XCTAssert(i == iterations, "incorrect number of messages received")
   }
 
-  func testSelectBufferedReceiverNoWait()
+  func testPerformanceSelectBufferedReceiver()
   {
-    SelectReceiverTest(buffered: true, useSelectable: false, sleepInterval: 0)
+    self.measureBlock {
+      self.SelectReceiverTest(buffered: true, useSelectable: false, sleepInterval: 0)
+    }
   }
 
   func testSelectBufferedReceiverWithWait()
@@ -93,9 +95,11 @@ class SelectTests: XCTestCase
     SelectReceiverTest(buffered: true, useSelectable: false, sleepInterval: 0.01)
   }
 
-  func testSelectUnbufferedReceiverNoWait()
+  func testPerformanceSelectUnbufferedReceiver()
   {
-    SelectReceiverTest(buffered: false, useSelectable: false, sleepInterval: 0)
+    self.measureBlock {
+      self.SelectReceiverTest(buffered: false, useSelectable: false, sleepInterval: 0)
+    }
   }
 
   func testSelectUnbufferedReceiverWithWait()
@@ -103,9 +107,11 @@ class SelectTests: XCTestCase
     SelectReceiverTest(buffered: false, useSelectable: false, sleepInterval: 0.01)
   }
   
-  func testSelectBufferedReceiverSelectableNoWait()
+  func testPerformanceSelectBufferedReceiverSelectable()
   {
-    SelectReceiverTest(buffered: true, useSelectable: true, sleepInterval: 0)
+    self.measureBlock {
+      self.SelectReceiverTest(buffered: true, useSelectable: true, sleepInterval: 0)
+    }
   }
 
   func testSelectBufferedReceiverSelectableWithWait()
@@ -113,21 +119,15 @@ class SelectTests: XCTestCase
     SelectReceiverTest(buffered: true, useSelectable: true, sleepInterval: 0.01)
   }
 
-  func testSelectUnbufferedReceiverSelectableNoWait()
+  func testPerformanceSelectUnbufferedReceiverSelectable()
   {
-    SelectReceiverTest(buffered: false, useSelectable: true, sleepInterval: 0)
+    self.measureBlock {
+      self.SelectReceiverTest(buffered: false, useSelectable: true, sleepInterval: 0)
+    }
   }
 
   func testSelectUnbufferedReceiverSelectableWithWait()
   {
     SelectReceiverTest(buffered: false, useSelectable: true, sleepInterval: 0.01)
   }
-  
-//  func testSuperSelectReceiver()
-//  {
-//    for i in 1...100
-//    {
-//      testSelectReceiver()
-//    }
-//  }
 }
