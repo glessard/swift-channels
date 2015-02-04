@@ -99,7 +99,7 @@ public class Chan<T>: ChannelType
       return QUnbufferedChan<T>()
 
     default:
-      return SBufferedChan<T>(capacity)
+      return QBufferedChan<T>(capacity)
     }
   }
 

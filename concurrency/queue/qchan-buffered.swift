@@ -180,14 +180,20 @@ final class QBufferedChan<T>: Chan<T>
     buffer.advancedBy(tail&mask).initialize(newElement)
     tail += 1
 
-    if readerQueue.count > 0
+    if !readerQueue.isEmpty
     {
-      dispatch_semaphore_signal(readerQueue.dequeue()!)
+      if let rs = readerQueue.dequeue()
+      {
+        dispatch_semaphore_signal(rs)
+      }
     }
 
-    if head+capacity < tail && writerQueue.count > 0
+    if head+capacity < tail && !writerQueue.isEmpty
     {
-      dispatch_semaphore_signal(writerQueue.dequeue()!)
+      if let ws = writerQueue.dequeue()
+      {
+        dispatch_semaphore_signal(ws)
+      }
     }
 
     OSSpinLockUnlock(&lock)
@@ -223,14 +229,20 @@ final class QBufferedChan<T>: Chan<T>
     let element = buffer.advancedBy(head&mask).move()
     head += 1
 
-    if writerQueue.count > 0
+    if !writerQueue.isEmpty
     {
-      dispatch_semaphore_signal(writerQueue.dequeue()!)
+      if let ws = writerQueue.dequeue()
+      {
+        dispatch_semaphore_signal(ws)
+      }
     }
 
-    if head < tail && readerQueue.count > 0
+    if head < tail && !readerQueue.isEmpty
     {
-      dispatch_semaphore_signal(readerQueue.dequeue()!)
+      if let rs = readerQueue.dequeue()
+      {
+        dispatch_semaphore_signal(rs)
+      }
     }
 
     OSSpinLockUnlock(&lock)
