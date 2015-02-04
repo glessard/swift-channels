@@ -14,20 +14,19 @@ import Channels
 
 class SelectTests: XCTestCase
 {
-  func testSelectReceiver()
+  func SelectReceiverTest(#buffered: Bool, useSelectable: Bool, sleepInterval: NSTimeInterval = 0)
   {
     let chanCount = 5
     // careful with 'iterations': there's a maximum thread count.
     let iterations = 50
 
-//    syncprint(__FUNCTION__)
+    //    syncprint(__FUNCTION__)
 
     var senders = [Sender<Int>]()
-//    var receivers = [Receiver<Int>]()
-    var receivers = [Selectable]()
+    var receivers = [Receiver<Int>]()
     for _ in 0..<chanCount
     {
-      let (tx, rx) = Channel<Int>.Make(0)
+      let (tx, rx) = Channel<Int>.Make(buffered ? iterations : 0)
       senders.append(tx)
       receivers.append(rx)
     }
@@ -38,43 +37,92 @@ class SelectTests: XCTestCase
     {
       let index = Int(arc4random_uniform(UInt32(senders.count)))
       async(group: group) {
-        NSThread.sleepForTimeInterval(NSTimeInterval(i)*0.01)
+        if sleepInterval > 0 { NSThread.sleepForTimeInterval(NSTimeInterval(i)*0.01) }
         senders[index] <- index
-//        syncprint("\(i): sent to \(index)")
+        //        syncprint("\(i): sent to \(index)")
       }
     }
 
     NSThread.sleepForTimeInterval(0.001)
-//    dispatch_async(queue) {
+    //    dispatch_async(queue) {
     async {
       dispatch_group_wait(group, DISPATCH_TIME_FOREVER)
       for s in enumerate(senders)
       {
-//        syncprint("closing sender \(s.index)")
+        //        syncprint("closing sender \(s.index)")
         s.element.close()
       }
     }
 
     var i = 0
-    while let (selected, selection) = select(receivers)
+    if useSelectable
     {
-      if let message: Int = selection.getData()
+      let selectables = receivers.map { $0 as Selectable }
+      while let (selected, selection) = select(selectables)
       {
-//          syncprint("\(i): received from \(message)")
+        if let message: Int = selection.getData()
+        {
           i++
+        }
       }
-//      else
-//      {
-//        syncprint("*** received nil message ***")
-//      }
+    }
+    else
+    {
+      while let (selected, selection) = select(receivers)
+      {
+        if let message: Int = selection.getData()
+        {
+          i++
+        }
+      }
     }
 
-//    syncprint("\(i) messages received")
+    //    syncprint("\(i) messages received")
     syncprintwait()
-
+    
     XCTAssert(i == iterations, "incorrect number of messages received")
   }
 
+  func testSelectBufferedReceiverNoWait()
+  {
+    SelectReceiverTest(buffered: true, useSelectable: false, sleepInterval: 0)
+  }
+
+  func testSelectBufferedReceiverWithWait()
+  {
+    SelectReceiverTest(buffered: true, useSelectable: false, sleepInterval: 0.01)
+  }
+
+  func testSelectUnbufferedReceiverNoWait()
+  {
+    SelectReceiverTest(buffered: false, useSelectable: false, sleepInterval: 0)
+  }
+
+  func testSelectUnbufferedReceiverWithWait()
+  {
+    SelectReceiverTest(buffered: false, useSelectable: false, sleepInterval: 0.01)
+  }
+  
+  func testSelectBufferedReceiverSelectableNoWait()
+  {
+    SelectReceiverTest(buffered: true, useSelectable: true, sleepInterval: 0)
+  }
+
+  func testSelectBufferedReceiverSelectableWithWait()
+  {
+    SelectReceiverTest(buffered: true, useSelectable: true, sleepInterval: 0.01)
+  }
+
+  func testSelectUnbufferedReceiverSelectableNoWait()
+  {
+    SelectReceiverTest(buffered: false, useSelectable: true, sleepInterval: 0)
+  }
+
+  func testSelectUnbufferedReceiverSelectableWithWait()
+  {
+    SelectReceiverTest(buffered: false, useSelectable: true, sleepInterval: 0.01)
+  }
+  
 //  func testSuperSelectReceiver()
 //  {
 //    for i in 1...100
