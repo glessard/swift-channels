@@ -19,54 +19,47 @@ public func select<T>(options: Receiver<T>...) -> (Selectable, Selection)?
 
 public func select<T>(options: [Receiver<T>]) -> (Selectable, Selection)?
 {
-  if options.count > 0
+  let selectables = options.filter { $0.selectable }
+
+  if selectables.count < 1
+  { // Nothing left to do
+    return nil
+  }
+
+  // The synchronous path
+  for option in shuffle(selectables)
   {
-    let semaphore = SemaphorePool.dequeue()
-    let resultChan = SingletonChan(semaphore)
-
-    var signals = [Signal]()
-
-    for option in shuffle(options)
+    if let selection = option.selectObtain(option)
     {
-      if option.selectable
-      {
-        let signal = option.selectNotify(resultChan, selectionID: option)
-        signals.append(signal)
-      }
+      return (selection.messageID, selection)
     }
+  }
 
-    if signals.count < 1
-    {
-      if dispatch_get_context(semaphore) != nil
-      {
-        // leak memory.
-        dispatch_set_context(semaphore, nil)
-      }
-      SemaphorePool.enqueue(semaphore)
-      return nil
-    }
+  // The asynchronous path
+  let semaphore = SemaphorePool.dequeue()
+  let resultChan = SingletonChan(semaphore)
 
-    dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)
-    // We have a result
-    let context = COpaquePointer(dispatch_get_context(semaphore))
-    if context != nil
-    {
-      let selection = Unmanaged<Selection>.fromOpaque(context).takeRetainedValue()
-      if let r = selection.messageID as? Receiver<T>
-      {
-        for signal in signals { signal() }
-        dispatch_set_context(semaphore, nil)
-        SemaphorePool.enqueue(semaphore)
-        return (r, selection)
-      }
-    }
+  let signals = selectables.map { $0.selectNotify(resultChan, selectionID: $0) }
+
+  dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)
+  // We have a result
+  let context = COpaquePointer(dispatch_get_context(semaphore))
+  if context != nil
+  {
+    let selection = Unmanaged<Selection>.fromOpaque(context).takeRetainedValue()
 
     for signal in signals { signal() }
     dispatch_set_context(semaphore, nil)
     SemaphorePool.enqueue(semaphore)
+
+    return (selection.messageID, selection)
   }
 
-//  syncprint("nil message received?")
-  let c = Receiver(Chan<()>())
-  return (c, Selection(selectionID: c, selectionData: Optional<()>.None))
+  for signal in signals { signal() }
+  dispatch_set_context(semaphore, nil)
+  SemaphorePool.enqueue(semaphore)
+
+  //  syncprint("nil message received?")
+  let selection = Selection(selectionID: Receiver(Chan<()>()), selectionData: Optional<()>.None)
+  return (selection.messageID, selection)
 }
