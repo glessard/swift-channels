@@ -188,7 +188,7 @@ final class QBufferedChan<T>: Chan<T>
       }
     }
 
-    if head+capacity < tail
+    if head+capacity < tail && !writerQueue.isEmpty
     {
       if let ws = writerQueue.dequeue()
       {
@@ -249,7 +249,7 @@ final class QBufferedChan<T>: Chan<T>
       }
     }
 
-    if head < tail
+    if head < tail && !readerQueue.isEmpty
     {
       if let rs = readerQueue.dequeue()
       {

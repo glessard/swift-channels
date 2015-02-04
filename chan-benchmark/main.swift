@@ -69,7 +69,7 @@ dt = tic.toc
 syncprint("\(dt)\t\t(\(dt/iterations) per message)")
 
 
-var bufferedN = Channel.Wrap(SBufferedChan<Int>(buflen))
+var bufferedN = Channel<Int>.Make(buflen)
 
 tic = Time()
 
