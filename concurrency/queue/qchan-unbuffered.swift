@@ -279,9 +279,17 @@ final class QUnbufferedChan<T>: Chan<T>
         OSSpinLockUnlock(&self.lock)
 
         // A weak-sauce busy-wait solution.
-        // This is not a good solution, though it works (although it will lose any race).
-        // However, a correct solution would require waiting for 2 other threads at once
-        // (the thread that runs put() and the thread that runs select(). How would that be done?
+        // This is not a good solution, though it works
+        // (note that it will pretty much lose any race against a QBufferedChan).
+        // An ideal solution would require waiting for the other 2 threads at once
+        // (the thread that runs put() and the thread that runs select()).
+        // This would mean having a local semaphore, enqueue it to the readerQueue,
+        // and wait for a writer. Even if the issue of reliably aborting the message reception is
+        // solved, the writer needs to handle the case of a message that fails to get passed
+        // on to select() (if the selectGet thread loses its race to obtain the semaphore after having
+        // gotten data from a put() thread).
+        // The busy-wait is a way to defer a solution to these issues until a later time.
+
         dispatch_semaphore_wait(threadLock, dispatch_time(DISPATCH_TIME_NOW, 10_000))
         if dispatch_get_context(threadLock) == abortSelect
         {
