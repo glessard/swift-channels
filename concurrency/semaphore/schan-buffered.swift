@@ -85,7 +85,7 @@ final class SBufferedChan<T>: Chan<T>
 
   final override var isFull: Bool
   {
-    return head+capacity >= tail
+    return head+capacity <= tail
   }
   
   /**
