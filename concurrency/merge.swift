@@ -7,8 +7,9 @@
 //
 
 /**
-  Merge an array of channel receivers into one Receiver
+  Merge an array of channel receivers into one Receiver.
   Every item from the input channels will be able to be received via the returned channel.
+
   This function uses a multithreaded approach to merging channels.
   The system could run out of threads if the length of the input array is too large.
 
@@ -42,90 +43,12 @@ public func merge<R: ReceiverType>(channels: [R]) -> Receiver<R.ReceivedElement>
 
 
 /**
-  Merge an array of channels into one Receiver
+  Merge an array of channel receivers into one Receiver.
   Every item from the input channels will be able to be received via the returned channel.
-  This function uses a multithreaded approach to merging channels.
-  The system could run out of threads if the length of the input array is too large.
 
-  :param: channels an array of Receivers to merge.
-
-  :return: a single Receiver provide access to get every message received by the input Receivers.
-*/
-
-public func merge<T>(channels: [Chan<T>]) -> Receiver<T>
-{
-  let (tx, rx) = Channel.Make(T.self, channels.count*2)
-  let g = dispatch_group_create()!
-
-  for chan in channels
-  {
-    async(group: g) {
-      while let element = chan.get()
-      {
-        tx <- element
-      }
-    }
-  }
-
-  async {
-    dispatch_group_wait(g, DISPATCH_TIME_FOREVER)
-    tx.close()
-  }
-
-  return rx
-}
-
-/**
-  Merge an array of channels into one Receiver
-  Every item from the input channels will be able to be received via the returned channel.
   This function uses a simple round-robin approach to merging channels; if any one
   of the input channel blocks, the whole thing might block.
-  The number of threads used is low, however.
-
-  :param: channels an array of Chan<T> to merge.
-
-  :return: a single Receiver provide access to get every message received by the input Receivers.
-*/
-
-public func mergeRR<T>(channels: [Chan<T>]) -> Receiver<T>
-{
-  if channels.count == 0
-  { // Return a closed channel in this case
-    return Receiver(Chan<T>())
-  }
-
-  let (tx, rx) = Channel.Make(T.self, channels.count*2)
-
-  // A non-clever, reliable, round-robin merging method.
-  async {
-    for var i=0, last=0; true; i++
-    {
-      if let element = channels[i % channels.count].get()
-      {
-        tx <- element
-        last = i
-      }
-      else
-      {
-        if (i-last >= channels.count)
-        { // All channels are closed. Job done.
-          break
-        }
-      }
-    }
-
-    tx.close()
-  }
-
-  return rx
-}
-
-/**
-  Merge an array of channels into one Receiver
-  Every item from the input channels will be able to be received via the returned channel.
-  This function uses a simple round-robin approach to merging channels; if any one
-  of the input channel blocks, the whole thing might block.
-  The number of threads used is low, however.
+  This being said, the number of threads used is small.
 
   :param: channels an array of Receivers to merge.
 
