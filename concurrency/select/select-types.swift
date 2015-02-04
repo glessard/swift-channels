@@ -83,12 +83,12 @@ public protocol Selectable: class
 protocol SelectableChannelType: ChannelType
 {
   func selectGet(semaphore: SingletonChan<dispatch_semaphore_t>, selectionID: Selectable) -> Signal
-  func selectSyncGet(selectionID: Selectable) -> Selection?
+  func selectReadyGet(selectionID: Selectable) -> Selection?
 
   //  func extract(item: Selection) -> Element?
 
-//  func selectSyncPut(selectionID: Selectable) -> Selection?
-//  func selectPut(semaphore: SingletonChan<dispatch_semaphore_t>, selectionID: Selectable) -> Signal
+  func selectReadyPut(selectionID: Selectable) -> Selection?
+  func selectPut(semaphore: SingletonChan<dispatch_semaphore_t>, selectionID: Selectable) -> Signal
 //  func insert(item: Selection) -> Bool
 }
 

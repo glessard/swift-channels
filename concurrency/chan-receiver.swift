@@ -119,7 +119,7 @@ public final class Receiver<T>: ReceiverType, GeneratorType, SequenceType, Selec
 
   public func selectObtain(selectionID: Selectable) -> Selection?
   {
-    return wrapped.selectSyncGet(selectionID)
+    return wrapped.selectReadyGet(selectionID)
   }
 
   public var selectable: Bool

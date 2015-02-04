@@ -211,7 +211,7 @@ final class QUnbufferedChan<T>: Chan<T>
     return element
   }
 
-  override func selectSyncGet(selectionID: Selectable) -> Selection?
+  override func selectReadyGet(selectionID: Selectable) -> Selection?
   {
     OSSpinLockLock(&lock)
     if let ws = writerQueue.dequeue()

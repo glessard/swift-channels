@@ -88,7 +88,7 @@ public class Chan<T>: ChannelType, SelectableChannelType
     return {}
   }
 
-  public func selectSyncGet(selectionID: Selectable) -> Selection?
+  public func selectReadyGet(selectionID: Selectable) -> Selection?
   {
     return nil
   }
@@ -96,6 +96,11 @@ public class Chan<T>: ChannelType, SelectableChannelType
   public func selectPut(semaphore: SingletonChan<dispatch_semaphore_t>, selectionID: Selectable) -> Signal
   {
     return {}
+  }
+
+  public func selectReadyPut(selectionID: Selectable) -> Selection?
+  {
+    return nil
   }
 
   // Factory functions.

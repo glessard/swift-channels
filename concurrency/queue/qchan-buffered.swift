@@ -161,7 +161,7 @@ final class QBufferedChan<T>: Chan<T>
 
     OSSpinLockLock(&lock)
 
-    while !closed && head+capacity <= tail
+    while !closed && head+capacity < tail
     {
       let threadLock = SemaphorePool.dequeue()
       writerQueue.enqueue(threadLock)
@@ -264,7 +264,7 @@ final class QBufferedChan<T>: Chan<T>
 
   // SelectableChannelType overrides
 
-  override func selectSyncGet(selectionID: Selectable) -> Selection?
+  override func selectReadyGet(selectionID: Selectable) -> Selection?
   {
     OSSpinLockLock(&lock)
     if !closed && head < tail

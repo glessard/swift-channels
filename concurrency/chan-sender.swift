@@ -6,6 +6,8 @@
 //  Copyright (c) 2014 Guillaume Lessard. All rights reserved.
 //
 
+import Dispatch
+
 /**
   Sender<T> is the sending endpoint for a Channel, Chan<T>.
 */
@@ -66,7 +68,7 @@ extension Sender
   Sender<T> is the sending endpoint for a Channel, Chan<T>.
 */
 
-public final class Sender<T>: SenderType
+public final class Sender<T>: SenderType, Selectable
 {
   private let wrapped: Chan<T>
 
@@ -82,6 +84,20 @@ public final class Sender<T>: SenderType
   public func close()  { wrapped.close() }
 
   public func send(newElement: T) -> Bool { return wrapped.put(newElement) }
+
+  // Selectable implementation
+
+  public var selectable: Bool { return wrapped.isClosed }
+
+  public func selectObtain(selectionID: Selectable) -> Selection?
+  {
+    return wrapped.selectReadyPut(selectionID)
+  }
+
+  public func selectNotify(semaphore: SingletonChan<dispatch_semaphore_t>, selectionID: Selectable) -> Signal
+  {
+    return wrapped.selectPut(semaphore, selectionID: selectionID)
+  }
 }
 
 /**
