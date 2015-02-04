@@ -19,13 +19,7 @@
 
 public func merge<R: ReceiverType>(channels: [R]) -> Receiver<R.ReceivedElement>
 {
-  if channels.count == 0
-  { // Return a closed channel in this case.
-    return Receiver(Chan<R.ReceivedElement>())
-  }
-
   let (tx, rx) = Channel.Make(R.ReceivedElement.self, channels.count*2)
-
   let g = dispatch_group_create()!
 
   for chan in channels
@@ -60,13 +54,7 @@ public func merge<R: ReceiverType>(channels: [R]) -> Receiver<R.ReceivedElement>
 
 public func merge<T>(channels: [Chan<T>]) -> Receiver<T>
 {
-  if channels.count == 0
-  { // Return a closed channel in this case
-    return Receiver(Chan<T>())
-  }
-
   let (tx, rx) = Channel.Make(T.self, channels.count*2)
-
   let g = dispatch_group_create()!
 
   for chan in channels
