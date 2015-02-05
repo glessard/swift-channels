@@ -22,14 +22,9 @@ class SelectTests: XCTestCase
 
     //    syncprint(__FUNCTION__)
 
-    var senders = [Sender<Int>]()
-    var receivers = [Receiver<Int>]()
-    for _ in 0..<chanCount
-    {
-      let (tx, rx) = Channel<Int>.Make(buffered ? iterations : 0)
-      senders.append(tx)
-      receivers.append(rx)
-    }
+    let channels  = map(0..<chanCount) { _ in Channel<Int>.Make(buffered ? iterations : 0) }
+    let senders   = channels.map { $0.tx }
+    let receivers = channels.map { $0.rx }
 
     let group = dispatch_group_create()
     let queue = dispatch_queue_create(nil, nil)
@@ -37,7 +32,7 @@ class SelectTests: XCTestCase
     {
       let index = Int(arc4random_uniform(UInt32(senders.count)))
       async(group: group) {
-        if sleepInterval > 0 { NSThread.sleepForTimeInterval(NSTimeInterval(i)*0.01) }
+        if sleepInterval > 0 { NSThread.sleepForTimeInterval(NSTimeInterval(i)*sleepInterval) }
         senders[index] <- index
         //        syncprint("\(i): sent to \(index)")
       }
@@ -129,5 +124,76 @@ class SelectTests: XCTestCase
   func testSelectUnbufferedReceiverSelectableWithWait()
   {
     SelectReceiverTest(buffered: false, useSelectable: true, sleepInterval: 0.01)
+  }
+
+
+  func SelectSenderTest(#buffered: Bool, sleepInterval: NSTimeInterval = 0)
+  {
+    let chanCount = 5
+    let iterations = 50
+
+    //    syncprint(__FUNCTION__)
+
+    let channels  = map(0..<chanCount) { _ in Chan<Int>.Make(buffered ? 1 : 0) }
+    let senders   = channels.map { Sender($0) }
+    let receivers = channels.map { Receiver($0) }
+
+    let (tx, rx) = Channel<Int>.Make(iterations)
+    let g = dispatch_group_create()
+    for (i, receiver) in enumerate(receivers)
+    {
+      async(group: g) {
+        while let element = <-receiver
+        {
+          tx <- element
+//          syncprint("\(element): received via channel #\(i)")
+          if sleepInterval > 0 { NSThread.sleepForTimeInterval(sleepInterval) }
+        }
+      }
+    }
+
+    async {
+      dispatch_group_wait(g, DISPATCH_TIME_FOREVER)
+      tx.close()
+    }
+
+    async {
+      var i = 0
+      let selectables = senders.map { $0 as Selectable }
+      while let (selected, selection) = select(selectables)
+      {
+        if let sender = selection.messageID as? Sender<Int>
+        {
+          if sender.insert(selection, item: i) { i++ }
+        }
+        if i >= iterations
+        {
+          for sender in senders { sender.close() }
+        }
+      }
+    }
+
+    var i=0
+    while let element = <-rx
+    {
+      i++
+    }
+
+//    syncprint("\(i) messages received")
+    syncprintwait()
+
+    XCTAssert(i == iterations, "incorrect number of messages received")
+  }
+
+  func testPerformanceSelectBufferedSender()
+  {
+    self.measureBlock {
+      self.SelectSenderTest(buffered: true)
+    }
+  }
+
+  func testSelectBufferedSenderWithWait()
+  {
+    SelectSenderTest(buffered: true, sleepInterval: 0.1)
   }
 }

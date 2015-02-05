@@ -103,6 +103,17 @@ public class Chan<T>: ChannelType, SelectableChannelType
     return nil
   }
 
+  public func insert(ref: Selection, item: T) -> Bool
+  {
+    if let s: dispatch_semaphore_t = ref.getData()
+    {
+      dispatch_set_context(s, nil)
+      dispatch_semaphore_signal(s)
+      return true
+    }
+    return false
+  }
+
   // Factory functions.
 
   /**

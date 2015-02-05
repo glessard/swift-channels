@@ -161,7 +161,7 @@ final class QBufferedChan<T>: Chan<T>
 
     OSSpinLockLock(&lock)
 
-    while !closed && head+capacity < tail
+    while !closed && head+capacity <= tail
     {
       let threadLock = SemaphorePool.dequeue()
       writerQueue.enqueue(threadLock)
@@ -263,6 +263,166 @@ final class QBufferedChan<T>: Chan<T>
   }
 
   // SelectableChannelType overrides
+
+  override func selectReadyPut(selectionID: Selectable) -> Selection?
+  {
+    OSSpinLockLock(&lock)
+    if !closed && !isFull
+    {
+      let semaphore = SemaphorePool.dequeue()
+
+      async {
+        // Maybe this should be called with a real timeout and checked on return.
+        // (that wouldn't be SemaphorePool compatible.)
+        dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)
+        let p = UnsafeMutablePointer<T>(dispatch_get_context(semaphore))
+        if p == nil
+        { // this isn't right
+          assertionFailure(__FUNCTION__)
+          OSSpinLockUnlock(&self.lock)
+          SemaphorePool.enqueue(semaphore)
+          return
+        }
+        self.buffer.advancedBy(self.tail&self.mask).initialize(p.move())
+        self.tail += 1
+        OSSpinLockUnlock(&self.lock)
+        // The lock couldn't be released until now. In another thread. It's kind of gross.
+
+        p.dealloc(1)
+        dispatch_set_context(semaphore, nil)
+        SemaphorePool.enqueue(semaphore)
+
+        if !self.readerQueue.isEmpty
+        {
+          if let rs = self.readerQueue.dequeue()
+          {
+            dispatch_semaphore_signal(rs)
+          }
+        }
+      }
+
+      return Selection(selectionID: selectionID, selectionData: semaphore)
+    }
+    OSSpinLockUnlock(&lock)
+    return nil
+  }
+
+  override func selectPut(semaphore: SingletonChan<dispatch_semaphore_t>, selectionID: Selectable) -> Signal
+  {
+    let threadLock = dispatch_semaphore_create(0)!
+
+    async {
+      OSSpinLockLock(&self.lock)
+
+      while !self.closed && self.head+self.capacity <= self.tail
+      {
+        self.writerQueue.enqueue(threadLock)
+        OSSpinLockUnlock(&self.lock)
+        dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
+        if dispatch_get_context(threadLock) == abortSelect
+        {
+          if let ws = self.writerQueue.dequeue()
+          {
+            dispatch_semaphore_signal(ws)
+          }
+          return
+        }
+        OSSpinLockLock(&self.lock)
+      }
+
+      if self.closed
+      {
+        OSSpinLockUnlock(&self.lock)
+        if let s = semaphore.get()
+        {
+          dispatch_set_context(s, nil)
+          dispatch_semaphore_signal(s)
+        }
+        return
+      }
+
+      if let s = semaphore.get()
+      {
+        let semaphore = SemaphorePool.dequeue()
+
+        let selection = Selection(selectionID: selectionID, selectionData: semaphore)
+        let context = UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque())
+        dispatch_set_context(s, context)
+        dispatch_semaphore_signal(s)
+
+        dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)
+        let p = UnsafeMutablePointer<T>(dispatch_get_context(semaphore))
+        if p == nil
+        { // this isn't right
+          assertionFailure(__FUNCTION__)
+          OSSpinLockUnlock(&self.lock)
+          SemaphorePool.enqueue(semaphore)
+          return
+        }
+        self.buffer.advancedBy(self.tail&self.mask).initialize(p.move())
+        self.tail += 1
+        OSSpinLockUnlock(&self.lock)
+
+        p.dealloc(1)
+        dispatch_set_context(semaphore, nil)
+        SemaphorePool.enqueue(semaphore)
+
+        if !self.readerQueue.isEmpty
+        {
+          if let rs = self.readerQueue.dequeue()
+          {
+            dispatch_semaphore_signal(rs)
+          }
+        }
+
+        if !self.isFull && !self.writerQueue.isEmpty
+        {
+          if let ws = self.writerQueue.dequeue()
+          {
+            dispatch_semaphore_signal(ws)
+          }
+        }
+      }
+      else
+      {
+        if !self.isFull
+        {
+          if let ws = self.writerQueue.dequeue()
+          {
+            dispatch_semaphore_signal(ws)
+          }
+        }
+
+        if !self.isEmpty
+        {
+          if let rs = self.readerQueue.dequeue()
+          {
+            dispatch_semaphore_signal(rs)
+          }
+        }
+
+        OSSpinLockUnlock(&self.lock)
+      }
+    }
+
+    return {
+      dispatch_set_context(threadLock, abortSelect)
+      dispatch_semaphore_signal(threadLock)
+    }
+  }
+
+  override func insert(ref: Selection, item: T) -> Bool
+  {
+    if let s: dispatch_semaphore_t = ref.getData()
+    {
+      let p = UnsafeMutablePointer<T>.alloc(1)
+      p.initialize(item)
+      dispatch_set_context(s, p)
+      dispatch_semaphore_signal(s)
+      return true
+    }
+    return false
+  }
 
   override func selectReadyGet(selectionID: Selectable) -> Selection?
   {

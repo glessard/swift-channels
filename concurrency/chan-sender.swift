@@ -87,7 +87,7 @@ public final class Sender<T>: SenderType, Selectable
 
   // Selectable implementation
 
-  public var selectable: Bool { return wrapped.isClosed }
+  public var selectable: Bool { return !wrapped.isClosed }
 
   public func selectObtain(selectionID: Selectable) -> Selection?
   {
@@ -97,6 +97,13 @@ public final class Sender<T>: SenderType, Selectable
   public func selectNotify(semaphore: SingletonChan<dispatch_semaphore_t>, selectionID: Selectable) -> Signal
   {
     return wrapped.selectPut(semaphore, selectionID: selectionID)
+  }
+
+  // A utility for SelectableChannelType, in place of a better idea
+
+  public func insert(ref: Selection, item: T) -> Bool
+  {
+    return wrapped.insert(ref, item: item)
   }
 }
 
