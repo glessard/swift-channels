@@ -111,6 +111,7 @@ final class QUnbufferedChan<T>: Chan<T>
       let pointer = UnsafeMutablePointer<T>(dispatch_get_context(rs))
       if pointer == UnsafeMutablePointer.null()
       { // not a normal code path.
+        assertionFailure(__FUNCTION__)
         dispatch_semaphore_signal(nil)
         return false
       }
@@ -170,6 +171,7 @@ final class QUnbufferedChan<T>: Chan<T>
       let context = UnsafePointer<T>(dispatch_get_context(ws))
       if context == UnsafePointer.null()
       { // not a normal code path.
+        assertionFailure(__FUNCTION__)
         dispatch_semaphore_signal(nil)
         return nil
       }
@@ -221,6 +223,7 @@ final class QUnbufferedChan<T>: Chan<T>
       let context = UnsafePointer<T>(dispatch_get_context(ws))
       if context == nil
       { // not a normal code path.
+        assertionFailure(__FUNCTION__)
         dispatch_semaphore_signal(nil)
         return nil
       }
@@ -253,6 +256,7 @@ final class QUnbufferedChan<T>: Chan<T>
             let context = UnsafePointer<T>(dispatch_get_context(ws))
             if context == nil
             { // not a normal code path.
+              assertionFailure(__FUNCTION__)
               dispatch_semaphore_signal(nil)
               return
             }
