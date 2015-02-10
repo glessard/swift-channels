@@ -66,12 +66,16 @@ final class PBuffered1Chan<T>: pthreadsChan<T>
       blockedWriters -= 1
     }
 
-    var success = false
+    let success: Bool
     if !closed
     {
       e.initialize(newElement)
       elements += 1
       success = true
+    }
+    else
+    {
+      success = false
     }
 
     if self.closed && blockedWriters > 0

@@ -9,7 +9,7 @@
 import Dispatch
 
 /**
-  An unbuffered channel.
+  An unbuffered channel that uses a queue of semaphores for scheduling.
 */
 
 final class QUnbufferedChan<T>: Chan<T>
@@ -109,10 +109,10 @@ final class QUnbufferedChan<T>: Chan<T>
 
       // attach a new copy of our data to the reader's semaphore
       let pointer = UnsafeMutablePointer<T>(dispatch_get_context(rs))
-      if pointer == UnsafeMutablePointer.null()
+      if pointer == nil
       { // not a normal code path.
-        assertionFailure(__FUNCTION__)
-        dispatch_semaphore_signal(nil)
+        assert(false, __FUNCTION__)
+        // dispatch_semaphore_signal(nil)
         return false
       }
 
@@ -136,7 +136,7 @@ final class QUnbufferedChan<T>: Chan<T>
 
     // got awoken
     let context = UnsafePointer<T>(dispatch_get_context(threadLock))
-    if context == UnsafePointer.null()
+    if context == nil
     { // thread was awoken by close(), not a reader
       SemaphorePool.enqueue(threadLock)
       return false
@@ -169,10 +169,10 @@ final class QUnbufferedChan<T>: Chan<T>
       OSSpinLockUnlock(&lock)
 
       let context = UnsafePointer<T>(dispatch_get_context(ws))
-      if context == UnsafePointer.null()
+      if context == nil
       { // not a normal code path.
-        assertionFailure(__FUNCTION__)
-        dispatch_semaphore_signal(nil)
+        assert(false, __FUNCTION__)
+        // dispatch_semaphore_signal(nil)
         return nil
       }
       let element = context.memory
@@ -197,7 +197,7 @@ final class QUnbufferedChan<T>: Chan<T>
 
     // got awoken
     let context = UnsafeMutablePointer<T>(dispatch_get_context(threadLock))
-    if context == UnsafeMutablePointer.null()
+    if context == nil
     { // thread was awoken by close(), not a writer
       buffer.dealloc(1)
       SemaphorePool.enqueue(threadLock)
@@ -223,8 +223,8 @@ final class QUnbufferedChan<T>: Chan<T>
       let context = UnsafePointer<T>(dispatch_get_context(ws))
       if context == nil
       { // not a normal code path.
-        assertionFailure(__FUNCTION__)
-        dispatch_semaphore_signal(nil)
+        assert(false, __FUNCTION__)
+        // dispatch_semaphore_signal(nil)
         return nil
       }
       let element = context.memory
@@ -256,8 +256,8 @@ final class QUnbufferedChan<T>: Chan<T>
             let context = UnsafePointer<T>(dispatch_get_context(ws))
             if context == nil
             { // not a normal code path.
-              assertionFailure(__FUNCTION__)
-              dispatch_semaphore_signal(nil)
+              assert(false, __FUNCTION__)
+              // dispatch_semaphore_signal(nil)
               return
             }
             let element = context.memory

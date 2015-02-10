@@ -69,7 +69,7 @@ struct IndexShuffler<S: SequenceType where
   init(_ input: S)
   {
     i = Array(input)
-    count = countElements(i) as Int
+    count = Swift.count(i) as Int
   }
 
   mutating func next() -> Index?

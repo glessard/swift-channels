@@ -9,7 +9,7 @@
 import Dispatch
 
 /**
-  A channel that uses a queue to store its elements.
+  A channel that uses a queue of semaphores for scheduling.
 */
 
 final class QBufferedChan<T>: Chan<T>
@@ -278,7 +278,7 @@ final class QBufferedChan<T>: Chan<T>
         let p = UnsafeMutablePointer<T>(dispatch_get_context(semaphore))
         if p == nil
         { // this isn't right
-          assertionFailure(__FUNCTION__)
+          assert(false, __FUNCTION__)
           OSSpinLockUnlock(&self.lock)
           SemaphorePool.enqueue(semaphore)
           return
@@ -354,7 +354,7 @@ final class QBufferedChan<T>: Chan<T>
         let p = UnsafeMutablePointer<T>(dispatch_get_context(semaphore))
         if p == nil
         { // this isn't right
-          assertionFailure(__FUNCTION__)
+          assert(false, __FUNCTION__)
           OSSpinLockUnlock(&self.lock)
           SemaphorePool.enqueue(semaphore)
           return
