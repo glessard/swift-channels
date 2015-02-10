@@ -9,7 +9,7 @@
 import Dispatch
 
 /**
-  A channel that uses a queue to store its elements.
+  A channel that uses a queue of semaphores for scheduling.
 */
 
 final class QBufferedChan<T>: Chan<T>
