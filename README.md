@@ -73,8 +73,8 @@ nil, thereby signaling that the channel has become closed.
 
 #### Performance
 
-On OS X, the message transmission with no thread contention takes
-about twice as long as it would in Go, e.g. 320 vs. 160 nanoseconds
+On OS X, with Swift 1.2, message transmission with no thread contention
+takes about 25% longer as it would in Go, e.g. 200 vs. 160 nanoseconds
 on a 2008 Mac Pro. It is possible to narrow the gap, but that would
 require compromises that are likely to be obviated by future compiler
 improvements. With thread contention, this library is *much* slower than
