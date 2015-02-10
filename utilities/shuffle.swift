@@ -62,22 +62,24 @@ struct IndexShuffler<S: SequenceType where
 {
   typealias Index = S.Generator.Element
 
+  let count: Int
   var step = -1
   var i: [Index]
 
   init(_ input: S)
   {
     i = Array(input)
+    count = Swift.count(i) as Int
   }
 
   mutating func next() -> Index?
   {
     step += 1
 
-    if step < i.count
+    if step < count
     {
       // select a random Index from the rest of the array
-      let j = step + Int(arc4random_uniform(UInt32(i.count-step)))
+      let j = step + Int(arc4random_uniform(UInt32(count-step)))
 
       // swap that Index with the one at the current step in the array
       swap(&i[j], &i[step])
