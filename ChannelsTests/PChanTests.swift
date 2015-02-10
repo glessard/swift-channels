@@ -29,17 +29,27 @@ class PBufferedQChannelTests: BufferedNChannelTests
 
   override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
   {
-    return Channel.Wrap(PChan.Make(buflen, useQueue: true))
+    return Channel.Wrap(PChan.Make(buflen, bufferType: .Queue))
+  }
+}
+
+class PBufferedBChannelTests: BufferedNChannelTests
+{
+  override var id: String { return "pthreads Buffered(N-UnsafePointer)" }
+
+  override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
+  {
+    return Channel.Wrap(PChan.Make(buflen, bufferType: .Buffer))
   }
 }
 
 class PBufferedAChannelTests: BufferedNChannelTests
 {
-  override var id: String { return "pthreads Buffered(N-Array)" }
+  override var id: String { return "pthreads Buffered(N-UnsafePointer)" }
 
   override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
   {
-    return Channel.Wrap(PChan.Make(buflen))
+    return Channel.Wrap(PChan.Make(buflen, bufferType: .Array))
   }
 }
 

@@ -8,19 +8,26 @@
 
 import Darwin
 
+public enum PChanBufferType
+{
+  case Buffer
+  case Array
+  case Queue
+}
+
 public class PChan<T>
 {
   /**
   Factory method to obtain pthreads channels of the desired channel capacity.
   If capacity is 0, then an unbuffered channel will be created.
 
-  :param: capacity the buffer capacity of the channel.
-  :param: queue    whether a buffered channel should use a queue-based implementation
+  :param: capacity   the buffer capacity of the channel.
+  :param: bufferType which kind of backing store should the channel use.
 
   :return: a newly-created, empty Chan<T>
   */
 
-  public class func Make(capacity: Int, useQueue: Bool) -> Chan<T>
+  public class func Make(capacity: Int, bufferType: PChanBufferType = .Buffer) -> Chan<T>
   {
     switch capacity
     {
@@ -28,25 +35,14 @@ public class PChan<T>
       return PUnbufferedChan()
 
     default:
-      if useQueue      { return PBufferedQChan(capacity) }
       if capacity == 1 { return PBuffered1Chan() }
-      return PBufferedAChan(capacity)
+      switch bufferType
+      {
+      case .Buffer: return PBufferedBChan(capacity)
+      case .Array:  return PBufferedAChan(capacity)
+      case .Queue:  return PBufferedQChan(capacity)
+      }
     }
-  }
-
-  /**
-  Factory method to obtain pthreads channels of the desired channel capacity.
-  If capacity is 0, then an unbuffered channel will be created.
-  Buffered channels will use a buffer-based implementation
-
-  :param: capacity the buffer capacity of the channel.
-
-  :return: a newly-created, empty Chan<T>
-  */
-
-  public class func Make(capacity: Int) -> Chan<T>
-  {
-    return Make(capacity, useQueue: false)
   }
 }
 
@@ -68,36 +64,26 @@ class pthreadsChan<T>: Chan<T>
 
   // pthreads variables
 
-  final let channelMutex:   UnsafeMutablePointer<pthread_mutex_t>
-  final let readCondition:  UnsafeMutablePointer<pthread_cond_t>
-  final let writeCondition: UnsafeMutablePointer<pthread_cond_t>
+  final var channelMutex =   pthread_mutex_t()
+  final var readCondition =  pthread_cond_t()
+  final var writeCondition = pthread_cond_t()
 
   // Initialization and destruction
 
   override init()
   {
-    channelMutex = UnsafeMutablePointer<pthread_mutex_t>.alloc(1)
-    pthread_mutex_init(channelMutex, nil)
-
-    writeCondition = UnsafeMutablePointer<pthread_cond_t>.alloc(1)
-    pthread_cond_init(writeCondition, nil)
-
-    readCondition = UnsafeMutablePointer<pthread_cond_t>.alloc(1)
-    pthread_cond_init(readCondition, nil)
+    pthread_mutex_init(&channelMutex, nil)
+    pthread_cond_init(&writeCondition, nil)
+    pthread_cond_init(&readCondition, nil)
 
     closed = false
   }
 
   deinit
   {
-    pthread_mutex_destroy(channelMutex)
-    channelMutex.dealloc(1)
-
-    pthread_cond_destroy(readCondition)
-    readCondition.dealloc(1)
-
-    pthread_cond_destroy(writeCondition)
-    writeCondition.dealloc(1)
+    pthread_mutex_destroy(&channelMutex)
+    pthread_cond_destroy(&readCondition)
+    pthread_cond_destroy(&writeCondition)
   }
 
   // Computed properties
@@ -127,10 +113,10 @@ class pthreadsChan<T>: Chan<T>
     // Unblock the threads waiting on our conditions.
     if blockedReaders > 0 || blockedWriters > 0
     {
-      pthread_mutex_lock(channelMutex)
-      pthread_cond_signal(writeCondition)
-      pthread_cond_signal(readCondition)
-      pthread_mutex_unlock(channelMutex)
+      pthread_mutex_lock(&channelMutex)
+      pthread_cond_signal(&writeCondition)
+      pthread_cond_signal(&readCondition)
+      pthread_mutex_unlock(&channelMutex)
     }
   }
 }

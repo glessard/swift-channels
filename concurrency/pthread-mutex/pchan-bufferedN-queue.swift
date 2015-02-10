@@ -61,39 +61,34 @@ final class PBufferedQChan<T>: pthreadsChan<T>
 
   override func put(newElement: T) -> Bool
   {
-    if self.closed { return false }
+    if closed { return false }
 
-    pthread_mutex_lock(channelMutex)
-    while (elements >= capacity) && !self.closed
+    pthread_mutex_lock(&channelMutex)
+    while (elements >= capacity) && !closed
     { // block while channel is full
       blockedWriters += 1
-      pthread_cond_wait(writeCondition, channelMutex)
+      pthread_cond_wait(&writeCondition, &channelMutex)
       blockedWriters -= 1
     }
 
-    let success: Bool
-    if !self.closed
+    if closed
     {
-      q.enqueue(newElement)
-      elements += 1
-      success = true
-    }
-    else
-    {
-      success = false
+      pthread_cond_signal(&writeCondition)
+      pthread_cond_signal(&readCondition)
+      pthread_mutex_unlock(&channelMutex)
+      return false
     }
 
-    if self.closed && blockedWriters > 0
-    { // No reason to block
-      pthread_cond_signal(writeCondition)
-    }
+    q.enqueue(newElement)
+    elements += 1
+
     if blockedReaders > 0
     { // Channel is not empty
-      pthread_cond_signal(readCondition)
+      pthread_cond_signal(&readCondition)
     }
 
-    pthread_mutex_unlock(channelMutex)
-    return success
+    pthread_mutex_unlock(&channelMutex)
+    return true
   }
 
   /**
@@ -107,30 +102,30 @@ final class PBufferedQChan<T>: pthreadsChan<T>
 
   override func get() -> T?
   {
-    if self.closed && elements <= 0 { return nil }
+    if closed && elements <= 0 { return nil }
 
-    pthread_mutex_lock(channelMutex)
+    pthread_mutex_lock(&channelMutex)
 
-    while (elements <= 0) && !self.closed
+    while (elements <= 0) && !closed
     { // block while channel is empty
       blockedReaders += 1
-      pthread_cond_wait(readCondition, channelMutex)
+      pthread_cond_wait(&readCondition, &channelMutex)
       blockedReaders -= 1
     }
 
     let oldElement = q.dequeue()
     elements -= 1
 
-    if self.closed && blockedReaders > 0
+    if closed && blockedReaders > 0
     { // No reason to block
-      pthread_cond_signal(readCondition)
+      pthread_cond_signal(&readCondition)
     }
     if blockedWriters > 0
     { // Channel isn't full
-      pthread_cond_signal(writeCondition)
+      pthread_cond_signal(&writeCondition)
     }
 
-    pthread_mutex_unlock(channelMutex)
+    pthread_mutex_unlock(&channelMutex)
 
     return oldElement
   }
