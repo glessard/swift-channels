@@ -71,12 +71,16 @@ final class PBufferedQChan<T>: pthreadsChan<T>
       blockedWriters -= 1
     }
 
-    var success = false
+    let success: Bool
     if !self.closed
     {
       q.enqueue(newElement)
       elements += 1
       success = true
+    }
+    else
+    {
+      success = false
     }
 
     if self.closed && blockedWriters > 0

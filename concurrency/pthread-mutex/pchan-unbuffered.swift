@@ -67,13 +67,17 @@ final class PUnbufferedChan<T>: pthreadsChan<T>
 
     assert(elements <= 0 || self.closed, "Messed up an unbuffered send")
 
-    var success = false
+    let success: Bool
     if !self.closed
     {
       e.initialize(newElement)
       elements += 1
       success = true
       //    syncprint("writer \(newElement) has successfully sent")
+    }
+    else
+    {
+      success = false
     }
 
     // Surely we can interest a reader

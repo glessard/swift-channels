@@ -92,12 +92,16 @@ final class PBufferedAChan<T>: pthreadsChan<T>
       blockedWriters -= 1
     }
 
-    var success = false
+    let success: Bool
     if !closed
     {
       buffer.advancedBy(tail&mask).initialize(newElement)
       tail += 1
       success = true
+    }
+    else
+    {
+      success = false
     }
 
     if self.closed && blockedWriters > 0
