@@ -102,7 +102,7 @@ protocol SelectableChannelType: ChannelType
 public class Selection
 {
   private let id: Selectable
-  private let data: Any? = nil
+  private let data: Any?
 
   public init<T>(selectionID: Selectable, selectionData: T?)
   {
@@ -110,6 +110,10 @@ public class Selection
     if let d = selectionData
     {
       data = d
+    }
+    else
+    {
+      data = nil
     }
   }
 
