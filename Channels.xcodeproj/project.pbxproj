@@ -13,6 +13,7 @@
 		035B606A1A67433800F4B44B /* Channels.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 035B605E1A67433800F4B44B /* Channels.framework */; };
 		035B60711A67433800F4B44B /* ChannelsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035B60701A67433800F4B44B /* ChannelsTests.swift */; };
 		0370A7171A7C44BC00F4B44B /* merge-select.swift in Sources */ = {isa = PBXBuildFile; fileRef = 032CCD3E1A79BE9400F4B44B /* merge-select.swift */; };
+		03747ECD1A8AC9FF00F4B44B /* pchan-bufferedN-array.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B24C0B1A8AC01F00F4B44B /* pchan-bufferedN-array.swift */; };
 		03AD471E1A6743E500F4B44B /* async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47001A6743E500F4B44B /* async.swift */; };
 		03AD471F1A6743E500F4B44B /* chan-operators.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47011A6743E500F4B44B /* chan-operators.swift */; };
 		03AD47201A6743E500F4B44B /* chan-protocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47021A6743E500F4B44B /* chan-protocols.swift */; };
@@ -203,6 +204,7 @@
 		03F3FD691A69D90400F4B44B /* select-types.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "select-types.swift"; path = "select/select-types.swift"; sourceTree = "<group>"; };
 		03F3FD6F1A6AF95400F4B44B /* select.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = select.swift; path = select/select.swift; sourceTree = "<group>"; };
 		03F3FD711A6B207E00F4B44B /* SelectTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SelectTests.swift; sourceTree = "<group>"; };
+		03B24C0B1A8AC01F00F4B44B /* pchan-bufferedN-array.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "pchan-bufferedN-array.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -333,6 +335,7 @@
 				03AD47101A6743E500F4B44B /* pchan-buffered1.swift */,
 				03AD47111A6743E500F4B44B /* pchan-bufferedN-queue.swift */,
 				03AD47121A6743E500F4B44B /* pchan-bufferedN-buffer.swift */,
+				03B24C0B1A8AC01F00F4B44B /* pchan-bufferedN-array.swift */,
 				03AD47141A6743E500F4B44B /* pchan-unbuffered.swift */,
 			);
 			path = "pthread-mutex";
@@ -581,6 +584,7 @@
 				03AD474B1A67441A00F4B44B /* semaphorequeue.swift in Sources */,
 				03AD47331A6743E500F4B44B /* qchan.swift in Sources */,
 				034392C21A7A065200F4B44B /* select.swift in Sources */,
+				03747ECD1A8AC9FF00F4B44B /* pchan-bufferedN-array.swift in Sources */,
 				03AD47341A6743E500F4B44B /* semaphorepool.swift in Sources */,
 				03F3FD741A6D762C00F4B44B /* logging.swift in Sources */,
 				03AD47AB1A688ADF00F4B44B /* future.swift in Sources */,

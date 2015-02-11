@@ -1,5 +1,5 @@
 //
-//  chan-buffered1.swift
+//  chan-bufferedN-array.swift
 //  concurrency
 //
 //  Created by Guillaume Lessard on 2014-11-19.
@@ -9,40 +9,57 @@
 import Darwin
 
 /**
-  A channel that uses a 1-element buffer.
+  A channel that uses an array as a backing store.
 */
 
-final class PBuffered1Chan<T>: pthreadsChan<T>
+final class PBufferedAChan<T>: pthreadsChan<T>
 {
-  private let e = UnsafeMutablePointer<T>.alloc(1)
+  private final var buffer: Array<T?>
+
+  private final let capacity: Int
+  private final let mask: Int
 
   // housekeeping variables
 
-  private let capacity = 1
-  private var elements = 0
+  private final var head = 0
+  private final var tail = 0
 
-  // Used to elucidate/troubleshoot message arrival order
-  // private var readerCount: Int32 = -1
+  // Initialization and destruction
 
-  deinit
+  init(_ capacity: Int)
   {
-    if elements > 0
-    {
-      e.destroy()
-    }
-    e.dealloc(1)
+    self.capacity = (capacity < 1) ? 1 : capacity
+
+    // find the next higher power of 2
+    var v = self.capacity - 1
+    v |= v >> 1
+    v |= v >> 2
+    v |= v >> 4
+    v |= v >> 8
+    v |= v >> 16
+    v |= v >> 32
+
+    mask = v // buffer size -1
+    buffer = Array<T?>(count: mask+1, repeatedValue: nil)
+
+    super.init()
+  }
+
+  convenience override init()
+  {
+    self.init(1)
   }
 
   // Computed property accessors
 
   final override var isEmpty: Bool
   {
-    return elements <= 0
+    return head >= tail
   }
 
   final override var isFull: Bool
   {
-    return elements >= capacity
+    return head+capacity <= tail
   }
 
   /**
@@ -59,7 +76,7 @@ final class PBuffered1Chan<T>: pthreadsChan<T>
     if closed { return false }
 
     pthread_mutex_lock(&channelMutex)
-    while (elements >= capacity) && !closed
+    while (head+capacity <= tail) && !closed
     { // block while channel is full
       blockedWriters += 1
       pthread_cond_wait(&writeCondition, &channelMutex)
@@ -74,8 +91,8 @@ final class PBuffered1Chan<T>: pthreadsChan<T>
       return false
     }
 
-    e.initialize(newElement)
-    elements += 1
+    buffer[tail&mask] = newElement
+    tail += 1
 
     if blockedReaders > 0
     { // Channel is not empty
@@ -97,26 +114,27 @@ final class PBuffered1Chan<T>: pthreadsChan<T>
 
   override func get() -> T?
   {
-    if closed && elements <= 0 { return nil }
+    if closed && head >= tail { return nil }
 
     pthread_mutex_lock(&channelMutex)
 
-    while (elements <= 0) && !closed
+    while (head >= tail) && !closed
     { // block while channel is empty
       blockedReaders += 1
       pthread_cond_wait(&readCondition, &channelMutex)
       blockedReaders -= 1
     }
 
-    if closed && elements <= 0
+    if closed && tail <= head
     {
       pthread_cond_signal(&readCondition)
       pthread_mutex_unlock(&channelMutex)
       return nil
     }
 
-    let element = e.move()
-    elements -= 1
+    let element = buffer[head&mask]
+    buffer[head&mask] = nil
+    head += 1
 
     if closed && blockedReaders > 0
     { // No reason to block

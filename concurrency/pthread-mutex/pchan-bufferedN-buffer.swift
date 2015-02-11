@@ -1,5 +1,5 @@
 //
-//  chan-bufferedN-ringbuffer.swift
+//  chan-bufferedN-buffer.swift
 //  concurrency
 //
 //  Created by Guillaume Lessard on 2014-11-19.
@@ -9,10 +9,10 @@
 import Darwin
 
 /**
-  A channel that uses an array as a backing store.
+  A channel that uses an "unsafe" buffer as a backing store.
 */
 
-final class PBufferedAChan<T>: pthreadsChan<T>
+final class PBufferedBChan<T>: pthreadsChan<T>
 {
   private final let buffer: UnsafeMutablePointer<T>
 
@@ -82,39 +82,34 @@ final class PBufferedAChan<T>: pthreadsChan<T>
 
   override func put(newElement: T) -> Bool
   {
-    if self.closed { return false }
+    if closed { return false }
 
-    pthread_mutex_lock(channelMutex)
-    while (head+capacity <= tail) && !self.closed
+    pthread_mutex_lock(&channelMutex)
+    while (head+capacity <= tail) && !closed
     { // block while channel is full
       blockedWriters += 1
-      pthread_cond_wait(writeCondition, channelMutex)
+      pthread_cond_wait(&writeCondition, &channelMutex)
       blockedWriters -= 1
     }
 
-    let success: Bool
-    if !closed
+    if closed
     {
-      buffer.advancedBy(tail&mask).initialize(newElement)
-      tail += 1
-      success = true
-    }
-    else
-    {
-      success = false
+      pthread_cond_signal(&writeCondition)
+      pthread_cond_signal(&readCondition)
+      pthread_mutex_unlock(&channelMutex)
+      return false
     }
 
-    if self.closed && blockedWriters > 0
-    { // No reason to block
-      pthread_cond_signal(writeCondition)
-    }
+    buffer.advancedBy(tail&mask).initialize(newElement)
+    tail += 1
+
     if blockedReaders > 0
     { // Channel is not empty
-      pthread_cond_signal(readCondition)
+      pthread_cond_signal(&readCondition)
     }
 
-    pthread_mutex_unlock(channelMutex)
-    return success
+    pthread_mutex_unlock(&channelMutex)
+    return true
   }
 
   /**
@@ -128,37 +123,37 @@ final class PBufferedAChan<T>: pthreadsChan<T>
 
   override func get() -> T?
   {
-    if self.closed && head >= tail { return nil }
+    if closed && head >= tail { return nil }
 
-    pthread_mutex_lock(channelMutex)
+    pthread_mutex_lock(&channelMutex)
 
-    while (head >= tail) && !self.closed
+    while (head >= tail) && !closed
     { // block while channel is empty
       blockedReaders += 1
-      pthread_cond_wait(readCondition, channelMutex)
+      pthread_cond_wait(&readCondition, &channelMutex)
       blockedReaders -= 1
     }
 
     if closed && tail <= head
     {
-      pthread_cond_signal(readCondition)
-      pthread_mutex_unlock(channelMutex)
+      pthread_cond_signal(&readCondition)
+      pthread_mutex_unlock(&channelMutex)
       return nil
     }
 
     let element = buffer.advancedBy(head&mask).move()
     head += 1
 
-    if self.closed && blockedReaders > 0
+    if closed && blockedReaders > 0
     { // No reason to block
-      pthread_cond_signal(readCondition)
+      pthread_cond_signal(&readCondition)
     }
     if blockedWriters > 0
     { // Channel isn't full
-      pthread_cond_signal(writeCondition)
+      pthread_cond_signal(&writeCondition)
     }
 
-    pthread_mutex_unlock(channelMutex)
+    pthread_mutex_unlock(&channelMutex)
 
     return element
   }

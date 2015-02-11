@@ -9,7 +9,7 @@
 import Darwin
 
 /**
-  A channel with no backing store.
+  A channel with "no backing store."
   Send operations block until a receiver is ready.
   Conversely, receive operations block until a sender is ready.
 */
@@ -52,44 +52,38 @@ final class PUnbufferedChan<T>: pthreadsChan<T>
 
   override func put(newElement: T) -> Bool
   {
-    if self.closed { return false }
+    if closed { return false }
 
-    pthread_mutex_lock(channelMutex)
+    pthread_mutex_lock(&channelMutex)
 
 //    syncprint("writer \(newElement) is trying to send")
 
-    while ( blockedReaders == 0 || elements > 0 ) && !self.closed
+    while ( blockedReaders == 0 || elements > 0 ) && !closed
     { // block while no reader is ready.
       blockedWriters += 1
-      pthread_cond_wait(writeCondition, channelMutex)
+      pthread_cond_wait(&writeCondition, &channelMutex)
       blockedWriters -= 1
     }
 
-    assert(elements <= 0 || self.closed, "Messed up an unbuffered send")
+    assert(elements <= 0 || closed, "Messed up an unbuffered send")
 
-    let success: Bool
-    if !self.closed
+    if closed
     {
-      e.initialize(newElement)
-      elements += 1
-      success = true
-      //    syncprint("writer \(newElement) has successfully sent")
+      pthread_cond_signal(&writeCondition)
+      pthread_cond_signal(&readCondition)
+      pthread_mutex_unlock(&channelMutex)
+      return false
     }
-    else
-    {
-      success = false
-    }
+
+    e.initialize(newElement)
+    elements += 1
 
     // Surely we can interest a reader
-    assert(blockedReaders > 0 || self.isClosed, "No reader available!")
-    pthread_cond_signal(readCondition)
-    if self.closed && blockedWriters > 0
-    {
-      pthread_cond_signal(writeCondition)
-    }
-    pthread_mutex_unlock(channelMutex)
+    assert(blockedReaders > 0 || closed, "No reader available!")
+    pthread_cond_signal(&readCondition)
+    pthread_mutex_unlock(&channelMutex)
 
-    return success
+    return true
   }
 
   /**
@@ -103,27 +97,27 @@ final class PUnbufferedChan<T>: pthreadsChan<T>
 
   override func get() -> T?
   {
-    pthread_mutex_lock(channelMutex)
+    pthread_mutex_lock(&channelMutex)
 
 //    let id = readerCount++
 //    syncprint("reader \(id) is trying to receive")
 
-    while elements <= 0 && !self.closed
+    while elements <= 0 && !closed
     {
       if blockedWriters > 0
       { // Maybe we can interest a writer
-        pthread_cond_signal(writeCondition)
+        pthread_cond_signal(&writeCondition)
       }
       // wait for a writer to signal us
       blockedReaders += 1
-      pthread_cond_wait(readCondition, channelMutex)
+      pthread_cond_wait(&readCondition, &channelMutex)
       blockedReaders -= 1
     }
 
-    if self.closed && (elements <= 0)
+    if closed && (elements <= 0)
     {
-      pthread_cond_signal(readCondition)
-      pthread_mutex_unlock(channelMutex)
+      pthread_cond_signal(&readCondition)
+      pthread_mutex_unlock(&channelMutex)
       return nil
     }
 
@@ -136,15 +130,15 @@ final class PUnbufferedChan<T>: pthreadsChan<T>
     { // If other readers are waiting, signal a waiting writer right away.
       if blockedWriters > 0
       {
-        pthread_cond_signal(writeCondition)
+        pthread_cond_signal(&writeCondition)
       }
       // If channel is closed, then signal a reader too.
-      if self.isClosed
+      if closed
       {
-        pthread_cond_signal(readCondition)
+        pthread_cond_signal(&readCondition)
       }
     }
-    pthread_mutex_unlock(channelMutex)
+    pthread_mutex_unlock(&channelMutex)
 
     return element
   }
@@ -161,18 +155,18 @@ final class PUnbufferedChan<T>: pthreadsChan<T>
 //  override func selectReceive(channel: SelectChan<Selection>, messageID: Selectable) -> Signal
 //  {
 //    async {
-//      pthread_mutex_lock(self.channelMutex)
+//      pthread_mutex_lock(self.&channelMutex)
 //
 //      while !self.isReady && !self.isClosed
 //      {
 //        if self.blockedWriters > 0
 //        {
 //          // Maybe we can interest a writer
-//          pthread_cond_signal(self.writeCondition)
+//          pthread_cond_signal(&self.writeCondition)
 //        }
 //        // wait for a writer to signal us
 //        self.blockedReaders += 1
-//        pthread_cond_wait(self.readCondition, self.channelMutex)
+//        pthread_cond_wait(&self.readCondition, self.&channelMutex)
 //        self.blockedReaders -= 1
 //      }
 //
@@ -185,19 +179,19 @@ final class PUnbufferedChan<T>: pthreadsChan<T>
 //
 //      if self.blockedReaders > 0
 //      { // If other readers are waiting, signal a writer right away.
-//        if self.blockedWriters > 0 { pthread_cond_signal(self.writeCondition) }
+//        if self.blockedWriters > 0 { pthread_cond_signal(&self.writeCondition) }
 //        // If channel is closed, then signal a reader too.
-//        if self.isClosed { pthread_cond_signal(self.readCondition) }
+//        if self.isClosed { pthread_cond_signal(&self.readCondition) }
 //      }
-//      pthread_mutex_unlock(self.channelMutex)
+//      pthread_mutex_unlock(self.&channelMutex)
 //    }
 //
 //    return {
 //      if self.blockedReaders > 0
 //      {
-//        pthread_mutex_lock(self.channelMutex)
+//        pthread_mutex_lock(self.&channelMutex)
 //        pthread_cond_broadcast(self.readCondition)
-//        pthread_mutex_unlock(self.channelMutex)
+//        pthread_mutex_unlock(self.&channelMutex)
 //      }
 //    }
 //  }
