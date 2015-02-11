@@ -16,8 +16,8 @@ final class QUnbufferedChan<T>: Chan<T>
 {
   // housekeeping variables
 
-  private let readerQueue = SemaphoreOSQueue()
-  private let writerQueue = SemaphoreOSQueue()
+  private let readerQueue = SemaphoreQueue()
+  private let writerQueue = SemaphoreQueue()
 
   private var lock = OS_SPINLOCK_INIT
 

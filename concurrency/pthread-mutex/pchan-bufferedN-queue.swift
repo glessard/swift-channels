@@ -14,11 +14,7 @@ import Darwin
 
 final class PBufferedQChan<T>: pthreadsChan<T>
 {
-  #if os(iOS)
   private let q = FastQueue<T>()
-  #else
-  private let q = FastOSQueue<T>()
-  #endif
 
   // housekeeping variables
 

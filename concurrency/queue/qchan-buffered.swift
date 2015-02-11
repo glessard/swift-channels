@@ -24,13 +24,8 @@ final class QBufferedChan<T>: Chan<T>
   private var head = 0
   private var tail = 0
 
-  #if os(iOS)
   private let readerQueue = SemaphoreQueue()
   private let writerQueue = SemaphoreQueue()
-  #else
-  private let readerQueue = SemaphoreOSQueue()
-  private let writerQueue = SemaphoreOSQueue()
-  #endif
 
   private var lock = OS_SPINLOCK_INIT
 
@@ -141,7 +136,7 @@ final class QBufferedChan<T>: Chan<T>
     :param: queue the queue to which the signal should be appended
   */
 
-  private func wait(inout #lock: OSSpinLock, queue: SemaphoreOSQueue)
+  private func wait(inout #lock: OSSpinLock, queue: SemaphoreQueue)
   {
     let threadLock = SemaphorePool.dequeue()
     queue.enqueue(threadLock)

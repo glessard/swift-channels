@@ -129,3 +129,15 @@ final class SemaphoreQueue: QueueType, SequenceType, GeneratorType
     return self
   }
 }
+
+
+struct SemaphoreNode
+{
+  var next: UnsafeMutablePointer<SemaphoreNode> = nil
+  var elem: dispatch_semaphore_t
+
+  init(_ e: dispatch_semaphore_t)
+  {
+    elem = e
+  }
+}
