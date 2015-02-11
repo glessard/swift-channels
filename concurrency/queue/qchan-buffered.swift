@@ -162,16 +162,16 @@ final class QBufferedChan<T>: Chan<T>
 
   override func put(newElement: T) -> Bool
   {
-    if self.closed { return false }
+    if closed { return false }
 
     OSSpinLockLock(&lock)
 
-    while !self.closed && head+capacity <= tail
+    while !closed && head+capacity <= tail
     {
       wait(lock: &lock, queue: writerQueue)
     }
 
-    if self.closed
+    if closed
     {
       OSSpinLockUnlock(&lock)
       return false
@@ -211,16 +211,16 @@ final class QBufferedChan<T>: Chan<T>
 
   override func get() -> T?
   {
-    if self.closed && head >= tail { return nil }
+    if closed && head >= tail { return nil }
 
     OSSpinLockLock(&lock)
 
-    while !self.closed && head >= tail
+    while !closed && head >= tail
     {
       wait(lock: &lock, queue: readerQueue)
     }
 
-    if self.closed && head >= tail
+    if closed && head >= tail
     {
       OSSpinLockUnlock(&lock)
       return nil
