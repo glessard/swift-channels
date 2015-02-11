@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0335FBE11A8B277500F4B44B /* pchan-bufferedN-array.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B24C0B1A8AC01F00F4B44B /* pchan-bufferedN-array.swift */; };
+		0335FBE21A8B277600F4B44B /* pchan-bufferedN-array.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B24C0B1A8AC01F00F4B44B /* pchan-bufferedN-array.swift */; };
 		035B60641A67433800F4B44B /* Channels.h in Headers */ = {isa = PBXBuildFile; fileRef = 035B60631A67433800F4B44B /* Channels.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		035B606A1A67433800F4B44B /* Channels.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 035B605E1A67433800F4B44B /* Channels.framework */; };
 		035B60711A67433800F4B44B /* ChannelsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035B60701A67433800F4B44B /* ChannelsTests.swift */; };
@@ -612,6 +614,7 @@
 				03AD47731A68348C00F4B44B /* qchan-buffered.swift in Sources */,
 				03AD47801A68354F00F4B44B /* fastosqueue.swift in Sources */,
 				03AD477F1A68354F00F4B44B /* fastqueue.swift in Sources */,
+				0335FBE11A8B277500F4B44B /* pchan-bufferedN-array.swift in Sources */,
 				03AD47751A68348C00F4B44B /* semaphorepool.swift in Sources */,
 				03AD476D1A68348C00F4B44B /* pchan.swift in Sources */,
 				03AD47791A6834F500F4B44B /* timing.swift in Sources */,
@@ -646,6 +649,7 @@
 				03AD479E1A68369C00F4B44B /* semaphorepool.swift in Sources */,
 				03AD47951A68369C00F4B44B /* channel.swift in Sources */,
 				03AD47A01A68369C00F4B44B /* schan-buffered.swift in Sources */,
+				0335FBE21A8B277600F4B44B /* pchan-bufferedN-array.swift in Sources */,
 				03AD47A51A6836B800F4B44B /* atomicqueue.swift in Sources */,
 				03AD47921A68369C00F4B44B /* chan-sender.swift in Sources */,
 				03AD47A21A6836B300F4B44B /* timing.swift in Sources */,
