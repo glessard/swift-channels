@@ -264,7 +264,7 @@ final class QBufferedChan<T>: Chan<T>
 
   // SelectableChannelType overrides
 
-  override func selectReadyPut(selectionID: Selectable) -> Selection?
+  override func selectPutNow(selectionID: Selectable) -> Selection?
   {
     OSSpinLockLock(&lock)
     if !closed && !isFull
@@ -424,7 +424,7 @@ final class QBufferedChan<T>: Chan<T>
     return false
   }
 
-  override func selectReadyGet(selectionID: Selectable) -> Selection?
+  override func selectGetNow(selectionID: Selectable) -> Selection?
   {
     OSSpinLockLock(&lock)
     if !closed && head < tail

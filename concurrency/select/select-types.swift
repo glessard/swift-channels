@@ -70,7 +70,7 @@ public protocol Selectable: class
     be canceled.
   */
 
-  func selectObtain(selectionID: Selectable) -> Selection?
+  func selectNow(selectionID: Selectable) -> Selection?
 
   /**
     If it makes no sense to invoke the selectNotify() method at this time, return false.
@@ -83,12 +83,11 @@ public protocol Selectable: class
 protocol SelectableChannelType: ChannelType
 {
   func selectGet(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
-  func selectReadyGet(selectionID: Selectable) -> Selection?
+  func selectGetNow(selectionID: Selectable) -> Selection?
+  // func extract(item: Selection) -> Element?
 
-  //  func extract(item: Selection) -> Element?
-
-  func selectReadyPut(selectionID: Selectable) -> Selection?
   func selectPut(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
+  func selectPutNow(selectionID: Selectable) -> Selection?
   func insert(ref: Selection, item: Element) -> Bool
 }
 

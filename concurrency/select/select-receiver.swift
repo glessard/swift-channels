@@ -29,7 +29,7 @@ public func select<T>(options: [Receiver<T>]) -> (Selectable, Selection)?
   // The synchronous path
   for option in shuffle(selectables)
   {
-    if let selection = option.selectObtain(option)
+    if let selection = option.selectNow(option)
     {
       return (selection.messageID, selection)
     }

@@ -117,9 +117,9 @@ public final class Receiver<T>: ReceiverType, GeneratorType, SequenceType, Selec
     return wrapped.selectGet(semaphore, selectionID: selectionID)
   }
 
-  public func selectObtain(selectionID: Selectable) -> Selection?
+  public func selectNow(selectionID: Selectable) -> Selection?
   {
-    return wrapped.selectReadyGet(selectionID)
+    return wrapped.selectGetNow(selectionID)
   }
 
   public var selectable: Bool

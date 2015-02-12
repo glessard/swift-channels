@@ -213,7 +213,7 @@ final class QUnbufferedChan<T>: Chan<T>
     return element
   }
 
-  override func selectReadyGet(selectionID: Selectable) -> Selection?
+  override func selectGetNow(selectionID: Selectable) -> Selection?
   {
     OSSpinLockLock(&lock)
     if let ws = writerQueue.dequeue()

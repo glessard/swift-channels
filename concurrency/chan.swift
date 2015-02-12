@@ -88,7 +88,7 @@ public class Chan<T>: ChannelType, SelectableChannelType
     return {}
   }
 
-  public func selectReadyGet(selectionID: Selectable) -> Selection?
+  public func selectGetNow(selectionID: Selectable) -> Selection?
   {
     return nil
   }
@@ -98,7 +98,7 @@ public class Chan<T>: ChannelType, SelectableChannelType
     return {}
   }
 
-  public func selectReadyPut(selectionID: Selectable) -> Selection?
+  public func selectPutNow(selectionID: Selectable) -> Selection?
   {
     return nil
   }

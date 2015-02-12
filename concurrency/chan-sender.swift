@@ -89,9 +89,9 @@ public final class Sender<T>: SenderType, Selectable
 
   public var selectable: Bool { return !wrapped.isClosed }
 
-  public func selectObtain(selectionID: Selectable) -> Selection?
+  public func selectNow(selectionID: Selectable) -> Selection?
   {
-    return wrapped.selectReadyPut(selectionID)
+    return wrapped.selectPutNow(selectionID)
   }
 
   public func selectNotify(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
