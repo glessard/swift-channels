@@ -215,7 +215,7 @@ final class QBufferedChan<T>: Chan<T>
 
     OSSpinLockLock(&lock)
 
-    if !closed && head >= tail
+    while !closed && head >= tail
     {
       let threadLock = SemaphorePool.dequeue()
       readerQueue.enqueue(threadLock)
