@@ -1,8 +1,8 @@
 //
-//  chan-singleton.swift
+//  semaphore-chan.swift
 //  concurrency
 //
-//  Created by Guillaume Lessard on 2014-11-19.
+//  Created by Guillaume Lessard on 2015-02-11.
 //  Copyright (c) 2014 Guillaume Lessard. All rights reserved.
 //
 
@@ -15,10 +15,7 @@ import Dispatch
 final public class SemaphoreChan: ChannelType
 {
   private let semaphore: dispatch_semaphore_t
-
-  // housekeeping variables
-
-  private var readerCount: Int32 = 0
+  private var lock: Int32 = 0
 
   public init(_ newElement: dispatch_semaphore_t)
   {
@@ -27,41 +24,22 @@ final public class SemaphoreChan: ChannelType
 
   // Computed property accessors
 
-  final public var isEmpty: Bool
-  {
-    return readerCount > 0
-  }
-
-  final public var isFull: Bool
-  {
-    return readerCount < 1
-  }
-
-  /**
-    Determine whether the channel has been closed
-  */
+  final public var isEmpty: Bool  { return lock != 0 }
+  final public var isFull: Bool   { return lock == 0 }
 
   final public var isClosed: Bool { return true }
 
   /**
     Close the channel
 
-    Any items still in the channel remain and can be retrieved.
-    New items cannot be added to a closed channel.
-
-    It could be considered an error to close a channel that has already
-    been closed. The actual reaction shall be implementation-dependent.
+    The channel is created as closed, so this has no effect
   */
 
-  public func close()
-  {
-  }
+  public func close() {}
 
   /**
-    Fail to append an element to the channel
-
-    This method will not block because only one send operation
-    can occur in the lifetime of this channel, and it has already happened on init.
+    Fail to append an element to the channel.
+    This method will return false because the channel is already closed.
 
     :param: element the new element to be added to the channel.
     :return: false
@@ -83,14 +61,11 @@ final public class SemaphoreChan: ChannelType
 
   public func get() -> dispatch_semaphore_t?
   {
-    if readerCount < 1
+    if lock == 0 && OSAtomicCompareAndSwap32Barrier(0, 1, &lock)
     {
-      let reader = OSAtomicIncrement32Barrier(&readerCount)
-      if reader == 1
-      {
-        return semaphore
-      }
+      return semaphore
     }
+
     // if this is not the first reader, too late.
     return nil
   }
