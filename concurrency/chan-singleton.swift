@@ -101,16 +101,14 @@ final public class SingletonChan<T>: Chan<T>
 
   public override func put(newElement: T) -> Bool
   {
-    let writer = OSAtomicIncrement32Barrier(&writerCount)
-
-    if writer == 1
-    {
+    if OSAtomicCompareAndSwap32Barrier(0, 1, &writerCount)
+    { // Only one thread can get here
       element = newElement
       close() // also increments the 'barrier' semaphore
       return true
     }
 
-    // if this is not the first writer, too late.
+    // not the first writer, too late.
     return false
   }
 
@@ -128,22 +126,18 @@ final public class SingletonChan<T>: Chan<T>
     if !closed
     {
       dispatch_semaphore_wait(barrier, DISPATCH_TIME_FOREVER)
+      dispatch_semaphore_signal(barrier)
     }
 
-    let reader = OSAtomicIncrement32Barrier(&readerCount)
-
-    if reader == 1
-    {
+    if OSAtomicCompareAndSwap32Barrier(0, 1, &readerCount)
+    { // Only one thread can get here.
       if let e = element
       {
         element = nil
-        dispatch_semaphore_signal(barrier)
         return e
       }
     }
 
-    // if this is not the first reader, too late.
-    dispatch_semaphore_signal(barrier)
     return nil
   }
 }
