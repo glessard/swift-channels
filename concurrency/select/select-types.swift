@@ -116,6 +116,12 @@ public class Selection
     }
   }
 
+  public init(selectionID: Selectable)
+  {
+    id = selectionID
+    data = nil
+  }
+
   public func getData<T>() -> T?
   {
     return data as? T

@@ -51,7 +51,7 @@ public func select(options: [Selectable]) -> (Selectable, Selection)?
   }
   else
   {
-    selection = Selection(selectionID: Receiver(Chan<()>()), selectionData: Optional<()>.None)
+    selection = Selection(selectionID: Receiver(Chan<()>()))
   }
 
   for signal in signals { signal() }
