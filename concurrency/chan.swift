@@ -83,7 +83,7 @@ public class Chan<T>: ChannelType, SelectableChannelType
 
   // SelectableChannelType implementation
 
-  public func selectGet(semaphore: SingletonChan<dispatch_semaphore_t>, selectionID: Selectable) -> Signal
+  public func selectGet(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
   {
     return {}
   }
@@ -93,7 +93,7 @@ public class Chan<T>: ChannelType, SelectableChannelType
     return nil
   }
 
-  public func selectPut(semaphore: SingletonChan<dispatch_semaphore_t>, selectionID: Selectable) -> Signal
+  public func selectPut(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
   {
     return {}
   }

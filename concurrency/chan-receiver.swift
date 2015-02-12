@@ -112,7 +112,7 @@ public final class Receiver<T>: ReceiverType, GeneratorType, SequenceType, Selec
 
   // Selectable implementation
 
-  public func selectNotify(semaphore: SingletonChan<dispatch_semaphore_t>, selectionID: Selectable) -> Signal
+  public func selectNotify(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
   {
     return wrapped.selectGet(semaphore, selectionID: selectionID)
   }

@@ -94,7 +94,7 @@ public final class Sender<T>: SenderType, Selectable
     return wrapped.selectReadyPut(selectionID)
   }
 
-  public func selectNotify(semaphore: SingletonChan<dispatch_semaphore_t>, selectionID: Selectable) -> Signal
+  public func selectNotify(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
   {
     return wrapped.selectPut(semaphore, selectionID: selectionID)
   }

@@ -37,7 +37,7 @@ public func select(options: [Selectable]) -> (Selectable, Selection)?
 
   // The asynchronous path
   let semaphore = SemaphorePool.dequeue()
-  let resultChan = SingletonChan(semaphore)
+  let resultChan = SemaphoreChan(semaphore)
 
   let signals = selectables.map { $0.selectNotify(resultChan, selectionID: $0) }
 

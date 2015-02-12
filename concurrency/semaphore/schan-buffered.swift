@@ -180,7 +180,7 @@ final class SBufferedChan<T>: Chan<T>
     return element
   }
 
-  override func selectGet(semaphore: SingletonChan<dispatch_semaphore_t>, selectionID: Selectable) -> Signal
+  override func selectGet(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
   {
     var j = OS_SPINLOCK_INIT
     var k = OS_SPINLOCK_INIT

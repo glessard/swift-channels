@@ -307,7 +307,7 @@ final class QBufferedChan<T>: Chan<T>
     return nil
   }
 
-  override func selectPut(semaphore: SingletonChan<dispatch_semaphore_t>, selectionID: Selectable) -> Signal
+  override func selectPut(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
   {
     let threadLock = dispatch_semaphore_create(0)!
 
@@ -439,7 +439,7 @@ final class QBufferedChan<T>: Chan<T>
     return nil
   }
 
-  override func selectGet(semaphore: SingletonChan<dispatch_semaphore_t>, selectionID: Selectable) -> Signal
+  override func selectGet(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
   {
     // We can't use the SemaphorePool here, because we don't know how many times
     // the semaphore will be incremented and decremented. It will be potentially

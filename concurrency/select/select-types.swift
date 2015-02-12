@@ -62,7 +62,7 @@ public protocol Selectable: class
     :return: a closure to be run once, which can unblock a stopped thread if needed.
   */
 
-  func selectNotify(semaphore: SingletonChan<dispatch_semaphore_t>, selectionID: Selectable) -> Signal
+  func selectNotify(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
 
   /*
     Select first iterates through its Selectables to find whether at least one of them is ready
@@ -82,13 +82,13 @@ public protocol Selectable: class
 
 protocol SelectableChannelType: ChannelType
 {
-  func selectGet(semaphore: SingletonChan<dispatch_semaphore_t>, selectionID: Selectable) -> Signal
+  func selectGet(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
   func selectReadyGet(selectionID: Selectable) -> Selection?
 
   //  func extract(item: Selection) -> Element?
 
   func selectReadyPut(selectionID: Selectable) -> Selection?
-  func selectPut(semaphore: SingletonChan<dispatch_semaphore_t>, selectionID: Selectable) -> Signal
+  func selectPut(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
   func insert(ref: Selection, item: Element) -> Bool
 }
 

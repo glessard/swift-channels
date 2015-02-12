@@ -8,12 +8,13 @@
 
 /* Begin PBXBuildFile section */
 		032CCD3D1A79B67700F4B44B /* select-receiver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 032CCD3C1A79B67700F4B44B /* select-receiver.swift */; };
-		034392C21A7A065200F4B44B /* select.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03F3FD6F1A6AF95400F4B44B /* select.swift */; };
 		0335FBE11A8B277500F4B44B /* pchan-bufferedN-array.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B24C0B1A8AC01F00F4B44B /* pchan-bufferedN-array.swift */; };
 		0335FBE21A8B277600F4B44B /* pchan-bufferedN-array.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B24C0B1A8AC01F00F4B44B /* pchan-bufferedN-array.swift */; };
 		0335FBE31A8B2A9E00F4B44B /* semaphoreosqueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47411A67441A00F4B44B /* semaphoreosqueue.swift */; };
 		0335FBE41A8B2A9F00F4B44B /* semaphoreosqueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47411A67441A00F4B44B /* semaphoreosqueue.swift */; };
 		0335FBE51A8B2A9F00F4B44B /* semaphoreosqueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47411A67441A00F4B44B /* semaphoreosqueue.swift */; };
+		034392C21A7A065200F4B44B /* select.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03F3FD6F1A6AF95400F4B44B /* select.swift */; };
+		0359EAFC1A8C77D300F4B44B /* semaphore-chan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0359EAFB1A8C77D300F4B44B /* semaphore-chan.swift */; };
 		035B60641A67433800F4B44B /* Channels.h in Headers */ = {isa = PBXBuildFile; fileRef = 035B60631A67433800F4B44B /* Channels.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		035B606A1A67433800F4B44B /* Channels.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 035B605E1A67433800F4B44B /* Channels.framework */; };
 		035B60711A67433800F4B44B /* ChannelsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035B60701A67433800F4B44B /* ChannelsTests.swift */; };
@@ -148,6 +149,7 @@
 /* Begin PBXFileReference section */
 		032CCD3C1A79B67700F4B44B /* select-receiver.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "select-receiver.swift"; path = "select/select-receiver.swift"; sourceTree = "<group>"; };
 		032CCD3E1A79BE9400F4B44B /* merge-select.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "merge-select.swift"; path = "select/merge-select.swift"; sourceTree = "<group>"; };
+		0359EAFB1A8C77D300F4B44B /* semaphore-chan.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "semaphore-chan.swift"; path = "select/semaphore-chan.swift"; sourceTree = "<group>"; };
 		035B605E1A67433800F4B44B /* Channels.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Channels.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		035B60621A67433800F4B44B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		035B60631A67433800F4B44B /* Channels.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Channels.h; sourceTree = "<group>"; };
@@ -197,10 +199,10 @@
 		03AD47AD1A688BE900F4B44B /* shuffle.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = shuffle.swift; path = ../utilities/shuffle.swift; sourceTree = "<group>"; };
 		03AD47B11A6890B100F4B44B /* merge.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = merge.swift; sourceTree = "<group>"; };
 		03AD47BF1A689E0900F4B44B /* MergeTest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MergeTest.swift; sourceTree = "<group>"; };
+		03B24C0B1A8AC01F00F4B44B /* pchan-bufferedN-array.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "pchan-bufferedN-array.swift"; sourceTree = "<group>"; };
 		03F3FD691A69D90400F4B44B /* select-types.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "select-types.swift"; path = "select/select-types.swift"; sourceTree = "<group>"; };
 		03F3FD6F1A6AF95400F4B44B /* select.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = select.swift; path = select/select.swift; sourceTree = "<group>"; };
 		03F3FD711A6B207E00F4B44B /* SelectTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SelectTests.swift; sourceTree = "<group>"; };
-		03B24C0B1A8AC01F00F4B44B /* pchan-bufferedN-array.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "pchan-bufferedN-array.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -411,6 +413,7 @@
 			isa = PBXGroup;
 			children = (
 				03F3FD691A69D90400F4B44B /* select-types.swift */,
+				0359EAFB1A8C77D300F4B44B /* semaphore-chan.swift */,
 				03F3FD6F1A6AF95400F4B44B /* select.swift */,
 				032CCD3C1A79B67700F4B44B /* select-receiver.swift */,
 				032CCD3E1A79BE9400F4B44B /* merge-select.swift */,
@@ -588,6 +591,7 @@
 				03F3FD6A1A69D90400F4B44B /* select-types.swift in Sources */,
 				03AD47211A6743E500F4B44B /* chan-receiver.swift in Sources */,
 				03AD47451A67441A00F4B44B /* fastqueue.swift in Sources */,
+				0359EAFC1A8C77D300F4B44B /* semaphore-chan.swift in Sources */,
 				03AD47201A6743E500F4B44B /* chan-protocols.swift in Sources */,
 				03AD47461A67441A00F4B44B /* linknodes.swift in Sources */,
 				03AD47241A6743E500F4B44B /* chan.swift in Sources */,

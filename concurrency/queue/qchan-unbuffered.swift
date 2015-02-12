@@ -237,7 +237,7 @@ final class QUnbufferedChan<T>: Chan<T>
     return nil
   }
 
-  override func selectGet(semaphore: SingletonChan<dispatch_semaphore_t>, selectionID: Selectable) -> Signal
+  override func selectGet(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
   {
     let threadLock = dispatch_semaphore_create(0)!
     dispatch_set_context(threadLock, nil)
