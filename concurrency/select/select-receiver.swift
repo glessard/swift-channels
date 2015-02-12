@@ -44,22 +44,19 @@ public func select<T>(options: [Receiver<T>]) -> (Selectable, Selection)?
   dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)
   // We have a result
   let context = COpaquePointer(dispatch_get_context(semaphore))
+  let selection: Selection
   if context != nil
   {
-    let selection = Unmanaged<Selection>.fromOpaque(context).takeRetainedValue()
-
-    for signal in signals { signal() }
-    dispatch_set_context(semaphore, nil)
-    SemaphorePool.enqueue(semaphore)
-
-    return (selection.messageID, selection)
+    selection = Unmanaged<Selection>.fromOpaque(context).takeRetainedValue()
+  }
+  else
+  {
+    selection = Selection(selectionID: Receiver(Chan<()>()), selectionData: Optional<()>.None)
   }
 
   for signal in signals { signal() }
   dispatch_set_context(semaphore, nil)
   SemaphorePool.enqueue(semaphore)
 
-  //  syncprint("nil message received?")
-  let selection = Selection(selectionID: Receiver(Chan<()>()), selectionData: Optional<()>.None)
   return (selection.messageID, selection)
 }
