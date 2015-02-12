@@ -161,14 +161,21 @@ final class QBufferedChan<T>: Chan<T>
 
     OSSpinLockLock(&lock)
 
-    while !closed && head+capacity <= tail
+    if !closed && head+capacity <= tail
     {
       let threadLock = SemaphorePool.dequeue()
       writerQueue.enqueue(threadLock)
       OSSpinLockUnlock(&lock)
       dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
-      SemaphorePool.enqueue(threadLock)
       OSSpinLockLock(&lock)
+      while !closed && head+capacity <= tail
+      {
+        writerQueue.undequeue(threadLock)
+        OSSpinLockUnlock(&lock)
+        dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
+        OSSpinLockLock(&lock)
+      }
+      SemaphorePool.enqueue(threadLock)
     }
 
     if closed
@@ -215,7 +222,7 @@ final class QBufferedChan<T>: Chan<T>
 
     OSSpinLockLock(&lock)
 
-    while !closed && head >= tail
+    if !closed && head >= tail
     {
       let threadLock = SemaphorePool.dequeue()
       readerQueue.enqueue(threadLock)
@@ -264,44 +271,36 @@ final class QBufferedChan<T>: Chan<T>
 
   // SelectableChannelType overrides
 
+  override func insert(ref: Selection, item: T) -> Bool
+  {
+    assert(lock != 0, "Lock should be locked in \(__FUNCTION__)")
+
+    buffer.advancedBy(tail&mask).initialize(item)
+    tail += 1
+
+    if let e = Optional(readerQueue.isEmpty) where !e,
+       let rs = readerQueue.dequeue()
+    {
+      dispatch_semaphore_signal(rs)
+    }
+    if let f = Optional(isFull) where !f,
+       let e = Optional(writerQueue.isEmpty) where !e,
+       let ws = writerQueue.dequeue()
+    {
+      dispatch_semaphore_signal(ws)
+    }
+
+    // The lock couldn't be released until now. In another thread. It's gross.
+    OSSpinLockUnlock(&lock)
+    return true
+  }
+
   override func selectPutNow(selectionID: Selectable) -> Selection?
   {
     OSSpinLockLock(&lock)
     if !closed && !isFull
     {
-      let semaphore = SemaphorePool.dequeue()
-
-      async {
-        // Maybe this should be called with a real timeout and checked on return.
-        // (that wouldn't be SemaphorePool compatible.)
-        dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)
-        let p = UnsafeMutablePointer<T>(dispatch_get_context(semaphore))
-        if p == nil
-        { // this isn't right
-          assert(false, __FUNCTION__)
-          OSSpinLockUnlock(&self.lock)
-          SemaphorePool.enqueue(semaphore)
-          return
-        }
-        self.buffer.advancedBy(self.tail&self.mask).initialize(p.move())
-        self.tail += 1
-        OSSpinLockUnlock(&self.lock)
-        // The lock couldn't be released until now. In another thread. It's kind of gross.
-
-        p.dealloc(1)
-        dispatch_set_context(semaphore, nil)
-        SemaphorePool.enqueue(semaphore)
-
-        if !self.readerQueue.isEmpty
-        {
-          if let rs = self.readerQueue.dequeue()
-          {
-            dispatch_semaphore_signal(rs)
-          }
-        }
-      }
-
-      return Selection(selectionID: selectionID, selectionData: semaphore)
+      return Selection(selectionID: selectionID)
     }
     OSSpinLockUnlock(&lock)
     return nil
@@ -309,25 +308,42 @@ final class QBufferedChan<T>: Chan<T>
 
   override func selectPut(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
   {
+    // We can't use the SemaphorePool here, because we don't know how many times
+    // the semaphore will be incremented and decremented. It will be potentially
+    // be referenced from two different threads, and could end up with
+    // a count of 0 or 1. There is no way to tell.
     let threadLock = dispatch_semaphore_create(0)!
 
     async {
       OSSpinLockLock(&self.lock)
 
-      while !self.closed && self.head+self.capacity <= self.tail
+      if !self.closed && self.head+self.capacity <= self.tail
       {
         self.writerQueue.enqueue(threadLock)
         OSSpinLockUnlock(&self.lock)
         dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
         if dispatch_get_context(threadLock) == abortSelect
         {
-          if let ws = self.writerQueue.dequeue()
-          {
-            dispatch_semaphore_signal(ws)
-          }
+          // If threadLock was awoken from a place other than the Signal closure,
+          // the next thread in line needs to be awoken.
+          // We don't know whether said next thread *actually* needs to be awoken.
+          // Perhaps better smarts need to exist. As a workaround, a thread that gets
+          // awoken but didn't need to will un-dequeue its semaphore and go back to sleep.
+          if let ws = self.writerQueue.dequeue() { dispatch_semaphore_signal(ws) }
           return
         }
         OSSpinLockLock(&self.lock)
+        while !self.closed && self.head+self.capacity <= self.tail
+        {
+          self.writerQueue.undequeue(threadLock)
+          OSSpinLockUnlock(&self.lock)
+          dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
+          if dispatch_get_context(threadLock) == abortSelect
+          {
+            if let ws = self.writerQueue.dequeue() { dispatch_semaphore_signal(ws) }
+            return
+          }
+        }
       }
 
       if self.closed
@@ -343,45 +359,10 @@ final class QBufferedChan<T>: Chan<T>
 
       if let s = semaphore.get()
       {
-        let semaphore = SemaphorePool.dequeue()
-
-        let selection = Selection(selectionID: selectionID, selectionData: semaphore)
+        let selection = Selection(selectionID: selectionID)
         let context = UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque())
         dispatch_set_context(s, context)
         dispatch_semaphore_signal(s)
-
-        dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)
-        let p = UnsafeMutablePointer<T>(dispatch_get_context(semaphore))
-        if p == nil
-        { // this isn't right
-          assert(false, __FUNCTION__)
-          OSSpinLockUnlock(&self.lock)
-          SemaphorePool.enqueue(semaphore)
-          return
-        }
-        self.buffer.advancedBy(self.tail&self.mask).initialize(p.move())
-        self.tail += 1
-        OSSpinLockUnlock(&self.lock)
-
-        p.dealloc(1)
-        dispatch_set_context(semaphore, nil)
-        SemaphorePool.enqueue(semaphore)
-
-        if !self.readerQueue.isEmpty
-        {
-          if let rs = self.readerQueue.dequeue()
-          {
-            dispatch_semaphore_signal(rs)
-          }
-        }
-
-        if !self.isFull && !self.writerQueue.isEmpty
-        {
-          if let ws = self.writerQueue.dequeue()
-          {
-            dispatch_semaphore_signal(ws)
-          }
-        }
       }
       else
       {
@@ -411,19 +392,6 @@ final class QBufferedChan<T>: Chan<T>
     }
   }
 
-  override func insert(ref: Selection, item: T) -> Bool
-  {
-    if let s: dispatch_semaphore_t = ref.getData()
-    {
-      let p = UnsafeMutablePointer<T>.alloc(1)
-      p.initialize(item)
-      dispatch_set_context(s, p)
-      dispatch_semaphore_signal(s)
-      return true
-    }
-    return false
-  }
-
   override func selectGetNow(selectionID: Selectable) -> Selection?
   {
     OSSpinLockLock(&lock)
@@ -450,27 +418,37 @@ final class QBufferedChan<T>: Chan<T>
     async {
       OSSpinLockLock(&self.lock)
 
-      while !self.closed && self.head >= self.tail
+      if !self.closed && self.head >= self.tail
       {
         self.readerQueue.enqueue(threadLock)
         OSSpinLockUnlock(&self.lock)
         dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
         if dispatch_get_context(threadLock) == abortSelect
         {
-          // If readerQueue was dequeued from a place other than the Signal closure,
+          // If threadLock was awoken from a place other than the Signal closure,
           // the next thread in line needs to be awoken.
-          // Now, we don't know whether said next thread *actually* needs to be awoken.
+          // We don't know whether said next thread *actually* needs to be awoken.
           // Perhaps better smarts need to exist. As a workaround, a thread that gets
           // awoken but didn't need to will un-dequeue its semaphore and go back to sleep.
-          if let rs = self.readerQueue.dequeue()
-          {
-            dispatch_semaphore_signal(rs)
-          }
-          // We can't be sure of threadLock semaphore's state at this point,
-          // therefore we cannot enqueue it to the SemaphorePool.
+          if let rs = self.readerQueue.dequeue() { dispatch_semaphore_signal(rs) }
           return
         }
         OSSpinLockLock(&self.lock)
+        while !self.closed && self.head >= self.tail
+        {
+          self.readerQueue.undequeue(threadLock)
+          OSSpinLockUnlock(&self.lock)
+          dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
+          if dispatch_get_context(threadLock) == abortSelect
+          {
+            if let rs = self.readerQueue.dequeue()
+            {
+              dispatch_semaphore_signal(rs)
+            }
+            return
+          }
+          OSSpinLockLock(&self.lock)
+        }
       }
 
       if self.closed && self.head >= self.tail
@@ -539,8 +517,6 @@ final class QBufferedChan<T>: Chan<T>
     return {
       dispatch_set_context(threadLock, abortSelect)
       dispatch_semaphore_signal(threadLock)
-      // We can't be sure of the semaphore's state at this point,
-      // so we cannot enqueue it to the SemaphorePool.
     }
   }
 }
