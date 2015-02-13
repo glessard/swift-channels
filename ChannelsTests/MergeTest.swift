@@ -15,9 +15,35 @@ import Channels
 class MergeTests: XCTestCase
 {
   let outerloopcount = 60
-  let innerloopcount = 60
+  let innerloopcount = 600
 
-  func testPerformanceMergeReceiver()
+  func testPerformanceGroupMerge()
+  {
+    self.measureBlock() {
+      var chans = [Receiver<Int>]()
+      for i in 0..<self.outerloopcount
+      {
+        var (tx, rx) = Channel<Int>.Make(self.innerloopcount)
+        async {
+          for j in 1...self.innerloopcount { tx <- j }
+          tx.close()
+        }
+        chans.append(rx)
+      }
+
+      let c = mergeGroup(chans)
+
+      var total = 0
+      for _ in c
+      {
+        total += 1
+      }
+
+      XCTAssert(total == self.outerloopcount*self.innerloopcount, "Incorrect merge in \(__FUNCTION__)")
+    }
+  }
+  
+  func testPerformanceDispatchApplyMerge()
   {
     self.measureBlock() {
       var chans = [Receiver<Int>]()
@@ -43,7 +69,7 @@ class MergeTests: XCTestCase
     }
   }
   
-  func testPerformanceRoundRobinMergeReceiver()
+  func testPerformanceRoundRobinMerge()
   {
     self.measureBlock() {
       var chans = [Receiver<Int>]()
@@ -69,7 +95,33 @@ class MergeTests: XCTestCase
     }
   }
   
-  func testPerformanceMergeUnbufferedReceiver()
+  func testPerformanceGroupMergeUnbuffered()
+  {
+    self.measureBlock() {
+      var chans = [Receiver<Int>]()
+      for i in 0..<self.outerloopcount
+      {
+        var (tx, rx) = Channel<Int>.Make(0)
+        async {
+          for j in 1...self.innerloopcount { tx <- j }
+          tx.close()
+        }
+        chans.append(rx)
+      }
+
+      let c = mergeGroup(chans)
+
+      var total = 0
+      for _ in c
+      {
+        total += 1
+      }
+
+      XCTAssert(total == self.outerloopcount*self.innerloopcount, "Incorrect merge in \(__FUNCTION__)")
+    }
+  }
+  
+  func testPerformanceDispatchApplyMergeUnbuffered()
   {
     self.measureBlock() {
       var chans = [Receiver<Int>]()
@@ -95,7 +147,7 @@ class MergeTests: XCTestCase
     }
   }
   
-  func testPerformanceRoundRobinMergeUnbufferedReceiver()
+  func testPerformanceRoundRobinMergeUnbuffered()
   {
     self.measureBlock() {
       var chans = [Receiver<Int>]()
