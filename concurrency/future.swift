@@ -26,19 +26,15 @@ import Dispatch
 
 public func future<T>(task: () -> T) -> () -> T
 {
-  let s = dispatch_semaphore_create(0)!
-  var r: T? = nil
+  let group = dispatch_group_create()
+  let queue = dispatch_get_global_queue(QOS_CLASS_UTILITY, 0)
 
-  async {
-    r = task()
-    dispatch_semaphore_signal(s)
-  }
+  var result: T! = nil
+  dispatch_group_async(group, queue) { result = task() }
 
   return {
-    dispatch_semaphore_wait(s, DISPATCH_TIME_FOREVER)
-    // Ensure the result is reusable by re-incrementing the semaphore
-    dispatch_semaphore_signal(s)
-    return r!
+    dispatch_group_wait(group, DISPATCH_TIME_FOREVER)
+    return result
   }
 }
 
