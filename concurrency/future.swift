@@ -27,7 +27,7 @@ import Dispatch
 public func future<T>(task: () -> T) -> () -> T
 {
   let group = dispatch_group_create()
-  let queue = dispatch_get_global_queue(QOS_CLASS_UTILITY, 0)
+  let queue = dispatch_get_global_queue(qos_class_self(), 0)
 
   var result: T! = nil
   dispatch_group_async(group, queue) { result = task() }

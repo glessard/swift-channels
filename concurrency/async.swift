@@ -22,11 +22,13 @@ import Dispatch
 
 struct DispatchQueue
 {
-  static var Global: dispatch_queue_attr_t
-    { return dispatch_get_global_queue(QOS_CLASS_UTILITY, 0) }
+  static var Global: dispatch_queue_attr_t {
+    return dispatch_get_global_queue(qos_class_self(), 0)
+  }
 
-  static var Main: dispatch_queue_attr_t
-    { return dispatch_get_main_queue() }
+  static var Main: dispatch_queue_attr_t {
+    return dispatch_get_main_queue()
+  }
 }
 
 /**
@@ -36,7 +38,7 @@ struct DispatchQueue
 */
 public func async (task: () -> ())
 {
-  dispatch_async(DispatchQueue.Global) { task() }
+  dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) { task() }
 }
 
 /**
@@ -46,7 +48,7 @@ public func async (task: () -> ())
 */
 public func async<IgnoredType> (task: () -> IgnoredType)
 {
-  dispatch_async(DispatchQueue.Global) { _ = task() }
+  dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) { _ = task() }
 }
 
 /**
@@ -57,7 +59,7 @@ public func async<IgnoredType> (task: () -> IgnoredType)
 */
 public func async(#group: dispatch_group_t, task: () -> ())
 {
-  dispatch_group_async(group, DispatchQueue.Global) { task() }
+  dispatch_group_async(group, dispatch_get_global_queue(qos_class_self(), 0)) { task() }
 }
 
 /**
@@ -68,5 +70,5 @@ public func async(#group: dispatch_group_t, task: () -> ())
 */
 public func async<IgnoredType>(#group: dispatch_group_t, task: () -> IgnoredType)
 {
-  dispatch_group_async(group, DispatchQueue.Global) { _ = task() }
+  dispatch_group_async(group, dispatch_get_global_queue(qos_class_self(), 0)) { _ = task() }
 }
