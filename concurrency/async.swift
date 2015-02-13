@@ -15,7 +15,7 @@ import Dispatch
   async { println("In the background") }
 
   That is simply a shortcut for
-  dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) { println("In the background") }
+  dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0)) { println("In the background") }
 
   Much more economical.
 */
@@ -23,7 +23,7 @@ import Dispatch
 struct DispatchQueue
 {
   static var Global: dispatch_queue_attr_t
-    { return dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0) }
+    { return dispatch_get_global_queue(QOS_CLASS_UTILITY, 0) }
 
   static var Main: dispatch_queue_attr_t
     { return dispatch_get_main_queue() }
