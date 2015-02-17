@@ -12,10 +12,9 @@ import Darwin
   The input collection is not modified in any way.
 */
 
-func shuffle<C: CollectionType>(c: C) -> SequenceOf<C.Generator.Element>
+public func shuffle<C: CollectionType>(c: C) -> PermutationGenerator<C, SequenceOf<C.Index>>
 {
-  let shuffledIndices = IndexShuffler(c.startIndex..<c.endIndex)
-  return SequenceOf(PermutationGenerator(elements: c, indices: shuffledIndices))
+  return PermutationGenerator(elements: c, indices: SequenceOf(IndexShuffler(indices(c))))
 }
 
 /**
@@ -25,19 +24,16 @@ func shuffle<C: CollectionType>(c: C) -> SequenceOf<C.Generator.Element>
 
 struct ShuffledSequence<C: CollectionType>: SequenceType, GeneratorType
 {
-  typealias Element = C.Generator.Element
-  typealias Index = C.Index
-
   private let collection: C
-  private var indexShuffler: IndexShuffler<Range<Index>>
+  private var indexShuffler: IndexShuffler<C.Index>
 
   init(_ input: C)
   {
     collection = input
-    indexShuffler = IndexShuffler(collection.startIndex..<collection.endIndex)
+    indexShuffler = IndexShuffler(indices(collection))
   }
 
-  mutating func next() -> Element?
+  mutating func next() -> C.Generator.Element?
   {
     if let index = indexShuffler.next()
     {
@@ -57,22 +53,29 @@ struct ShuffledSequence<C: CollectionType>: SequenceType, GeneratorType
   using a sequence of indices for the input.
 */
 
-struct IndexShuffler<S: SequenceType where
-                     S.Generator.Element: ForwardIndexType>: SequenceType, GeneratorType
+struct IndexShuffler<I: ForwardIndexType>: SequenceType, GeneratorType
 {
-  typealias Index = S.Generator.Element
-
   let count: Int
   var step = -1
-  var i: [Index]
+  var i: [I]
 
-  init(_ input: S)
+  init<S: SequenceType where S.Generator.Element == I>(_ input: S)
   {
-    i = Array(input)
-    count = Swift.count(i) as Int
+    self.init(Array(input))
   }
 
-  mutating func next() -> Index?
+  init(_ input: Range<I>)
+  {
+    self.init(Array(input))
+  }
+
+  init(_ input: Array<I>)
+  {
+    i = input
+    count = Swift.count(input) as Int
+  }
+
+  mutating func next() -> I?
   {
     step += 1
 

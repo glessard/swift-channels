@@ -11,53 +11,62 @@ import XCTest
 
 class ShuffleTests: XCTestCase
 {
-  let a = Array(stride(from: -5.0, to: 1e3, by: 0.8))
+  let a = Array(stride(from: -5.0, to: 1e4, by: 0.8))
+
+  func testPerformanceControl()
+  {
+    self.measureBlock() {
+      let s = Array(SequenceOf(self.a))
+      //      let s = Array(PermutationGenerator(elements: self.a, indices: SequenceOf(indices(self.a))))
+    }
+  }
 
   func testPerformanceShuffle()
   {
     self.measureBlock() {
-      var s = Array(shuffle(self.a))
+      let s = Array(shuffle(self.a))
     }
   }
 
   func testPerformanceShuffledSequence()
   {
     self.measureBlock() {
-      var s = Array(ShuffledSequence(self.a))
+      let s = Array(ShuffledSequence(self.a))
     }
   }
 
   func testPerformanceSequenceOfShuffledSequence()
   {
     self.measureBlock() {
-      var s = Array(SequenceOf(ShuffledSequence(self.a)))
+//      let s = Array(SequenceOf(ShuffledSequence(self.a)))
+      let soss = SequenceOf(ShuffledSequence(self.a))
+      let s = Array(soss)
     }
   }
 
   func testPerformancePermutationGenerator()
   {
     self.measureBlock() {
-      let shuffledIndices = IndexShuffler(self.a.startIndex..<self.a.endIndex)
-      let permutation = PermutationGenerator(elements: self.a, indices: shuffledIndices)
-      var s = Array(permutation)
+      let s = Array(PermutationGenerator(elements: self.a, indices: IndexShuffler(indices(self.a))))
     }
   }
 
   func testPerformancePermutationGeneratorOfSequenceOfShuffledIndices()
   {
     self.measureBlock() {
-      let shuffledIndices = IndexShuffler(self.a.startIndex..<self.a.endIndex)
-      let permutation = PermutationGenerator(elements: self.a, indices: SequenceOf(shuffledIndices))
-      var s = Array(permutation)
+      let shuffledIndices = IndexShuffler(indices(self.a))
+//      let permutation = PermutationGenerator(elements: self.a, indices: SequenceOf(shuffledIndices))
+      let s = Array(PermutationGenerator(elements: self.a, indices: SequenceOf(shuffledIndices)))
     }
   }
 
   func testPerformanceSequenceOfPermutationGenerator()
   {
     self.measureBlock() {
-      let shuffledIndices = IndexShuffler(self.a.startIndex..<self.a.endIndex)
+//      let permutation = PermutationGenerator(elements: self.a, indices: IndexShuffler(indices(self.a)))
+      let shuffledIndices = IndexShuffler(indices(self.a))
       let permutation = PermutationGenerator(elements: self.a, indices: shuffledIndices)
-      var s = Array(SequenceOf(permutation))
+      let s = Array(SequenceOf(permutation))
     }
   }
 }
