@@ -20,11 +20,9 @@ class SelectTests: XCTestCase
     // careful with 'iterations': there's a maximum thread count.
     let iterations = 50
 
-    //    syncprint(__FUNCTION__)
-
-    let channels  = map(0..<chanCount) { _ in Channel<Int>.Make(buffered ? iterations : 0) }
-    let senders   = channels.map { $0.tx }
-    let receivers = channels.map { $0.rx }
+    let channels  = map(0..<chanCount) { _ in Chan<Int>.Make(buffered ? iterations : 0) }
+    let senders   = channels.map { Sender($0) }
+    let receivers = channels.map { Receiver($0) }
 
     let group = dispatch_group_create()
     let queue = dispatch_queue_create(nil, nil)
@@ -34,17 +32,14 @@ class SelectTests: XCTestCase
       async(group: group) {
         if sleepInterval > 0 { NSThread.sleepForTimeInterval(NSTimeInterval(i)*sleepInterval) }
         senders[index] <- index
-        //        syncprint("\(i): sent to \(index)")
+        // syncprint("\(i): sent to \(index)")
       }
     }
 
-    NSThread.sleepForTimeInterval(0.001)
-    //    dispatch_async(queue) {
-    async {
-      dispatch_group_wait(group, DISPATCH_TIME_FOREVER)
+    dispatch_group_notify(group, dispatch_get_global_queue(qos_class_self(), 0)) {
       for s in enumerate(senders)
       {
-        //        syncprint("closing sender \(s.index)")
+        // syncprint("closing sender \(s.index)")
         s.element.close()
       }
     }
@@ -85,7 +80,7 @@ class SelectTests: XCTestCase
     }
   }
 
-  func testSelectBufferedReceiverWithWait()
+  func testSelectBufferedReceiverWithSleep()
   {
     SelectReceiverTest(buffered: true, useSelectable: false, sleepInterval: 0.01)
   }
@@ -97,7 +92,7 @@ class SelectTests: XCTestCase
     }
   }
 
-  func testSelectUnbufferedReceiverWithWait()
+  func testSelectUnbufferedReceiverWithSleep()
   {
     SelectReceiverTest(buffered: false, useSelectable: false, sleepInterval: 0.01)
   }
@@ -109,7 +104,7 @@ class SelectTests: XCTestCase
     }
   }
 
-  func testSelectBufferedReceiverSelectableWithWait()
+  func testSelectBufferedReceiverSelectableWithSleep()
   {
     SelectReceiverTest(buffered: true, useSelectable: true, sleepInterval: 0.01)
   }
@@ -121,7 +116,7 @@ class SelectTests: XCTestCase
     }
   }
 
-  func testSelectUnbufferedReceiverSelectableWithWait()
+  func testSelectUnbufferedReceiverSelectableWithSleep()
   {
     SelectReceiverTest(buffered: false, useSelectable: true, sleepInterval: 0.01)
   }
@@ -131,8 +126,6 @@ class SelectTests: XCTestCase
   {
     let chanCount = 5
     let iterations = 50
-
-    //    syncprint(__FUNCTION__)
 
     let channels  = map(0..<chanCount) { _ in Chan<Int>.Make(buffered ? 1 : 0) }
     let senders   = channels.map { Sender($0) }
@@ -152,8 +145,7 @@ class SelectTests: XCTestCase
       }
     }
 
-    async {
-      dispatch_group_wait(g, DISPATCH_TIME_FOREVER)
+    dispatch_group_notify(g, dispatch_get_global_queue(qos_class_self(), 0)) {
       tx.close()
     }
 
@@ -192,7 +184,7 @@ class SelectTests: XCTestCase
     }
   }
 
-  func testSelectBufferedSenderWithWait()
+  func testSelectBufferedSenderWithSleep()
   {
     SelectSenderTest(buffered: true, sleepInterval: 0.1)
   }
