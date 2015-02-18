@@ -65,9 +65,9 @@ public protocol Selectable: class
   func selectNotify(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
 
   /*
-    Select first iterates through its Selectables to find whether at least one of them is ready
-    This is much faster than launching N threads, triggering a race, and then getting all threads to
-    be canceled.
+    Select first iterates through its Selectables to find whether at least one of them is ready.
+    This is much faster than launching N threads, having them race to get the semaphore,
+    and then getting the N-1 losing threads to be canceled.
   */
 
   func selectNow(selectionID: Selectable) -> Selection?
