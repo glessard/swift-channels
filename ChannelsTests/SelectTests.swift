@@ -184,8 +184,20 @@ class SelectTests: XCTestCase
     }
   }
 
+  func testPerformanceSelectUnbufferedSender()
+  {
+    self.measureBlock {
+      self.SelectSenderTest(buffered: false)
+    }
+  }
+
   func testSelectBufferedSenderWithSleep()
   {
-    SelectSenderTest(buffered: true, sleepInterval: 0.1)
+    SelectSenderTest(buffered: true, sleepInterval: 0.01)
+  }
+
+  func testSelectUnbufferedSenderWithSleep()
+  {
+    SelectSenderTest(buffered: false, sleepInterval: 0.01)
   }
 }

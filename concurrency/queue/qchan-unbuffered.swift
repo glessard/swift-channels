@@ -213,6 +213,110 @@ final class QUnbufferedChan<T>: Chan<T>
     return element
   }
 
+  override func selectPutNow(selectionID: Selectable) -> Selection?
+  {
+    OSSpinLockLock(&lock)
+    if let rs = readerQueue.dequeue()
+    {
+      OSSpinLockUnlock(&lock)
+      return Selection(selectionID: selectionID, selectionData: rs)
+    }
+    else
+    {
+      OSSpinLockUnlock(&lock)
+      return nil
+    }
+  }
+
+  override func insert(ref: Selection, item: T) -> Bool
+  {
+    if let rs: dispatch_semaphore_t = ref.getData()
+    {
+      let pointer = UnsafeMutablePointer<T>(dispatch_get_context(rs))
+      if pointer == nil
+      { // not a normal code path.
+        assert(false, __FUNCTION__)
+        return false
+      }
+
+      pointer.initialize(item)
+      dispatch_semaphore_signal(rs)
+      return true
+    }
+    assert(false, "Thread left hanging in \(__FUNCTION__), semaphore not found in \(ref)")
+    return false
+  }
+
+  override func selectPut(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
+  {
+    let threadLock = dispatch_semaphore_create(0)!
+
+    async {
+      OSSpinLockLock(&self.lock)
+
+      while !self.closed
+      {
+        if let rs = self.readerQueue.dequeue()
+        {
+          if let s = semaphore.get()
+          {
+            OSSpinLockUnlock(&self.lock)
+
+            let selection = Selection(selectionID: selectionID, selectionData: rs)
+            let selectptr = UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque())
+            dispatch_set_context(s, selectptr)
+            dispatch_semaphore_signal(s)
+            return
+          }
+          else
+          {
+            self.readerQueue.undequeue(rs)
+            // The spinlock stayed locked between dequeue() and undequeue(),
+            // so it was transparent to other threads.
+            OSSpinLockUnlock(&self.lock)
+            return
+          }
+        }
+
+        OSSpinLockUnlock(&self.lock)
+
+        // A weak-sauce busy-wait solution.
+        // This is not a good solution, though it works
+        // (note that it will pretty much lose any race against a QBufferedChan).
+        // An ideal solution would require waiting for the other 2 threads at once
+        // (the thread that runs get() and the thread that runs select()).
+        // This would mean having a local semaphore, enqueue it to the writerQueue,
+        // and wait for a reader. Even if the issue of reliably aborting the message reception is
+        // solved, the writer needs to handle the case of a message that fails to get passed
+        // on to select() (if the selectPut thread loses its race to obtain the semaphore after having
+        // gotten the semaphore from a get() thread).
+        // The busy-wait is a way to defer a solution to these issues until a later time.
+
+        dispatch_semaphore_wait(threadLock, dispatch_time(DISPATCH_TIME_NOW, 10_000))
+        if dispatch_get_context(threadLock) == abortSelect
+        {
+          return
+        }
+
+        OSSpinLockLock(&self.lock)
+      }
+
+      OSSpinLockUnlock(&self.lock)
+
+      // channel is closed; try to wake select() with a nil message
+      if let s = semaphore.get()
+      {
+        dispatch_set_context(s, nil)
+        dispatch_semaphore_signal(s)
+      }
+    }
+
+    return {
+      dispatch_set_context(threadLock, abortSelect)
+      dispatch_semaphore_signal(threadLock)
+    }
+  }
+
   override func selectGetNow(selectionID: Selectable) -> Selection?
   {
     OSSpinLockLock(&lock)
@@ -240,7 +344,6 @@ final class QUnbufferedChan<T>: Chan<T>
   override func selectGet(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
   {
     let threadLock = dispatch_semaphore_create(0)!
-    dispatch_set_context(threadLock, nil)
 
     async {
       OSSpinLockLock(&self.lock)
