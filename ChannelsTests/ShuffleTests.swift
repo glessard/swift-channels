@@ -17,7 +17,6 @@ class ShuffleTests: XCTestCase
   {
     self.measureBlock() {
       let s = Array(SequenceOf(self.a))
-      //      let s = Array(PermutationGenerator(elements: self.a, indices: SequenceOf(indices(self.a))))
     }
   }
 
@@ -38,7 +37,8 @@ class ShuffleTests: XCTestCase
   func testPerformanceSequenceOfShuffledSequence()
   {
     self.measureBlock() {
-//      let s = Array(SequenceOf(ShuffledSequence(self.a)))
+      // Crashes if invoked directly with 6D520o
+      // let s = Array(SequenceOf(ShuffledSequence(self.a)))
       let soss = SequenceOf(ShuffledSequence(self.a))
       let s = Array(soss)
     }
@@ -54,8 +54,9 @@ class ShuffleTests: XCTestCase
   func testPerformancePermutationGeneratorOfSequenceOfShuffledIndices()
   {
     self.measureBlock() {
+      // Crashes if invoked directly with 6D520o
+      // let s = Array(PermutationGenerator(elements: self.a, indices: SequenceOf(IndexShuffler(indices(self.a)))))
       let shuffledIndices = IndexShuffler(indices(self.a))
-//      let permutation = PermutationGenerator(elements: self.a, indices: SequenceOf(shuffledIndices))
       let s = Array(PermutationGenerator(elements: self.a, indices: SequenceOf(shuffledIndices)))
     }
   }
@@ -63,10 +64,10 @@ class ShuffleTests: XCTestCase
   func testPerformanceSequenceOfPermutationGenerator()
   {
     self.measureBlock() {
-//      let permutation = PermutationGenerator(elements: self.a, indices: IndexShuffler(indices(self.a)))
+      // Hangs if invoked directly with 6D520o
+      // let s = Array(SequenceOf(PermutationGenerator(elements: self.a, indices: IndexShuffler(indices(self.a)))))
       let shuffledIndices = IndexShuffler(indices(self.a))
-      let permutation = PermutationGenerator(elements: self.a, indices: shuffledIndices)
-      let s = Array(SequenceOf(permutation))
+      let s = Array(SequenceOf(PermutationGenerator(elements: self.a, indices: shuffledIndices)))
     }
   }
 }
