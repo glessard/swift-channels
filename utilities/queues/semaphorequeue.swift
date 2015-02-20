@@ -15,7 +15,6 @@ final class SemaphoreQueue: QueueType, SequenceType, GeneratorType
   private var tail: UnsafeMutablePointer<SemaphoreNode> = nil
 
   private let pool = AtomicStackInit()
-  private var lock = OS_SPINLOCK_INIT
 
   init() { }
 
@@ -72,7 +71,6 @@ final class SemaphoreQueue: QueueType, SequenceType, GeneratorType
     }
     node.initialize(SemaphoreNode(newElement))
 
-    OSSpinLockLock(&lock)
     if head == nil
     {
       head = node
@@ -83,21 +81,15 @@ final class SemaphoreQueue: QueueType, SequenceType, GeneratorType
       tail.memory.next = node
       tail = node
     }
-    OSSpinLockUnlock(&lock)
   }
 
   func dequeue() -> dispatch_semaphore_t?
   {
-    OSSpinLockLock(&lock)
     let node = head
     if node != nil
     { // Promote the 2nd item to 1st
       head = node.memory.next
-    }
-    OSSpinLockUnlock(&lock)
 
-    if node != nil
-    {
       let element = node.memory.elem
       node.destroy()
       OSAtomicEnqueue(pool, node, 0)
