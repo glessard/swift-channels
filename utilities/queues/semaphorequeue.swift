@@ -11,8 +11,8 @@ import Dispatch
 
 final class SemaphoreQueue: QueueType, SequenceType, GeneratorType
 {
-  private var head: COpaquePointer = nil
-  private var tail: COpaquePointer = nil
+  private var head: UnsafeMutablePointer<SemaphoreNode> = nil
+  private var tail: UnsafeMutablePointer<SemaphoreNode> = nil
 
   private let pool = AtomicStackInit()
   private var lock = OS_SPINLOCK_INIT
@@ -27,16 +27,15 @@ final class SemaphoreQueue: QueueType, SequenceType, GeneratorType
 
   deinit
   {
-    var h = UnsafeMutablePointer<SemaphoreNode>(head)
-    while h != nil
+    while head != nil
     {
-      let node = h
-      h = node.memory.next
+      let node = head
+      head = node.memory.next
       node.destroy()
       node.dealloc(1)
     }
 
-    while UnsafeMutablePointer<COpaquePointer>(pool).memory != nil
+    while UnsafePointer<COpaquePointer>(pool).memory != nil
     {
       UnsafeMutablePointer<SemaphoreNode>(OSAtomicDequeue(pool, 0)).dealloc(1)
     }
@@ -74,44 +73,36 @@ final class SemaphoreQueue: QueueType, SequenceType, GeneratorType
     node.initialize(SemaphoreNode(newElement))
 
     OSSpinLockLock(&lock)
-
     if head == nil
     {
-      head = COpaquePointer(node)
-      tail = COpaquePointer(node)
-      OSSpinLockUnlock(&lock)
-      return
+      head = node
+      tail = node
     }
-
-    UnsafeMutablePointer<SemaphoreNode>(tail).memory.next = node
-    tail = COpaquePointer(node)
+    else
+    {
+      tail.memory.next = node
+      tail = node
+    }
     OSSpinLockUnlock(&lock)
   }
 
   func dequeue() -> dispatch_semaphore_t?
   {
     OSSpinLockLock(&lock)
+    let node = head
+    if node != nil
+    { // Promote the 2nd item to 1st
+      head = node.memory.next
+    }
+    OSSpinLockUnlock(&lock)
 
-    if head != nil
+    if node != nil
     {
-      let node = UnsafeMutablePointer<SemaphoreNode>(head)
-
-      // Promote the 2nd item to 1st
-      head = COpaquePointer(node.memory.next)
-
-      // Logical housekeeping
-      if head == nil { tail = nil }
-
-      OSSpinLockUnlock(&lock)
-
       let element = node.memory.elem
       node.destroy()
       OSAtomicEnqueue(pool, node, 0)
       return element
     }
-
-    // queue is empty
-    OSSpinLockUnlock(&lock)
     return nil
   }
 
@@ -130,11 +121,10 @@ final class SemaphoreQueue: QueueType, SequenceType, GeneratorType
   }
 }
 
-
-struct SemaphoreNode
+private struct SemaphoreNode
 {
   var next: UnsafeMutablePointer<SemaphoreNode> = nil
-  var elem: dispatch_semaphore_t
+  let elem: dispatch_semaphore_t
 
   init(_ e: dispatch_semaphore_t)
   {
