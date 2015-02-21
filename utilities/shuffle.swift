@@ -12,52 +12,21 @@ import Darwin
   The input collection is not modified in any way.
 */
 
-public func shuffle<C: CollectionType>(c: C) -> PermutationGenerator<C, SequenceOf<C.Index>>
+func shuffle<C: CollectionType>(c: C) -> PermutationGenerator<C, IndexShuffler<C.Index>>
 {
-  return PermutationGenerator(elements: c, indices: SequenceOf(IndexShuffler(indices(c))))
+  return PermutationGenerator(elements: c, indices: IndexShuffler(indices(c)))
 }
 
 /**
-  A stepwise implementation of the Knuth Shuffle (a.k.a. Fisher-Yates Shuffle).
-  The input collection is not modified: the shuffling itself is done using an adjunct array of indices.
-*/
-
-struct ShuffledSequence<C: CollectionType>: SequenceType, GeneratorType
-{
-  private let collection: C
-  private var indexShuffler: IndexShuffler<C.Index>
-
-  init(_ input: C)
-  {
-    collection = input
-    indexShuffler = IndexShuffler(indices(collection))
-  }
-
-  mutating func next() -> C.Generator.Element?
-  {
-    if let index = indexShuffler.next()
-    {
-      return collection[index]
-    }
-    return nil
-  }
-
-  func generate() -> ShuffledSequence
-  {
-    return self
-  }
-}
-
-/**
-  A stepwise implementation of the Knuth Shuffle (a.k.a. Fisher-Yates Shuffle),
-  using a sequence of indices for the input.
+A stepwise implementation of the Knuth Shuffle (a.k.a. Fisher-Yates Shuffle),
+using a sequence of indices as its input.
 */
 
 struct IndexShuffler<I: ForwardIndexType>: SequenceType, GeneratorType
 {
-  let count: Int
-  var step = -1
-  var i: [I]
+  private var i: [I]
+  private let count: Int
+  private var step = -1
 
   init<S: SequenceType where S.Generator.Element == I>(_ input: S)
   {

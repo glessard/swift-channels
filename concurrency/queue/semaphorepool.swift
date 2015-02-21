@@ -10,11 +10,7 @@ import Dispatch
 
 struct SemaphorePool
 {
-  #if os(iOS)
-  static let poolq = SemaphoreQueue()
-  #else
-  static let poolq = SemaphoreOSQueue()
-  #endif
+  static let poolq = SemaphoreStack()
 
   static func enqueue(s: dispatch_semaphore_t)
   {
