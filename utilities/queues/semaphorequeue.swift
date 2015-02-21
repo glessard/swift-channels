@@ -42,10 +42,7 @@ final class SemaphoreQueue: QueueType, SequenceType, GeneratorType
   }
 
   var isEmpty: Bool {
-    OSSpinLockLock(&lock)
-    let empty = (head == nil)
-    OSSpinLockUnlock(&lock)
-    return empty
+    return (head == nil)
   }
 
   var count: Int {
@@ -97,19 +94,16 @@ final class SemaphoreQueue: QueueType, SequenceType, GeneratorType
     }
     node.initialize(SemaphoreNode(newElement))
 
-    OSSpinLockLock(&lock)
-
     if head == nil
     {
-      head = COpaquePointer(node)
-      tail = COpaquePointer(node)
-      OSSpinLockUnlock(&lock)
-      return
+      head = node
+      tail = node
     }
-
-    node.memory.next = UnsafeMutablePointer<SemaphoreNode>(head)
-    head = COpaquePointer(node)
-    OSSpinLockUnlock(&lock)
+    else
+    {
+      node.memory.next = head
+      head = node
+    }
   }
   
   func dequeue() -> dispatch_semaphore_t?
