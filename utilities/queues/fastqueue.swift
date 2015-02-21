@@ -14,7 +14,6 @@ final class FastQueue<T>: QueueType, SequenceType, GeneratorType
   private var tail: UnsafeMutablePointer<Node> = nil
 
   private let pool = AtomicStackInit()
-  private var lock = OS_SPINLOCK_INIT
 
   init() { }
 
@@ -81,7 +80,6 @@ final class FastQueue<T>: QueueType, SequenceType, GeneratorType
     node.memory.next = nil
     node.memory.elem().initialize(newElement)
 
-    OSSpinLockLock(&lock)
     if head == nil
     {
       head = node
@@ -92,21 +90,15 @@ final class FastQueue<T>: QueueType, SequenceType, GeneratorType
       tail.memory.next = node
       tail = node
     }
-    OSSpinLockUnlock(&lock)
   }
 
   func dequeue() -> T?
   {
-    OSSpinLockLock(&lock)
     let node = head
     if node != nil
     { // Promote the 2nd item to 1st
       head = node.memory.next
-    }
-    OSSpinLockUnlock(&lock)
 
-    if node != nil
-    {
       let element: T = node.memory.elem().move()
       OSAtomicEnqueue(pool, node, 0)
       return element
