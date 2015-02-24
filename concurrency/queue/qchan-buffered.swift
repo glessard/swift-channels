@@ -169,15 +169,13 @@ final class QBufferedChan<T>: Chan<T>
     buffer.advancedBy(tail&mask).initialize(newElement)
     tail += 1
 
-    if let empty = Optional(readerQueue.isEmpty) where !empty, // a reader is waiting
-       let rs = readerQueue.dequeue()
+    if !readerQueue.isEmpty, let rs = readerQueue.dequeue()
     {
       dispatch_semaphore_signal(rs)
     }
     else if head+capacity > tail // the channel isn't full
     {
-      if let empty = Optional(writerQueue.isEmpty) where !empty, // a writer is waiting
-         let ws = writerQueue.dequeue()
+      if !writerQueue.isEmpty, let ws = writerQueue.dequeue()
       {
         dispatch_semaphore_signal(ws)
       }
@@ -216,15 +214,13 @@ final class QBufferedChan<T>: Chan<T>
     let element = buffer.advancedBy(head&mask).move()
     head += 1
 
-    if let empty = Optional(writerQueue.isEmpty) where !empty, // a writer is waiting
-       let ws = writerQueue.dequeue()
+    if !writerQueue.isEmpty, let ws = writerQueue.dequeue()
     {
       dispatch_semaphore_signal(ws)
     }
     else if head < tail // the channel isn't empty
     {
-      if let empty = Optional(readerQueue.isEmpty) where !empty, // a reader is waiting
-         let rs = readerQueue.dequeue()
+      if !readerQueue.isEmpty, let rs = readerQueue.dequeue()
       {
         dispatch_semaphore_signal(rs)
       }
