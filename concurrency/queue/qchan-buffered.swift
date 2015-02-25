@@ -102,7 +102,7 @@ final class QBufferedChan<T>: Chan<T>
     OSSpinLockLock(&lock)
     closed = true
 
-    // Unblock one of the waiting threads.
+    // Unblock waiting threads.
     if !readerQueue.isEmpty, let rs = readerQueue.dequeue()
     {
       dispatch_semaphore_signal(rs)
@@ -159,7 +159,7 @@ final class QBufferedChan<T>: Chan<T>
       buffer.advancedBy(tail&mask).initialize(newElement)
       tail += 1
     }
-    let success = !closed
+    let sent = !closed
 
     if !readerQueue.isEmpty, let rs = readerQueue.dequeue()
     {
@@ -174,8 +174,7 @@ final class QBufferedChan<T>: Chan<T>
     }
 
     OSSpinLockUnlock(&lock)
-
-    return success
+    return sent
   }
 
   /**
@@ -198,17 +197,22 @@ final class QBufferedChan<T>: Chan<T>
       wait(lock: &lock, queue: readerQueue)
     }
 
-    let element: T?
-    if head < tail
+    if closed && head >= tail
     {
-      element = buffer.advancedBy(head&mask).move()
-      head += 1
+      if !writerQueue.isEmpty, let ws = writerQueue.dequeue()
+      {
+        dispatch_semaphore_signal(ws)
+      }
+      else if !readerQueue.isEmpty, let rs = readerQueue.dequeue()
+      {
+        dispatch_semaphore_signal(rs)
+      }
+      OSSpinLockUnlock(&lock)
+      return nil
     }
-    else
-    { // channel must be closed if this is reached.
-      assert(closed, __FUNCTION__)
-      element = nil
-    }
+
+    let element = buffer.advancedBy(head&mask).move()
+    head += 1
 
     if !writerQueue.isEmpty, let ws = writerQueue.dequeue()
     {
