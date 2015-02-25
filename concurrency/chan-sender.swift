@@ -6,8 +6,6 @@
 //  Copyright (c) 2014 Guillaume Lessard. All rights reserved.
 //
 
-import Dispatch
-
 /**
   Sender<T> is the sending endpoint for a Channel, Chan<T>.
 */

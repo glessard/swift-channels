@@ -6,8 +6,6 @@
 //  Copyright (c) 2014 Guillaume Lessard. All rights reserved.
 //
 
-import Dispatch
-
 /**
   A channel allows concurrently executing tasks to communicate by sending and
   receiving data of a specific type.
@@ -105,12 +103,6 @@ public class Chan<T>: ChannelType, SelectableChannelType
 
   public func insert(ref: Selection, item: T) -> Bool
   {
-    if let s: dispatch_semaphore_t = ref.getData()
-    {
-      dispatch_set_context(s, nil)
-      dispatch_semaphore_signal(s)
-      return true
-    }
     return false
   }
 
