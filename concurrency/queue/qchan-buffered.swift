@@ -259,14 +259,11 @@ final class QBufferedChan<T>: Chan<T>
     buffer.advancedBy(tail&mask).initialize(item)
     tail += 1
 
-    if let empty = Optional(readerQueue.isEmpty) where !empty,
-       let rs = readerQueue.dequeue()
+    if let rs = readerQueue.dequeue()
     {
       dispatch_semaphore_signal(rs)
     }
-    else if let full = Optional(head+capacity <= tail) where !full, // the channel isn't full
-            let empty = Optional(writerQueue.isEmpty) where !empty, // a writer is waiting
-            let ws = writerQueue.dequeue()
+    else if head+capacity <= tail, let ws = writerQueue.dequeue()
     {
       dispatch_semaphore_signal(ws)
     }
@@ -348,15 +345,11 @@ final class QBufferedChan<T>: Chan<T>
       }
       else
       {
-        if let emptyc = Optional(self.head >= self.tail) where !emptyc,   // channel isn't empty
-           let emptyq = Optional(self.readerQueue.isEmpty) where !emptyq, // a reader is waiting
-           let rs = self.readerQueue.dequeue()
+        if self.head >= self.tail, let rs = self.readerQueue.dequeue()
         {
           dispatch_semaphore_signal(rs)
         }
-        else if let full = Optional(self.head+self.capacity <= self.tail) where !full, // the channel isn't full
-                let empty = Optional(self.writerQueue.isEmpty) where !empty,           // a writer is waiting
-                let ws = self.writerQueue.dequeue()
+        else if self.head+self.capacity <= self.tail, let ws = self.writerQueue.dequeue()
         {
           dispatch_semaphore_signal(ws)
         }
@@ -380,14 +373,11 @@ final class QBufferedChan<T>: Chan<T>
       head += 1
       OSSpinLockUnlock(&lock)
 
-      if let empty = Optional(self.writerQueue.isEmpty) where !empty, // a writer is waiting
-         let ws = self.writerQueue.dequeue()
+      if let ws = self.writerQueue.dequeue()
       {
         dispatch_semaphore_signal(ws)
       }
-      else if let emptyc = Optional(self.head >= self.tail) where !emptyc,   // channel isn't empty
-              let emptyq = Optional(self.readerQueue.isEmpty) where !emptyq, // a reader is waiting
-              let rs = self.readerQueue.dequeue()
+      else if self.head >= self.tail, let rs = self.readerQueue.dequeue()
       {
         dispatch_semaphore_signal(rs)
       }
@@ -456,14 +446,11 @@ final class QBufferedChan<T>: Chan<T>
         let element = self.buffer.advancedBy(self.head&self.mask).move()
         self.head += 1
 
-        if let empty = Optional(self.writerQueue.isEmpty) where !empty, // a writer is waiting
-           let ws = self.writerQueue.dequeue()
+        if let ws = self.writerQueue.dequeue()
         {
           dispatch_semaphore_signal(ws)
         }
-        else if let emptyc = Optional(self.head >= self.tail) where !emptyc,   // channel isn't empty
-                let emptyq = Optional(self.readerQueue.isEmpty) where !emptyq, // a reader is waiting
-                let rs = self.readerQueue.dequeue()
+        else if self.head >= self.tail, let rs = self.readerQueue.dequeue()
         {
           dispatch_semaphore_signal(rs)
         }
@@ -478,15 +465,11 @@ final class QBufferedChan<T>: Chan<T>
       }
       else
       {
-        if let full = Optional(self.head+self.capacity <= self.tail) where !full, // channel isn't full
-           let empty = Optional(self.writerQueue.isEmpty) where !empty,           // a writer is waiting
-           let ws = self.writerQueue.dequeue()
+        if self.head+self.capacity <= self.tail, let ws = self.writerQueue.dequeue()
         {
           dispatch_semaphore_signal(ws)
         }
-        else if let emptyc = Optional(self.head >= self.tail) where !emptyc,   // channel isn't empty
-                let emptyq = Optional(self.readerQueue.isEmpty) where !emptyq, // a reader is waiting
-                let rs = self.readerQueue.dequeue()
+        else if self.head >= self.tail, let rs = self.readerQueue.dequeue()
         {
           dispatch_semaphore_signal(rs)
         }
