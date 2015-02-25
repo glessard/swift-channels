@@ -62,21 +62,15 @@ final class QUnbufferedChan<T>: Chan<T>
     closed = true
 
     // Unblock the threads waiting on our conditions.
-    if readerQueue.isEmpty == false
+    while let rs = readerQueue.dequeue()
     {
-      while let rs = readerQueue.dequeue()
-      {
-        dispatch_set_context(rs, nil)
-        dispatch_semaphore_signal(rs)
-      }
+      dispatch_set_context(rs, nil)
+      dispatch_semaphore_signal(rs)
     }
-    if writerQueue.isEmpty == false
+    while let ws = writerQueue.dequeue()
     {
-      while let ws = writerQueue.dequeue()
-      {
-        dispatch_set_context(ws, nil)
-        dispatch_semaphore_signal(ws)
-      }
+      dispatch_set_context(ws, nil)
+      dispatch_semaphore_signal(ws)
     }
     OSSpinLockUnlock(&lock)
   }

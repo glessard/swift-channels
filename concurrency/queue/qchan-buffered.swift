@@ -103,11 +103,11 @@ final class QBufferedChan<T>: Chan<T>
     closed = true
 
     // Unblock waiting threads.
-    if !readerQueue.isEmpty, let rs = readerQueue.dequeue()
+    if let rs = readerQueue.dequeue()
     {
       dispatch_semaphore_signal(rs)
     }
-    else if !writerQueue.isEmpty, let ws = writerQueue.dequeue()
+    else if let ws = writerQueue.dequeue()
     {
       dispatch_semaphore_signal(ws)
     }
@@ -161,16 +161,13 @@ final class QBufferedChan<T>: Chan<T>
     }
     let sent = !closed
 
-    if !readerQueue.isEmpty, let rs = readerQueue.dequeue()
+    if let rs = readerQueue.dequeue()
     {
       dispatch_semaphore_signal(rs)
     }
-    else if head+capacity > tail || closed
+    else if head+capacity > tail || closed, let ws = writerQueue.dequeue()
     {
-      if !writerQueue.isEmpty, let ws = writerQueue.dequeue()
-      {
-        dispatch_semaphore_signal(ws)
-      }
+      dispatch_semaphore_signal(ws)
     }
 
     OSSpinLockUnlock(&lock)
@@ -199,11 +196,11 @@ final class QBufferedChan<T>: Chan<T>
 
     if closed && head >= tail
     {
-      if !writerQueue.isEmpty, let ws = writerQueue.dequeue()
+      if let ws = writerQueue.dequeue()
       {
         dispatch_semaphore_signal(ws)
       }
-      else if !readerQueue.isEmpty, let rs = readerQueue.dequeue()
+      else if let rs = readerQueue.dequeue()
       {
         dispatch_semaphore_signal(rs)
       }
@@ -214,16 +211,13 @@ final class QBufferedChan<T>: Chan<T>
     let element = buffer.advancedBy(head&mask).move()
     head += 1
 
-    if !writerQueue.isEmpty, let ws = writerQueue.dequeue()
+    if let ws = writerQueue.dequeue()
     {
       dispatch_semaphore_signal(ws)
     }
-    else if head < tail || closed
+    else if head < tail || closed, let rs = readerQueue.dequeue()
     {
-      if !readerQueue.isEmpty, let rs = readerQueue.dequeue()
-      {
-        dispatch_semaphore_signal(rs)
-      }
+      dispatch_semaphore_signal(rs)
     }
 
     OSSpinLockUnlock(&lock)
