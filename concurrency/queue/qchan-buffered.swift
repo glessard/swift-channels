@@ -124,8 +124,10 @@ final class QBufferedChan<T>: Chan<T>
     :param: queue the queue to which the signal should be appended
   */
 
-  private func wait(inout #lock: OSSpinLock, queue: SemaphoreQueue)
+  private func wait(queue: SemaphoreQueue)
   {
+    precondition(lock != 0, "Lock must be locked upon entering \(__FUNCTION__)")
+
     let threadLock = SemaphorePool.dequeue()
     queue.enqueue(threadLock)
     OSSpinLockUnlock(&lock)
@@ -151,7 +153,7 @@ final class QBufferedChan<T>: Chan<T>
 
     while !closed && head+capacity <= tail
     {
-      wait(lock: &lock, queue: writerQueue)
+      wait(writerQueue)
     }
 
     if !closed
@@ -191,7 +193,7 @@ final class QBufferedChan<T>: Chan<T>
 
     while !closed && head >= tail
     {
-      wait(lock: &lock, queue: readerQueue)
+      wait(readerQueue)
     }
 
     if closed && head >= tail
