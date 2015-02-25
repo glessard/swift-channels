@@ -196,8 +196,25 @@ final class QBufferedChan<T>: Chan<T>
       wait(readerQueue)
     }
 
-    if closed && head >= tail
+    if head < tail
     {
+      let element = buffer.advancedBy(head&mask).move()
+      head += 1
+
+      if let ws = writerQueue.dequeue()
+      {
+        dispatch_semaphore_signal(ws)
+      }
+      else if head < tail || closed, let rs = readerQueue.dequeue()
+      {
+        dispatch_semaphore_signal(rs)
+      }
+      OSSpinLockUnlock(&lock)
+      return element
+    }
+    else
+    {
+      assert(closed, __FUNCTION__)
       if let ws = writerQueue.dequeue()
       {
         dispatch_semaphore_signal(ws)
@@ -210,20 +227,5 @@ final class QBufferedChan<T>: Chan<T>
       return nil
     }
 
-    let element = buffer.advancedBy(head&mask).move()
-    head += 1
-
-    if let ws = writerQueue.dequeue()
-    {
-      dispatch_semaphore_signal(ws)
-    }
-    else if head < tail || closed, let rs = readerQueue.dequeue()
-    {
-      dispatch_semaphore_signal(rs)
-    }
-
-    OSSpinLockUnlock(&lock)
-
-    return element
   }
 }
