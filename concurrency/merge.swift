@@ -24,7 +24,7 @@ public func merge<R: ReceiverType>(channels: [R]) -> Receiver<R.ReceivedElement>
   let q = dispatch_get_global_queue(qos_class_self(), 0)
 
   dispatch_async(q) {
-    dispatch_apply(UInt(channels.count), q) { (i: UInt) -> () in
+    dispatch_apply(channels.count, q) { (i: Int) -> () in
       let chan = channels[Int(i)]
       while let element = <-chan
       {
