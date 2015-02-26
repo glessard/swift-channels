@@ -124,8 +124,10 @@ final class QBufferedChan<T>: Chan<T>
     :param: queue the queue to which the signal should be appended
   */
 
-  private func wait(inout #lock: OSSpinLock, queue: SemaphoreQueue)
+  private func wait(queue: SemaphoreQueue)
   {
+    precondition(lock != 0, "Lock must be locked upon entering \(__FUNCTION__)")
+
     let threadLock = SemaphorePool.dequeue()
     queue.enqueue(threadLock)
     OSSpinLockUnlock(&lock)
@@ -218,8 +220,25 @@ final class QBufferedChan<T>: Chan<T>
       SemaphorePool.enqueue(threadLock)
     }
 
-    if closed && head >= tail
+    if head < tail
     {
+      let element = buffer.advancedBy(head&mask).move()
+      head += 1
+
+      if let ws = writerQueue.dequeue()
+      {
+        dispatch_semaphore_signal(ws)
+      }
+      else if head < tail || closed, let rs = readerQueue.dequeue()
+      {
+        dispatch_semaphore_signal(rs)
+      }
+      OSSpinLockUnlock(&lock)
+      return element
+    }
+    else
+    {
+      assert(closed, __FUNCTION__)
       if let ws = writerQueue.dequeue()
       {
         dispatch_semaphore_signal(ws)
@@ -232,21 +251,6 @@ final class QBufferedChan<T>: Chan<T>
       return nil
     }
 
-    let element = buffer.advancedBy(head&mask).move()
-    head += 1
-
-    if let ws = writerQueue.dequeue()
-    {
-      dispatch_semaphore_signal(ws)
-    }
-    else if head < tail || closed, let rs = readerQueue.dequeue()
-    {
-      dispatch_semaphore_signal(rs)
-    }
-
-    OSSpinLockUnlock(&lock)
-
-    return element
   }
 
   // SelectableChannelType overrides

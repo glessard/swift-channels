@@ -123,17 +123,19 @@ final class QUnbufferedChan<T>: Chan<T>
 
     // got awoken
     let context = UnsafePointer<T>(dispatch_get_context(threadLock))
-    if context == nil
-    { // thread was awoken by close(), not a reader
-      SemaphorePool.enqueue(threadLock)
-      return false
-    }
-
-    assert(context == &newElement)
-
     dispatch_set_context(threadLock, nil)
     SemaphorePool.enqueue(threadLock)
-    return true
+
+    switch context
+    {
+    case nil:
+      // thread was awoken by close() and put() has failed
+      return false
+
+    default:
+      assert(context == &newElement)
+      return true
+    }
   }
 
   /**
@@ -183,20 +185,22 @@ final class QUnbufferedChan<T>: Chan<T>
 
     // got awoken
     let context = UnsafeMutablePointer<T>(dispatch_get_context(threadLock))
-    if context == nil
-    { // thread was awoken by close(), not a writer
-      buffer.dealloc(1)
-      SemaphorePool.enqueue(threadLock)
-      return nil
-    }
-
-    assert(context == buffer)
-
-    let element = buffer.move()
-    buffer.dealloc(1)
     dispatch_set_context(threadLock, nil)
     SemaphorePool.enqueue(threadLock)
-    return element
+
+    switch context
+    {
+    case nil:
+      // thread was awoken by close(): no more data on the channel.
+      buffer.dealloc(1)
+      return nil
+
+    default:
+      assert(context == buffer)
+      let element = buffer.move()
+      buffer.dealloc(1)
+      return element
+    }
   }
 
   override func selectPutNow(selectionID: Selectable) -> Selection?
