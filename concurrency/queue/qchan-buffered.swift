@@ -16,7 +16,7 @@ final class QBufferedChan<T>: Chan<T>
 {
   private let buffer: UnsafeMutablePointer<T>
 
-  // housekeeping variables
+  // MARK: private housekeeping
 
   private let capacity: Int
   private let mask: Int
@@ -33,6 +33,8 @@ final class QBufferedChan<T>: Chan<T>
 
   // Used to elucidate/troubleshoot message arrival order
   // private var readerCount: Int32 = -1
+
+  // MARK: init/deinit
 
   init(_ capacity: Int)
   {
@@ -67,7 +69,7 @@ final class QBufferedChan<T>: Chan<T>
     buffer.dealloc(mask+1)
   }
 
-  // Computed property accessors
+  // MARK: computed properties
 
   final override var isEmpty: Bool
   {
@@ -84,6 +86,8 @@ final class QBufferedChan<T>: Chan<T>
   */
 
   final override var isClosed: Bool { return closed }
+
+  // MARK: ChannelType methods
 
   /**
     Close the channel
@@ -253,7 +257,7 @@ final class QBufferedChan<T>: Chan<T>
 
   }
 
-  // SelectableChannelType overrides
+  // MARK: SelectableChannelType methods
 
   override func insert(ref: Selection, item: T) -> Bool
   {
@@ -267,7 +271,7 @@ final class QBufferedChan<T>: Chan<T>
     {
       dispatch_semaphore_signal(rs)
     }
-    else if head+capacity <= tail, let ws = writerQueue.dequeue()
+    else if head+capacity > tail || closed, let ws = writerQueue.dequeue()
     {
       dispatch_semaphore_signal(ws)
     }
@@ -282,7 +286,7 @@ final class QBufferedChan<T>: Chan<T>
     OSSpinLockLock(&lock)
     if !closed && !isFull
     {
-      // the lock will be unlocked by insert()
+      // unlocking the spinlock will be done by insert()
       return Selection(selectionID: selectionID)
     }
     OSSpinLockUnlock(&lock)
@@ -308,12 +312,12 @@ final class QBufferedChan<T>: Chan<T>
         if dispatch_get_context(threadLock) == abortSelect
         {
           // If threadLock was awoken from a place other than the Signal closure,
-          // the next thread in line needs to be awoken.
-          // We don't know whether said next thread *actually* needs to be awoken.
-          // Perhaps better smarts need to exist. As a workaround, a thread that gets
-          // awoken but didn't need to will un-dequeue its semaphore and go back to sleep.
+          // the next thread in line may need to be awoken.
           OSSpinLockLock(&self.lock)
-          if let ws = self.writerQueue.dequeue() { dispatch_semaphore_signal(ws) }
+          if self.closed || self.head+self.capacity > self.tail, let ws = self.writerQueue.dequeue()
+          {
+            dispatch_semaphore_signal(ws)
+          }
           OSSpinLockUnlock(&self.lock)
           return
         }
@@ -326,42 +330,50 @@ final class QBufferedChan<T>: Chan<T>
           if dispatch_get_context(threadLock) == abortSelect
           {
             OSSpinLockLock(&self.lock)
-            if let ws = self.writerQueue.dequeue() { dispatch_semaphore_signal(ws) }
+            if self.closed || self.head+self.capacity > self.tail, let ws = self.writerQueue.dequeue()
+            {
+              dispatch_semaphore_signal(ws)
+            }
             OSSpinLockUnlock(&self.lock)
             return
           }
         }
       }
 
-      if self.closed
-      {
-        OSSpinLockUnlock(&self.lock)
-        if let s = semaphore.get()
-        {
-          dispatch_set_context(s, nil)
-          dispatch_semaphore_signal(s)
-        }
-        return
-      }
-
       if let s = semaphore.get()
       {
-        let selection = Selection(selectionID: selectionID)
-        let context = UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque())
-        dispatch_set_context(s, context)
+        if !self.closed
+        {
+          // unlocking the spinlock (and waking the next thread) will be done by insert()
+          let selection = Selection(selectionID: selectionID)
+          let context = UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque())
+          dispatch_set_context(s, context)
+        }
+        else
+        { // channel is closed; signal another thread
+          if let rs = self.readerQueue.dequeue()
+          {
+            dispatch_semaphore_signal(rs)
+          }
+          else if let ws = self.writerQueue.dequeue()
+          {
+            dispatch_semaphore_signal(ws)
+          }
+          OSSpinLockUnlock(&self.lock)
+          dispatch_set_context(s, nil)
+        }
         dispatch_semaphore_signal(s)
       }
       else
       {
-        if self.head >= self.tail, let rs = self.readerQueue.dequeue()
+        if self.head < self.tail || self.closed, let rs = self.readerQueue.dequeue()
         {
           dispatch_semaphore_signal(rs)
         }
-        else if self.head+self.capacity <= self.tail, let ws = self.writerQueue.dequeue()
+        else if self.head+self.capacity > self.tail || self.closed, let ws = self.writerQueue.dequeue()
         {
           dispatch_semaphore_signal(ws)
         }
-
         OSSpinLockUnlock(&self.lock)
       }
     }
@@ -375,25 +387,27 @@ final class QBufferedChan<T>: Chan<T>
   override func selectGetNow(selectionID: Selectable) -> Selection?
   {
     OSSpinLockLock(&lock)
-    if !closed && head < tail
+    if head < tail
     {
       let element = buffer.advancedBy(head&mask).move()
       head += 1
-      OSSpinLockUnlock(&lock)
 
-      if let ws = self.writerQueue.dequeue()
+      if let ws = writerQueue.dequeue()
       {
         dispatch_semaphore_signal(ws)
       }
-      else if self.head >= self.tail, let rs = self.readerQueue.dequeue()
+      else if head < tail || closed, let rs = readerQueue.dequeue()
       {
         dispatch_semaphore_signal(rs)
       }
-
+      OSSpinLockUnlock(&lock)
       return Selection(selectionID: selectionID, selectionData: element)
     }
-    OSSpinLockUnlock(&lock)
-    return nil
+    else
+    {
+      OSSpinLockUnlock(&lock)
+      return nil
+    }
   }
 
   override func selectGet(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
@@ -415,12 +429,12 @@ final class QBufferedChan<T>: Chan<T>
         if dispatch_get_context(threadLock) == abortSelect
         {
           // If threadLock was awoken from a place other than the Signal closure,
-          // the next thread in line needs to be awoken.
-          // We don't know whether said next thread *actually* needs to be awoken.
-          // Perhaps better smarts need to exist. As a workaround, a thread that gets
-          // awoken but didn't need to will un-dequeue its semaphore and go back to sleep.
+          // the next thread in line may need to be awoken.
           OSSpinLockLock(&self.lock)
-          if let rs = self.readerQueue.dequeue() { dispatch_semaphore_signal(rs) }
+          if self.closed || self.head < self.tail, let rs = self.readerQueue.dequeue()
+          {
+            dispatch_semaphore_signal(rs)
+          }
           OSSpinLockUnlock(&self.lock)
           return
         }
@@ -433,7 +447,10 @@ final class QBufferedChan<T>: Chan<T>
           if dispatch_get_context(threadLock) == abortSelect
           {
             OSSpinLockLock(&self.lock)
-            if let rs = self.readerQueue.dequeue() { dispatch_semaphore_signal(rs) }
+            if self.closed || self.head < self.tail, let rs = self.readerQueue.dequeue()
+            {
+              dispatch_semaphore_signal(rs)
+            }
             OSSpinLockUnlock(&self.lock)
             return
           }
@@ -441,51 +458,53 @@ final class QBufferedChan<T>: Chan<T>
         }
       }
 
-      if self.closed && self.head >= self.tail
-      {
-        OSSpinLockUnlock(&self.lock)
-        if let s = semaphore.get()
-        {
-//          syncprint("sending nil message")
-          dispatch_set_context(s, nil)
-          dispatch_semaphore_signal(s)
-        }
-        return
-      }
-
       if let s = semaphore.get()
       {
-        let element = self.buffer.advancedBy(self.head&self.mask).move()
-        self.head += 1
-
-        if let ws = self.writerQueue.dequeue()
+        if self.head < self.tail
         {
-          dispatch_semaphore_signal(ws)
+          let element = self.buffer.advancedBy(self.head&self.mask).move()
+          self.head += 1
+
+          if let ws = self.writerQueue.dequeue()
+          {
+            dispatch_semaphore_signal(ws)
+          }
+          else if self.head < self.tail, let rs = self.readerQueue.dequeue()
+          {
+            dispatch_semaphore_signal(rs)
+          }
+          OSSpinLockUnlock(&self.lock)
+
+          let selection = Selection(selectionID: selectionID, selectionData: element)
+          let context = UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque())
+          dispatch_set_context(s, context)
         }
-        else if self.head >= self.tail, let rs = self.readerQueue.dequeue()
+        else
         {
-          dispatch_semaphore_signal(rs)
+          assert(self.closed, __FUNCTION__)
+          if let ws = self.writerQueue.dequeue()
+          {
+            dispatch_semaphore_signal(ws)
+          }
+          else if let rs = self.readerQueue.dequeue()
+          {
+            dispatch_semaphore_signal(rs)
+          }
+          OSSpinLockUnlock(&self.lock)
+          dispatch_set_context(s, nil)
         }
-
-        OSSpinLockUnlock(&self.lock)
-
-        let selection = Selection(selectionID: selectionID, selectionData: element)
-        let context = UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque())
-        dispatch_set_context(s, context)
         dispatch_semaphore_signal(s)
-        return
       }
       else
       {
-        if self.head+self.capacity <= self.tail, let ws = self.writerQueue.dequeue()
-        {
-          dispatch_semaphore_signal(ws)
-        }
-        else if self.head >= self.tail, let rs = self.readerQueue.dequeue()
+        if self.head < self.tail || self.closed, let rs = self.readerQueue.dequeue()
         {
           dispatch_semaphore_signal(rs)
         }
-
+        else if self.head+self.capacity > self.tail || self.closed, let ws = self.writerQueue.dequeue()
+        {
+          dispatch_semaphore_signal(ws)
+        }
         OSSpinLockUnlock(&self.lock)
       }
     }
