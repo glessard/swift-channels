@@ -366,13 +366,13 @@ final class QBufferedChan<T>: Chan<T>
       }
       else
       {
-        if self.head < self.tail || self.closed, let rs = self.readerQueue.dequeue()
-        {
-          dispatch_semaphore_signal(rs)
-        }
-        else if self.head+self.capacity > self.tail || self.closed, let ws = self.writerQueue.dequeue()
+        if let ws = self.writerQueue.dequeue()
         {
           dispatch_semaphore_signal(ws)
+        }
+        else if self.head < self.tail || self.closed, let rs = self.readerQueue.dequeue()
+        {
+          dispatch_semaphore_signal(rs)
         }
         OSSpinLockUnlock(&self.lock)
       }
@@ -497,7 +497,7 @@ final class QBufferedChan<T>: Chan<T>
       }
       else
       {
-        if self.head < self.tail || self.closed, let rs = self.readerQueue.dequeue()
+        if let rs = self.readerQueue.dequeue()
         {
           dispatch_semaphore_signal(rs)
         }
