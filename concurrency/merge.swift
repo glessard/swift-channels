@@ -97,8 +97,8 @@ public func mergeRR<R: ReceiverType>(channels: [R]) -> Receiver<R.ReceivedElemen
 
   let (tx, rx) = Channel.Make(R.ReceivedElement.self, channels.count*2)
 
-  // A non-clever, reliable, round-robin merging method.
-  async {
+  dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
+    // A non-clever, imperative-style round-robin merge.
     for var i=0, last=0; true; i++
     {
       if let element = <-channels[i % channels.count]
@@ -114,7 +114,6 @@ public func mergeRR<R: ReceiverType>(channels: [R]) -> Receiver<R.ReceivedElemen
         }
       }
     }
-
     tx.close()
   }
 
