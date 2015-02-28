@@ -14,25 +14,24 @@ import Channels
 
 class SelectTests: XCTestCase
 {
-  func SelectReceiverTest(#buffered: Bool, useSelectable: Bool, sleepInterval: NSTimeInterval = 0)
+  func SelectReceiverTest(#buffered: Bool, sleepInterval: NSTimeInterval = 0)
   {
     let chanCount = 5
     // careful with 'iterations': there's a maximum thread count.
-    let iterations = 50
+    let iterations = sleepInterval == 0 ? 1000 : 25
 
     let channels  = map(0..<chanCount) { _ in Chan<Int>.Make(buffered ? iterations : 0) }
     let senders   = channels.map { Sender($0) }
     let receivers = channels.map { Receiver($0) }
 
-    let group = dispatch_group_create()
+    let group = dispatch_group_create()!
     let queue = dispatch_queue_create(nil, nil)
-    for i in 0..<iterations
-    {
-      let index = Int(arc4random_uniform(UInt32(senders.count)))
-      async(group: group) {
-        if sleepInterval > 0 { NSThread.sleepForTimeInterval(NSTimeInterval(i)*sleepInterval) }
+    dispatch_group_async(group, dispatch_get_global_queue(qos_class_self(), 0)) {
+      dispatch_apply(iterations, dispatch_get_global_queue(qos_class_self(), 0)) {
+        let index = Int(arc4random_uniform(UInt32(senders.count)))
+        if sleepInterval > 0 { NSThread.sleepForTimeInterval(NSTimeInterval($0)*sleepInterval) }
         senders[index] <- index
-        // syncprint("\(i): sent to \(index)")
+          // syncprint("\(i): sent to \(index)")
       }
     }
 
@@ -45,25 +44,13 @@ class SelectTests: XCTestCase
     }
 
     var i = 0
-    if useSelectable
+    // Currently required to avoid a runtime crash:
+    let selectables = receivers.map { $0 as Selectable }
+    while let (selected, selection) = select(selectables)
     {
-      let selectables = receivers.map { $0 as Selectable }
-      while let (selected, selection) = select(selectables)
+      if let message: Int = selection.getData()
       {
-        if let message: Int = selection.getData()
-        {
-          i++
-        }
-      }
-    }
-    else
-    {
-      while let (selected, selection) = select(receivers)
-      {
-        if let message: Int = selection.getData()
-        {
-          i++
-        }
+        i++
       }
     }
 
@@ -76,62 +63,38 @@ class SelectTests: XCTestCase
   func testPerformanceSelectBufferedReceiver()
   {
     self.measureBlock {
-      self.SelectReceiverTest(buffered: true, useSelectable: false, sleepInterval: 0)
+      self.SelectReceiverTest(buffered: true)
     }
   }
 
   func testSelectBufferedReceiverWithSleep()
   {
-    SelectReceiverTest(buffered: true, useSelectable: false, sleepInterval: 0.01)
+    SelectReceiverTest(buffered: true, sleepInterval: 0.01)
   }
 
   func testPerformanceSelectUnbufferedReceiver()
   {
     self.measureBlock {
-      self.SelectReceiverTest(buffered: false, useSelectable: false, sleepInterval: 0)
+      self.SelectReceiverTest(buffered: false)
     }
   }
 
   func testSelectUnbufferedReceiverWithSleep()
   {
-    SelectReceiverTest(buffered: false, useSelectable: false, sleepInterval: 0.01)
-  }
-  
-  func testPerformanceSelectBufferedReceiverSelectable()
-  {
-    self.measureBlock {
-      self.SelectReceiverTest(buffered: true, useSelectable: true, sleepInterval: 0)
-    }
-  }
-
-  func testSelectBufferedReceiverSelectableWithSleep()
-  {
-    SelectReceiverTest(buffered: true, useSelectable: true, sleepInterval: 0.01)
-  }
-
-  func testPerformanceSelectUnbufferedReceiverSelectable()
-  {
-    self.measureBlock {
-      self.SelectReceiverTest(buffered: false, useSelectable: true, sleepInterval: 0)
-    }
-  }
-
-  func testSelectUnbufferedReceiverSelectableWithSleep()
-  {
-    SelectReceiverTest(buffered: false, useSelectable: true, sleepInterval: 0.01)
+    SelectReceiverTest(buffered: false, sleepInterval: 0.01)
   }
 
 
   func SelectSenderTest(#buffered: Bool, sleepInterval: NSTimeInterval = 0)
   {
     let chanCount = 5
-    let iterations = 50
+    let iterations = sleepInterval == 0 ? 1000 : 25
 
     let channels  = map(0..<chanCount) { _ in Chan<Int>.Make(buffered ? 1 : 0) }
     let senders   = channels.map { Sender($0) }
     let receivers = channels.map { Receiver($0) }
 
-    let (tx, rx) = Channel<Int>.Make(iterations)
+    let (tx, rx) = Channel<Int>.Make()
     let g = dispatch_group_create()
     for (i, receiver) in enumerate(receivers)
     {
@@ -151,6 +114,7 @@ class SelectTests: XCTestCase
 
     async {
       var i = 0
+      // Currently required to avoid a runtime crash:
       let selectables = senders.map { $0 as Selectable }
       while let (selected, selection) = select(selectables)
       {
