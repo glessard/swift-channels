@@ -16,7 +16,7 @@ final class QBufferedChan<T>: Chan<T>
 {
   private let buffer: UnsafeMutablePointer<T>
 
-  // housekeeping variables
+  // MARK: private housekeeping
 
   private let capacity: Int
   private let mask: Int
@@ -33,6 +33,8 @@ final class QBufferedChan<T>: Chan<T>
 
   // Used to elucidate/troubleshoot message arrival order
   // private var readerCount: Int32 = -1
+
+  // MARK: init/deinit
 
   init(_ capacity: Int)
   {
@@ -67,7 +69,7 @@ final class QBufferedChan<T>: Chan<T>
     buffer.dealloc(mask+1)
   }
 
-  // Computed property accessors
+  // MARK: computed properties
 
   final override var isEmpty: Bool
   {
@@ -84,6 +86,8 @@ final class QBufferedChan<T>: Chan<T>
   */
 
   final override var isClosed: Bool { return closed }
+
+  // MARK: ChannelType methods
 
   /**
     Close the channel
@@ -132,8 +136,8 @@ final class QBufferedChan<T>: Chan<T>
     queue.enqueue(threadLock)
     OSSpinLockUnlock(&lock)
     dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
-    OSSpinLockLock(&lock)
     SemaphorePool.enqueue(threadLock)
+    OSSpinLockLock(&lock)
   }
 
   /**
@@ -226,6 +230,5 @@ final class QBufferedChan<T>: Chan<T>
       OSSpinLockUnlock(&lock)
       return nil
     }
-
   }
 }
