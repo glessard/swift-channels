@@ -30,6 +30,7 @@ final class SemaphoreQueue: QueueType, SequenceType, GeneratorType
     {
       let node = head
       head = node.memory.next
+      dispatch_semaphore_signal(node.memory.elem)
       node.destroy()
       node.dealloc(1)
     }
@@ -52,7 +53,7 @@ final class SemaphoreQueue: QueueType, SequenceType, GeneratorType
     // Not thread safe.
 
     var i = 0
-    var node = UnsafeMutablePointer<SemaphoreNode>(head)
+    var node = head
     while node != nil
     { // Iterate along the linked nodes while counting
       node = node.memory.next

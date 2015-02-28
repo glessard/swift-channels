@@ -14,14 +14,17 @@ struct SemaphorePool
 
   static func enqueue(s: dispatch_semaphore_t)
   {
-    poolq.enqueue(s)
+    if dispatch_get_context(s) == nil
+    {
+      poolq.enqueue(s)
+    }
   }
 
   static func dequeue() -> dispatch_semaphore_t
   {
-    if let sem = poolq.dequeue()
+    if let semaphore = poolq.dequeue()
     {
-      return sem
+      return semaphore
     }
 
     return dispatch_semaphore_create(0)!
