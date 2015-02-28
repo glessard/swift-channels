@@ -301,7 +301,7 @@ final class QBufferedChan<T>: Chan<T>
     // a count of 0 or 1. There is no way to tell.
     let threadLock = dispatch_semaphore_create(0)!
 
-    async {
+    dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
       OSSpinLockLock(&self.lock)
 
       if !self.closed && self.head+self.capacity <= self.tail
@@ -309,7 +309,7 @@ final class QBufferedChan<T>: Chan<T>
         self.writerQueue.enqueue(threadLock)
         OSSpinLockUnlock(&self.lock)
         dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
-        if dispatch_get_context(threadLock) == abortSelect
+        if dispatch_get_context(threadLock) == cancelSelect
         {
           // If threadLock was awoken from a place other than the Signal closure,
           // the next thread in line may need to be awoken.
@@ -327,7 +327,7 @@ final class QBufferedChan<T>: Chan<T>
           self.writerQueue.undequeue(threadLock)
           OSSpinLockUnlock(&self.lock)
           dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
-          if dispatch_get_context(threadLock) == abortSelect
+          if dispatch_get_context(threadLock) == cancelSelect
           {
             OSSpinLockLock(&self.lock)
             if self.closed || self.head+self.capacity > self.tail, let ws = self.writerQueue.dequeue()
@@ -379,7 +379,7 @@ final class QBufferedChan<T>: Chan<T>
     }
 
     return {
-      dispatch_set_context(threadLock, abortSelect)
+      dispatch_set_context(threadLock, cancelSelect)
       dispatch_semaphore_signal(threadLock)
     }
   }
@@ -426,7 +426,7 @@ final class QBufferedChan<T>: Chan<T>
         self.readerQueue.enqueue(threadLock)
         OSSpinLockUnlock(&self.lock)
         dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
-        if dispatch_get_context(threadLock) == abortSelect
+        if dispatch_get_context(threadLock) == cancelSelect
         {
           // If threadLock was awoken from a place other than the Signal closure,
           // the next thread in line may need to be awoken.
@@ -510,7 +510,7 @@ final class QBufferedChan<T>: Chan<T>
     }
 
     return {
-      dispatch_set_context(threadLock, abortSelect)
+      dispatch_set_context(threadLock, cancelSelect)
       dispatch_semaphore_signal(threadLock)
     }
   }
