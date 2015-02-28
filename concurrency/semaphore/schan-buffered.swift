@@ -18,12 +18,10 @@ final class SBufferedChan<T>: Chan<T>
 {
   private let buffer: UnsafeMutablePointer<T>
 
-  // housekeeping variables
+  // MARK: private housekeeping
 
   private let capacity: Int
   private let mask: Int
-
-  // housekeeping variables
 
   private var head = 0
   private var tail = 0
@@ -37,6 +35,8 @@ final class SBufferedChan<T>: Chan<T>
 
   // Used to elucidate/troubleshoot message arrival order
   // private var readerCount: Int32 = -1
+
+  // MARK: init/deinit
 
   init(_ capacity: Int)
   {
@@ -57,6 +57,8 @@ final class SBufferedChan<T>: Chan<T>
 
     mask = v // buffer size -1
     buffer = UnsafeMutablePointer.alloc(mask+1)
+
+    super.init()
   }
 
   convenience override init()
@@ -66,7 +68,8 @@ final class SBufferedChan<T>: Chan<T>
 
   deinit
   {
-    if head < tail
+    // println("\(head) \(tail) \(buffer)")
+    for i in head..<tail
     {
       for i in head..<tail
       {
@@ -76,7 +79,7 @@ final class SBufferedChan<T>: Chan<T>
     buffer.dealloc(mask+1)
   }
 
-  // Computed property accessors
+  // MARK: ChannelType properties
 
   final override var isEmpty: Bool
   {
@@ -93,6 +96,8 @@ final class SBufferedChan<T>: Chan<T>
   */
 
   final override var isClosed: Bool { return closed }
+
+  // MARK: ChannelType methods
 
   /**
     Close the channel

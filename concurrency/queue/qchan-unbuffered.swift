@@ -241,7 +241,7 @@ final class QUnbufferedChan<T>: Chan<T>
   {
     let threadLock = dispatch_semaphore_create(0)!
 
-    async {
+    dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
       OSSpinLockLock(&self.lock)
 
       while !self.closed
@@ -335,7 +335,7 @@ final class QUnbufferedChan<T>: Chan<T>
   {
     let threadLock = dispatch_semaphore_create(0)!
 
-    async {
+    dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
       OSSpinLockLock(&self.lock)
 
       while !self.closed

@@ -27,7 +27,7 @@ public func mergeSelect<R: ReceiverType where R: Selectable>(channels: [R]) -> R
 
   let (tx, rx) = Channel.Make(R.ReceivedElement.self, channels.count*2)
 
-  async {
+  dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
     let selectables = channels.map { $0 as Selectable }
     while let (s, selection) = select(selectables)
     {
