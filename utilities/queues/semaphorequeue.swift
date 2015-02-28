@@ -122,7 +122,7 @@ final class SemaphoreQueue: QueueType, SequenceType, GeneratorType
     return nil
   }
 
-  func remove(elemensNonGrata: dispatch_semaphore_t)
+  func remove(elemensNonGrata: dispatch_semaphore_t) -> Bool
   {
     if head != nil
     {
@@ -132,7 +132,7 @@ final class SemaphoreQueue: QueueType, SequenceType, GeneratorType
         head = node.memory.next
         node.destroy()
         OSAtomicEnqueue(pool, node, 0)
-        return
+        return true
       }
 
       var prev = node
@@ -145,12 +145,13 @@ final class SemaphoreQueue: QueueType, SequenceType, GeneratorType
           if node == tail { tail = prev }
           node.destroy()
           OSAtomicEnqueue(pool, node, 0)
-          return
+          return true
         }
         prev = node
         node = node.memory.next
       }
     }
+    return false
   }
 
   // Implementation of GeneratorType
