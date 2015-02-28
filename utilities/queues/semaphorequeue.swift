@@ -55,7 +55,7 @@ final class SemaphoreQueue: QueueType, SequenceType, GeneratorType
     // Not thread safe.
 
     var i = 0
-    var node = UnsafeMutablePointer<SemaphoreNode>(head)
+    var node = head
     while node != nil
     { // Iterate along the linked nodes while counting
       node = node.memory.next
@@ -120,6 +120,37 @@ final class SemaphoreQueue: QueueType, SequenceType, GeneratorType
       return element
     }
     return nil
+  }
+
+  func remove(elemensNonGrata: dispatch_semaphore_t)
+  {
+    if head != nil
+    {
+      var node = head
+      if node.memory.elem === elemensNonGrata
+      {
+        head = node.memory.next
+        node.destroy()
+        OSAtomicEnqueue(pool, node, 0)
+        return
+      }
+
+      var prev = node
+      node = node.memory.next
+      while node != nil
+      {
+        if node.memory.elem === elemensNonGrata
+        {
+          prev.memory.next = node.memory.next
+          if node == tail { tail = prev }
+          node.destroy()
+          OSAtomicEnqueue(pool, node, 0)
+          return
+        }
+        prev = node
+        node = node.memory.next
+      }
+    }
   }
 
   // Implementation of GeneratorType
