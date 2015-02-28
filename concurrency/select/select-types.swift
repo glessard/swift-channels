@@ -26,7 +26,7 @@ public typealias Signal = () -> ()
   A useful fake pointer for use with dispatch_set_context() in Signal closures.
 */
 
-public let abortSelect = UnsafeMutablePointer<Void>(bitPattern: 1)
+public let cancelSelect = UnsafeMutablePointer<Void>(bitPattern: 1)
 
 /**
   What a type needs to be usable in the Select() function.

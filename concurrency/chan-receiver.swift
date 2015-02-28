@@ -77,6 +77,11 @@ public final class Receiver<T>: ReceiverType, GeneratorType, SequenceType, Selec
     wrapped = c
   }
 
+  init()
+  {
+    wrapped = Chan()
+  }
+
   // ReceiverType implementation
 
   public var isClosed: Bool { return wrapped.isClosed }

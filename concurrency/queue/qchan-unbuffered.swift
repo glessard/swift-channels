@@ -283,7 +283,7 @@ final class QUnbufferedChan<T>: Chan<T>
         // The busy-wait is a way to defer a solution to these issues until a later time.
 
         dispatch_semaphore_wait(threadLock, dispatch_time(DISPATCH_TIME_NOW, 10_000))
-        if dispatch_get_context(threadLock) == abortSelect
+        if dispatch_get_context(threadLock) == cancelSelect
         {
           return
         }
@@ -302,7 +302,7 @@ final class QUnbufferedChan<T>: Chan<T>
     }
 
     return {
-      dispatch_set_context(threadLock, abortSelect)
+      dispatch_set_context(threadLock, cancelSelect)
       dispatch_semaphore_signal(threadLock)
     }
   }
@@ -388,7 +388,7 @@ final class QUnbufferedChan<T>: Chan<T>
         // The busy-wait is a way to defer a solution to these issues until a later time.
 
         dispatch_semaphore_wait(threadLock, dispatch_time(DISPATCH_TIME_NOW, 10_000))
-        if dispatch_get_context(threadLock) == abortSelect
+        if dispatch_get_context(threadLock) == cancelSelect
         {
           return
         }
@@ -407,7 +407,7 @@ final class QUnbufferedChan<T>: Chan<T>
     }
 
     return {
-      dispatch_set_context(threadLock, abortSelect)
+      dispatch_set_context(threadLock, cancelSelect)
       dispatch_semaphore_signal(threadLock)
     }
   }

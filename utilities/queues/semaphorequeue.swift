@@ -30,6 +30,7 @@ final class SemaphoreQueue: QueueType, SequenceType, GeneratorType
     {
       let node = head
       head = node.memory.next
+      dispatch_semaphore_signal(node.memory.elem)
       node.destroy()
       node.dealloc(1)
     }

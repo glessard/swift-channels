@@ -37,9 +37,9 @@ public func select(options: [Selectable]) -> (Selectable, Selection)?
 
   // The asynchronous path
   let semaphore = SemaphorePool.dequeue()
-  let resultChan = SemaphoreChan(semaphore)
+  let semaphoreChan = SemaphoreChan(semaphore)
 
-  let signals = selectables.map { $0.selectNotify(resultChan, selectionID: $0) }
+  let signals = map(shuffle(selectables)) { $0.selectNotify(semaphoreChan, selectionID: $0) }
 
   dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)
   // We have a result
@@ -51,7 +51,7 @@ public func select(options: [Selectable]) -> (Selectable, Selection)?
   }
   else
   {
-    selection = Selection(selectionID: Receiver(Chan<()>()))
+    selection = Selection(selectionID: Receiver<Void>())
   }
 
   for signal in signals { signal() }
