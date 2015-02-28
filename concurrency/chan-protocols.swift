@@ -10,6 +10,8 @@
   The interface required for the receiving end of a channel.
 */
 
+// MARK: ReceiverType
+
 public protocol ReceiverType: BasicChannelType, GeneratorType, SequenceType
 {
   typealias ReceivedElement
@@ -58,6 +60,8 @@ public protocol ReceiverType: BasicChannelType, GeneratorType, SequenceType
 /**
   The interface required for the sending end of a channel.
 */
+
+// MARK: SenderType
 
 public protocol SenderType: BasicChannelType
 {
@@ -112,6 +116,8 @@ public protocol BasicChannelType
 /**
   ChannelType is the connection between a SenderType and  ReceiverType.
 */
+
+// MARK: ChannelType
 
 protocol ChannelType: class, BasicChannelType
 {

@@ -69,7 +69,7 @@ final class QBufferedChan<T>: Chan<T>
     buffer.dealloc(mask+1)
   }
 
-  // MARK: computed properties
+  // MARK: ChannelType properties
 
   final override var isEmpty: Bool
   {
