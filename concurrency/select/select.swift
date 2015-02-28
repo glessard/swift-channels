@@ -17,7 +17,7 @@ public func select(options: Selectable...) -> (Selectable, Selection)?
   return select(options)
 }
 
-public func select(options: [Selectable]) -> (Selectable, Selection)?
+public func select(options: [Selectable], withDefault: Selectable? = nil) -> (Selectable, Selection)?
 {
   let selectables = options.filter { $0.selectable }
 
@@ -31,8 +31,14 @@ public func select(options: [Selectable]) -> (Selectable, Selection)?
   {
     if let selection = option.selectNow(option)
     {
-      return (selection.messageID, selection)
+      return (selection.selectionID, selection)
     }
+  }
+
+  if let d = withDefault
+  {
+    let selection = Selection(selectionID: d)
+    return (d, selection)
   }
 
   // The asynchronous path
@@ -58,5 +64,5 @@ public func select(options: [Selectable]) -> (Selectable, Selection)?
   dispatch_set_context(semaphore, nil)
   SemaphorePool.enqueue(semaphore)
 
-  return (selection.messageID, selection)
+  return (selection.selectionID, selection)
 }

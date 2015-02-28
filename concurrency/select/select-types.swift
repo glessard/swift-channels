@@ -127,5 +127,5 @@ public class Selection
     return data as? T
   }
 
-  public var messageID: Selectable { return id }
+  public var selectionID: Selectable { return id }
 }
