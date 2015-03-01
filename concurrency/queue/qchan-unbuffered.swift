@@ -321,8 +321,8 @@ final class QUnbufferedChan<T>: Chan<T>
       let context = UnsafePointer<T>(dispatch_get_context(ws))
       if context == nil
       { // not a normal code path.
-        assert(false, __FUNCTION__)
-        // dispatch_semaphore_signal(nil)
+        precondition(false, __FUNCTION__)
+        dispatch_semaphore_signal(nil as dispatch_semaphore_t!)
         return nil
       }
       let element = context.memory
@@ -340,79 +340,104 @@ final class QUnbufferedChan<T>: Chan<T>
     let threadLock = dispatch_semaphore_create(0)!
 
     dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
+      _ in
       OSSpinLockLock(&self.lock)
-
-      while !self.closed
+      if let ws = self.writerQueue.dequeue()
       {
-        if let ws = self.writerQueue.dequeue()
+        if let s = semaphore.get()
         {
-          if let s = semaphore.get()
-          {
-            OSSpinLockUnlock(&self.lock)
-            
-            let context = UnsafePointer<T>(dispatch_get_context(ws))
-            if context == nil
-            { // not a normal code path.
-              assert(false, __FUNCTION__)
-              // dispatch_semaphore_signal(nil)
-              return
-            }
-            let element = context.memory
-            dispatch_set_context(ws, nil)
-            dispatch_semaphore_signal(ws)
-
-            let selection = Selection(selectionID: selectionID, selectionData: element)
-            let selectptr = UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque())
-            dispatch_set_context(s, selectptr)
-            dispatch_semaphore_signal(s)
+          OSSpinLockUnlock(&self.lock)
+          
+          let context = UnsafePointer<T>(dispatch_get_context(ws))
+          if context == nil
+          { // not a normal code path.
+            assert(false, __FUNCTION__)
+            // dispatch_semaphore_signal(nil)
             return
           }
-          else
-          {
-            self.writerQueue.undequeue(ws)
-            // The spinlock stayed locked between dequeue() and undequeue(),
-            // so it was transparent to other threads.
-            OSSpinLockUnlock(&self.lock)
-            return
-          }
-        }
+          let element = context.memory
+          dispatch_set_context(ws, nil)
+          dispatch_semaphore_signal(ws)
 
-        OSSpinLockUnlock(&self.lock)
-
-        // A weak-sauce busy-wait solution.
-        // This is not a good solution, though it works
-        // (note that it will pretty much lose any race against a QBufferedChan).
-        // An ideal solution would require waiting for the other 2 threads at once
-        // (the thread that runs put() and the thread that runs select()).
-        // This would mean having a local semaphore, enqueue it to the readerQueue,
-        // and wait for a writer. Even if the issue of reliably aborting the message reception is
-        // solved, the writer needs to handle the case of a message that fails to get passed
-        // on to select() (if the selectGet thread loses its race to obtain the semaphore after having
-        // gotten data from a put() thread).
-        // The busy-wait is a way to defer a solution to these issues until a later time.
-
-        dispatch_semaphore_wait(threadLock, dispatch_time(DISPATCH_TIME_NOW, 10_000))
-        if dispatch_get_context(threadLock) == cancelSelect
-        {
+          let selection = Selection(selectionID: selectionID, selectionData: element)
+          let selectptr = UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque())
+          dispatch_set_context(s, selectptr)
+          dispatch_semaphore_signal(s)
           return
         }
-
-        OSSpinLockLock(&self.lock)
+        else
+        {
+          self.writerQueue.undequeue(ws)
+          // The spinlock stayed locked between dequeue() and undequeue(),
+          // so it was transparent to other threads.
+          OSSpinLockUnlock(&self.lock)
+          return
+        }
       }
 
-      OSSpinLockUnlock(&self.lock)
-
-      // channel is closed; try to wake select() with a nil message.
-      if let s = semaphore.get()
+      if self.closed
       {
-        dispatch_set_context(s, nil)
-        dispatch_semaphore_signal(s)
+        OSSpinLockUnlock(&self.lock)
+        if let s = semaphore.get()
+        {
+          dispatch_set_context(s, nil)
+          dispatch_semaphore_signal(s)
+        }
+        return
+      }
+
+      let threadLock = SemaphorePool.dequeue()
+      let buffer = UnsafeMutablePointer<T>.alloc(1)
+      dispatch_set_context(threadLock, buffer)
+      self.readerQueue.enqueue(threadLock)
+      OSSpinLockUnlock(&self.lock)
+      dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
+
+      // got awoken
+      let context = UnsafeMutablePointer<T>(dispatch_get_context(threadLock))
+
+      switch context
+      {
+      case nil:
+        // thread was awoken by close(): no more data on the channel
+        buffer.dealloc(1)
+        if let s = semaphore.get()
+        {
+          dispatch_set_context(s, nil)
+          dispatch_semaphore_signal(s)
+        }
+
+      case cancelSelect:
+        // no need to try for the semaphore.
+        buffer.dealloc(1)
+
+      default:
+        assert(context == buffer)
+        let element = buffer.move()
+        buffer.dealloc(1)
+        if let s = semaphore.get()
+        {
+          let selection = Selection(selectionID: selectionID, selectionData: element)
+          let selectptr = UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque())
+          dispatch_set_context(s, selectptr)
+          dispatch_semaphore_signal(s)
+        }
+        else
+        { // what to do? We have data, but it has no clear destination.
+          // try to pass it on to another reader.
+          self.put(element)
+        }
       }
     }
 
     return {
-      dispatch_set_context(threadLock, cancelSelect)
-      dispatch_semaphore_signal(threadLock)
+      OSSpinLockLock(&self.lock)
+      if self.readerQueue.remove(threadLock)
+      {
+        dispatch_set_context(threadLock, cancelSelect)
+        dispatch_semaphore_signal(threadLock)
+      }
+      OSSpinLockUnlock(&self.lock)
     }
   }
 }
