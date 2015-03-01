@@ -19,8 +19,15 @@ class SelectTests: XCTestCase
     let selectableCount = 10
     let iterations = sleepInterval < 0 ? 10_000 : 100
 
-    let channels  = map(0..<selectableCount) { _ in Chan<Int>.Make(buffered ? 1 : 0) }
-//    let channels  = [Chan<Int>](count: selectableCount, repeatedValue: Chan<Int>.Make(buffered ? 1 : 0))
+    let channels: [Chan<Int>]
+    if buffered
+    {
+      channels  = map(0..<selectableCount) { _ in Chan<Int>.Make(buffered ? 1 : 0) }
+    }
+    else
+    {
+      channels  = Array(count: selectableCount, repeatedValue: Chan<Int>.Make(buffered ? 1 : 0))
+    }
     let senders   = channels.map { Sender($0) }
     let receivers = channels.map { Receiver($0) }
 
@@ -31,6 +38,7 @@ class SelectTests: XCTestCase
         let index = Int(arc4random_uniform(UInt32(senders.count)))
         senders[index] <- i
       }
+      NSThread.sleepForTimeInterval(sleepInterval > 0 ? sleepInterval : 1e-6)
       for sender in senders { sender.close() }
     }
 
@@ -42,10 +50,9 @@ class SelectTests: XCTestCase
       if let message: Int = selection.getData() { i++ }
     }
 
-    //    syncprint("\(i) messages received")
     syncprintwait()
     
-    XCTAssert(i == iterations, "incorrect number of messages received")
+    XCTAssert(i == iterations, "Received \(i) messages; expected \(iterations)")
   }
 
   func testPerformanceSelectBufferedReceiver()
@@ -109,7 +116,7 @@ class SelectTests: XCTestCase
 //    syncprint("\(i) messages received")
     syncprintwait()
 
-    XCTAssert(i == iterations, "incorrect number of messages received")
+    XCTAssert(i == iterations, "Received \(i) messages; expected \(iterations)")
   }
 
   func testPerformanceSelectBufferedSender()
