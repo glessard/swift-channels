@@ -14,7 +14,7 @@ import Dispatch
 
 final class QUnbufferedChan<T>: Chan<T>
 {
-  // housekeeping variables
+  // MARK: private housekeeping
 
   private let readerQueue = SemaphoreQueue()
   private let writerQueue = SemaphoreQueue()
@@ -26,7 +26,7 @@ final class QUnbufferedChan<T>: Chan<T>
   // Used to elucidate/troubleshoot message arrival order
   // private var readerCount: Int32 = -1
 
-  // Computed property accessors
+  // MARK: ChannelType properties
 
   final override var isEmpty: Bool
   {
@@ -43,6 +43,8 @@ final class QUnbufferedChan<T>: Chan<T>
   */
 
   final override var isClosed: Bool { return closed }
+
+  // MARK: ChannelType methods
 
   /**
     Close the channel
@@ -129,7 +131,7 @@ final class QUnbufferedChan<T>: Chan<T>
     switch context
     {
     case nil:
-      // thread was awoken by close() and put() has failed
+      // thread was awoken by close(); which means put() has failed
       return false
 
     default:
@@ -203,20 +205,7 @@ final class QUnbufferedChan<T>: Chan<T>
     }
   }
 
-  override func selectPutNow(selectionID: Selectable) -> Selection?
-  {
-    OSSpinLockLock(&lock)
-    if let rs = readerQueue.dequeue()
-    {
-      OSSpinLockUnlock(&lock)
-      return Selection(selectionID: selectionID, selectionData: rs)
-    }
-    else
-    {
-      OSSpinLockUnlock(&lock)
-      return nil
-    }
-  }
+  // MARK: SelectableChannelType methods
 
   override func insert(ref: Selection, item: T) -> Bool
   {
@@ -237,13 +226,28 @@ final class QUnbufferedChan<T>: Chan<T>
     return false
   }
 
+  override func selectPutNow(selectionID: Selectable) -> Selection?
+  {
+    OSSpinLockLock(&lock)
+    if let rs = readerQueue.dequeue()
+    {
+      OSSpinLockUnlock(&lock)
+      return Selection(selectionID: selectionID, selectionData: rs)
+    }
+    else
+    {
+      OSSpinLockUnlock(&lock)
+      return nil
+    }
+  }
+
   override func selectPut(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
   {
     let threadLock = dispatch_semaphore_create(0)!
 
     dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
+      _ in
       OSSpinLockLock(&self.lock)
-
       while !self.closed
       {
         if let rs = self.readerQueue.dequeue()
