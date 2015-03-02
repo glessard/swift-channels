@@ -98,16 +98,17 @@ final class QUnbufferedChan<T>: Chan<T>
       OSSpinLockUnlock(&lock)
 
       // attach a new copy of our data to the reader's semaphore
-      let pointer = UnsafeMutablePointer<T>(dispatch_get_context(rs))
-      if pointer == nil
-      { // not a normal code path.
-        precondition(false, __FUNCTION__)
-        return false
-      }
+      let context = UnsafeMutablePointer<T>(dispatch_get_context(rs))
+      switch context
+      {
+      case nil:
+        preconditionFailure(__FUNCTION__)
 
-      pointer.initialize(newElement)
-      dispatch_semaphore_signal(rs)
-      return true
+      default:
+        context.initialize(newElement)
+        dispatch_semaphore_signal(rs)
+        return true
+      }
     }
 
     if closed
@@ -125,7 +126,7 @@ final class QUnbufferedChan<T>: Chan<T>
     dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
 
     // got awoken
-    let context = UnsafePointer<T>(dispatch_get_context(threadLock))
+    let context = dispatch_get_context(threadLock)
     dispatch_set_context(threadLock, nil)
     SemaphorePool.enqueue(threadLock)
 
@@ -135,9 +136,12 @@ final class QUnbufferedChan<T>: Chan<T>
       // thread was awoken by close() and put() has failed
       return false
 
-    default:
-      assert(context == &newElement)
+    case &newElement:
+      // the message was succesfully passed.
       return true
+
+    default:
+      preconditionFailure("Weird context value in \(__FUNCTION__)")
     }
   }
 
@@ -161,15 +165,17 @@ final class QUnbufferedChan<T>: Chan<T>
       OSSpinLockUnlock(&lock)
 
       let context = UnsafePointer<T>(dispatch_get_context(ws))
-      if context == nil
-      { // not a normal code path.
-        precondition(false, __FUNCTION__)
-        return nil
+      switch context
+      {
+      case nil:
+        preconditionFailure(__FUNCTION__)
+
+      default:
+        let element = context.memory
+        dispatch_set_context(ws, nil)
+        dispatch_semaphore_signal(ws)
+        return element
       }
-      let element = context.memory
-      dispatch_set_context(ws, nil)
-      dispatch_semaphore_signal(ws)
-      return element
     }
 
     if closed
@@ -187,7 +193,7 @@ final class QUnbufferedChan<T>: Chan<T>
     dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
 
     // got awoken
-    let context = UnsafeMutablePointer<T>(dispatch_get_context(threadLock))
+    let context = dispatch_get_context(threadLock)
     dispatch_set_context(threadLock, nil)
     SemaphorePool.enqueue(threadLock)
 
@@ -198,11 +204,13 @@ final class QUnbufferedChan<T>: Chan<T>
       buffer.dealloc(1)
       return nil
 
-    default:
-      assert(context == buffer)
+    case buffer:
       let element = buffer.move()
       buffer.dealloc(1)
       return element
+
+    default:
+      preconditionFailure("Weird context value in \(__FUNCTION__)")
     }
   }
 }
