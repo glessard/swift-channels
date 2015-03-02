@@ -448,3 +448,10 @@ final class QUnbufferedChan<T>: Chan<T>
     }
   }
 }
+
+/**
+  Useful fake pointers for use with dispatch_set_context()
+*/
+
+private let cancelSelect = UnsafeMutablePointer<Void>(bitPattern: 1)
+private let waitSelect   = UnsafeMutablePointer<Void>(bitPattern: 3)

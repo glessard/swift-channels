@@ -486,4 +486,8 @@ final class QBufferedChan<T>: Chan<T>
   }
 }
 
-var selectCount: Int32 = 0
+/**
+  A useful fake pointer for use with dispatch_set_context() in Signal closures.
+*/
+
+private let cancelSelect = UnsafeMutablePointer<Void>(bitPattern: 1)
