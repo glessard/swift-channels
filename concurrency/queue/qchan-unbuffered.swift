@@ -14,7 +14,7 @@ import Dispatch
 
 final class QUnbufferedChan<T>: Chan<T>
 {
-  // housekeeping variables
+  // MARK: private housekeeping
 
   private let readerQueue = SemaphoreQueue()
   private let writerQueue = SemaphoreQueue()
@@ -26,7 +26,7 @@ final class QUnbufferedChan<T>: Chan<T>
   // Used to elucidate/troubleshoot message arrival order
   // private var readerCount: Int32 = -1
 
-  // Computed property accessors
+  // MARK: ChannelType properties
 
   final override var isEmpty: Bool
   {
@@ -43,6 +43,8 @@ final class QUnbufferedChan<T>: Chan<T>
   */
 
   final override var isClosed: Bool { return closed }
+
+  // MARK: ChannelType methods
 
   /**
     Close the channel
