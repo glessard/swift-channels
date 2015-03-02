@@ -96,7 +96,7 @@ protocol SelectableChannelType: ChannelType
   coupled to a decidedly generic accessor method.
 */
 
-public class Selection
+public final class Selection
 {
   public  let id: Selectable
   private let data: Any?
@@ -105,13 +105,9 @@ public class Selection
   {
     id = selectionID
     if let d = selectionData
-    {
-      data = d
-    }
+    { data = d }
     else
-    {
-      data = nil
-    }
+    { data = nil }
   }
 
   public init(selectionID: Selectable)
