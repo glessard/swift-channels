@@ -259,7 +259,7 @@ final class QBufferedChan<T>: Chan<T>
 
   // MARK: SelectableChannelType methods
 
-  override func insert(ref: Selection, newElement: T) -> Bool
+  override func insert(selection: Selection, newElement: T) -> Bool
   {
     precondition(lock != 0, "Lock should be locked in \(__FUNCTION__)")
     // assert(lock != 0, "Lock should be locked in \(__FUNCTION__)")

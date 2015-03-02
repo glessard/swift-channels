@@ -99,9 +99,9 @@ public final class Sender<T>: SenderType, Selectable
 
   // A utility for SelectableChannelType, in place of a better idea
 
-  public func insert(ref: Selection, newElement: T) -> Bool
+  public func insert(selection: Selection, newElement: T) -> Bool
   {
-    return wrapped.insert(ref, newElement: newElement)
+    return wrapped.insert(selection, newElement: newElement)
   }
 }
 

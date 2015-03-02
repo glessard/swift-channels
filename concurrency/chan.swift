@@ -101,7 +101,7 @@ public class Chan<T>: ChannelType, SelectableChannelType
     return nil
   }
 
-  public func insert(ref: Selection, newElement: T) -> Bool
+  public func insert(selection: Selection, newElement: T) -> Bool
   {
     return false
   }

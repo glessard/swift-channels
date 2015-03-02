@@ -86,7 +86,7 @@ protocol SelectableChannelType: ChannelType
 
   func selectPut(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
   func selectPutNow(selectionID: Selectable) -> Selection?
-  func insert(ref: Selection, newElement: Element) -> Bool
+  func insert(selection: Selection, newElement: Element) -> Bool
 }
 
 
