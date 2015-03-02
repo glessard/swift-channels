@@ -329,16 +329,18 @@ final class QUnbufferedChan<T>: Chan<T>
       OSSpinLockUnlock(&lock)
 
       let context = UnsafePointer<T>(dispatch_get_context(ws))
-      if context == nil
-      { // not a normal code path.
-        precondition(false, __FUNCTION__)
-        dispatch_semaphore_signal(nil as dispatch_semaphore_t!)
-        return nil
-      }
-      let element = context.memory
-      dispatch_semaphore_signal(ws)
+      switch context
+      {
+      case nil:
+        preconditionFailure(__FUNCTION__)
 
-      return Selection(selectionID: selectionID, selectionData: element)
+      default:
+        let element = context.memory
+        dispatch_set_context(ws, nil)
+        dispatch_semaphore_signal(ws)
+
+        return Selection(selectionID: selectionID, selectionData: element)
+      }
     }
     OSSpinLockUnlock(&lock)
     return nil
@@ -358,21 +360,22 @@ final class QUnbufferedChan<T>: Chan<T>
           OSSpinLockUnlock(&self.lock)
           
           let context = UnsafePointer<T>(dispatch_get_context(ws))
-          if context == nil
-          { // not a normal code path.
-            assert(false, __FUNCTION__)
-            // dispatch_semaphore_signal(nil)
+          switch context
+          {
+          case nil:
+            preconditionFailure(__FUNCTION__)
+
+          default:
+            let element = context.memory
+            dispatch_set_context(ws, nil)
+            dispatch_semaphore_signal(ws)
+
+            let selection = Selection(selectionID: selectionID, selectionData: element)
+            let selectptr = UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque())
+            dispatch_set_context(s, selectptr)
+            dispatch_semaphore_signal(s)
             return
           }
-          let element = context.memory
-          dispatch_set_context(ws, nil)
-          dispatch_semaphore_signal(ws)
-
-          let selection = Selection(selectionID: selectionID, selectionData: element)
-          let selectptr = UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque())
-          dispatch_set_context(s, selectptr)
-          dispatch_semaphore_signal(s)
-          return
         }
         else
         {
@@ -402,7 +405,7 @@ final class QUnbufferedChan<T>: Chan<T>
       dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
 
       // got awoken
-      let context = UnsafeMutablePointer<T>(dispatch_get_context(threadLock))
+      let context = dispatch_get_context(threadLock)
 
       switch context
       {
