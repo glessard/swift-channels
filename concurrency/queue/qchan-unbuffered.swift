@@ -216,21 +216,21 @@ final class QUnbufferedChan<T>: Chan<T>
 
   // MARK: SelectableChannelType methods
 
-  override func insert(ref: Selection, item: T) -> Bool
+  override func insert(ref: Selection, newElement: T) -> Bool
   {
     if let rs: dispatch_semaphore_t = ref.getData()
     {
-      let pointer = UnsafeMutablePointer<T>(dispatch_get_context(rs))
-      if pointer == nil
-      { // not a normal code path.
-        precondition(false, __FUNCTION__)
-        dispatch_semaphore_signal(nil as dispatch_semaphore_t!)
-        return false
-      }
+      let context = UnsafeMutablePointer<T>(dispatch_get_context(rs))
+      switch context
+      {
+      case nil:
+        preconditionFailure(__FUNCTION__)
 
-      pointer.initialize(item)
-      dispatch_semaphore_signal(rs)
-      return true
+      default:
+        context.initialize(newElement)
+        dispatch_semaphore_signal(rs)
+        return true
+      }
     }
     assert(false, "Thread left hanging in \(__FUNCTION__), semaphore not found in \(ref)")
     return false

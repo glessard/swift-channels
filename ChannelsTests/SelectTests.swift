@@ -95,9 +95,9 @@ class SelectTests: XCTestCase
       let selectables = senders.map { $0 as Selectable }
       while let (selected, selection) = select(selectables)
       {
-        if let sender = selection.selectionID as? Sender<Int>
+        if let sender = selection.id as? Sender<Int>
         {
-          if sender.insert(selection, item: i) { i++ }
+          if sender.insert(selection, newElement: i) { i++ }
         }
         if i >= iterations
         {

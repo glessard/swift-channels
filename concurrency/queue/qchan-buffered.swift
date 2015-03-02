@@ -259,12 +259,12 @@ final class QBufferedChan<T>: Chan<T>
 
   // MARK: SelectableChannelType methods
 
-  override func insert(ref: Selection, item: T) -> Bool
+  override func insert(ref: Selection, newElement: T) -> Bool
   {
     precondition(lock != 0, "Lock should be locked in \(__FUNCTION__)")
     // assert(lock != 0, "Lock should be locked in \(__FUNCTION__)")
 
-    buffer.advancedBy(tail&mask).initialize(item)
+    buffer.advancedBy(tail&mask).initialize(newElement)
     tail += 1
 
     if let rs = readerQueue.dequeue()

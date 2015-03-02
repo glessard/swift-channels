@@ -26,6 +26,8 @@ public typealias Signal = () -> ()
   What a type needs to be usable in the Select() function.
 */
 
+// MARK: Selectable
+
 public protocol Selectable: class
 {
   /**
@@ -74,6 +76,8 @@ public protocol Selectable: class
   var selectable: Bool { get }
 }
 
+// MARK: SelectableChannelType
+
 protocol SelectableChannelType: ChannelType
 {
   func selectGet(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
@@ -82,7 +86,7 @@ protocol SelectableChannelType: ChannelType
 
   func selectPut(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
   func selectPutNow(selectionID: Selectable) -> Selection?
-  func insert(ref: Selection, item: Element) -> Bool
+  func insert(ref: Selection, newElement: Element) -> Bool
 }
 
 
@@ -94,7 +98,7 @@ protocol SelectableChannelType: ChannelType
 
 public class Selection
 {
-  private let id: Selectable
+  public  let id: Selectable
   private let data: Any?
 
   public init<T>(selectionID: Selectable, selectionData: T?)
@@ -120,6 +124,4 @@ public class Selection
   {
     return data as? T
   }
-
-  public var selectionID: Selectable { return id }
 }

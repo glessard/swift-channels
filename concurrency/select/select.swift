@@ -31,7 +31,7 @@ public func select(options: [Selectable], withDefault: Selectable? = nil) -> (Se
   {
     if let selection = option.selectNow(option)
     {
-      return (selection.selectionID, selection)
+      return (selection.id, selection)
     }
   }
 
@@ -64,5 +64,5 @@ public func select(options: [Selectable], withDefault: Selectable? = nil) -> (Se
   dispatch_set_context(semaphore, nil)
   SemaphorePool.enqueue(semaphore)
 
-  return (selection.selectionID, selection)
+  return (selection.id, selection)
 }
