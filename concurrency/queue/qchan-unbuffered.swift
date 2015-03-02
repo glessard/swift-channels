@@ -104,6 +104,27 @@ final class QUnbufferedChan<T>: Chan<T>
       case nil:
         preconditionFailure(__FUNCTION__)
 
+      case waitSelect:
+        let threadLock = dispatch_semaphore_create(0)!
+        dispatch_set_context(threadLock, &newElement)
+        let contextptr = UnsafeMutablePointer<Void>(Unmanaged.passRetained(threadLock).toOpaque())
+        dispatch_set_context(rs, contextptr)
+        dispatch_semaphore_signal(rs)
+        dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
+
+        let context = dispatch_get_context(threadLock)
+        switch context
+        {
+        case contextptr:
+          return true
+
+        case nil:
+          return self.put(newElement)
+
+        default:
+          preconditionFailure("Weird context value in waitSelect case of \(__FUNCTION__)")
+        }
+
       default:
         context.initialize(newElement)
         dispatch_semaphore_signal(rs)
@@ -399,7 +420,7 @@ final class QUnbufferedChan<T>: Chan<T>
       }
 
       let buffer = UnsafeMutablePointer<T>.alloc(1)
-      dispatch_set_context(threadLock, buffer)
+      dispatch_set_context(threadLock, waitSelect)
       self.readerQueue.enqueue(threadLock)
       OSSpinLockUnlock(&self.lock)
       dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
@@ -439,7 +460,20 @@ final class QUnbufferedChan<T>: Chan<T>
 
       default:
         buffer.dealloc(1)
-        precondition(false, "Weird semaphore context in \(__FUNCTION__)")
+        // precondition(false, "Weird semaphore context in \(__FUNCTION__)")
+        let selectput = Unmanaged<dispatch_semaphore_t>.fromOpaque(COpaquePointer(context)).takeRetainedValue()
+        if let s = semaphore.get()
+        {
+          let selection = Selection(selectionID: selectionID, selectionData: selectput)
+          let selectptr = UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque())
+          dispatch_set_context(s, selectptr)
+          dispatch_semaphore_signal(s)
+        }
+        else
+        {
+          dispatch_set_context(selectput, nil)
+          dispatch_semaphore_signal(selectput)
+        }
       }
     }
 
