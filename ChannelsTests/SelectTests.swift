@@ -45,7 +45,7 @@ class SelectTests: XCTestCase
     var i = 0
     // Currently required to avoid a runtime crash:
     let selectables = receivers.map { $0 as Selectable }
-    while let (selected, selection) = select(selectables)
+    while let selection = select(selectables)
     {
       if let message: Int = selection.getData() { i++ }
     }
@@ -93,7 +93,7 @@ class SelectTests: XCTestCase
       var i = 0
       // Currently required to avoid a runtime crash:
       let selectables = senders.map { $0 as Selectable }
-      while let (selected, selection) = select(selectables)
+      while let selection = select(selectables)
       {
         if let sender = selection.id as? Sender<Int>
         {

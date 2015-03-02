@@ -12,12 +12,12 @@ import Dispatch
   Select gets notified of events by the first of a list of Selectable items.
 */
 
-public func select(options: Selectable...) -> (Selectable, Selection)?
+public func select(options: Selectable...) -> Selection?
 {
   return select(options)
 }
 
-public func select(options: [Selectable], withDefault: Selectable? = nil) -> (Selectable, Selection)?
+public func select(options: [Selectable], withDefault: Selectable? = nil) -> Selection?
 {
   let selectables = options.filter { $0.selectable }
 
@@ -31,14 +31,13 @@ public func select(options: [Selectable], withDefault: Selectable? = nil) -> (Se
   {
     if let selection = option.selectNow(option)
     {
-      return (selection.id, selection)
+      return selection
     }
   }
 
   if let d = withDefault
   {
-    let selection = Selection(selectionID: d)
-    return (d, selection)
+    return Selection(selectionID: d)
   }
 
   // The asynchronous path
@@ -64,5 +63,5 @@ public func select(options: [Selectable], withDefault: Selectable? = nil) -> (Se
   dispatch_set_context(semaphore, nil)
   SemaphorePool.enqueue(semaphore)
 
-  return (selection.id, selection)
+  return selection
 }
