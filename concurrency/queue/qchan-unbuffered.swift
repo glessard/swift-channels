@@ -242,16 +242,9 @@ final class QUnbufferedChan<T>: Chan<T>
     if let rs: dispatch_semaphore_t = selection.getData()
     {
       let context = UnsafeMutablePointer<T>(dispatch_get_context(rs))
-      switch context
-      {
-      case nil, waitSelect:
-        preconditionFailure("Context is \(context) in \(__FUNCTION__)")
-
-      default:
-        context.initialize(newElement)
-        dispatch_semaphore_signal(rs)
-        return true
-      }
+      context.initialize(newElement)
+      dispatch_semaphore_signal(rs)
+      return true
     }
     assert(false, "Thread left hanging in \(__FUNCTION__), semaphore not found in \(selection)")
     return false
@@ -262,12 +255,18 @@ final class QUnbufferedChan<T>: Chan<T>
     OSSpinLockLock(&lock)
     if let rs = readerQueue.dequeue()
     {
-      if dispatch_get_context(rs) != waitSelect
+      switch dispatch_get_context(rs)
       {
+      case nil, cancelSelect:
+        preconditionFailure("Context is invalid in \(__FUNCTION__)")
+
+      case waitSelect:
+        readerQueue.undequeue(rs)
+
+      default:
         OSSpinLockUnlock(&lock)
         return Selection(selectionID: selectionID, selectionData: rs)
       }
-      readerQueue.undequeue(rs)
     }
     OSSpinLockUnlock(&lock)
     return nil
@@ -348,19 +347,19 @@ final class QUnbufferedChan<T>: Chan<T>
     OSSpinLockLock(&lock)
     if let ws = writerQueue.dequeue()
     {
-      OSSpinLockUnlock(&lock)
-
       let context = UnsafePointer<T>(dispatch_get_context(ws))
       switch context
       {
       case nil, UnsafePointer(cancelSelect):
         preconditionFailure(__FUNCTION__)
 
-      default:
-        let element = context.memory
-        dispatch_set_context(ws, nil)
-        dispatch_semaphore_signal(ws)
+      case UnsafePointer(waitSelect):
+        writerQueue.undequeue(ws)
 
+      default:
+        OSSpinLockUnlock(&lock)
+        let element = context.memory
+        dispatch_semaphore_signal(ws)
         return Selection(selectionID: selectionID, selectionData: element)
       }
     }
