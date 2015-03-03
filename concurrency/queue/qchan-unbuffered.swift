@@ -193,7 +193,6 @@ final class QUnbufferedChan<T>: Chan<T>
 
       default:
         let element = context.memory
-        dispatch_set_context(ws, nil)
         dispatch_semaphore_signal(ws)
         return element
       }
@@ -388,7 +387,6 @@ final class QUnbufferedChan<T>: Chan<T>
 
           default:
             let element = context.memory
-            dispatch_set_context(ws, nil)
             dispatch_semaphore_signal(ws)
 
             let selection = Selection(selectionID: selectionID, selectionData: element)
