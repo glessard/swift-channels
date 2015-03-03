@@ -97,7 +97,6 @@ final class QUnbufferedChan<T>: Chan<T>
     { // there is already an interested reader
       OSSpinLockUnlock(&lock)
 
-      // attach a new copy of our data to the reader's semaphore
       let context = UnsafeMutablePointer<T>(dispatch_get_context(rs))
       switch context
       {
@@ -115,17 +114,18 @@ final class QUnbufferedChan<T>: Chan<T>
         let context = dispatch_get_context(threadLock)
         switch context
         {
-        case contextptr:
+        case &newElement:
           return true
 
         case nil:
           return self.put(newElement)
 
         default:
-          preconditionFailure("Weird context value in waitSelect case of \(__FUNCTION__)")
+          preconditionFailure("Weird context value (\(context)) in waitSelect case of \(__FUNCTION__)")
         }
 
       default:
+        // attach a new copy of our data to the reader's semaphore
         context.initialize(newElement)
         dispatch_semaphore_signal(rs)
         return true
@@ -244,8 +244,8 @@ final class QUnbufferedChan<T>: Chan<T>
       let context = UnsafeMutablePointer<T>(dispatch_get_context(rs))
       switch context
       {
-      case nil:
-        preconditionFailure(__FUNCTION__)
+      case nil, waitSelect:
+        preconditionFailure("Context is \(context) in \(__FUNCTION__)")
 
       default:
         context.initialize(newElement)
@@ -262,14 +262,15 @@ final class QUnbufferedChan<T>: Chan<T>
     OSSpinLockLock(&lock)
     if let rs = readerQueue.dequeue()
     {
-      OSSpinLockUnlock(&lock)
-      return Selection(selectionID: selectionID, selectionData: rs)
+      if dispatch_get_context(rs) != waitSelect
+      {
+        OSSpinLockUnlock(&lock)
+        return Selection(selectionID: selectionID, selectionData: rs)
+      }
+      readerQueue.undequeue(rs)
     }
-    else
-    {
-      OSSpinLockUnlock(&lock)
-      return nil
-    }
+    OSSpinLockUnlock(&lock)
+    return nil
   }
 
   override func selectPut(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
@@ -352,7 +353,7 @@ final class QUnbufferedChan<T>: Chan<T>
       let context = UnsafePointer<T>(dispatch_get_context(ws))
       switch context
       {
-      case nil:
+      case nil, UnsafePointer(cancelSelect):
         preconditionFailure(__FUNCTION__)
 
       default:
@@ -419,58 +420,42 @@ final class QUnbufferedChan<T>: Chan<T>
         return
       }
 
-      let buffer = UnsafeMutablePointer<T>.alloc(1)
       dispatch_set_context(threadLock, waitSelect)
       self.readerQueue.enqueue(threadLock)
       OSSpinLockUnlock(&self.lock)
       dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
 
       // got awoken
-      let context = dispatch_get_context(threadLock)
+      let context = COpaquePointer(dispatch_get_context(threadLock))
 
       switch context
       {
       case nil:
         // thread was awoken by close(): no more data on the channel
-        buffer.dealloc(1)
         if let s = semaphore.get()
         {
           dispatch_set_context(s, nil)
           dispatch_semaphore_signal(s)
         }
 
-      case cancelSelect:
+      case COpaquePointer(cancelSelect):
         // no need to try for the semaphore.
-        buffer.dealloc(1)
-
-      case buffer:
-        let element = buffer.move()
-        buffer.dealloc(1)
-        if let s = semaphore.get()
-        {
-          let selection = Selection(selectionID: selectionID, selectionData: element)
-          let selectptr = UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque())
-          dispatch_set_context(s, selectptr)
-          dispatch_semaphore_signal(s)
-        }
-        else
-        { // what to do? We have data, but it has no taker. try to pass it on to another reader.
-          self.put(element)
-        }
+        break
 
       default:
-        buffer.dealloc(1)
-        // precondition(false, "Weird semaphore context in \(__FUNCTION__)")
-        let selectput = Unmanaged<dispatch_semaphore_t>.fromOpaque(COpaquePointer(context)).takeRetainedValue()
+        let selectput = Unmanaged<dispatch_semaphore_t>.fromOpaque(context).takeRetainedValue()
         if let s = semaphore.get()
         {
-          let selection = Selection(selectionID: selectionID, selectionData: selectput)
+          let context = UnsafeMutablePointer<T>(dispatch_get_context(selectput))
+          let selection = Selection(selectionID: selectionID, selectionData: context.memory)
+          dispatch_semaphore_signal(selectput)
+
           let selectptr = UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque())
           dispatch_set_context(s, selectptr)
           dispatch_semaphore_signal(s)
         }
         else
-        {
+        { // signal failure to the writer
           dispatch_set_context(selectput, nil)
           dispatch_semaphore_signal(selectput)
         }
