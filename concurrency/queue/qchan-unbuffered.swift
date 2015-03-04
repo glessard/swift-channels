@@ -97,7 +97,7 @@ final class QUnbufferedChan<T>: Chan<T>
     { // there is already an interested reader
       OSSpinLockUnlock(&lock)
 
-      let context = UnsafeMutablePointer<T>(dispatch_get_context(rs))
+      let context = dispatch_get_context(rs)
       switch context
       {
       case nil:
@@ -126,7 +126,7 @@ final class QUnbufferedChan<T>: Chan<T>
 
       default:
         // attach a new copy of our data to the reader's semaphore
-        context.initialize(newElement)
+        UnsafeMutablePointer<T>(context).initialize(newElement)
         dispatch_semaphore_signal(rs)
         return true
       }
@@ -185,13 +185,13 @@ final class QUnbufferedChan<T>: Chan<T>
     { // data is already available
       OSSpinLockUnlock(&lock)
 
-      let context = UnsafePointer<T>(dispatch_get_context(ws))
+      let context = dispatch_get_context(ws)
       switch context
       {
       case nil:
         preconditionFailure(__FUNCTION__)
 
-      case UnsafePointer(waitSelect):
+      case waitSelect:
         let threadLock = dispatch_semaphore_create(0)!
         let buffer = UnsafeMutablePointer<T>.alloc(1)
         dispatch_set_context(threadLock, buffer)
@@ -213,11 +213,12 @@ final class QUnbufferedChan<T>: Chan<T>
           return self.get()
 
         default:
+          buffer.dealloc(1)
           preconditionFailure("Weird context value (\(context)) in waitSelect case of \(__FUNCTION__)")
         }
 
       default:
-        let element = context.memory
+        let element: T = UnsafePointer(context).memory
         dispatch_semaphore_signal(ws)
         return element
       }
@@ -255,6 +256,7 @@ final class QUnbufferedChan<T>: Chan<T>
       return element
 
     default:
+      buffer.dealloc(1)
       preconditionFailure("Weird context value in \(__FUNCTION__)")
     }
   }
@@ -265,8 +267,8 @@ final class QUnbufferedChan<T>: Chan<T>
   {
     if let rs: dispatch_semaphore_t = selection.getData()
     {
-      let context = UnsafeMutablePointer<T>(dispatch_get_context(rs))
-      context.initialize(newElement)
+      let context = dispatch_get_context(rs)
+      UnsafeMutablePointer<T>(context).initialize(newElement)
       dispatch_semaphore_signal(rs)
       return true
     }
@@ -352,7 +354,7 @@ final class QUnbufferedChan<T>: Chan<T>
       dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
 
       // got awoken
-      let context = COpaquePointer(dispatch_get_context(threadLock))
+      let context = dispatch_get_context(threadLock)
 
       switch context
       {
@@ -365,12 +367,12 @@ final class QUnbufferedChan<T>: Chan<T>
         }
         return
 
-      case COpaquePointer(cancelSelect):
+      case cancelSelect:
         // no need to try for the semaphore.
         break
 
       default:
-        let selectget = Unmanaged<dispatch_semaphore_t>.fromOpaque(context).takeRetainedValue()
+        let selectget = Unmanaged<dispatch_semaphore_t>.fromOpaque(COpaquePointer(context)).takeRetainedValue()
         if let s = semaphore.get()
         {
           let selection = Selection(selectionID: selectionID, selectionData: selectget)
@@ -402,18 +404,18 @@ final class QUnbufferedChan<T>: Chan<T>
     OSSpinLockLock(&lock)
     if let ws = writerQueue.dequeue()
     {
-      let context = UnsafePointer<T>(dispatch_get_context(ws))
+      let context = dispatch_get_context(ws)
       switch context
       {
-      case nil, UnsafePointer(cancelSelect):
+      case nil, cancelSelect:
         preconditionFailure(__FUNCTION__)
 
-      case UnsafePointer(waitSelect):
+      case waitSelect:
         writerQueue.undequeue(ws)
 
       default:
         OSSpinLockUnlock(&lock)
-        let element = context.memory
+        let element: T = UnsafePointer(context).memory
         dispatch_semaphore_signal(ws)
         return Selection(selectionID: selectionID, selectionData: element)
       }
@@ -435,14 +437,14 @@ final class QUnbufferedChan<T>: Chan<T>
         {
           OSSpinLockUnlock(&self.lock)
           
-          let context = UnsafePointer<T>(dispatch_get_context(ws))
+          let context = dispatch_get_context(ws)
           switch context
           {
           case nil:
             preconditionFailure(__FUNCTION__)
 
           default:
-            let element = context.memory
+            let element: T = UnsafePointer(context).memory
             dispatch_semaphore_signal(ws)
 
             let selection = Selection(selectionID: selectionID, selectionData: element)
@@ -479,7 +481,7 @@ final class QUnbufferedChan<T>: Chan<T>
       dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
 
       // got awoken
-      let context = COpaquePointer(dispatch_get_context(threadLock))
+      let context = dispatch_get_context(threadLock)
 
       switch context
       {
@@ -491,16 +493,17 @@ final class QUnbufferedChan<T>: Chan<T>
           dispatch_semaphore_signal(s)
         }
 
-      case COpaquePointer(cancelSelect):
+      case cancelSelect:
         // no need to try for the semaphore.
         break
 
       default:
-        let selectput = Unmanaged<dispatch_semaphore_t>.fromOpaque(context).takeRetainedValue()
+        let selectput = Unmanaged<dispatch_semaphore_t>.fromOpaque(COpaquePointer(context)).takeRetainedValue()
         if let s = semaphore.get()
         {
-          let context = UnsafeMutablePointer<T>(dispatch_get_context(selectput))
-          let selection = Selection(selectionID: selectionID, selectionData: context.memory)
+          let context = dispatch_get_context(selectput)
+          let element: T = UnsafePointer(context).memory
+          let selection = Selection(selectionID: selectionID, selectionData: element)
           dispatch_semaphore_signal(selectput)
 
           let selectptr = UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque())
