@@ -117,9 +117,8 @@ final class QUnbufferedChan<T>: Chan<T>
       return false
     }
 
-    // wait for a buffer from a reader
+    // make our data available for a reader
     let threadLock = SemaphorePool.dequeue()
-    // attach a pointer to our data on the stack
     dispatch_set_context(threadLock, &newElement)
     writerQueue.enqueue(threadLock)
     OSSpinLockUnlock(&lock)
@@ -141,7 +140,7 @@ final class QUnbufferedChan<T>: Chan<T>
       return true
 
     default:
-      preconditionFailure("Weird context value in \(__FUNCTION__)")
+      preconditionFailure("Unknown context value in \(__FUNCTION__)")
     }
   }
 
@@ -210,7 +209,7 @@ final class QUnbufferedChan<T>: Chan<T>
       return element
 
     default:
-      preconditionFailure("Weird context value in \(__FUNCTION__)")
+      preconditionFailure("Unknown context value in \(__FUNCTION__)")
     }
   }
 }
