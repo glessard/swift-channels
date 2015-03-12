@@ -295,7 +295,7 @@ final class QBufferedChan<T>: Chan<T>
 
   override func selectPut(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
   {
-    let threadLock = dispatch_semaphore_create(0)!
+    let threadLock = SemaphorePool.dequeue()
     var turnstiled = false
 
     dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
@@ -308,6 +308,8 @@ final class QBufferedChan<T>: Chan<T>
         dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
         if dispatch_get_context(threadLock) == cancelSelect
         {
+          dispatch_set_context(threadLock, nil)
+          SemaphorePool.enqueue(threadLock)
           return
         }
         OSSpinLockLock(&self.lock)
@@ -370,6 +372,11 @@ final class QBufferedChan<T>: Chan<T>
           OSSpinLockUnlock(&self.lock)
         }
       }
+      else
+      {
+        dispatch_set_context(threadLock, nil)
+        SemaphorePool.enqueue(threadLock)
+      }
     }
   }
 
@@ -401,7 +408,7 @@ final class QBufferedChan<T>: Chan<T>
 
   override func selectGet(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
   {
-    let threadLock = dispatch_semaphore_create(0)! //SemaphorePool.dequeue()
+    let threadLock = SemaphorePool.dequeue()
     var turnstiled = false
 
     dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
@@ -414,6 +421,8 @@ final class QBufferedChan<T>: Chan<T>
         dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
         if dispatch_get_context(threadLock) == cancelSelect
         {
+          dispatch_set_context(threadLock, nil)
+          SemaphorePool.enqueue(threadLock)
           return
         }
         OSSpinLockLock(&self.lock)
@@ -481,6 +490,11 @@ final class QBufferedChan<T>: Chan<T>
           dispatch_semaphore_signal(threadLock)
         }
         OSSpinLockUnlock(&self.lock)
+      }
+      else
+      {
+        dispatch_set_context(threadLock, nil)
+        SemaphorePool.enqueue(threadLock)
       }
     }
   }
