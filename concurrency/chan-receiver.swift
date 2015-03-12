@@ -130,7 +130,7 @@ public prefix func <-<T>(r: Receiver<T>) -> T?
 }
 
 /**
-  ChannelTypeAsChan<T> disguises any ChannelType as a Chan<T>,
+  ChannelTypeAsChan<T,C> disguises any ChannelType as a Chan<T>,
   for use by Receiver<T>
 */
 

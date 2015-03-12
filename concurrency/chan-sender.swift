@@ -108,7 +108,7 @@ public func <-<T>(s: Sender<T>, element: T)
 }
 
 /**
-  ChannelTypeAsChan<T> disguises any ChannelType as a Chan<T>, for use by Sender<T>
+  ChannelTypeAsChan<T,C> disguises any ChannelType C as a Chan<T>, for use by Sender<T>
 */
 
 private class ChannelTypeAsChan<T, C: ChannelType where C.Element == T>: Chan<T>
