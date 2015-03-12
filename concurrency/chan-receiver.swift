@@ -117,8 +117,6 @@ public struct Receiver<T>: ReceiverType, GeneratorType, SequenceType
 
   This is the equivalent of Receiver<T>.receive() -> T?
 
-  If ReceiverType 'r' were passed as inout, this would be slightly faster (~15ns)
-
   :param:  r a ReceiverType
 
   :return: the oldest element from the channel
