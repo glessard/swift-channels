@@ -213,7 +213,6 @@ final class QUnbufferedChan<T>: Chan<T>
           return self.get()
 
         default:
-          buffer.dealloc(1)
           preconditionFailure("Weird context value (\(context)) in waitSelect case of \(__FUNCTION__)")
         }
 
@@ -256,7 +255,6 @@ final class QUnbufferedChan<T>: Chan<T>
       return element
 
     default:
-      buffer.dealloc(1)
       preconditionFailure("Weird context value in \(__FUNCTION__)")
     }
   }
