@@ -121,7 +121,7 @@ final class QUnbufferedChan<T>: Chan<T>
           return self.put(newElement)
 
         default:
-          preconditionFailure("Weird context value (\(context)) in waitSelect case of \(__FUNCTION__)")
+          preconditionFailure("Unknown context value (\(context)) in waitSelect case of \(__FUNCTION__)")
         }
 
       default:
@@ -212,7 +212,7 @@ final class QUnbufferedChan<T>: Chan<T>
           return self.get()
 
         default:
-          preconditionFailure("Weird context value (\(context)) in waitSelect case of \(__FUNCTION__)")
+          preconditionFailure("Unknown context value (\(context)) in waitSelect case of \(__FUNCTION__)")
         }
 
       default:
@@ -495,8 +495,7 @@ final class QUnbufferedChan<T>: Chan<T>
               dispatch_semaphore_signal(s)
 
             default:
-              buffer.dealloc(1)
-              preconditionFailure("Weird context value (\(context)) in waitSelect case of \(__FUNCTION__)")
+              preconditionFailure("Unknown context value (\(context)) in waitSelect case of \(__FUNCTION__)")
             }
           }
           else
