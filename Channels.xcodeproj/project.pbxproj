@@ -194,7 +194,6 @@
 		03AD477A1A6834FE00F4B44B /* logging.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = logging.swift; path = utilities/logging.swift; sourceTree = "<group>"; };
 		03AD47871A68366A00F4B44B /* concurrency tester */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "concurrency tester"; sourceTree = BUILT_PRODUCTS_DIR; };
 		03AD47891A68366A00F4B44B /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
-		03AD47AA1A688ADF00F4B44B /* future.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = future.swift; path = concurrency/future.swift; sourceTree = "<group>"; };
 		03AD47AD1A688BE900F4B44B /* shuffle.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = shuffle.swift; path = ../utilities/shuffle.swift; sourceTree = "<group>"; };
 		03AD47B11A6890B100F4B44B /* merge.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = merge.swift; sourceTree = "<group>"; };
 		03AD47BF1A689E0900F4B44B /* MergeTest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MergeTest.swift; sourceTree = "<group>"; };
@@ -363,7 +362,6 @@
 			isa = PBXGroup;
 			children = (
 				03AD47001A6743E500F4B44B /* async.swift */,
-				03AD47AA1A688ADF00F4B44B /* future.swift */,
 				03AD477A1A6834FE00F4B44B /* logging.swift */,
 				03AD47781A6834F500F4B44B /* timing.swift */,
 			);

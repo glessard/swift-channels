@@ -117,8 +117,6 @@ public final class Sender<T>: SenderType, Selectable
 
   Using this operator is equivalent to '_ = Sender<T>.send(T)'
 
-  If the Sender 's' were passed as inout, this would be slgihtly faster (~15ns)
-
   :param: s a Sender<T>
   :param: element the new T to be added to the channel.
 */
@@ -129,7 +127,7 @@ public func <-<T>(s: Sender<T>, element: T)
 }
 
 /**
-  ChannelTypeAsChan<T> disguises any ChannelType as a Chan<T>, for use by Sender<T>
+  ChannelTypeAsChan<T,C> disguises any ChannelType as a Chan<T>, for use by Sender<T>
 */
 
 private class ChannelTypeAsChan<T, C: ChannelType where C.Element == T>: Chan<T>

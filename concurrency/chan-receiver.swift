@@ -146,8 +146,6 @@ public final class Receiver<T>: ReceiverType, GeneratorType, SequenceType, Selec
 
   This is the equivalent of Receiver<T>.receive() -> T?
 
-  If ReceiverType 'r' were passed as inout, this would be slightly faster (~15ns)
-
   :param:  r a ReceiverType
 
   :return: the oldest element from the channel
@@ -159,7 +157,7 @@ public prefix func <-<T>(r: Receiver<T>) -> T?
 }
 
 /**
-  ChannelTypeAsChan<T> disguises any ChannelType as a Chan<T>,
+  ChannelTypeAsChan<T,C> disguises any ChannelType as a Chan<T>,
   for use by Receiver<T>
 */
 
