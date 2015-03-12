@@ -107,6 +107,7 @@
 		03AD47B21A6890B100F4B44B /* merge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47B11A6890B100F4B44B /* merge.swift */; };
 		03AD47C01A689E0900F4B44B /* MergeTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47BF1A689E0900F4B44B /* MergeTest.swift */; };
 		03DC9A211AA2876400F4B44B /* async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47001A6743E500F4B44B /* async.swift */; };
+		03E60E611AAC08CE00F4B44B /* SelectDualTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E60E601AAC08CE00F4B44B /* SelectDualTests.swift */; };
 		03EE7ECD1A94217000F4B44B /* select-types.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03F3FD691A69D90400F4B44B /* select-types.swift */; };
 		03F3FD6A1A69D90400F4B44B /* select-types.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03F3FD691A69D90400F4B44B /* select-types.swift */; };
 		03F3FD6E1A6A4E7900F4B44B /* select-types.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03F3FD691A69D90400F4B44B /* select-types.swift */; };
@@ -196,6 +197,7 @@
 		03AD47B11A6890B100F4B44B /* merge.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = merge.swift; sourceTree = "<group>"; };
 		03AD47BF1A689E0900F4B44B /* MergeTest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MergeTest.swift; sourceTree = "<group>"; };
 		03B24C0B1A8AC01F00F4B44B /* pchan-bufferedN-array.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "pchan-bufferedN-array.swift"; sourceTree = "<group>"; };
+		03E60E601AAC08CE00F4B44B /* SelectDualTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SelectDualTests.swift; sourceTree = "<group>"; };
 		03F3FD691A69D90400F4B44B /* select-types.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "select-types.swift"; path = "select/select-types.swift"; sourceTree = "<group>"; };
 		03F3FD6F1A6AF95400F4B44B /* select.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = select.swift; path = select/select.swift; sourceTree = "<group>"; };
 		03F3FD711A6B207E00F4B44B /* SelectTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SelectTests.swift; sourceTree = "<group>"; };
@@ -287,6 +289,7 @@
 				03AD47541A6744DA00F4B44B /* SChanTests.swift */,
 				03AD47BF1A689E0900F4B44B /* MergeTest.swift */,
 				03F3FD711A6B207E00F4B44B /* SelectTests.swift */,
+				03E60E601AAC08CE00F4B44B /* SelectDualTests.swift */,
 				035B606E1A67433800F4B44B /* Supporting Files */,
 			);
 			path = ChannelsTests;
@@ -604,6 +607,7 @@
 			files = (
 				03F3FD751A6D76B300F4B44B /* SelectTests.swift in Sources */,
 				03AD474D1A67447B00F4B44B /* BufferedChannelTests.swift in Sources */,
+				03E60E611AAC08CE00F4B44B /* SelectDualTests.swift in Sources */,
 				03AD47551A6744DA00F4B44B /* PChanTests.swift in Sources */,
 				03AD47C01A689E0900F4B44B /* MergeTest.swift in Sources */,
 				03AD47511A67448400F4B44B /* UnbufferedChannelTests.swift in Sources */,
