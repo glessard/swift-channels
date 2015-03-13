@@ -37,6 +37,11 @@ public func merge<R: ReceiverType>(channels: [R]) -> Receiver<R.ReceivedElement>
   return rx
 }
 
+public func merge<R: ReceiverType>(channels: R...) -> Receiver<R.ReceivedElement>
+{
+  return merge(channels)
+}
+
 /**
   Merge an array of channel receivers into one Receiver.
   Every item from the input channels will be able to be received via the returned channel.
@@ -71,6 +76,11 @@ public func mergeGroup<R: ReceiverType>(channels: [R]) -> Receiver<R.ReceivedEle
   dispatch_group_notify(g, q) { tx.close() }
 
   return rx
+}
+
+public func mergeGroup<R: ReceiverType>(channels: R...) -> Receiver<R.ReceivedElement>
+{
+  return mergeGroup(channels)
 }
 
 /**
@@ -118,4 +128,9 @@ public func mergeRR<R: ReceiverType>(channels: [R]) -> Receiver<R.ReceivedElemen
   }
 
   return rx
+}
+
+public func mergeRR<R: ReceiverType>(channels: R...) -> Receiver<R.ReceivedElement>
+{
+  return mergeRR(channels)
 }
