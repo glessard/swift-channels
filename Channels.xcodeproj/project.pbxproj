@@ -306,8 +306,8 @@
 			children = (
 				03AD47131A6743E500F4B44B /* pchan.swift */,
 				03AD47101A6743E500F4B44B /* pchan-buffered1.swift */,
-				03AD47111A6743E500F4B44B /* pchan-bufferedN-queue.swift */,
 				03AD47121A6743E500F4B44B /* pchan-bufferedN-buffer.swift */,
+				03AD47111A6743E500F4B44B /* pchan-bufferedN-queue.swift */,
 				03B24C0B1A8AC01F00F4B44B /* pchan-bufferedN-array.swift */,
 				03AD47141A6743E500F4B44B /* pchan-unbuffered.swift */,
 			);

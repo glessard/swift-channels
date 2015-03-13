@@ -67,24 +67,24 @@ final class PBufferedQChan<T>: pthreadsChan<T>
       blockedWriters -= 1
     }
 
-    if closed
+    if !closed
     {
-      pthread_cond_signal(&writeCondition)
-      pthread_cond_signal(&readCondition)
-      pthread_mutex_unlock(&channelMutex)
-      return false
+      q.enqueue(newElement)
+      elements += 1
     }
-
-    q.enqueue(newElement)
-    elements += 1
+    let sent = !closed
 
     if blockedReaders > 0
     { // Channel is not empty
       pthread_cond_signal(&readCondition)
     }
+    else if closed || elements < capacity && blockedWriters > 0
+    {
+      pthread_cond_signal(&writeCondition)
+    }
 
     pthread_mutex_unlock(&channelMutex)
-    return true
+    return sent
   }
 
   /**
@@ -109,20 +109,35 @@ final class PBufferedQChan<T>: pthreadsChan<T>
       blockedReaders -= 1
     }
 
-    let oldElement = q.dequeue()
-    elements -= 1
+    if elements > 0
+    {
+      let element = q.dequeue()
+      elements -= 1
 
-    if closed && blockedReaders > 0
-    { // No reason to block
-      pthread_cond_signal(&readCondition)
+      if blockedWriters > 0
+      { // Channel isn't full
+        pthread_cond_signal(&writeCondition)
+      }
+      else if closed || elements > 0 && blockedReaders > 0
+      { // No reason to block
+        pthread_cond_signal(&readCondition)
+      }
+      pthread_mutex_unlock(&channelMutex)
+      return element
     }
-    if blockedWriters > 0
-    { // Channel isn't full
-      pthread_cond_signal(&writeCondition)
+    else
+    {
+      assert(closed, __FUNCTION__)
+      if blockedWriters > 0
+      {
+        pthread_cond_signal(&writeCondition)
+      }
+      else if blockedReaders > 0
+      {
+        pthread_cond_signal(&readCondition)
+      }
+      pthread_mutex_unlock(&channelMutex)
+      return nil
     }
-
-    pthread_mutex_unlock(&channelMutex)
-
-    return oldElement
   }
 }
