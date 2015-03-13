@@ -74,16 +74,24 @@ final class PBuffered1Chan<T>: pthreadsChan<T>
       return false
     }
 
-    e.initialize(newElement)
-    elements += 1
+    if !closed
+    {
+      e.initialize(newElement)
+      elements += 1
+    }
+    let sent = !closed
 
     if blockedReaders > 0
     { // Channel is not empty
       pthread_cond_signal(&readCondition)
     }
+    else if closed && blockedWriters > 0
+    {
+      pthread_cond_signal(&writeCondition)
+    }
 
     pthread_mutex_unlock(&channelMutex)
-    return true
+    return sent
   }
 
   /**
@@ -108,27 +116,35 @@ final class PBuffered1Chan<T>: pthreadsChan<T>
       blockedReaders -= 1
     }
 
-    if closed && elements <= 0
+    if elements > 0
     {
-      pthread_cond_signal(&readCondition)
+      let element = e.move()
+      elements -= 1
+
+      if blockedWriters > 0
+      {
+        pthread_cond_signal(&writeCondition)
+      }
+      else if closed && blockedReaders > 0
+      {
+        pthread_cond_signal(&readCondition)
+      }
+      pthread_mutex_unlock(&channelMutex)
+      return element
+    }
+    else
+    {
+      assert(closed, __FUNCTION__)
+      if blockedWriters > 0
+      {
+        pthread_cond_signal(&writeCondition)
+      }
+      else if blockedReaders > 0
+      {
+        pthread_cond_signal(&readCondition)
+      }
       pthread_mutex_unlock(&channelMutex)
       return nil
     }
-
-    let element = e.move()
-    elements -= 1
-
-    if closed && blockedReaders > 0
-    { // No reason to block
-      pthread_cond_signal(&readCondition)
-    }
-    if blockedWriters > 0
-    { // Channel isn't full
-      pthread_cond_signal(&writeCondition)
-    }
-
-    pthread_mutex_unlock(&channelMutex)
-
-    return element
   }
 }

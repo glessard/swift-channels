@@ -68,7 +68,7 @@ final class SBufferedChan<T>: Chan<T>
 
   deinit
   {
-    // println("\(head) \(tail) \(buffer)")
+    // println("\(head) \(tail) \(mask+1)")
     for i in head..<tail
     {
       for i in head..<tail

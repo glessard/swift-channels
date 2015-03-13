@@ -330,8 +330,8 @@
 			children = (
 				03AD47131A6743E500F4B44B /* pchan.swift */,
 				03AD47101A6743E500F4B44B /* pchan-buffered1.swift */,
-				03AD47111A6743E500F4B44B /* pchan-bufferedN-queue.swift */,
 				03AD47121A6743E500F4B44B /* pchan-bufferedN-buffer.swift */,
+				03AD47111A6743E500F4B44B /* pchan-bufferedN-queue.swift */,
 				03B24C0B1A8AC01F00F4B44B /* pchan-bufferedN-array.swift */,
 				03AD47141A6743E500F4B44B /* pchan-unbuffered.swift */,
 			);
@@ -804,6 +804,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_WHOLE_MODULE_OPTIMIZATION = NO;
 			};
 			name = Debug;
 		};
@@ -822,6 +823,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_WHOLE_MODULE_OPTIMIZATION = YES;
 			};
 			name = Release;
 		};
@@ -856,6 +858,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_WHOLE_MODULE_OPTIMIZATION = YES;
 			};
 			name = Release;
 		};
@@ -868,6 +871,7 @@
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_WHOLE_MODULE_OPTIMIZATION = YES;
 			};
 			name = Debug;
 		};
@@ -876,6 +880,7 @@
 			buildSettings = {
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_WHOLE_MODULE_OPTIMIZATION = YES;
 			};
 			name = Release;
 		};

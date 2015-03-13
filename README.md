@@ -73,15 +73,14 @@ nil, thereby signaling that the channel has become closed.
 
 #### Performance
 
-On OS X, with Swift 1.2, message transmission with no thread
-contention takes about 25% longer as it would in Go, e.g. 200 vs. 160
-nanoseconds on a 2008 Mac Pro. It is possible to narrow the gap, but
-that would require compromises that are likely to be obviated by
-future compiler improvements. With thread contention, this library is
-*much* slower than Go channels (about 10x), due to the time it takes
-to switch contexts. Go has a very lightweight concurrency system,
-while GCD maps onto system threads. Message transmission through this
-library's unbuffered channels takes about the same time as two context
-switches, and that is about as good as can be expected.
+On OS X, with Swift 1.2 and whole-module optimization,
+message transmission with no thread contention is slightly faster as
+it would be in Go, e.g. 150 vs. 160 nanoseconds on a 2008 Mac Pro.
+With thread contention, this library is *much* slower than Go channels
+(about 10x), due to the time it takes to switch contexts. Go has a
+very lightweight concurrency system, while GCD maps onto system
+threads. Message transmission through this library's unbuffered
+channels takes about the same time as two context switches, and that
+is about as good as can be expected.
 
 I welcome questions and suggestions.

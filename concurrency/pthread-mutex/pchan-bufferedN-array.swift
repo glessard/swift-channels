@@ -83,24 +83,24 @@ final class PBufferedAChan<T>: pthreadsChan<T>
       blockedWriters -= 1
     }
 
-    if closed
+    if !closed
     {
-      pthread_cond_signal(&writeCondition)
-      pthread_cond_signal(&readCondition)
-      pthread_mutex_unlock(&channelMutex)
-      return false
+      buffer[tail&mask] = newElement
+      tail += 1
     }
-
-    buffer[tail&mask] = newElement
-    tail += 1
+    let sent = !closed
 
     if blockedReaders > 0
     { // Channel is not empty
       pthread_cond_signal(&readCondition)
     }
+    else if closed || head+capacity > tail && blockedWriters > 0
+    {
+      pthread_cond_signal(&writeCondition)
+    }
 
     pthread_mutex_unlock(&channelMutex)
-    return true
+    return sent
   }
 
   /**
@@ -125,28 +125,36 @@ final class PBufferedAChan<T>: pthreadsChan<T>
       blockedReaders -= 1
     }
 
-    if closed && tail <= head
+    if head < tail
     {
-      pthread_cond_signal(&readCondition)
+      let element = buffer[head&mask]
+      buffer[head&mask] = nil
+      head += 1
+
+      if blockedWriters > 0
+      { // Channel isn't full
+        pthread_cond_signal(&writeCondition)
+      }
+      else if closed || head < tail && blockedReaders > 0
+      { // No reason to block
+        pthread_cond_signal(&readCondition)
+      }
+      pthread_mutex_unlock(&channelMutex)
+      return element
+    }
+    else
+    {
+      assert(closed, __FUNCTION__)
+      if blockedWriters > 0
+      {
+        pthread_cond_signal(&writeCondition)
+      }
+      else if blockedReaders > 0
+      {
+        pthread_cond_signal(&readCondition)
+      }
       pthread_mutex_unlock(&channelMutex)
       return nil
     }
-
-    let element = buffer[head&mask]
-    buffer[head&mask] = nil
-    head += 1
-
-    if closed && blockedReaders > 0
-    { // No reason to block
-      pthread_cond_signal(&readCondition)
-    }
-    if blockedWriters > 0
-    { // Channel isn't full
-      pthread_cond_signal(&writeCondition)
-    }
-
-    pthread_mutex_unlock(&channelMutex)
-
-    return element
   }
 }
