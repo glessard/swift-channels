@@ -24,7 +24,7 @@ class SelectDemoTests: XCTestCase
 
     let channels = [a,b,c,d,e]
 
-    let iterations = 10000
+    let iterations = 10_000
     async {
       let senders = map(channels) { $0.tx }
       for i in 0..<iterations
@@ -57,7 +57,7 @@ class SelectDemoTests: XCTestCase
         if let p = e.rx.extract(selection) { messages[p] += 1 }
 
       default:
-        syncprint("Bad selection: \(selection)")
+        continue // missed selection
       }
     }
 
@@ -70,34 +70,32 @@ class SelectDemoTests: XCTestCase
 
   func testRandomBits()
   {
-    let channel = Chan<Bool>.Make(0)
-
-    let sender0 = Sender(channel)
-    let sender1 = Sender(channel)
-
-    let receiver = Receiver(channel)
+    let c0 = Channel<Bool>.Make(8)
+    let c1 = Channel<Bool>.Make(8)
 
     async {
       for _ in 0..<8
       {
-        if let selection = select(sender0, sender1)
+        if let selection = select(c0.tx, c1.tx)
         {
           switch selection.id
           {
-          case let s where s === sender0:
-            sender0.insert(selection, newElement: false)
+          case let s where s === c0.tx:
+            c0.tx.insert(selection, newElement: false)
 
-          case let s where s === sender1:
-            sender1.insert(selection, newElement: true)
+          case let s where s === c1.tx:
+            c1.tx.insert(selection, newElement: true)
 
           default: break
           }
         }
       }
-      sender0.close()
+      c0.tx.close()
+      c1.tx.close()
     }
 
-    while let b = <-receiver
+    let merged = merge(c0.rx, c1.rx)
+    while let b = <-merged
     {
       print("\(b ? 0:1)")
     }
