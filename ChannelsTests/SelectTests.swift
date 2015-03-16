@@ -97,11 +97,14 @@ class SelectTests: XCTestCase
       {
         if let sender = selection.id as? Sender<Int>
         {
-          if sender.insert(selection, newElement: i) { i++ }
-        }
-        if i >= iterations
-        {
-          for sender in senders { sender.close() }
+          if sender.insert(selection, newElement: i)
+          {
+            i++
+            if i >= iterations
+            {
+              for sender in senders { sender.close() }
+            }
+          }
         }
       }
     }

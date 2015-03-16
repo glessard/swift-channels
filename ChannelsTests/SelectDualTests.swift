@@ -33,12 +33,14 @@ class SelectDualTests: XCTestCase
       while let selection = select(selectables)
       {
         if let sender = selection.id as? Sender<Int>
-        where sender.insert(selection, newElement: i)
         {
-          i++
-          if sleeper == .Sender { NSThread.sleepForTimeInterval(sleepInterval) }
+          if sender.insert(selection, newElement: i)
+          {
+            i++
+            if sleeper == .Sender { NSThread.sleepForTimeInterval(sleepInterval) }
+            if i >= iterations { break }
+          }
         }
-        if i >= iterations { break }
       }
       for sender in senders { sender.close() }
     }
