@@ -8,7 +8,7 @@
 
 public class QChan<T>
 {
-  public class func Make(capacity: Int, queue: Bool = false) -> Chan<T>
+  public class func Make(capacity: Int) -> Chan<T>
   {
     switch capacity < 1
     {

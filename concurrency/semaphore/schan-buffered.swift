@@ -29,7 +29,8 @@ final class SBufferedChan<T>: Chan<T>
   private let filled: dispatch_semaphore_t
   private let empty:  dispatch_semaphore_t
 
-  private var lock = OS_SPINLOCK_INIT
+  private var wlock = OS_SPINLOCK_INIT
+  private var rlock = OS_SPINLOCK_INIT
 
   private var closed = false
 
@@ -43,7 +44,7 @@ final class SBufferedChan<T>: Chan<T>
     self.capacity = (capacity < 1) ? 1 : capacity
 
     filled = dispatch_semaphore_create(0)!
-    empty =  dispatch_semaphore_create(capacity)!
+    empty =  dispatch_semaphore_create(self.capacity)!
 
     // find the next power of 2 that is >= self.capacity
     var v = self.capacity - 1
@@ -68,13 +69,11 @@ final class SBufferedChan<T>: Chan<T>
 
   deinit
   {
-    // println("\(head) \(tail) \(mask+1)")
+    precondition(head <= tail, __FUNCTION__)
     for i in head..<tail
     {
-      for i in head..<tail
-      {
-        buffer.advancedBy(i&mask).destroy()
-      }
+      buffer.advancedBy(i&mask).destroy()
+      dispatch_semaphore_signal(empty)
     }
     buffer.dealloc(mask+1)
   }
@@ -113,9 +112,9 @@ final class SBufferedChan<T>: Chan<T>
   {
     if closed { return }
 
-    OSSpinLockLock(&lock)
+    OSSpinLockLock(&wlock)
     closed = true
-    OSSpinLockUnlock(&lock)
+    OSSpinLockUnlock(&wlock)
 
     dispatch_semaphore_signal(filled)
     dispatch_semaphore_signal(empty)
@@ -135,22 +134,23 @@ final class SBufferedChan<T>: Chan<T>
     if closed { return false }
 
     dispatch_semaphore_wait(empty, DISPATCH_TIME_FOREVER)
-    OSSpinLockLock(&lock)
+    OSSpinLockLock(&wlock)
 
-    if closed
+    if !closed
     {
-      OSSpinLockUnlock(&lock)
+      buffer.advancedBy(tail&mask).initialize(newElement)
+      tail += 1
+
+      OSSpinLockUnlock(&wlock)
+      dispatch_semaphore_signal(filled)
+      return true
+    }
+    else
+    {
+      OSSpinLockUnlock(&wlock)
       dispatch_semaphore_signal(empty)
       return false
     }
-
-    buffer.advancedBy(tail&mask).initialize(newElement)
-    tail += 1
-
-    OSSpinLockUnlock(&lock)
-    dispatch_semaphore_signal(filled)
-
-    return true
   }
 
   /**
@@ -167,21 +167,23 @@ final class SBufferedChan<T>: Chan<T>
     if closed && head >= tail { return nil }
 
     dispatch_semaphore_wait(filled, DISPATCH_TIME_FOREVER)
-    OSSpinLockLock(&lock)
+    OSSpinLockLock(&rlock)
 
-    if closed && head >= tail
+    if head < tail
     {
-      OSSpinLockUnlock(&lock)
+      let element = buffer.advancedBy(head&mask).move()
+      head += 1
+
+      OSSpinLockUnlock(&rlock)
+      dispatch_semaphore_signal(empty)
+      return element
+    }
+    else
+    {
+      assert(closed, __FUNCTION__)
+      OSSpinLockUnlock(&rlock)
       dispatch_semaphore_signal(filled)
       return nil
     }
-
-    let element = buffer.advancedBy(head&mask).move()
-    head += 1
-
-    OSSpinLockUnlock(&lock)
-    dispatch_semaphore_signal(empty)
-
-    return element
   }
 }
