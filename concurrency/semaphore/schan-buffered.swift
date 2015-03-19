@@ -68,10 +68,11 @@ final class SBufferedChan<T>: Chan<T>
 
   deinit
   {
-    // println("\(head) \(tail) \(mask+1)")
+    precondition(head <= tail, __FUNCTION__)
     for i in head..<tail
     {
       buffer.advancedBy(i&mask).destroy()
+      dispatch_semaphore_signal(empty)
     }
     buffer.dealloc(mask+1)
   }

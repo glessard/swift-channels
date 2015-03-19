@@ -21,10 +21,4 @@ class SBufferedChannelTests: BufferedNChannelTests
   {
     return Channel.Wrap(SChan.Make(buflen))
   }
-
-  override func testNoReceiver()
-  {
-    XCTAssert(false, "SBufferedChan fails \(__FUNCTION__) for unknown reasons. Stall on main thread? Wha?")
-//    ChannelTestNoReceiver()
-  }
 }
