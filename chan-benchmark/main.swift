@@ -15,7 +15,7 @@ var dt: Interval
 var tic: Time
 
 
-var buffered = Channel.Wrap(QBufferedChan<Int>())
+var buffered = Channel<Int>.Make(1)
 
 tic = Time()
 
@@ -33,7 +33,7 @@ dt = tic.toc
 syncprint("\(dt)\t\t(\(dt/iterations) per message)")
 
 
-buffered = Channel.Wrap(QBufferedChan<Int>())
+buffered = Channel<Int>.Make(1)
 
 tic = Time()
 
@@ -69,7 +69,7 @@ dt = tic.toc
 syncprint("\(dt)\t\t(\(dt/iterations) per message)")
 
 
-var bufferedN = Channel.Wrap(QBufferedChan<Int>(buflen))
+var bufferedN = Channel<Int>.Make(buflen)
 
 tic = Time()
 
@@ -91,7 +91,7 @@ dt = tic.toc
 syncprint("\(dt)\t\t(\(dt/iterations) per message)")
 
 
-bufferedN = Channel.Wrap(QBufferedChan<Int>(buflen))
+bufferedN = Channel<Int>.Make(buflen)
 
 tic = Time()
 

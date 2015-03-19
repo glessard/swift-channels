@@ -77,6 +77,11 @@ public struct Receiver<T>: ReceiverType, GeneratorType, SequenceType
     wrapped = c
   }
 
+  init()
+  {
+    wrapped = Chan()
+  }
+
   // ReceiverType implementation
 
   public var isClosed: Bool { return wrapped.isClosed }

@@ -42,7 +42,9 @@ final class SemaphoreQueue: QueueType, SequenceType, GeneratorType
     AtomicStackRelease(pool)
   }
 
-  var isEmpty: Bool { return head == nil }
+  var isEmpty: Bool {
+    return (head == nil)
+  }
 
   var count: Int {
     return (head == nil) ? 0 : countElements()

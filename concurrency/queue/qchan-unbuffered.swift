@@ -97,15 +97,15 @@ final class QUnbufferedChan<T>: Chan<T>
     { // there is already an interested reader
       OSSpinLockUnlock(&lock)
 
-      // attach a new copy of our data to the reader's semaphore
-      let context = UnsafeMutablePointer<T>(dispatch_get_context(rs))
+      let context = dispatch_get_context(rs)
       switch context
       {
       case nil:
         preconditionFailure(__FUNCTION__)
 
       default:
-        context.initialize(newElement)
+        // attach a new copy of our data to the reader's semaphore
+        UnsafeMutablePointer<T>(context).initialize(newElement)
         dispatch_semaphore_signal(rs)
         return true
       }
@@ -163,15 +163,14 @@ final class QUnbufferedChan<T>: Chan<T>
     { // data is already available
       OSSpinLockUnlock(&lock)
 
-      let context = UnsafePointer<T>(dispatch_get_context(ws))
+      let context = dispatch_get_context(ws)
       switch context
       {
       case nil:
         preconditionFailure(__FUNCTION__)
 
       default:
-        let element = context.memory
-        dispatch_set_context(ws, nil)
+        let element: T = UnsafePointer(context).memory
         dispatch_semaphore_signal(ws)
         return element
       }
