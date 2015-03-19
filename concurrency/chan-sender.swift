@@ -101,6 +101,7 @@ public final class Sender<T>: SenderType, Selectable
 
   public func insert(selection: Selection, newElement: T) -> Bool
   {
+    precondition(selection.id === self, __FUNCTION__)
     return wrapped.insert(selection, newElement: newElement)
   }
 }

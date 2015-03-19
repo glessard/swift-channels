@@ -134,6 +134,7 @@ public final class Receiver<T>: ReceiverType, GeneratorType, SequenceType, Selec
 
   public func extract(selection: Selection) -> T?
   {
+    precondition(selection.id === self, __FUNCTION__)
     return selection.getData()
   }
 }
