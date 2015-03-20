@@ -189,18 +189,6 @@ final class SBufferedChan<T>: Chan<T>
 
   // MARK: SelectableChannelType methods
 
-  override func insert(selection: Selection, newElement: T) -> Bool
-  {
-    OSSpinLockLock(&wlock)
-
-    buffer.advancedBy(tail&mask).initialize(newElement)
-    tail += 1
-
-    OSSpinLockUnlock(&wlock)
-    dispatch_semaphore_signal(filled)
-    return true
-  }
-
   override func selectPutNow(selectionID: Selectable) -> Selection?
   {
     if dispatch_semaphore_wait(empty, DISPATCH_TIME_NOW) == 0
@@ -210,6 +198,27 @@ final class SBufferedChan<T>: Chan<T>
     else
     {
       return nil
+    }
+  }
+
+  override func insert(selection: Selection, newElement: T) -> Bool
+  {
+    // the `empty` semaphore has already been decremented for this operation.
+    OSSpinLockLock(&wlock)
+    if !closed
+    {
+      buffer.advancedBy(tail&mask).initialize(newElement)
+      tail += 1
+
+      OSSpinLockUnlock(&wlock)
+      dispatch_semaphore_signal(filled)
+      return true
+    }
+    else
+    {
+      OSSpinLockUnlock(&wlock)
+      dispatch_semaphore_signal(empty)
+      return false
     }
   }
 
