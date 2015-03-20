@@ -245,11 +245,7 @@ final class SBufferedChan<T>: Chan<T>
     }
 
     return {
-      if OSAtomicCompareAndSwap32Barrier(0, 1, &put)
-      {
-        // just let another writer through.
-        dispatch_semaphore_signal(self.empty)
-      }
+      OSAtomicCompareAndSwap32Barrier(0, 1, &put)
     }
   }
 
@@ -319,11 +315,7 @@ final class SBufferedChan<T>: Chan<T>
     }
 
     return {
-      if OSAtomicCompareAndSwap32Barrier(0, 1, &get)
-      {
-        // just let another reader through
-        dispatch_semaphore_signal(self.filled)
-      }
+      OSAtomicCompareAndSwap32Barrier(0, 1, &get)
     }
   }
 }
