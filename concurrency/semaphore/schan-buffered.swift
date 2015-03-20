@@ -224,37 +224,38 @@ final class SBufferedChan<T>: Chan<T>
 
   override func selectPut(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
   {
-    var put: Int32 = 0
+    var cancel = 0
 
     dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
       _ in
       dispatch_semaphore_wait(self.empty, DISPATCH_TIME_FOREVER)
-      if OSAtomicCompareAndSwap32Barrier(0, 1, &put)
+
+      OSMemoryBarrier()
+      if cancel == 0, let s = semaphore.get()
       {
-        if let s = semaphore.get()
+        OSMemoryBarrier()
+        if !self.closed
         {
-          OSMemoryBarrier()
-          if !self.closed
-          {
-            let selection = Selection(selectionID: selectionID)
-            dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
-          }
-          else
-          {
-            dispatch_semaphore_signal(self.empty)
-            dispatch_set_context(s, nil)
-          }
+          let selection = Selection(selectionID: selectionID)
+          dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
           dispatch_semaphore_signal(s)
-          return
+        }
+        else
+        {
+          dispatch_semaphore_signal(self.empty)
+          dispatch_set_context(s, nil)
+          dispatch_semaphore_signal(s)
         }
       }
-
-      // we got the semaphore, but got the cancel signal first.
-      dispatch_semaphore_signal(self.empty)
+      else
+      { // let another writer through
+        dispatch_semaphore_signal(self.empty)
+      }
     }
 
     return {
-      OSAtomicCompareAndSwap32Barrier(0, 1, &put)
+      cancel = 1
+      OSMemoryBarrier()
     }
   }
 
@@ -287,44 +288,45 @@ final class SBufferedChan<T>: Chan<T>
 
   override func selectGet(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
   {
-    var get: Int32 = 0
+    var cancel = 0
 
     dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
       _ in
       dispatch_semaphore_wait(self.filled, DISPATCH_TIME_FOREVER)
-      if OSAtomicCompareAndSwap32Barrier(0, 1, &get)
+
+      OSMemoryBarrier()
+      if cancel == 0, let s = semaphore.get()
       {
-        if let s = semaphore.get()
+        OSSpinLockLock(&self.rlock)
+        if self.head < self.tail
         {
-          OSSpinLockLock(&self.rlock)
-          if self.head < self.tail
-          {
-            let element = self.buffer.advancedBy(self.head&self.mask).move()
-            self.head += 1
-            OSSpinLockUnlock(&self.rlock)
-            dispatch_semaphore_signal(self.empty)
+          let element = self.buffer.advancedBy(self.head&self.mask).move()
+          self.head += 1
+          OSSpinLockUnlock(&self.rlock)
+          dispatch_semaphore_signal(self.empty)
 
-            let selection = Selection(selectionID: selectionID, selectionData: element)
-            dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
-          }
-          else
-          {
-            OSSpinLockUnlock(&self.rlock)
-            dispatch_semaphore_signal(self.filled)
-
-            dispatch_set_context(s, nil)
-          }
+          let selection = Selection(selectionID: selectionID, selectionData: element)
+          dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
           dispatch_semaphore_signal(s)
-          return
+        }
+        else
+        {
+          OSSpinLockUnlock(&self.rlock)
+          dispatch_semaphore_signal(self.filled)
+
+          dispatch_set_context(s, nil)
+          dispatch_semaphore_signal(s)
         }
       }
-
-      // we got the semaphore, but got the cancel signal first.
-      dispatch_semaphore_signal(self.filled)
+      else
+      { // let another reader through
+        dispatch_semaphore_signal(self.filled)
+      }
     }
 
     return {
-      OSAtomicCompareAndSwap32Barrier(0, 1, &get)
+      cancel = 1
+      OSMemoryBarrier()
     }
   }
 }

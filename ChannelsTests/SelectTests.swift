@@ -16,7 +16,7 @@ class SelectTests: XCTestCase
 {
   func SelectReceiverTest(#buffered: Bool, sleepInterval: NSTimeInterval = -1)
   {
-    let selectableCount = 10
+    let selectableCount = 5
     let iterations = sleepInterval < 0 ? 10_000 : 100
 
     let channels: [Chan<Int>]
@@ -82,7 +82,7 @@ class SelectTests: XCTestCase
 
   func SelectSenderTest(#buffered: Bool, sleepInterval: NSTimeInterval = -1)
   {
-    let selectableCount = 10
+    let selectableCount = 5
     let iterations = sleepInterval < 0 ? 10_000 : 100
 
     let chan     = Chan<Int>.Make(buffered ? 1 : 0)
