@@ -6,6 +6,8 @@
 //  Copyright (c) 2014 Guillaume Lessard. All rights reserved.
 //
 
+import Dispatch
+
 /**
   Merge an array of Receivers into one Receiver.
   Every item from the input channels will be able to be received via the returned channel.
