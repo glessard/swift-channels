@@ -101,13 +101,10 @@ public final class Selection
   public  let id: Selectable
   private let data: Any?
 
-  public init<T>(selectionID: Selectable, selectionData: T?)
+  public init<T>(selectionID: Selectable, selectionData: T)
   {
     id = selectionID
-    if let d = selectionData
-    { data = d }
-    else
-    { data = nil }
+    data = selectionData
   }
 
   public init(selectionID: Selectable)
