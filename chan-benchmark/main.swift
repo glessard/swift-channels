@@ -51,7 +51,7 @@ dt = tic.toc
 syncprint("\(dt)\t\t(\(dt/iterations) per message)")
 
 
-var unbuffered = Channel.Wrap(QUnbufferedChan<Int>())
+var unbuffered = Channel<Int>.Make(0)
 
 tic = Time()
 
