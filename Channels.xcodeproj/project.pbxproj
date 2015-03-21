@@ -15,6 +15,7 @@
 		0336B9B51ABB1BF700F4B44B /* async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0336B9B41ABB1BF700F4B44B /* async.swift */; };
 		0336B9B61ABB1BF700F4B44B /* async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0336B9B41ABB1BF700F4B44B /* async.swift */; };
 		0336B9B71ABB1BF700F4B44B /* async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0336B9B41ABB1BF700F4B44B /* async.swift */; };
+		033912031ABD3DC000F4B44B /* ChannelsExamples.swift in Sources */ = {isa = PBXBuildFile; fileRef = 033912021ABD3DC000F4B44B /* ChannelsExamples.swift */; };
 		035B606A1A67433800F4B44B /* Channels.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 035B605E1A67433800F4B44B /* Channels.framework */; };
 		035B60711A67433800F4B44B /* ChannelsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035B60701A67433800F4B44B /* ChannelsTests.swift */; };
 		03747ECD1A8AC9FF00F4B44B /* pchan-bufferedN-array.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B24C0B1A8AC01F00F4B44B /* pchan-bufferedN-array.swift */; };
@@ -135,6 +136,7 @@
 
 /* Begin PBXFileReference section */
 		0336B9B41ABB1BF700F4B44B /* async.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = async.swift; path = utilities/async.swift; sourceTree = "<group>"; };
+		033912021ABD3DC000F4B44B /* ChannelsExamples.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChannelsExamples.swift; sourceTree = "<group>"; };
 		035B605E1A67433800F4B44B /* Channels.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Channels.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		035B60621A67433800F4B44B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		035B60631A67433800F4B44B /* Channels.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Channels.h; sourceTree = "<group>"; };
@@ -260,6 +262,7 @@
 		035B606D1A67433800F4B44B /* ChannelsTests */ = {
 			isa = PBXGroup;
 			children = (
+				033912021ABD3DC000F4B44B /* ChannelsExamples.swift */,
 				035B60701A67433800F4B44B /* ChannelsTests.swift */,
 				03AD474F1A67448400F4B44B /* UnbufferedChannelTests.swift */,
 				03AD474C1A67447B00F4B44B /* BufferedChannelTests.swift */,
@@ -569,6 +572,7 @@
 				03AD47511A67448400F4B44B /* UnbufferedChannelTests.swift in Sources */,
 				03AD47571A6744DA00F4B44B /* SChanTests.swift in Sources */,
 				03AD47501A67448400F4B44B /* SingletonChannelTests.swift in Sources */,
+				033912031ABD3DC000F4B44B /* ChannelsExamples.swift in Sources */,
 				035B60711A67433800F4B44B /* ChannelsTests.swift in Sources */,
 				0336B9B51ABB1BF700F4B44B /* async.swift in Sources */,
 				03AD47561A6744DA00F4B44B /* QChanTests.swift in Sources */,
