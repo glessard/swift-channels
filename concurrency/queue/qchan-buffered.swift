@@ -157,21 +157,9 @@ final class QBufferedChan<T>: Chan<T>
 
     OSSpinLockLock(&lock)
 
-    if !closed && head+capacity <= nextput
+    while !closed && head+capacity <= nextput
     {
-      let threadLock = SemaphorePool.dequeue()
-      writerQueue.enqueue(threadLock)
-      OSSpinLockUnlock(&lock)
-      dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
-      OSSpinLockLock(&lock)
-      while !closed && head+capacity <= nextput
-      {
-        writerQueue.undequeue(threadLock)
-        OSSpinLockUnlock(&lock)
-        dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
-        OSSpinLockLock(&lock)
-      }
-      SemaphorePool.enqueue(threadLock)
+      wait(writerQueue)
     }
 
     if !closed
@@ -210,21 +198,9 @@ final class QBufferedChan<T>: Chan<T>
 
     OSSpinLockLock(&lock)
 
-    if !closed && head >= tail
+    while !closed && head >= tail
     {
-      let threadLock = SemaphorePool.dequeue()
-      readerQueue.enqueue(threadLock)
-      OSSpinLockUnlock(&lock)
-      dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
-      OSSpinLockLock(&lock)
-      while !closed && head >= tail
-      {
-        readerQueue.undequeue(threadLock)
-        OSSpinLockUnlock(&lock)
-        dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
-        OSSpinLockLock(&lock)
-      }
-      SemaphorePool.enqueue(threadLock)
+      wait(readerQueue)
     }
 
     if head < tail
