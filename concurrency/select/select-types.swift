@@ -107,6 +107,15 @@ public final class Selection
     data = selectionData
   }
 
+  public init<T>(selectionID: Selectable, selectionData: T?)
+  {
+    id = selectionID
+    if let d = selectionData
+    { data = d }
+    else
+    { data = nil }
+  }
+
   public init(selectionID: Selectable)
   {
     id = selectionID
