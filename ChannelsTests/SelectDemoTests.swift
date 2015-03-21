@@ -16,11 +16,11 @@ class SelectDemoTests: XCTestCase
 {
   func testSelect()
   {
-    let a = Channel<Int>.Make(0)
-    let b = Channel<Int>.Make(0)
-    let c = Channel<Int>.Make(1)
-    let d = Channel<Int>.Make(2)
-    let e = Channel<Int>.Make(3)
+    let a: (tx: Sender<Int>, rx: Receiver<Int>) = Channel<Int>.Make(0)
+    let b: (tx: Sender<Int>, rx: Receiver<Int>) = Channel<Int>.Make(0)
+    let c: (tx: Sender<Int>, rx: Receiver<Int>) = Channel<Int>.Make(1)
+    let d: (tx: Sender<Int>, rx: Receiver<Int>) = Channel<Int>.Make(2)
+    let e: (tx: Sender<Int>, rx: Receiver<Int>) = Channel<Int>.Make(5)
 
     let channels = [a,b,c,d,e]
 
