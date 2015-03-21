@@ -1,21 +1,19 @@
 swift-channels
 ==============
 
-This library contains concurrency constructs for use in Swift.
-
-The concurrency model this attempts to achieve is similar to that of
-Go, wherein concurrent threads are encouraged to synchronize and share
+This library implements channel classes to help with communication between
+asynchronous tasks in Swift. These channels are similar to those
+in Go, wherein concurrent tasks are encouraged to synchronize and share
 data chiefly through type-constrained channels.
 
-The main part of this is a channel (`Chan<T>`) class that models
-sending and receiving (strongly typed) messages on a bounded
-queue. By default, Channel creation returns a tuple of objects that act
-as the endpoints of the channel: `Sender<T>` and `Receiver<T>`.
+The main attractions are `Sender<T>` and `Receiver<T>`. They respectively
+implement sending and receiving (strongly typed) messages on synchronized,
+bounded queues. They are created as a tuple when a channel is initialized.
 
-Sending on the channel is achieved with an infix `<-` operator on the
-`Sender` object; this operation will block whenever the channel is
-full. Receiving from the channel is achieved with an unary prefix `<-`
-operator on the `Receiver` object; this operation will block whenever
+Send data on the channel with the infix `<-` operator on a
+`Sender` object; this will block whenever the channel is full.
+Receive data from the channel with the unary prefix `<-`
+operator on a `Receiver` object; this will block whenever
 the channel is empty.
 
 A channel can be closed by invoking the `close()` method on either the
@@ -28,28 +26,23 @@ channel a receive operation will block until a sender is ready (and
 vice-versa). A buffered channel can store a certain number of
 elements, after which the next send operation will block.
 
-Thread blocking and thread spawning is implemented with libdispatch
-(aka GCD); a pthreads-based implementation of thread blocking exists as
-subclasses of `PChan`. The pthreads implementations are not quite as
-fast as the libdispatch semaphore versions.
-
-Along with a channels implementation, this library includes an `async`
-pseudo-keyword, a simple shortcut to launch a closure asynchronously
-in the background with GCD. The only requirement for a closure
-launched via `async` is that it have no parameters. A return value
-will be ignored if it exists.
+Thread synchronization and blocking is implemented with libdispatch semaphores
+(`dispatch_semaphore_t`); an implementation based on pthreads mutexes exists
+in subclasses of `PChan`. The pthreads implementation is significantly slower
+than the the libdispatch semaphore version.
 
 Missing from this is a powerful construct such as the Select keyword
 from Go, which would be quite useful when dealing with multiple
-channels at once.
+channels at once. See the `select` branch for details.
 
 #### Example:
 ```
 import Darwin
+import Dispatch
 
 let (sender, receiver) = Channel<Int>.Make()
 
-async {
+dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
   for i in 1...10
   {
     sender <- i
@@ -67,20 +60,23 @@ while let m = <-receiver
 The `for` loop will count up to 10 on a background thread, sending
 results to the main thread, which prints them. The main thread pauses
 while waiting for results inside `<-receiver`, the channel receive
-operation. The `while` loop will then exit when the channel becomes
-closed. Receiving from a channel that is both empty and closed returns
-nil, thereby signaling that the channel has become closed.
+operation. The `while` loop will then exit when the channel is
+closed by `sender.close()`. Attempting to receive from a channel that
+is both empty and closed returns nil.
+This causes the while loop in the example to exit.
 
 #### Performance
 
 On OS X, with Swift 1.2 and whole-module optimization,
 message transmission with no thread contention is slightly faster as
-it would be in Go, e.g. 150 vs. 160 nanoseconds on a 2008 Mac Pro.
-With thread contention, this library is *much* slower than Go channels
-(about 10x), due to the time it takes to switch contexts. Go has a
-very lightweight concurrency system, while GCD maps onto system
-threads. Message transmission through this library's unbuffered
-channels takes about the same time as two context switches, and that
+it would be in Go 1.4, e.g. 145 vs. 160 nanoseconds on a 2008 Mac Pro.
+With thread contention, Go channels are *much* faster (about 10x),
+due to context switching time involving dispatch semaphores. Go has a
+very lightweight concurrency system, while dispatch_semaphore pause and
+resume system threads.
+
+Message transmission through this library's unbuffered channel type
+takes about the same time as two context switches, and that
 is about as good as can be expected.
 
 I welcome questions and suggestions.
