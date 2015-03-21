@@ -25,6 +25,8 @@ final class QBufferedChan<T>: Chan<T>
   private var head = 0
   private var tail = 0
 
+  private var nextput = 0
+
   private let readerQueue = SemaphoreQueue()
   private let writerQueue = SemaphoreQueue()
 
@@ -156,14 +158,14 @@ final class QBufferedChan<T>: Chan<T>
 
     OSSpinLockLock(&lock)
 
-    if !closed && head+capacity <= tail
+    if !closed && head+capacity <= nextput
     {
       let threadLock = SemaphorePool.dequeue()
       writerQueue.enqueue(threadLock)
       OSSpinLockUnlock(&lock)
       dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
       OSSpinLockLock(&lock)
-      while !closed && head+capacity <= tail
+      while !closed && head+capacity <= nextput
       {
         writerQueue.undequeue(threadLock)
         OSSpinLockUnlock(&lock)
@@ -175,6 +177,7 @@ final class QBufferedChan<T>: Chan<T>
 
     if !closed
     {
+      nextput += 1
       buffer.advancedBy(tail&mask).initialize(newElement)
       tail += 1
     }
@@ -261,32 +264,37 @@ final class QBufferedChan<T>: Chan<T>
 
   override func insert(selection: Selection, newElement: T) -> Bool
   {
-    precondition(lock != 0, "Lock should be locked in \(__FUNCTION__)")
-    // assert(lock != 0, "Lock should be locked in \(__FUNCTION__)")
-
-    buffer.advancedBy(tail&mask).initialize(newElement)
-    tail += 1
-
-    if let rs = readerQueue.dequeue()
+    OSSpinLockLock(&lock)
+    if !closed
     {
-      dispatch_semaphore_signal(rs)
-    }
-    else if head+capacity > tail || closed, let ws = writerQueue.dequeue()
-    {
-      dispatch_semaphore_signal(ws)
-    }
+      buffer.advancedBy(tail&mask).initialize(newElement)
+      tail += 1
 
-    // The lock couldn't be released until now. In another thread. It's gross.
-    OSSpinLockUnlock(&lock)
-    return true
+      if let rs = readerQueue.dequeue()
+      {
+        dispatch_semaphore_signal(rs)
+      }
+      else if head+capacity > tail || closed, let ws = writerQueue.dequeue()
+      {
+        dispatch_semaphore_signal(ws)
+      }
+      OSSpinLockUnlock(&lock)
+      return true
+    }
+    else
+    {
+      OSSpinLockUnlock(&lock)
+      return false
+    }
   }
 
   override func selectPutNow(selectionID: Selectable) -> Selection?
   {
     OSSpinLockLock(&lock)
-    if !closed && !isFull
+    if !closed && head+capacity <= nextput
     {
-      // unlocking the spinlock will be done by insert()
+      nextput += 1
+      OSSpinLockUnlock(&lock)
       return Selection(selectionID: selectionID)
     }
     OSSpinLockUnlock(&lock)
@@ -296,34 +304,38 @@ final class QBufferedChan<T>: Chan<T>
   override func selectPut(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
   {
     let threadLock = SemaphorePool.dequeue()
-    var turnstiled = false
+    var cancel = false
+    var cancelable = true
 
     dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
       _ in
       OSSpinLockLock(&self.lock)
-      while !self.closed && self.head+self.capacity <= self.tail
+      while !self.closed && self.head+self.capacity <= self.nextput
       {
         self.writerQueue.enqueue(threadLock)
         OSSpinLockUnlock(&self.lock)
         dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
-        if dispatch_get_context(threadLock) == cancelSelect
+        OSMemoryBarrier()
+        if cancel
         {
-          dispatch_set_context(threadLock, nil)
           SemaphorePool.enqueue(threadLock)
           return
         }
         OSSpinLockLock(&self.lock)
       }
 
-      turnstiled = true
+      cancelable = false
+      OSMemoryBarrier()
       if let s = semaphore.get()
       {
         if !self.closed
         {
-          // unlocking the spinlock (and waking the next thread) will be done by insert()
+          self.nextput += 1
+          OSSpinLockUnlock(&self.lock)
+
           let selection = Selection(selectionID: selectionID)
-          let context = UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque())
-          dispatch_set_context(s, context)
+          dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
+          dispatch_semaphore_signal(s)
         }
         else
         { // channel is closed; signal another thread
@@ -336,9 +348,10 @@ final class QBufferedChan<T>: Chan<T>
             dispatch_semaphore_signal(ws)
           }
           OSSpinLockUnlock(&self.lock)
+
           dispatch_set_context(s, nil)
+          dispatch_semaphore_signal(s)
         }
-        dispatch_semaphore_signal(s)
       }
       else
       {
@@ -352,30 +365,22 @@ final class QBufferedChan<T>: Chan<T>
         }
         OSSpinLockUnlock(&self.lock)
       }
+
+      SemaphorePool.enqueue(threadLock)
     }
 
     return {
-      if !turnstiled
-      { // This needs to be async because of the horrible thread-traversing
-        // lock state that eventually gets resolved by insert().
-        dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
-          while !OSSpinLockTry(&self.lock)
-          { // A kinder, gentler way to busy-wait
-            NSThread.sleepForTimeInterval(100e-9)
-            if turnstiled { return }
-          }
-          if self.writerQueue.remove(threadLock)
-          {
-            dispatch_set_context(threadLock, cancelSelect)
-            dispatch_semaphore_signal(threadLock)
-          }
-          OSSpinLockUnlock(&self.lock)
-        }
-      }
-      else
+      OSMemoryBarrier()
+      if cancelable
       {
-        dispatch_set_context(threadLock, nil)
-        SemaphorePool.enqueue(threadLock)
+        OSSpinLockLock(&self.lock)
+        if self.writerQueue.remove(threadLock)
+        {
+          cancel = true
+          OSMemoryBarrier()
+          dispatch_semaphore_signal(threadLock)
+        }
+        OSSpinLockUnlock(&self.lock)
       }
     }
   }
@@ -409,7 +414,8 @@ final class QBufferedChan<T>: Chan<T>
   override func selectGet(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
   {
     let threadLock = SemaphorePool.dequeue()
-    var turnstiled = false
+    var cancel = false
+    var cancelable = true
 
     dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
       _ in
@@ -419,16 +425,17 @@ final class QBufferedChan<T>: Chan<T>
         self.readerQueue.enqueue(threadLock)
         OSSpinLockUnlock(&self.lock)
         dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
-        if dispatch_get_context(threadLock) == cancelSelect
+        OSMemoryBarrier()
+        if cancel
         {
-          dispatch_set_context(threadLock, nil)
           SemaphorePool.enqueue(threadLock)
           return
         }
         OSSpinLockLock(&self.lock)
       }
 
-      turnstiled = true
+      cancelable = false
+      OSMemoryBarrier()
       if let s = semaphore.get()
       {
         if self.head < self.tail
@@ -447,8 +454,8 @@ final class QBufferedChan<T>: Chan<T>
           OSSpinLockUnlock(&self.lock)
 
           let selection = Selection(selectionID: selectionID, selectionData: element)
-          let context = UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque())
-          dispatch_set_context(s, context)
+          dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
+          dispatch_semaphore_signal(s)
         }
         else
         {
@@ -462,9 +469,10 @@ final class QBufferedChan<T>: Chan<T>
             dispatch_semaphore_signal(rs)
           }
           OSSpinLockUnlock(&self.lock)
+
           dispatch_set_context(s, nil)
+          dispatch_semaphore_signal(s)
         }
-        dispatch_semaphore_signal(s)
       }
       else
       {
@@ -478,30 +486,23 @@ final class QBufferedChan<T>: Chan<T>
         }
         OSSpinLockUnlock(&self.lock)
       }
+
+      SemaphorePool.enqueue(threadLock)
     }
 
     return {
-      if !turnstiled
+      OSMemoryBarrier()
+      if cancelable
       {
         OSSpinLockLock(&self.lock)
         if self.readerQueue.remove(threadLock)
         {
-          dispatch_set_context(threadLock, cancelSelect)
+          cancel = true
+          OSMemoryBarrier()
           dispatch_semaphore_signal(threadLock)
         }
         OSSpinLockUnlock(&self.lock)
       }
-      else
-      {
-        dispatch_set_context(threadLock, nil)
-        SemaphorePool.enqueue(threadLock)
-      }
     }
   }
 }
-
-/**
-  A useful fake pointer for use with dispatch_set_context() in Signal closures.
-*/
-
-private let cancelSelect = UnsafeMutablePointer<Void>(bitPattern: 1)
