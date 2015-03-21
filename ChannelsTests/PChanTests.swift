@@ -52,13 +52,3 @@ class PBufferedAChannelTests: BufferedNChannelTests
     return Channel.Wrap(PChan.Make(buflen, bufferType: .Array))
   }
 }
-
-class PUnbufferedChannelTests: UnbufferedChannelTests
-{
-  override var id: String { return "pthreads Unbuffered" }
-
-  override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
-  {
-    return Channel.Wrap(PChan.Make(buflen))
-  }
-}
