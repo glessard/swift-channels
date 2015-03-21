@@ -7,7 +7,6 @@
 //
 
 import Dispatch
-import Foundation.NSThread
 
 /**
   A channel that uses a queue of semaphores for scheduling.
@@ -187,7 +186,7 @@ final class QBufferedChan<T>: Chan<T>
     {
       dispatch_semaphore_signal(rs)
     }
-    else if head+capacity > tail || closed, let ws = writerQueue.dequeue()
+    else if head+capacity > nextput || closed, let ws = writerQueue.dequeue()
     {
       dispatch_semaphore_signal(ws)
     }
@@ -274,7 +273,7 @@ final class QBufferedChan<T>: Chan<T>
       {
         dispatch_semaphore_signal(rs)
       }
-      else if head+capacity > tail || closed, let ws = writerQueue.dequeue()
+      else if head+capacity > nextput || closed, let ws = writerQueue.dequeue()
       {
         dispatch_semaphore_signal(ws)
       }
@@ -480,7 +479,7 @@ final class QBufferedChan<T>: Chan<T>
         {
           dispatch_semaphore_signal(rs)
         }
-        else if self.head+self.capacity > self.tail || self.closed, let ws = self.writerQueue.dequeue()
+        else if self.head+self.capacity > self.nextput || self.closed, let ws = self.writerQueue.dequeue()
         {
           dispatch_semaphore_signal(ws)
         }
