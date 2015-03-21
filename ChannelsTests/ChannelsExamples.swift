@@ -15,11 +15,13 @@ import Channels
 
 class ChannelsExamples: XCTestCase
 {
+  private let q = dispatch_get_global_queue(qos_class_self(), 0)
+
   func testExample1()
   {
     let (sender, receiver) = Channel<Int>.Make()
 
-    dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
+    dispatch_async(q) {
       for i in 1...5
       {
         sender <- i
@@ -38,9 +40,8 @@ class ChannelsExamples: XCTestCase
   {
     let (sender, receiver) = Channel<Int>.Make()
 
-    let q = dispatch_get_global_queue(qos_class_self(), 0)
     dispatch_async(q) {
-      dispatch_apply(5, q) { sender <- $0+1 }
+      dispatch_apply(5, self.q) { sender <- $0+1 }
       sender.close()
     }
 
@@ -49,36 +50,38 @@ class ChannelsExamples: XCTestCase
 
   func testExampleProcessingPipeline()
   {
-    let (sender, receiver) = Channel<Int>.Make()
-
-    let q = dispatch_get_global_queue(qos_class_self(), 0)
-
-    dispatch_async(q) {
-      for i in 1...5
-      {
-        sender <- i
-        NSThread.sleepForTimeInterval(0.1)
+    let intReceiver = {
+      (limit: Int) -> Receiver<Int> in
+      let (tx, rx) = Channel<Int>.Make()
+      dispatch_async(self.q) {
+        for i in 0..<limit
+        {
+          NSThread.sleepForTimeInterval(0.01)
+          tx <- i
+        }
+        println("Closing Int sender")
+        tx.close()
       }
-      sender.close()
-    }
+      return rx
+    }(50)
 
     let doubleReceiver = {
       (r: Receiver<Int>) -> Receiver<Double> in
       let (tx, rx) = Channel<Double>.Make()
-      dispatch_async(q) {
+      dispatch_async(self.q) {
         while let i = <-r
         {
-          tx <- sin(Double(i)/10)
+          if i % 7 == 0 { tx <- sin(Double(i)/100) }
         }
         tx.close()
       }
       return rx
-    }(receiver)
+    }(intReceiver)
 
     let stringReceiver = {
       (r: Receiver<Double>) -> Receiver<String> in
       let (tx, rx) = Channel<String>.Make()
-      dispatch_async(q) {
+      dispatch_async(self.q) {
         while let d = <-r
         {
           tx <- d.description
