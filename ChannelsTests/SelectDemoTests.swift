@@ -70,10 +70,11 @@ class SelectDemoTests: XCTestCase
 
   func testRandomBits()
   {
-    let c0 = Channel<Bool>.Make(8)
-    let c1 = Channel<Bool>.Make(8)
+    let c0: (tx: Sender<Bool>, rx: Receiver<Bool>) = Channel<Bool>.Make(8)
+    let c1: (tx: Sender<Bool>, rx: Receiver<Bool>) = Channel<Bool>.Make(8)
 
-    async {
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 12345),
+                   dispatch_get_global_queue(qos_class_self(), 0)) {
       for _ in 0..<8
       {
         if let selection = select(c0.tx, c1.tx)
