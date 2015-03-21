@@ -27,9 +27,9 @@ vice-versa). A buffered channel can store a certain number of
 elements, after which the next send operation will block.
 
 Thread synchronization and blocking is implemented with libdispatch semaphores
-(aka dispatch_semaphore_t); an implementation based on pthreads mutexes exists
-in subclasses of `PChan`. The pthreads implementations are significantly slower
-than the the libdispatch semaphore versions.
+(`dispatch_semaphore_t`); an implementation based on pthreads mutexes exists
+in subclasses of `PChan`. The pthreads implementation is significantly slower
+than the the libdispatch semaphore version.
 
 Missing from this is a powerful construct such as the Select keyword
 from Go, which would be quite useful when dealing with multiple
