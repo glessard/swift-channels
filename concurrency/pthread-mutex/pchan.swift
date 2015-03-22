@@ -31,11 +31,10 @@ public class PChan<T>
   {
     switch capacity
     {
-    case let c where c<1:
-      return PUnbufferedChan()
+    case let c where c<=1:
+      return PBuffered1Chan()
 
     default:
-      if capacity == 1 { return PBuffered1Chan() }
       switch bufferType
       {
       case .Buffer: return PBufferedBChan(capacity)

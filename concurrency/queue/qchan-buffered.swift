@@ -18,13 +18,13 @@ final class QBufferedChan<T>: Chan<T>
 
   // MARK: private housekeeping
 
-  private let capacity: Int
-  private let mask: Int
+  private let capacity: Int64
+  private let mask: Int64
 
-  private var head = 0
-  private var tail = 0
+  private var head: Int64 = 0
+  private var tail: Int64 = 0
 
-  private var nextput = 0
+  private var nextput: Int64 = 0
 
   private let readerQueue = SemaphoreQueue()
   private let writerQueue = SemaphoreQueue()
@@ -40,7 +40,7 @@ final class QBufferedChan<T>: Chan<T>
 
   init(_ capacity: Int)
   {
-    self.capacity = (capacity < 1) ? 1 : capacity
+    self.capacity = (capacity < 1) ? 1 : Int64(capacity)
 
     // find the next higher power of 2
     var v = self.capacity - 1
@@ -52,7 +52,7 @@ final class QBufferedChan<T>: Chan<T>
     v |= v >> 32
 
     mask = v // buffer size -1
-    buffer = UnsafeMutablePointer.alloc(mask+1)
+    buffer = UnsafeMutablePointer.alloc(Int(mask+1))
 
     super.init()
   }
@@ -66,9 +66,9 @@ final class QBufferedChan<T>: Chan<T>
   {
     for i in head..<tail
     {
-      buffer.advancedBy(i&mask).destroy()
+      buffer.advancedBy(Int(i&mask)).destroy()
     }
-    buffer.dealloc(mask+1)
+    buffer.dealloc(Int(mask+1))
   }
 
   // MARK: ChannelType properties
@@ -165,7 +165,7 @@ final class QBufferedChan<T>: Chan<T>
     if !closed
     {
       nextput += 1
-      buffer.advancedBy(tail&mask).initialize(newElement)
+      buffer.advancedBy(Int(tail&mask)).initialize(newElement)
       tail += 1
     }
     let sent = !closed
@@ -205,7 +205,7 @@ final class QBufferedChan<T>: Chan<T>
 
     if head < tail
     {
-      let element = buffer.advancedBy(head&mask).move()
+      let element = buffer.advancedBy(Int(head&mask)).move()
       head += 1
 
       if let ws = writerQueue.dequeue()
@@ -242,7 +242,7 @@ final class QBufferedChan<T>: Chan<T>
     OSSpinLockLock(&lock)
     if !closed
     {
-      buffer.advancedBy(tail&mask).initialize(newElement)
+      buffer.advancedBy(Int(tail&mask)).initialize(newElement)
       tail += 1
 
       if let rs = readerQueue.dequeue()
@@ -365,7 +365,7 @@ final class QBufferedChan<T>: Chan<T>
     OSSpinLockLock(&lock)
     if head < tail
     {
-      let element = buffer.advancedBy(head&mask).move()
+      let element = buffer.advancedBy(Int(head&mask)).move()
       head += 1
 
       if let ws = writerQueue.dequeue()
@@ -415,7 +415,7 @@ final class QBufferedChan<T>: Chan<T>
       {
         if self.head < self.tail
         {
-          let element = self.buffer.advancedBy(self.head&self.mask).move()
+          let element = self.buffer.advancedBy(Int(self.head&self.mask)).move()
           self.head += 1
 
           if let ws = self.writerQueue.dequeue()

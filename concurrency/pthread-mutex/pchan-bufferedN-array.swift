@@ -16,19 +16,19 @@ final class PBufferedAChan<T>: pthreadsChan<T>
 {
   private final var buffer: Array<T?>
 
-  private final let capacity: Int
-  private final let mask: Int
+  private final let capacity: Int64
+  private final let mask: Int64
 
   // housekeeping variables
 
-  private final var head = 0
-  private final var tail = 0
+  private final var head: Int64 = 0
+  private final var tail: Int64 = 0
 
   // Initialization and destruction
 
   init(_ capacity: Int)
   {
-    self.capacity = (capacity < 1) ? 1 : capacity
+    self.capacity = (capacity < 1) ? 1 : Int64(capacity)
 
     // find the next higher power of 2
     var v = self.capacity - 1
@@ -40,7 +40,7 @@ final class PBufferedAChan<T>: pthreadsChan<T>
     v |= v >> 32
 
     mask = v // buffer size -1
-    buffer = Array<T?>(count: mask+1, repeatedValue: nil)
+    buffer = Array<T?>(count: Int(mask+1), repeatedValue: nil)
 
     super.init()
   }
@@ -85,7 +85,7 @@ final class PBufferedAChan<T>: pthreadsChan<T>
 
     if !closed
     {
-      buffer[tail&mask] = newElement
+      buffer[Int(tail&mask)] = newElement
       tail += 1
     }
     let sent = !closed
@@ -127,8 +127,8 @@ final class PBufferedAChan<T>: pthreadsChan<T>
 
     if head < tail
     {
-      let element = buffer[head&mask]
-      buffer[head&mask] = nil
+      let element = buffer[Int(head&mask)]
+      buffer[Int(head&mask)] = nil
       head += 1
 
       if blockedWriters > 0

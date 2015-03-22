@@ -16,19 +16,19 @@ final class PBufferedBChan<T>: pthreadsChan<T>
 {
   private final let buffer: UnsafeMutablePointer<T>
 
-  private final let capacity: Int
-  private final let mask: Int
+  private final let capacity: Int64
+  private final let mask: Int64
 
   // housekeeping variables
 
-  private final var head = 0
-  private final var tail = 0
+  private final var head: Int64 = 0
+  private final var tail: Int64 = 0
 
   // Initialization and destruction
 
   init(_ capacity: Int)
   {
-    self.capacity = (capacity < 1) ? 1 : capacity
+    self.capacity = (capacity < 1) ? 1 : Int64(capacity)
 
     // find the next higher power of 2
     var v = self.capacity - 1
@@ -40,7 +40,7 @@ final class PBufferedBChan<T>: pthreadsChan<T>
     v |= v >> 32
 
     mask = v // buffer size -1
-    buffer = UnsafeMutablePointer.alloc(mask+1)
+    buffer = UnsafeMutablePointer.alloc(Int(mask+1))
 
     super.init()
   }
@@ -54,9 +54,9 @@ final class PBufferedBChan<T>: pthreadsChan<T>
   {
     for i in head..<tail
     {
-      buffer.advancedBy(i&mask).destroy()
+      buffer.advancedBy(Int(i&mask)).destroy()
     }
-    buffer.dealloc(mask+1)
+    buffer.dealloc(Int(mask+1))
   }
 
   // Computed property accessors
@@ -94,7 +94,7 @@ final class PBufferedBChan<T>: pthreadsChan<T>
 
     if !closed
     {
-      buffer.advancedBy(tail&mask).initialize(newElement)
+      buffer.advancedBy(Int(tail&mask)).initialize(newElement)
       tail += 1
     }
     let sent = !closed
@@ -136,7 +136,7 @@ final class PBufferedBChan<T>: pthreadsChan<T>
 
     if head < tail
     {
-      let element = buffer.advancedBy(head&mask).move()
+      let element = buffer.advancedBy(Int(head&mask)).move()
       head += 1
 
       if blockedWriters > 0

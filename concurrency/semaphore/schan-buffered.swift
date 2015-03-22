@@ -20,11 +20,11 @@ final class SBufferedChan<T>: Chan<T>
 
   // MARK: private housekeeping
 
-  private let capacity: Int
-  private let mask: Int
+  private let capacity: Int64
+  private let mask: Int64
 
-  private var head = 0
-  private var tail = 0
+  private var head: Int64 = 0
+  private var tail: Int64 = 0
 
   private let filled: dispatch_semaphore_t
   private let empty:  dispatch_semaphore_t
@@ -41,10 +41,10 @@ final class SBufferedChan<T>: Chan<T>
 
   init(_ capacity: Int)
   {
-    self.capacity = (capacity < 1) ? 1 : capacity
+    self.capacity = (capacity < 1) ? 1 : Int64(capacity)
 
     filled = dispatch_semaphore_create(0)!
-    empty =  dispatch_semaphore_create(self.capacity)!
+    empty =  dispatch_semaphore_create(Int(self.capacity))!
 
     // find the next power of 2 that is >= self.capacity
     var v = self.capacity - 1
@@ -57,7 +57,7 @@ final class SBufferedChan<T>: Chan<T>
     // the answer is v+1
 
     mask = v // buffer size -1
-    buffer = UnsafeMutablePointer.alloc(mask+1)
+    buffer = UnsafeMutablePointer.alloc(Int(mask+1))
 
     super.init()
   }
@@ -72,10 +72,10 @@ final class SBufferedChan<T>: Chan<T>
     precondition(head <= tail, __FUNCTION__)
     for i in head..<tail
     {
-      buffer.advancedBy(i&mask).destroy()
+      buffer.advancedBy(Int(i&mask)).destroy()
       dispatch_semaphore_signal(empty)
     }
-    buffer.dealloc(mask+1)
+    buffer.dealloc(Int(mask+1))
   }
 
   // MARK: ChannelType properties
@@ -138,7 +138,7 @@ final class SBufferedChan<T>: Chan<T>
 
     if !closed
     {
-      buffer.advancedBy(tail&mask).initialize(newElement)
+      buffer.advancedBy(Int(tail&mask)).initialize(newElement)
       tail += 1
 
       OSSpinLockUnlock(&wlock)
@@ -171,7 +171,7 @@ final class SBufferedChan<T>: Chan<T>
 
     if head < tail
     {
-      let element = buffer.advancedBy(head&mask).move()
+      let element = buffer.advancedBy(Int(head&mask)).move()
       head += 1
 
       OSSpinLockUnlock(&rlock)
@@ -207,7 +207,7 @@ final class SBufferedChan<T>: Chan<T>
     OSSpinLockLock(&wlock)
     if !closed
     {
-      buffer.advancedBy(tail&mask).initialize(newElement)
+      buffer.advancedBy(Int(tail&mask)).initialize(newElement)
       tail += 1
 
       OSSpinLockUnlock(&wlock)
@@ -266,7 +266,7 @@ final class SBufferedChan<T>: Chan<T>
       OSSpinLockLock(&rlock)
       if head < tail
       {
-        let element = buffer.advancedBy(head&mask).move()
+        let element = buffer.advancedBy(Int(head&mask)).move()
         head += 1
         OSSpinLockUnlock(&rlock)
         dispatch_semaphore_signal(empty)
@@ -300,7 +300,7 @@ final class SBufferedChan<T>: Chan<T>
         OSSpinLockLock(&self.rlock)
         if self.head < self.tail
         {
-          let element = self.buffer.advancedBy(self.head&self.mask).move()
+          let element = self.buffer.advancedBy(Int(self.head&self.mask)).move()
           self.head += 1
           OSSpinLockUnlock(&self.rlock)
           dispatch_semaphore_signal(self.empty)
