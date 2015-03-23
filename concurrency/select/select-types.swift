@@ -82,7 +82,7 @@ protocol SelectableChannelType: ChannelType
 {
   func selectGet(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
   func selectGetNow(selectionID: Selectable) -> Selection?
-  // func extract(item: Selection) -> Element?
+  func extract(selection: Selection) -> Element?
 
   func selectPut(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
   func selectPutNow(selectionID: Selectable) -> Selection?

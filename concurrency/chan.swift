@@ -91,6 +91,11 @@ public class Chan<T>: ChannelType, SelectableChannelType
     return nil
   }
 
+  public func extract(selection: Selection) -> T?
+  {
+    return selection.getData()
+  }
+
   public func selectPut(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
   {
     return {}

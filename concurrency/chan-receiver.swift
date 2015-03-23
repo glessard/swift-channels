@@ -130,12 +130,10 @@ public final class Receiver<T>: ReceiverType, GeneratorType, SequenceType, Selec
     return !(wrapped.isClosed && wrapped.isEmpty)
   }
 
-  // A utility for SelectableChannelType, in place of a better idea
-
   public func extract(selection: Selection) -> T?
   {
     precondition(selection.id === self, __FUNCTION__)
-    return selection.getData()
+    return wrapped.extract(selection)
   }
 }
 

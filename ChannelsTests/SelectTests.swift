@@ -47,7 +47,10 @@ class SelectTests: XCTestCase
     let selectables = receivers.map { $0 as Selectable }
     while let selection = select(selectables)
     {
-      if let message: Int = selection.getData() { i++ }
+      if let receiver = selection.id as? Receiver<Int>
+      {
+         if let message = receiver.extract(selection) { i++ }
+      }
     }
 
     syncprintwait()

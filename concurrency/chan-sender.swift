@@ -97,8 +97,6 @@ public final class Sender<T>: SenderType, Selectable
     return wrapped.selectPut(semaphore, selectionID: selectionID)
   }
 
-  // A utility for SelectableChannelType, in place of a better idea
-
   public func insert(selection: Selection, newElement: T) -> Bool
   {
     precondition(selection.id === self, __FUNCTION__)

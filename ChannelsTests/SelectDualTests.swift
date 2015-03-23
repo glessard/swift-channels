@@ -50,10 +50,13 @@ class SelectDualTests: XCTestCase
     let selectables = receivers.map { $0 as Selectable }
     while let selection = select(selectables)
     {
-      if let message: Int = selection.getData()
+      if let receiver = selection.id as? Receiver<Int>
       {
-        i++
-        if sleeper == .Receiver { NSThread.sleepForTimeInterval(sleepInterval) }
+        if let message = receiver.extract(selection)
+        {
+          i++
+          if sleeper == .Receiver { NSThread.sleepForTimeInterval(sleepInterval) }
+        }
       }
     }
 
