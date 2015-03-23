@@ -20,7 +20,7 @@ import Dispatch
   :return: a single Receiver provide access to get every message received by the input Receivers.
 */
 
-public func mergeSelect<R: ReceiverType where R: Selectable>(channels: [R]) -> Receiver<R.ReceivedElement>
+public func mergeSelect<R: ReceiverType where R: SelectableReceiverType>(channels: [R]) -> Receiver<R.ReceivedElement>
 {
   if channels.count == 0
   { // Not likely to happen, but return a closed channel.
@@ -33,7 +33,8 @@ public func mergeSelect<R: ReceiverType where R: Selectable>(channels: [R]) -> R
     let selectables = channels.map { $0 as Selectable }
     while let selection = select(selectables)
     {
-      if let element: R.ReceivedElement = selection.getData()
+      if let receiver = selection.id as? R,
+         let element = receiver.extract(selection)
       {
         tx <- element
       }

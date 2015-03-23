@@ -89,6 +89,20 @@ protocol SelectableChannelType: ChannelType
   func insert(selection: Selection, newElement: Element) -> Bool
 }
 
+// MARK: SelectableReceiverType
+
+public protocol SelectableReceiverType: ReceiverType, Selectable
+{
+  func extract(selection: Selection) -> ReceivedElement?
+}
+
+// MARK: SelectableSenderType
+
+public protocol SelectableSenderType: SenderType, Selectable
+{
+  func insert(selection: Selection, newElement: SentElement) -> Bool
+}
+
 
 /**
   You can put anything in a Selection.
@@ -98,32 +112,18 @@ protocol SelectableChannelType: ChannelType
 
 public final class Selection
 {
-  public  let id: Selectable
-  private let data: Any?
+  public let id: Selectable
+  public let semaphore: dispatch_semaphore_t?
 
-  public init<T>(selectionID: Selectable, selectionData: T)
+  public init(selectionID: Selectable, semaphore: dispatch_semaphore_t)
   {
-    id = selectionID
-    data = selectionData
-  }
-
-  public init<T>(selectionID: Selectable, selectionData: T?)
-  {
-    id = selectionID
-    if let d = selectionData
-    { data = d }
-    else
-    { data = nil }
+    self.id = selectionID
+    self.semaphore = semaphore
   }
 
   public init(selectionID: Selectable)
   {
     id = selectionID
-    data = nil
-  }
-
-  public func getData<T>() -> T?
-  {
-    return data as? T
+    semaphore = nil
   }
 }

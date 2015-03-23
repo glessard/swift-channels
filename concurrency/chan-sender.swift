@@ -66,7 +66,7 @@ extension Sender
   Sender<T> is the sending endpoint for a Channel, Chan<T>.
 */
 
-public final class Sender<T>: SenderType, Selectable
+public final class Sender<T>: SenderType
 {
   private let wrapped: Chan<T>
 
@@ -82,9 +82,12 @@ public final class Sender<T>: SenderType, Selectable
   public func close()  { wrapped.close() }
 
   public func send(newElement: T) -> Bool { return wrapped.put(newElement) }
+}
 
-  // Selectable implementation
+// Selectable implementation
 
+extension Sender: Selectable
+{
   public var selectable: Bool { return !wrapped.isClosed }
 
   public func selectNow(selectionID: Selectable) -> Selection?
@@ -96,7 +99,10 @@ public final class Sender<T>: SenderType, Selectable
   {
     return wrapped.selectPut(semaphore, selectionID: selectionID)
   }
+}
 
+extension Sender: SelectableSenderType
+{
   public func insert(selection: Selection, newElement: T) -> Bool
   {
     precondition(selection.id === self, __FUNCTION__)
