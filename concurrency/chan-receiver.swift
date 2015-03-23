@@ -10,64 +10,6 @@
   Receiver<T> is the receiving endpoint for a ChannelType.
 */
 
-extension Receiver
-{
-  /**
-    Return a new Receiver<T> to act as the receiving endpoint for a Chan<T>.
-
-    :param: c A Chan<T> object
-    :return:  A Receiver<T> object that will receive elements from the Chan<T>
-  */
-
-  public class func Wrap(c: Chan<T>) -> Receiver<T>
-  {
-    return Receiver(c)
-  }
-
-  /**
-    Return a new Receiver<T> to act as the receiving endpoint for a ChannelType.
-
-    :param: c An object that implements ChannelType
-    :return:  A Receiver<T> object that will receive elements from the ChannelType
-  */
-
-  class func Wrap<C: ChannelType where C.Element == T>(c: C) -> Receiver<T>
-  {
-    if let chan = c as? Chan<T>
-    {
-      return Receiver(chan)
-    }
-
-    return Receiver(ChannelTypeAsChan(c))
-  }
-
-  /**
-    Return a new Receiver<T> to stand in for ReceiverType c.
-
-    If c is a Receiver, c will be returned directly.
-
-    If c is any other kind of ReceiverType, c will be type-obscured and
-    wrapped in a new Receiver.
-
-    :param: c An object that implements ReceiverType.
-    :return:  A Receiver object that will pass along the elements from c.
-  */
-
-  public class func Wrap<C: ReceiverType where C.ReceivedElement == T>(c: C) -> Receiver<T>
-  {
-    if let r = c as? Receiver<T>
-    {
-      return r
-    }
-
-    return Receiver(ReceiverTypeAsChan(c))
-  }
-}
-
-/**
-  Receiver<T> is the receiving endpoint for a ChannelType.
-*/
-
 public final class Receiver<T>: ReceiverType, GeneratorType, SequenceType
 {
   private let wrapped: Chan<T>
@@ -82,7 +24,7 @@ public final class Receiver<T>: ReceiverType, GeneratorType, SequenceType
     wrapped = Chan()
   }
 
-  // ReceiverType implementation
+  // MARK: ReceiverType implementation
 
   public var isClosed: Bool { return wrapped.isClosed }
   public var isEmpty:  Bool { return wrapped.isEmpty }
@@ -93,7 +35,7 @@ public final class Receiver<T>: ReceiverType, GeneratorType, SequenceType
     return wrapped.get()
   }
 
-  // GeneratorType implementation
+  // MARK: GeneratorType implementation
 
   /**
     If all elements are exhausted, return `nil`.  Otherwise, advance
@@ -106,7 +48,7 @@ public final class Receiver<T>: ReceiverType, GeneratorType, SequenceType
     return wrapped.get()
   }
 
-  // SequenceType implementation
+  // MARK: SequenceType implementation
 
   public func generate() -> Self
   {
@@ -114,10 +56,10 @@ public final class Receiver<T>: ReceiverType, GeneratorType, SequenceType
   }
 }
 
-// Selectable implementation
-
 extension Receiver: Selectable
 {
+  // MARK: Selectable implementation
+  
   public func selectNotify(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
   {
     return wrapped.selectGet(semaphore, selectionID: selectionID)
@@ -136,6 +78,8 @@ extension Receiver: Selectable
 
 extension Receiver: SelectableReceiverType
 {
+  // MARK: SelectableReceiverType implementation
+  
   public func extract(selection: Selection) -> T?
   {
     precondition(selection.id === self, __FUNCTION__)
@@ -159,6 +103,62 @@ extension Receiver: SelectableReceiverType
 public prefix func <-<T>(r: Receiver<T>) -> T?
 {
   return r.wrapped.get()
+}
+
+// MARK: Receiver factory functions
+
+extension Receiver
+{
+  /**
+    Return a new Receiver<T> to act as the receiving endpoint for a Chan<T>.
+
+    :param: c A Chan<T> object
+    :return:  A Receiver<T> object that will receive elements from the Chan<T>
+  */
+
+  public static func Wrap(c: Chan<T>) -> Receiver<T>
+  {
+    return Receiver(c)
+  }
+
+  /**
+    Return a new Receiver<T> to act as the receiving endpoint for a ChannelType.
+
+    :param: c An object that implements ChannelType
+    :return:  A Receiver<T> object that will receive elements from the ChannelType
+  */
+
+  static func Wrap<C: ChannelType where C.Element == T>(c: C) -> Receiver<T>
+  {
+    if let chan = c as? Chan<T>
+    {
+      return Receiver(chan)
+    }
+
+    return Receiver(ChannelTypeAsChan(c))
+  }
+
+  /**
+    Return a new Receiver<T> to stand in for ReceiverType c.
+
+    If c is a Receiver, c will be returned directly.
+
+    If c is any other kind of ReceiverType, c will be type-obscured and
+    wrapped in a new Receiver.
+
+    :param: c An object that implements ReceiverType.
+    :return:  A Receiver object that will pass along the elements from c.
+  */
+
+  public static func Wrap<C: ReceiverType where C.ReceivedElement == T>(c: C) -> Receiver<T>
+  {
+    if let r = c as? Receiver<T>
+    {
+      return r
+    }
+
+    return Receiver(ReceiverTypeAsChan(c))
+  }
 }
 
 /**

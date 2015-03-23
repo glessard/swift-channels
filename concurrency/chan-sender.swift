@@ -10,62 +10,6 @@
   Sender<T> is the sending endpoint for a Channel, Chan<T>.
 */
 
-extension Sender
-{
-  /**
-    Return a new Sender<T> to act as the sending endpoint for a Chan<T>.
-
-    :param: c A Chan<T> object
-    :return:  A Sender<T> object that will send elements to the Chan<T>
-  */
-
-  public class func Wrap(c: Chan<T>) -> Sender<T>
-  {
-    return Sender(c)
-  }
-
-  /**
-    Return a new Sender<T> to act as the sending enpoint for a ChannelType
-
-    :param: c An object that implements ChannelType
-    :return:  A Sender<T> object that will send elements to c
-  */
-
-  class func Wrap<C: ChannelType where C.Element == T>(c: C) -> Sender<T>
-  {
-    if let chan = c as? Chan<T>
-    {
-      return Sender(chan)
-    }
-
-    return Sender(ChannelTypeAsChan(c))
-  }
-
-  /**
-    Return a new Sender<T> to stand in for SenderType c.
-
-    If c is a Sender, c will be returned directly.
-    If c is any other kind of SenderType, it will be wrapped in a type-hidden way.
-
-    :param: c A SenderType implementor to be wrapped by a Sender object.
-    :return:  A Sender object that will pass along the elements to c.
-  */
-
-  public class func Wrap<C: SenderType where C.SentElement == T>(c: C) -> Sender<T>
-  {
-    if let s = c as? Sender<T>
-    {
-      return s
-    }
-
-    return Sender(SenderTypeAsChan(c))
-  }
-}
-
-/**
-  Sender<T> is the sending endpoint for a Channel, Chan<T>.
-*/
-
 public final class Sender<T>: SenderType
 {
   private let wrapped: Chan<T>
@@ -75,7 +19,12 @@ public final class Sender<T>: SenderType
     wrapped = c
   }
 
-  // SenderType implementation
+  init()
+  {
+    wrapped = Chan()
+  }
+
+  // MARK: SenderType implementation
 
   public var isClosed: Bool { return wrapped.isClosed }
   public var isFull:   Bool { return wrapped.isFull }
@@ -84,10 +33,10 @@ public final class Sender<T>: SenderType
   public func send(newElement: T) -> Bool { return wrapped.put(newElement) }
 }
 
-// Selectable implementation
-
 extension Sender: Selectable
 {
+  // MARK: Selectable implementation
+  
   public var selectable: Bool { return !wrapped.isClosed }
 
   public func selectNow(selectionID: Selectable) -> Selection?
@@ -103,6 +52,8 @@ extension Sender: Selectable
 
 extension Sender: SelectableSenderType
 {
+  // MARK: SelectableSenderType implementation
+
   public func insert(selection: Selection, newElement: T) -> Bool
   {
     precondition(selection.id === self, __FUNCTION__)
@@ -129,6 +80,60 @@ extension Sender: SelectableSenderType
 public func <-<T>(s: Sender<T>, element: T)
 {
   s.wrapped.put(element)
+}
+
+// MARK: Sender factory functions
+
+extension Sender
+{
+  /**
+    Return a new Sender<T> to act as the sending endpoint for a Chan<T>.
+
+    :param: c A Chan<T> object
+    :return:  A Sender<T> object that will send elements to the Chan<T>
+  */
+
+  public static func Wrap(c: Chan<T>) -> Sender<T>
+  {
+    return Sender(c)
+  }
+
+  /**
+    Return a new Sender<T> to act as the sending enpoint for a ChannelType
+
+    :param: c An object that implements ChannelType
+    :return:  A Sender<T> object that will send elements to c
+  */
+
+  static func Wrap<C: ChannelType where C.Element == T>(c: C) -> Sender<T>
+  {
+    if let chan = c as? Chan<T>
+    {
+      return Sender(chan)
+    }
+
+    return Sender(ChannelTypeAsChan(c))
+  }
+
+  /**
+    Return a new Sender<T> to stand in for SenderType c.
+
+    If c is a Sender, c will be returned directly.
+    If c is any other kind of SenderType, it will be wrapped in a type-hidden way.
+
+    :param: c A SenderType implementor to be wrapped by a Sender object.
+    :return:  A Sender object that will pass along the elements to c.
+  */
+
+  public static func Wrap<C: SenderType where C.SentElement == T>(c: C) -> Sender<T>
+  {
+    if let s = c as? Sender<T>
+    {
+      return s
+    }
+
+    return Sender(SenderTypeAsChan(c))
+  }
 }
 
 /**

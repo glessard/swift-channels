@@ -9,12 +9,20 @@
 import Dispatch
 
 /**
-  A one-element channel which will only ever transmit one message:
+  A one-element buffered channel which will only ever transmit one message:
   the first successful write operation closes the channel.
 */
 
 final public class SingletonChan<T>: Chan<T>
 {
+  // MARK: Factory functions
+
+  /**
+    Factory method to obtain a (buffered) single-message channel.
+
+    :return: a newly-created, empty Chan<T>
+  */
+
   override public class func Make() -> Chan<T>
   {
     return SingletonChan()
@@ -30,18 +38,23 @@ final public class SingletonChan<T>: Chan<T>
     return Make()
   }
 
-  private var element: T? = nil
+  // MARK: Private instance variables
 
-  // housekeeping variables
+  private var element: T? = nil
 
   private var writerCount: Int32 = 0
   private var readerCount: Int32 = 0
 
-  private var barrier = dispatch_semaphore_create(0)!
+  private var barrier = dispatch_group_create()!
 
-  private var closed = false
+  private var closedState: Int32 = 0
 
-  public override init() { }
+  // MARK: Initialization
+
+  public override init()
+  {
+    dispatch_group_enter(barrier)
+  }
 
   public convenience init(_ element: T)
   {
@@ -50,7 +63,7 @@ final public class SingletonChan<T>: Chan<T>
     close()
   }
 
-  // Computed property accessors
+  // MARK: Property accessors
 
   final public override var isEmpty: Bool
   {
@@ -66,7 +79,9 @@ final public class SingletonChan<T>: Chan<T>
     Determine whether the channel has been closed
   */
 
-  final public override var isClosed: Bool { return closed }
+  final public override var isClosed: Bool { return closedState > 0 }
+
+  // MARK: ChannelType implementation
 
   /**
     Close the channel
@@ -80,11 +95,10 @@ final public class SingletonChan<T>: Chan<T>
 
   public override func close()
   {
-    if closed { return }
-
-    closed = true
-
-    dispatch_semaphore_signal(barrier)
+    if closedState == 0 && OSAtomicCompareAndSwap32Barrier(0, 1, &closedState)
+    { // Only one thread can get here
+      dispatch_group_leave(barrier)
+    }
   }
 
   /**
@@ -101,7 +115,7 @@ final public class SingletonChan<T>: Chan<T>
 
   public override func put(newElement: T) -> Bool
   {
-    if OSAtomicCompareAndSwap32Barrier(0, 1, &writerCount)
+    if writerCount == 0 && OSAtomicCompareAndSwap32Barrier(0, 1, &writerCount)
     { // Only one thread can get here
       element = newElement
       close() // also increments the 'barrier' semaphore
@@ -123,13 +137,12 @@ final public class SingletonChan<T>: Chan<T>
 
   public override func get() -> T?
   {
-    if !closed
+    if closedState == 0
     {
-      dispatch_semaphore_wait(barrier, DISPATCH_TIME_FOREVER)
-      dispatch_semaphore_signal(barrier)
+      dispatch_group_wait(barrier, DISPATCH_TIME_FOREVER)
     }
 
-    if OSAtomicCompareAndSwap32Barrier(0, 1, &readerCount)
+    if readerCount == 0 && OSAtomicCompareAndSwap32Barrier(0, 1, &readerCount)
     { // Only one thread can get here.
       if let e = element
       {

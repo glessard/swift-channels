@@ -18,13 +18,13 @@ public enum PChanBufferType
 public class PChan<T>
 {
   /**
-  Factory method to obtain pthreads channels of the desired channel capacity.
-  If capacity is 0, then an unbuffered channel will be created.
+    Factory method to obtain pthreads channels of the desired channel capacity.
+    If capacity is 0, then an unbuffered channel will be created.
 
-  :param: capacity   the buffer capacity of the channel.
-  :param: bufferType which kind of backing store should the channel use.
+    :param: capacity   the buffer capacity of the channel.
+    :param: bufferType which kind of backing store should the channel use.
 
-  :return: a newly-created, empty Chan<T>
+    :return: a newly-created, empty Chan<T>
   */
 
   public class func Make(capacity: Int, bufferType: PChanBufferType = .Buffer) -> Chan<T>
@@ -55,7 +55,7 @@ public class PChan<T>
 
 class pthreadsChan<T>: Chan<T>
 {
-  // Instance variables
+  // MARK: Housekeeping variables
 
   final var closed = false
   final var blockedReaders = 0
@@ -67,7 +67,7 @@ class pthreadsChan<T>: Chan<T>
   final var readCondition =  pthread_cond_t()
   final var writeCondition = pthread_cond_t()
 
-  // Initialization and destruction
+  // MARK: Initialization and destruction
 
   override init()
   {
@@ -85,7 +85,7 @@ class pthreadsChan<T>: Chan<T>
     pthread_cond_destroy(&writeCondition)
   }
 
-  // Computed properties
+  // MARK: BasicChannelType implementation
 
   /**
     Determine whether the channel has been closed
