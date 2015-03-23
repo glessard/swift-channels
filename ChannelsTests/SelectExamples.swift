@@ -12,7 +12,7 @@ import XCTest
 
 import Channels
 
-class SelectDemoTests: XCTestCase
+class SelectExamples: XCTestCase
 {
   func testSelect()
   {

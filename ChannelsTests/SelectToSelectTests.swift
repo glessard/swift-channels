@@ -12,7 +12,7 @@ import XCTest
 
 import Channels
 
-class SelectDualTests: XCTestCase
+class SelectToSelectTests: XCTestCase
 {
   private enum Sleeper { case Receiver; case Sender; case None }
   
