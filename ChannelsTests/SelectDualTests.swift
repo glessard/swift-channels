@@ -18,7 +18,7 @@ class SelectDualTests: XCTestCase
   
   private func SelectTest(#buffered: Bool, sleeper: Sleeper)
   {
-    let selectableCount = 10
+    let selectableCount = 5
     let iterations = (sleeper == .None) ? 10_000 : 100
     let sleepInterval = 0.01
 
