@@ -260,19 +260,6 @@ final class QUnbufferedChan<T>: Chan<T>
 
   // MARK: SelectableChannelType methods
 
-  override func insert(selection: Selection, newElement: T) -> Bool
-  {
-    if let rs: dispatch_semaphore_t = selection.getData()
-    {
-      let context = dispatch_get_context(rs)
-      UnsafeMutablePointer<T>(context).initialize(newElement)
-      dispatch_semaphore_signal(rs)
-      return true
-    }
-    assert(false, "Thread left hanging in \(__FUNCTION__), semaphore not found in \(selection)")
-    return false
-  }
-
   override func selectPutNow(selectionID: Selectable) -> Selection?
   {
     OSSpinLockLock(&lock)
@@ -294,6 +281,19 @@ final class QUnbufferedChan<T>: Chan<T>
     }
     OSSpinLockUnlock(&lock)
     return nil
+  }
+
+  override func insert(selection: Selection, newElement: T) -> Bool
+  {
+    if let rs: dispatch_semaphore_t = selection.getData()
+    {
+      let context = dispatch_get_context(rs)
+      UnsafeMutablePointer<T>(context).initialize(newElement)
+      dispatch_semaphore_signal(rs)
+      return true
+    }
+    assert(false, "Thread left hanging in \(__FUNCTION__), semaphore not found in \(selection)")
+    return false
   }
 
   override func selectPut(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal

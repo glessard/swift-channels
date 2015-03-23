@@ -239,6 +239,19 @@ final class QBufferedChan<T>: Chan<T>
 
   // MARK: SelectableChannelType methods
 
+  override func selectPutNow(selectionID: Selectable) -> Selection?
+  {
+    OSSpinLockLock(&lock)
+    if !closed && head+capacity <= nextput
+    {
+      nextput += 1
+      OSSpinLockUnlock(&lock)
+      return Selection(selectionID: selectionID)
+    }
+    OSSpinLockUnlock(&lock)
+    return nil
+  }
+
   override func insert(selection: Selection, newElement: T) -> Bool
   {
     OSSpinLockLock(&lock)
@@ -263,19 +276,6 @@ final class QBufferedChan<T>: Chan<T>
       OSSpinLockUnlock(&lock)
       return false
     }
-  }
-
-  override func selectPutNow(selectionID: Selectable) -> Selection?
-  {
-    OSSpinLockLock(&lock)
-    if !closed && head+capacity <= nextput
-    {
-      nextput += 1
-      OSSpinLockUnlock(&lock)
-      return Selection(selectionID: selectionID)
-    }
-    OSSpinLockUnlock(&lock)
-    return nil
   }
 
   override func selectPut(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
