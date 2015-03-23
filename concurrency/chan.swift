@@ -19,7 +19,7 @@ public class Chan<T>: ChannelType, SelectableChannelType
 {
   init() {}
 
-  // Computed properties
+  // MARK: ChannelType interface
 
   /**
     Determine whether the channel is empty (and therefore can't be received from)
@@ -79,34 +79,34 @@ public class Chan<T>: ChannelType, SelectableChannelType
     return nil
   }
 
-  // SelectableChannelType implementation
+  // MARK: SelectableChannelType interface
 
-  public func selectGet(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
+  func selectGet(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
   {
     return {}
   }
 
-  public func selectGetNow(selectionID: Selectable) -> Selection?
+  func selectGetNow(selectionID: Selectable) -> Selection?
   {
     return nil
   }
 
-  public func extract(selection: Selection) -> T?
+  func extract(selection: Selection) -> T?
   {
     return nil
   }
 
-  public func selectPut(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
+  func selectPut(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
   {
     return {}
   }
 
-  public func selectPutNow(selectionID: Selectable) -> Selection?
+  func selectPutNow(selectionID: Selectable) -> Selection?
   {
     return nil
   }
 
-  public func insert(selection: Selection, newElement: T) -> Bool
+  func insert(selection: Selection, newElement: T) -> Bool
   {
     return false
   }
