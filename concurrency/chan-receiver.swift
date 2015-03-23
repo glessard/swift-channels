@@ -10,6 +10,72 @@
   Receiver<T> is the receiving endpoint for a ChannelType.
 */
 
+public struct Receiver<T>: ReceiverType, GeneratorType, SequenceType
+{
+  private let wrapped: Chan<T>
+
+  public init(_ c: Chan<T>)
+  {
+    wrapped = c
+  }
+
+  init()
+  {
+    wrapped = Chan()
+  }
+
+  // MARK: ReceiverType implementation
+
+  public var isClosed: Bool { return wrapped.isClosed }
+  public var isEmpty:  Bool { return wrapped.isEmpty }
+  public func close()  { wrapped.close() }
+
+  public func receive() -> T?
+  {
+    return wrapped.get()
+  }
+
+  // MARK: GeneratorType implementation
+
+  /**
+    If all elements are exhausted, return `nil`.  Otherwise, advance
+    to the next element and return it.
+    This is a synonym for receive()
+  */
+
+  public func next() -> T?
+  {
+    return wrapped.get()
+  }
+
+  // MARK: SequenceType implementation
+
+  public func generate() -> Receiver
+  {
+    return self
+  }
+}
+
+/**
+  Channel receive operator: receive the oldest element from the channel.
+
+  If the channel is empty, this call will block.
+  If the channel is empty and closed, this will return nil.
+
+  This is the equivalent of Receiver<T>.receive() -> T?
+
+  :param:  r a ReceiverType
+
+  :return: the oldest element from the channel
+*/
+
+public prefix func <-<T>(r: Receiver<T>) -> T?
+{
+  return r.wrapped.get()
+}
+
+// MARK: Receiver factory functions
+
 extension Receiver
 {
   /**
@@ -62,74 +128,6 @@ extension Receiver
 
     return Receiver(ReceiverTypeAsChan(c))
   }
-}
-
-/**
-  Receiver<T> is the receiving endpoint for a ChannelType.
-*/
-
-public struct Receiver<T>: ReceiverType, GeneratorType, SequenceType
-{
-  private let wrapped: Chan<T>
-
-  public init(_ c: Chan<T>)
-  {
-    wrapped = c
-  }
-
-  init()
-  {
-    wrapped = Chan()
-  }
-
-  // ReceiverType implementation
-
-  public var isClosed: Bool { return wrapped.isClosed }
-  public var isEmpty:  Bool { return wrapped.isEmpty }
-  public func close()  { wrapped.close() }
-
-  public func receive() -> T?
-  {
-    return wrapped.get()
-  }
-
-  // GeneratorType implementation
-
-  /**
-    If all elements are exhausted, return `nil`.  Otherwise, advance
-    to the next element and return it.
-    This is a synonym for receive()
-  */
-
-  public func next() -> T?
-  {
-    return wrapped.get()
-  }
-
-  // SequenceType implementation
-
-  public func generate() -> Receiver
-  {
-    return self
-  }
-}
-
-/**
-  Channel receive operator: receive the oldest element from the channel.
-
-  If the channel is empty, this call will block.
-  If the channel is empty and closed, this will return nil.
-
-  This is the equivalent of Receiver<T>.receive() -> T?
-
-  :param:  r a ReceiverType
-
-  :return: the oldest element from the channel
-*/
-
-public prefix func <-<T>(r: Receiver<T>) -> T?
-{
-  return r.wrapped.get()
 }
 
 /**

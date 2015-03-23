@@ -80,7 +80,7 @@ public class Chan<T>: ChannelType
   }
 
 
-  // Factory functions.
+  // MARK: Chan Factory Functions
 
   /**
     Factory function to obtain a new Chan<T> of the desired channel capacity.

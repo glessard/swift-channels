@@ -10,6 +10,52 @@
   Sender<T> is the sending endpoint for a Channel, Chan<T>.
 */
 
+public struct Sender<T>: SenderType
+{
+  private let wrapped: Chan<T>
+
+  public init(_ c: Chan<T>)
+  {
+    wrapped = c
+  }
+
+  init()
+  {
+    wrapped = Chan()
+  }
+
+  // MARK: SenderType implementation
+
+  public var isClosed: Bool { return wrapped.isClosed }
+  public var isFull:   Bool { return wrapped.isFull }
+  public func close()  { wrapped.close() }
+
+  public func send(newElement: T) -> Bool { return wrapped.put(newElement) }
+}
+
+/**
+  Channel send operator: send a new element to the channel
+
+  If the channel is full, this call will block.
+  If the channel has been closed, sending will fail silently.
+
+  The ideal situation when the channel has been closed
+  would involve some error-handling, such as a panic() call.
+  Unfortunately there is no such thing in Swift, so a silent failure it is.
+
+  Using this operator is equivalent to '_ = Sender<T>.send(T)'
+
+  :param: s a Sender<T>
+  :param: element the new T to be added to the channel.
+*/
+
+public func <-<T>(s: Sender<T>, element: T)
+{
+  s.wrapped.put(element)
+}
+
+// MARK: Sender factory functions
+
 extension Sender
 {
   /**
@@ -60,49 +106,6 @@ extension Sender
 
     return Sender(SenderTypeAsChan(c))
   }
-}
-
-/**
-  Sender<T> is the sending endpoint for a Channel, Chan<T>.
-*/
-
-public struct Sender<T>: SenderType
-{
-  private let wrapped: Chan<T>
-
-  public init(_ c: Chan<T>)
-  {
-    wrapped = c
-  }
-
-  // SenderType implementation
-
-  public var isClosed: Bool { return wrapped.isClosed }
-  public var isFull:   Bool { return wrapped.isFull }
-  public func close()  { wrapped.close() }
-
-  public func send(newElement: T) -> Bool { return wrapped.put(newElement) }
-}
-
-/**
-  Channel send operator: send a new element to the channel
-
-  If the channel is full, this call will block.
-  If the channel has been closed, sending will fail silently.
-
-  The ideal situation when the channel has been closed
-  would involve some error-handling, such as a panic() call.
-  Unfortunately there is no such thing in Swift, so a silent failure it is.
-
-  Using this operator is equivalent to '_ = Sender<T>.send(T)'
-
-  :param: s a Sender<T>
-  :param: element the new T to be added to the channel.
-*/
-
-public func <-<T>(s: Sender<T>, element: T)
-{
-  s.wrapped.put(element)
 }
 
 /**

@@ -18,8 +18,8 @@ func shuffle<C: CollectionType>(c: C) -> PermutationGenerator<C, IndexShuffler<C
 }
 
 /**
-A stepwise implementation of the Knuth Shuffle (a.k.a. Fisher-Yates Shuffle),
-using a sequence of indices as its input.
+  A stepwise implementation of the Knuth Shuffle (a.k.a. Fisher-Yates Shuffle),
+  using a sequence of indices as its input.
 */
 
 struct IndexShuffler<I: ForwardIndexType>: SequenceType, GeneratorType
