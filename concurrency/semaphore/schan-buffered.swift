@@ -263,25 +263,31 @@ final class SBufferedChan<T>: Chan<T>
   {
     if dispatch_semaphore_wait(filled, DISPATCH_TIME_NOW) == 0
     {
-      OSSpinLockLock(&rlock)
-      if head < tail
-      {
-        let element = buffer.advancedBy(Int(head&mask)).move()
-        head += 1
-        OSSpinLockUnlock(&rlock)
-        dispatch_semaphore_signal(empty)
-        return Selection(selectionID: selectionID, selectionData: element)
-      }
-      else
-      {
-        assert(closed, __FUNCTION__)
-        OSSpinLockUnlock(&rlock)
-        dispatch_semaphore_signal(filled)
-        return nil
-      }
+      return Selection(selectionID: selectionID)
     }
     else
     {
+      return nil
+    }
+  }
+
+  override func extract(selection: Selection) -> T?
+  {
+    // the `filled` semaphore has already been decremented for this operation.
+    OSSpinLockLock(&rlock)
+    if head < tail
+    {
+      let element = buffer.advancedBy(Int(head&mask)).move()
+      head += 1
+      OSSpinLockUnlock(&rlock)
+      dispatch_semaphore_signal(empty)
+      return element
+    }
+    else
+    {
+      assert(closed, __FUNCTION__)
+      OSSpinLockUnlock(&rlock)
+      dispatch_semaphore_signal(filled)
       return nil
     }
   }
@@ -297,23 +303,16 @@ final class SBufferedChan<T>: Chan<T>
       OSMemoryBarrier()
       if cancel == 0, let s = semaphore.get()
       {
-        OSSpinLockLock(&self.rlock)
+        OSMemoryBarrier()
         if self.head < self.tail
         {
-          let element = self.buffer.advancedBy(Int(self.head&self.mask)).move()
-          self.head += 1
-          OSSpinLockUnlock(&self.rlock)
-          dispatch_semaphore_signal(self.empty)
-
-          let selection = Selection(selectionID: selectionID, selectionData: element)
+          let selection = Selection(selectionID: selectionID)
           dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
           dispatch_semaphore_signal(s)
         }
         else
         {
-          OSSpinLockUnlock(&self.rlock)
           dispatch_semaphore_signal(self.filled)
-
           dispatch_set_context(s, nil)
           dispatch_semaphore_signal(s)
         }
