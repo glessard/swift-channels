@@ -22,3 +22,11 @@ class SBufferedChannelTests: BufferedNChannelTests
     return Channel.Wrap(SChan.Make(buflen))
   }
 }
+
+class SSingletonChannelTests: SingletonChannelTests
+{
+  override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
+  {
+    return Channel.Wrap(SChan.MakeSingleton())
+  }
+}

@@ -27,4 +27,20 @@ public class SChan<T>
     // Note that an SBufferedChan with a capacity of 0 *will* deadlock.
     return SBufferedChan<T>((capacity < 1) ? 1 : capacity)
   }
+
+  /**
+    Factory method to obtain a (buffered) single-message channel.
+
+    :return: a newly-created, empty Chan<T>
+  */
+
+  public class func MakeSingleton() -> Chan<T>
+  {
+    return SingletonChan()
+  }
+
+  public class func MakeSingleton(element: T) -> Chan<T>
+  {
+    return SingletonChan(element)
+  }
 }

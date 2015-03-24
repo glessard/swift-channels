@@ -32,3 +32,11 @@ class QBufferedNChannelTests: BufferedNChannelTests
     return Channel.Wrap(QChan.Make(buflen))
   }
 }
+
+class QSingletonChannelTests: SingletonChannelTests
+{
+  override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
+  {
+    return Channel.Wrap(QChan.MakeSingleton())
+  }
+}

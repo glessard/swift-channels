@@ -12,7 +12,7 @@ import Dispatch
   A one-element buffered channel which will only ever transmit one message:
   the first successful write operation closes the channel.
 
-  The set of transmitted messages is (at most) singleton set;
+  The set of transmitted messages is (at most) a singleton set;
   not to be confused with the Singleton (anti?)pattern.
 */
 
@@ -30,6 +30,19 @@ final class QSingletonChan<T>: Chan<T>
   private var lock = OS_SPINLOCK_INIT
 
   private var closedState: Int32 = 0
+
+  override init()
+  {
+    super.init()
+  }
+
+  convenience init(_ element: T)
+  {
+    self.init()
+    self.element = element
+    writerCount = 1
+    closedState = 1
+  }
 
   // MARK: ChannelType properties
 
@@ -73,28 +86,6 @@ final class QSingletonChan<T>: Chan<T>
       }
       OSSpinLockUnlock(&lock)
     }
-  }
-
-  /**
-    Stop the thread on a new semaphore obtained from the SemaphorePool
-
-    The new semaphore is enqueued to readerQueue or writerQueue, and
-    will be used as a signal to resume the thread at a later time.
-
-    :param: lock a semaphore that is currently held by the calling thread.
-    :param: queue the queue to which the signal should be appended
-  */
-
-  private func wait(queue: SemaphoreQueue)
-  {
-    precondition(lock != 0, "Lock must be locked upon entering \(__FUNCTION__)")
-
-    let threadLock = SemaphorePool.dequeue()
-    queue.enqueue(threadLock)
-    OSSpinLockUnlock(&lock)
-    dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
-    SemaphorePool.enqueue(threadLock)
-    OSSpinLockLock(&lock)
   }
 
   /**

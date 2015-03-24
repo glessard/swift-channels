@@ -33,4 +33,9 @@ public class QChan<T>
   {
     return QSingletonChan()
   }
+
+  public class func MakeSingleton(element: T) -> Chan<T>
+  {
+    return QSingletonChan(element)
+  }
 }
