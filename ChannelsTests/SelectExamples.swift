@@ -102,4 +102,30 @@ class SelectExamples: XCTestCase
     }
     println()
   }
+
+  func testSendsAndReceives()
+  {
+    let c: (tx: Sender<Int>, rx: Receiver<Int>) = Channel<Int>.Make(5)
+
+    var i = 0
+    while let selection = select(c.tx, c.rx)
+    {
+      switch selection.id
+      {
+      case let s where s === c.tx:
+        c.tx.insert(selection, newElement: i++)
+        print("s")
+        if i > 30 { c.tx.close() }
+
+      case let s where s === c.rx:
+        if let v = c.rx.extract(selection)
+        {
+          print("r")
+        }
+
+      default: continue
+      }
+    }
+    println()
+  }
 }

@@ -242,7 +242,7 @@ final class QBufferedChan<T>: Chan<T>
   override func selectPutNow(selectionID: Selectable) -> Selection?
   {
     OSSpinLockLock(&lock)
-    if !closed && head+capacity <= nextput
+    if !closed && head+capacity > nextput
     {
       nextput += 1
       OSSpinLockUnlock(&lock)
