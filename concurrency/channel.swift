@@ -50,7 +50,7 @@ public class Channel<T>
 
   public class func MakeSingleton() -> (tx: Sender<T>, rx: Receiver<T>)
   {
-    return Wrap(SChan.MakeSingleton())
+    return Wrap(QChan.MakeSingleton())
   }
 
   public class func MakeSingleton(_: T.Type) -> (tx: Sender<T>, rx: Receiver<T>)
@@ -68,7 +68,7 @@ public class Channel<T>
 
   public class func MakeSingleton(element: T) -> (tx: Sender<T>, rx: Receiver<T>)
   {
-    return Wrap(SChan.MakeSingleton(element))
+    return Wrap(QChan.MakeSingleton(element))
   }
 
   /**

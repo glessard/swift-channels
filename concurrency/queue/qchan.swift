@@ -22,10 +22,20 @@ public class QChan<T>
     switch capacity < 1
     {
     case true:
-      return QUnbufferedChan<T>()
+      return QUnbufferedChan()
 
     default:
-      return QBufferedChan<T>(capacity)
+      return QBufferedChan(capacity)
     }
+  }
+
+  public class func MakeSingleton() -> Chan<T>
+  {
+    return QSingletonChan()
+  }
+
+  public class func MakeSingleton(element: T) -> Chan<T>
+  {
+    return QSingletonChan(element)
   }
 }
