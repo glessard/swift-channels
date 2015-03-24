@@ -105,9 +105,7 @@ public protocol SelectableSenderType: SenderType, Selectable
 
 
 /**
-  You can put anything in a Selection.
-  It has a convenient, non-generic type,
-  coupled to a decidedly generic accessor method.
+  Selection is used to communicate references back to the select() function.
 */
 
 public final class Selection
@@ -115,15 +113,15 @@ public final class Selection
   public let id: Selectable
   public let semaphore: dispatch_semaphore_t?
 
-  public init(selectionID: Selectable, semaphore: dispatch_semaphore_t)
+  public init(id: Selectable, semaphore: dispatch_semaphore_t)
   {
-    self.id = selectionID
+    self.id = id
     self.semaphore = semaphore
   }
 
-  public init(selectionID: Selectable)
+  public init(id: Selectable)
   {
-    id = selectionID
+    self.id = id
     semaphore = nil
   }
 }

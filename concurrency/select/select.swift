@@ -37,7 +37,7 @@ public func select(options: [Selectable], withDefault: Selectable? = nil) -> Sel
 
   if let d = withDefault
   {
-    return Selection(selectionID: d)
+    return Selection(id: d)
   }
 
   // The asynchronous path
@@ -56,7 +56,7 @@ public func select(options: [Selectable], withDefault: Selectable? = nil) -> Sel
   }
   else
   {
-    selection = Selection(selectionID: Receiver<Void>())
+    selection = Selection(id: Receiver<Void>())
   }
 
   for signal in signals { signal() }

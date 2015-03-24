@@ -193,7 +193,7 @@ final class SBufferedChan<T>: Chan<T>
   {
     if dispatch_semaphore_wait(empty, DISPATCH_TIME_NOW) == 0
     {
-      return Selection(selectionID: selectionID)
+      return Selection(id: selectionID)
     }
     else
     {
@@ -236,7 +236,7 @@ final class SBufferedChan<T>: Chan<T>
         OSMemoryBarrier()
         if !self.closed
         {
-          let selection = Selection(selectionID: selectionID)
+          let selection = Selection(id: selectionID)
           dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
           dispatch_semaphore_signal(s)
         }
@@ -263,7 +263,7 @@ final class SBufferedChan<T>: Chan<T>
   {
     if dispatch_semaphore_wait(filled, DISPATCH_TIME_NOW) == 0
     {
-      return Selection(selectionID: selectionID)
+      return Selection(id: selectionID)
     }
     else
     {
@@ -306,7 +306,7 @@ final class SBufferedChan<T>: Chan<T>
         OSMemoryBarrier()
         if self.head < self.tail
         {
-          let selection = Selection(selectionID: selectionID)
+          let selection = Selection(id: selectionID)
           dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
           dispatch_semaphore_signal(s)
         }

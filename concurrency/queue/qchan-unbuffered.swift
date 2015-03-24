@@ -279,7 +279,7 @@ final class QUnbufferedChan<T>: Chan<T>
 
       default:
         OSSpinLockUnlock(&lock)
-        return Selection(selectionID: selectionID, semaphore: rs)
+        return Selection(id: selectionID, semaphore: rs)
       }
     }
     OSSpinLockUnlock(&lock)
@@ -333,7 +333,7 @@ final class QUnbufferedChan<T>: Chan<T>
               let reader = Unmanaged<dispatch_semaphore_t>.fromOpaque(COpaquePointer(context)).takeRetainedValue()
               assert(reader === rs, __FUNCTION__)
               // pass the rs semaphore on to insert()
-              let selection = Selection(selectionID: selectionID, semaphore: rs)
+              let selection = Selection(id: selectionID, semaphore: rs)
               dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
               dispatch_semaphore_signal(s)
             }
@@ -350,7 +350,7 @@ final class QUnbufferedChan<T>: Chan<T>
           if let s = semaphore.get()
           { // pass the rs semaphore on to insert()
             OSSpinLockUnlock(&self.lock)
-            let selection = Selection(selectionID: selectionID, semaphore: rs)
+            let selection = Selection(id: selectionID, semaphore: rs)
             dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
             dispatch_semaphore_signal(s)
           }
@@ -402,7 +402,7 @@ final class QUnbufferedChan<T>: Chan<T>
         let rs = Unmanaged<dispatch_semaphore_t>.fromOpaque(COpaquePointer(context)).takeRetainedValue()
         if let s = semaphore.get()
         { // pass rs on to insert()
-          let selection = Selection(selectionID: selectionID, semaphore: rs)
+          let selection = Selection(id: selectionID, semaphore: rs)
           dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
           dispatch_semaphore_signal(s)
         }
@@ -441,7 +441,7 @@ final class QUnbufferedChan<T>: Chan<T>
 
       default:
         OSSpinLockUnlock(&lock)
-        return Selection(selectionID: selectionID, semaphore: ws)
+        return Selection(id: selectionID, semaphore: ws)
       }
     }
     OSSpinLockUnlock(&lock)
@@ -490,7 +490,7 @@ final class QUnbufferedChan<T>: Chan<T>
             {
             case buffer:
               // thread awoken by insert(); pass threadLock on to extract(), mimicking a queued put()
-              let selection = Selection(selectionID: selectionID, semaphore: threadLock)
+              let selection = Selection(id: selectionID, semaphore: threadLock)
               dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
               dispatch_semaphore_signal(s)
 
@@ -527,7 +527,7 @@ final class QUnbufferedChan<T>: Chan<T>
           if let s = semaphore.get()
           { // pass ws on to extract()
             OSSpinLockUnlock(&self.lock)
-            let selection = Selection(selectionID: selectionID, semaphore: ws)
+            let selection = Selection(id: selectionID, semaphore: ws)
             dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
             dispatch_semaphore_signal(s)
           }
@@ -593,7 +593,7 @@ final class QUnbufferedChan<T>: Chan<T>
             assert(dispatch_get_context(threadLock) == buffer)
 
             // pass threadLock on to extract(), i.e. mimic a queued put()
-            let selection = Selection(selectionID: selectionID, semaphore: threadLock)
+            let selection = Selection(id: selectionID, semaphore: threadLock)
             dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
             dispatch_semaphore_signal(s)
 
@@ -610,7 +610,7 @@ final class QUnbufferedChan<T>: Chan<T>
 
           default:
             // the data is attached from a put(); pass it on to extract()
-            let selection = Selection(selectionID: selectionID, semaphore: ws)
+            let selection = Selection(id: selectionID, semaphore: ws)
             dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
             dispatch_semaphore_signal(s)
           }

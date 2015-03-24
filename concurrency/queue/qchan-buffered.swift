@@ -246,7 +246,7 @@ final class QBufferedChan<T>: Chan<T>
     {
       nextput += 1
       OSSpinLockUnlock(&lock)
-      return Selection(selectionID: selectionID)
+      return Selection(id: selectionID)
     }
     OSSpinLockUnlock(&lock)
     return nil
@@ -310,7 +310,7 @@ final class QBufferedChan<T>: Chan<T>
           self.nextput += 1
           OSSpinLockUnlock(&self.lock)
 
-          let selection = Selection(selectionID: selectionID)
+          let selection = Selection(id: selectionID)
           dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
           dispatch_semaphore_signal(s)
         }
@@ -369,7 +369,7 @@ final class QBufferedChan<T>: Chan<T>
     {
       nextget += 1
       OSSpinLockUnlock(&lock)
-      return Selection(selectionID: selectionID)
+      return Selection(id: selectionID)
     }
     OSSpinLockUnlock(&lock)
     return nil
@@ -434,7 +434,7 @@ final class QBufferedChan<T>: Chan<T>
           self.nextget += 1
           OSSpinLockUnlock(&self.lock)
 
-          let selection = Selection(selectionID: selectionID)
+          let selection = Selection(id: selectionID)
           dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
           dispatch_semaphore_signal(s)
         }
