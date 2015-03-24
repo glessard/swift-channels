@@ -205,7 +205,7 @@ final class SBufferedChan<T>: Chan<T>
   {
     // the `empty` semaphore has already been decremented for this operation.
     OSSpinLockLock(&wlock)
-    if !closed
+    if !closed && head+capacity > tail
     {
       buffer.advancedBy(Int(tail&mask)).initialize(newElement)
       tail += 1
@@ -243,7 +243,6 @@ final class SBufferedChan<T>: Chan<T>
         else
         {
           dispatch_semaphore_signal(self.empty)
-          dispatch_set_context(s, nil)
           dispatch_semaphore_signal(s)
         }
       }
@@ -313,7 +312,6 @@ final class SBufferedChan<T>: Chan<T>
         else
         {
           dispatch_semaphore_signal(self.filled)
-          dispatch_set_context(s, nil)
           dispatch_semaphore_signal(s)
         }
       }

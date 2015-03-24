@@ -255,7 +255,7 @@ final class QBufferedChan<T>: Chan<T>
   override func insert(selection: Selection, newElement: T) -> Bool
   {
     OSSpinLockLock(&lock)
-    if !closed
+    if !closed && head+capacity > tail
     {
       buffer.advancedBy(Int(tail&mask)).initialize(newElement)
       tail += 1
@@ -325,8 +325,6 @@ final class QBufferedChan<T>: Chan<T>
             dispatch_semaphore_signal(ws)
           }
           OSSpinLockUnlock(&self.lock)
-
-          dispatch_set_context(s, nil)
           dispatch_semaphore_signal(s)
         }
       }
@@ -365,7 +363,7 @@ final class QBufferedChan<T>: Chan<T>
   override func selectGetNow(selectionID: Selectable) -> Selection?
   {
     OSSpinLockLock(&lock)
-    if !closed && nextget < tail
+    if nextget < tail
     {
       nextget += 1
       OSSpinLockUnlock(&lock)
@@ -450,8 +448,6 @@ final class QBufferedChan<T>: Chan<T>
             dispatch_semaphore_signal(rs)
           }
           OSSpinLockUnlock(&self.lock)
-
-          dispatch_set_context(s, nil)
           dispatch_semaphore_signal(s)
         }
       }
