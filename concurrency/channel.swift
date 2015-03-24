@@ -34,21 +34,7 @@ public class Channel<T>
 
   public class func Make(capacity: Int) -> (tx: Sender<T>, rx: Receiver<T>)
   {
-    return Wrap(Chan<T>.Make(capacity))
-  }
-
-  /**
-    Factory function to obtain a new Chan<T> object, wrapped by a Sender<T>/Receiver<T> pair.
-
-    :param: type a sample variable whose type will be used for the channel's element type. The variable is not used.
-    :param: capacity the buffer capacity of the channel. The default is 0 for an unbuffered channel.
-
-    :return: a newly-created, empty Sender<T>/Receiver<T> pair.
-  */
-
-  public class func Make(#typeOf: T, _ capacity: Int = 0) -> (tx: Sender<T>, rx: Receiver<T>)
-  {
-    return Make(capacity)
+    return Wrap(Chan.Make(capacity))
   }
 
   public class func Make(_: T.Type, _ capacity: Int = 0) -> (tx: Sender<T>, rx: Receiver<T>)
@@ -64,25 +50,25 @@ public class Channel<T>
 
   public class func MakeSingleton() -> (tx: Sender<T>, rx: Receiver<T>)
   {
-    return Wrap(SingletonChan<T>())
-  }
-
-  /**
-    Factory function to obtain a single-message channel, wrapped by a Sender<T>/Receiver<T> pair.
-
-    :param: type a sample variable whose type will be used for the channel's element type. The variable is not used.
-
-    :return: a newly-created, empty Sender<T>/Receiver<T> pair.
-  */
-
-  public class func MakeSingleton(#typeOf: T) -> (tx: Sender<T>, rx: Receiver<T>)
-  {
-    return MakeSingleton()
+    return Wrap(SChan.MakeSingleton())
   }
 
   public class func MakeSingleton(_: T.Type) -> (tx: Sender<T>, rx: Receiver<T>)
   {
     return MakeSingleton()
+  }
+
+  /**
+    Factory function to obtain a single-message channel, wrapped by a Sender<T>/Receiver<T> pair.
+
+    :param:  element the element to be used as the channel's one and only message.
+
+    :return: a newly-created, empty Sender<T>/Receiver<T> pair.
+  */
+
+  public class func MakeSingleton(element: T) -> (tx: Sender<T>, rx: Receiver<T>)
+  {
+    return Wrap(SChan.MakeSingleton(element))
   }
 
   /**

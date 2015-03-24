@@ -11,33 +11,13 @@ import Dispatch
 /**
   A one-element buffered channel which will only ever transmit one message:
   the first successful write operation closes the channel.
+
+  The set of transmitted messages is (at most) singleton set;
+  not to be confused with the Singleton (anti?)pattern.
 */
 
-final public class SingletonChan<T>: Chan<T>
+final class SingletonChan<T>: Chan<T>
 {
-  // MARK: Factory functions
-
-  /**
-    Factory method to obtain a (buffered) single-message channel.
-
-    :return: a newly-created, empty Chan<T>
-  */
-
-  override public class func Make() -> Chan<T>
-  {
-    return SingletonChan()
-  }
-
-  public class func Make(#typeOf: T) -> Chan<T>
-  {
-    return Make()
-  }
-
-  public class func Make(_: T.Type) -> Chan<T>
-  {
-    return Make()
-  }
-
   // MARK: Private instance variables
 
   private var element: T? = nil
@@ -51,12 +31,12 @@ final public class SingletonChan<T>: Chan<T>
 
   // MARK: Initialization
 
-  public override init()
+  override init()
   {
     dispatch_group_enter(barrier)
   }
 
-  public convenience init(_ element: T)
+  convenience init(_ element: T)
   {
     self.init()
     self.element = element
@@ -65,12 +45,12 @@ final public class SingletonChan<T>: Chan<T>
 
   // MARK: Property accessors
 
-  final public override var isEmpty: Bool
+  final override var isEmpty: Bool
   {
     return element == nil
   }
 
-  final public override var isFull: Bool
+  final override var isFull: Bool
   {
     return element != nil
   }
@@ -79,7 +59,7 @@ final public class SingletonChan<T>: Chan<T>
     Determine whether the channel has been closed
   */
 
-  final public override var isClosed: Bool { return closedState > 0 }
+  final override var isClosed: Bool { return closedState > 0 }
 
   // MARK: ChannelType implementation
 
@@ -93,7 +73,7 @@ final public class SingletonChan<T>: Chan<T>
     been closed. The actual reaction shall be implementation-dependent.
   */
 
-  public override func close()
+  override func close()
   {
     if closedState == 0 && OSAtomicCompareAndSwap32Barrier(0, 1, &closedState)
     { // Only one thread can get here
@@ -113,7 +93,7 @@ final public class SingletonChan<T>: Chan<T>
     :param: element the new element to be added to the channel.
   */
 
-  public override func put(newElement: T) -> Bool
+  override func put(newElement: T) -> Bool
   {
     if writerCount == 0 && OSAtomicCompareAndSwap32Barrier(0, 1, &writerCount)
     { // Only one thread can get here
@@ -135,7 +115,7 @@ final public class SingletonChan<T>: Chan<T>
     :return: the element transmitted through the channel.
   */
 
-  public override func get() -> T?
+  override func get() -> T?
   {
     if closedState == 0
     {
