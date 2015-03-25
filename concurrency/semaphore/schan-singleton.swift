@@ -133,4 +133,81 @@ final class SingletonChan<T>: Chan<T>
 
     return nil
   }
+
+  // MARK: SelectableChannelType methods
+
+  override func selectPutNow(selectionID: Selectable) -> Selection?
+  {
+    return writerCount == 0 ? Selection(id: selectionID) : nil
+  }
+
+  override func insert(selection: Selection, newElement: T) -> Bool
+  {
+    return put(newElement)
+  }
+
+  override func selectPut(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
+  {
+    // If we get here, it would be as a result of an inconceivable set of circumstances.
+    // Dispense with the asynchronicity, as the put() operation cannot block.
+    if let s = semaphore.get()
+    {
+      if self.writerCount == 0
+      {
+        let selection = Selection(id: selectionID)
+        dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
+      }
+      dispatch_semaphore_signal(s)
+    }
+
+    return {}
+  }
+
+  override func selectGetNow(selectionID: Selectable) -> Selection?
+  {
+    return readerCount == 0 ? Selection(id: selectionID) : nil
+  }
+
+  override func extract(selection: Selection) -> T?
+  {
+    if readerCount == 0 && writerCount == 1 && OSAtomicCompareAndSwap32Barrier(0, 1, &readerCount)
+    { // Only one thread can get here.
+      if let e = element
+      {
+        element = nil
+        return e
+      }
+    }
+    return nil
+  }
+
+  override func selectGet(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
+  {
+    var cancel = false
+
+    dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
+      _ in
+      if self.closedState == 0
+      {
+        dispatch_group_wait(self.barrier, DISPATCH_TIME_FOREVER)
+        OSMemoryBarrier()
+        if cancel { return }
+      }
+
+      if let s = semaphore.get()
+      {
+        if self.readerCount == 0
+        {
+          let selection = Selection(id: selectionID)
+          dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
+        }
+        dispatch_semaphore_signal(s)
+      }
+    }
+
+    return {
+      cancel = true
+      OSMemoryBarrier()
+    }
+  }
 }

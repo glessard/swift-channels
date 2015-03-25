@@ -94,4 +94,45 @@ class SelectToSelectTests: XCTestCase
   {
     SelectTest(buffered: true, sleeper: .Receiver)
   }
+
+  func testSelectSingletons()
+  {
+    let selectableCount = 10
+
+    let channels  = map(0..<selectableCount) { _ in Channel<Int>.MakeSingleton() }
+    let senders   = channels.map { $0.tx }
+    let receivers = channels.map { $0.rx }
+
+    async {
+      var i = 0
+      // Currently required to avoid a runtime crash:
+      let selectables = senders.map { $0 as Selectable }
+      while let selection = select(selectables)
+      {
+        if let sender = selection.id as? Sender<Int>
+        {
+          if sender.insert(selection, newElement: i) { i++ }
+        }
+      }
+      for sender in senders { XCTAssert(sender.isClosed, __FUNCTION__) }
+    }
+
+    var i = 0
+    // Currently required to avoid a runtime crash:
+    let selectables = receivers.map { $0 as Selectable }
+    while let selection = select(selectables)
+    {
+      if let receiver = selection.id as? Receiver<Int>
+      {
+        if let message = receiver.extract(selection)
+        {
+          print(message)
+          i++
+        }
+      }
+    }
+    println()
+
+    XCTAssert(i == selectableCount, "Received \(i) messages; expected \(selectableCount)")
+  }
 }
