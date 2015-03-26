@@ -97,6 +97,10 @@
 		03AD47AF1A688BE900F4B44B /* shuffle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47AD1A688BE900F4B44B /* shuffle.swift */; };
 		03AD47B21A6890B100F4B44B /* merge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47B11A6890B100F4B44B /* merge.swift */; };
 		03AD47C01A689E0900F4B44B /* MergeTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47BF1A689E0900F4B44B /* MergeTest.swift */; };
+		03E50F901AC3E3DC00F4B44B /* schan-singleton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 034CABE21AC210BC00F4B44B /* schan-singleton.swift */; };
+		03E50F911AC3E3DC00F4B44B /* schan-singleton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 034CABE21AC210BC00F4B44B /* schan-singleton.swift */; };
+		03E50F921AC3E3EA00F4B44B /* qchan-singleton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 034CABE41AC2166700F4B44B /* qchan-singleton.swift */; };
+		03E50F931AC3E3EB00F4B44B /* qchan-singleton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 034CABE41AC2166700F4B44B /* qchan-singleton.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -587,6 +591,7 @@
 				03AD477F1A68354F00F4B44B /* fastqueue.swift in Sources */,
 				0335FBE11A8B277500F4B44B /* pchan-bufferedN-array.swift in Sources */,
 				0336B9B61ABB1BF700F4B44B /* async.swift in Sources */,
+				03E50F921AC3E3EA00F4B44B /* qchan-singleton.swift in Sources */,
 				03AD47751A68348C00F4B44B /* semaphorepool.swift in Sources */,
 				03AD476D1A68348C00F4B44B /* pchan.swift in Sources */,
 				03AD47791A6834F500F4B44B /* timing.swift in Sources */,
@@ -600,6 +605,7 @@
 				03AD475F1A68346300F4B44B /* main.swift in Sources */,
 				03AD476F1A68348C00F4B44B /* pchan-bufferedN-queue.swift in Sources */,
 				03AD476B1A68348C00F4B44B /* chan.swift in Sources */,
+				03E50F901AC3E3DC00F4B44B /* schan-singleton.swift in Sources */,
 				03AD47661A68348C00F4B44B /* chan-operators.swift in Sources */,
 				03AD47701A68348C00F4B44B /* pchan-bufferedN-buffer.swift in Sources */,
 				03AD47641A68347300F4B44B /* SimpleChannel.swift in Sources */,
@@ -616,6 +622,7 @@
 				03AD479D1A68369C00F4B44B /* qchan-unbuffered.swift in Sources */,
 				03AD47981A68369C00F4B44B /* pchan-bufferedN-queue.swift in Sources */,
 				03AD47A11A6836B300F4B44B /* logging.swift in Sources */,
+				03E50F931AC3E3EB00F4B44B /* qchan-singleton.swift in Sources */,
 				03AD479E1A68369C00F4B44B /* semaphorepool.swift in Sources */,
 				0335FBE51A8B2A9F00F4B44B /* semaphorestack.swift in Sources */,
 				03AD47951A68369C00F4B44B /* channel.swift in Sources */,
@@ -635,6 +642,7 @@
 				03AD478A1A68366A00F4B44B /* main.swift in Sources */,
 				03AD47A31A6836B800F4B44B /* queuetype.swift in Sources */,
 				03AD47961A68369C00F4B44B /* pchan.swift in Sources */,
+				03E50F911AC3E3DC00F4B44B /* schan-singleton.swift in Sources */,
 				03AD47901A68369C00F4B44B /* chan-protocols.swift in Sources */,
 				03AD47A61A6836B800F4B44B /* fastqueue.swift in Sources */,
 				03AD47911A68369C00F4B44B /* chan-receiver.swift in Sources */,
