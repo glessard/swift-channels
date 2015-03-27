@@ -69,9 +69,10 @@ This causes the while loop in the example to exit.
 
 On OS X, with Swift 1.2 and whole-module optimization,
 message transmission with no thread contention is slightly faster as
-it would be in Go 1.4, e.g. 145 vs. 160 nanoseconds on a 2008 Mac Pro.
+it would be in Go 1.4, e.g. 140 vs. 160 nanoseconds on a 2008 Mac Pro
+(2.8 GHz Xeon "Harpertown" (E5462)).
 With thread contention, Go channels are *much* faster (about 10x),
-due to context switching time involving dispatch semaphores. Go has a
+due to the context switching time involving dispatch semaphores. Go has a
 very lightweight concurrency system, while dispatch_semaphore pause and
 resume system threads.
 

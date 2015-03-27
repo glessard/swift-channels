@@ -110,14 +110,7 @@ final class QBufferedChan<T>: Chan<T>
     closed = true
 
     // Unblock waiting threads.
-    if let rs = readerQueue.dequeue()
-    {
-      dispatch_semaphore_signal(rs)
-    }
-    else if let ws = writerQueue.dequeue()
-    {
-      dispatch_semaphore_signal(ws)
-    }
+    readerQueue.signalNext() || writerQueue.signalNext()
     OSSpinLockUnlock(&lock)
   }
 
@@ -168,20 +161,20 @@ final class QBufferedChan<T>: Chan<T>
       nextput += 1
       buffer.advancedBy(Int(tail&mask)).initialize(newElement)
       tail += 1
-    }
-    let sent = !closed
 
-    if let rs = readerQueue.dequeue()
-    {
-      dispatch_semaphore_signal(rs)
+      if !readerQueue.signalNext()
+      {
+        if head+capacity > nextput || closed { writerQueue.signalNext() }
+      }
+      OSSpinLockUnlock(&lock)
+      return true
     }
-    else if head+capacity > nextput || closed, let ws = writerQueue.dequeue()
+    else
     {
-      dispatch_semaphore_signal(ws)
+      readerQueue.signalNext() || writerQueue.signalNext()
+      OSSpinLockUnlock(&lock)
+      return false
     }
-
-    OSSpinLockUnlock(&lock)
-    return sent
   }
 
   /**
@@ -210,13 +203,9 @@ final class QBufferedChan<T>: Chan<T>
       let element = buffer.advancedBy(Int(head&mask)).move()
       head += 1
 
-      if let ws = writerQueue.dequeue()
+      if !writerQueue.signalNext()
       {
-        dispatch_semaphore_signal(ws)
-      }
-      else if nextget < tail || closed, let rs = readerQueue.dequeue()
-      {
-        dispatch_semaphore_signal(rs)
+        if nextget < tail || closed { readerQueue.signalNext() }
       }
       OSSpinLockUnlock(&lock)
       return element
@@ -224,14 +213,7 @@ final class QBufferedChan<T>: Chan<T>
     else
     {
       assert(closed, __FUNCTION__)
-      if let ws = writerQueue.dequeue()
-      {
-        dispatch_semaphore_signal(ws)
-      }
-      else if let rs = readerQueue.dequeue()
-      {
-        dispatch_semaphore_signal(rs)
-      }
+      writerQueue.signalNext() || readerQueue.signalNext()
       OSSpinLockUnlock(&lock)
       return nil
     }
@@ -481,5 +463,24 @@ final class QBufferedChan<T>: Chan<T>
         OSSpinLockUnlock(&self.lock)
       }
     }
+  }
+}
+
+private extension SemaphoreQueue
+{
+  /**
+    Signal the next valid semaphore from the SemaphoreQueue.
+  
+    For some reason, this is cost-free as an extension, but costly as a method of QBufferedChan.
+  */
+
+  private func signalNext() -> Bool
+  {
+    while let s = dequeue()
+    {
+      dispatch_semaphore_signal(s)
+      return true
+    }
+    return false
   }
 }

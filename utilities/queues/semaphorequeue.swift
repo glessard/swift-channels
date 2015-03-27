@@ -16,6 +16,8 @@ final class SemaphoreQueue: QueueType, SequenceType, GeneratorType
 
   private let pool = AtomicStackInit()
 
+  // MARK: init/deinit
+
   init() { }
 
   convenience init(_ newElement: dispatch_semaphore_t)
@@ -41,6 +43,8 @@ final class SemaphoreQueue: QueueType, SequenceType, GeneratorType
     }
     AtomicStackRelease(pool)
   }
+
+  // MARK: QueueType interface
 
   var isEmpty: Bool {
     return (head == nil)
@@ -154,14 +158,14 @@ final class SemaphoreQueue: QueueType, SequenceType, GeneratorType
     return false
   }
 
-  // Implementation of GeneratorType
+  // MARK: GeneratorType implementation
 
   func next() -> dispatch_semaphore_t?
   {
     return dequeue()
   }
 
-  // Implementation of SequenceType
+  // MARK: SequenceType implementation
 
   func generate() -> Self
   {
