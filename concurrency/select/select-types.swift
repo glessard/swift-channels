@@ -110,7 +110,7 @@ public protocol SelectableSenderType: SenderType, Selectable
 
 public final class Selection
 {
-  public let id: Selectable
+  public unowned let id: Selectable
   public let semaphore: dispatch_semaphore_t?
 
   public init(id: Selectable, semaphore: dispatch_semaphore_t)
