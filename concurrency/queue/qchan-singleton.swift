@@ -25,7 +25,7 @@ final class QSingletonChan<T>: Chan<T>
   private var writerCount: Int32 = 0
   private var readerCount: Int32 = 0
 
-  private let readerQueue = SemaphoreQueue()
+  private let readerQueue = SuperSemaphoreQueue()
 
   private var lock = OS_SPINLOCK_INIT
 
@@ -79,15 +79,37 @@ final class QSingletonChan<T>: Chan<T>
     if closedState == 0 && OSAtomicCompareAndSwap32Barrier(0, 1, &closedState)
     { // Only one thread can get here
       // Unblock waiting threads.
-      OSSpinLockLock(&lock)
-      if let rs = readerQueue.dequeue()
-      {
-        dispatch_semaphore_signal(rs)
-      }
-      OSSpinLockUnlock(&lock)
+      signalNextReader()
     }
   }
 
+  private func signalNextReader() -> Bool
+  {
+    OSSpinLockLock(&lock)
+    while let ssema = readerQueue.dequeue()
+    {
+      switch ssema
+      {
+      case .semaphore(let s):
+        OSSpinLockUnlock(&lock)
+        dispatch_semaphore_signal(s)
+        return true
+
+      case .selection(let c, let selectionID):
+        if let s = c.get()
+        {
+          OSSpinLockUnlock(&lock)
+          let selection = Selection(id: selectionID)
+          dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
+          dispatch_semaphore_signal(s)
+          return true
+        }
+      }
+    }
+    OSSpinLockUnlock(&lock)
+    return false
+  }
+  
   /**
     Append an element to the channel
 
@@ -129,9 +151,7 @@ final class QSingletonChan<T>: Chan<T>
       OSSpinLockUnlock(&lock)
       dispatch_semaphore_wait(s, DISPATCH_TIME_FOREVER)
 
-      OSSpinLockLock(&lock)
-      if let rs = readerQueue.dequeue() { dispatch_semaphore_signal(rs) }
-      OSSpinLockUnlock(&lock)
+      signalNextReader()
     }
 
     if readerCount == 0 && OSAtomicCompareAndSwap32Barrier(0, 1, &readerCount)
@@ -161,7 +181,6 @@ final class QSingletonChan<T>: Chan<T>
   override func selectPut(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
   {
     // If we get here, it would be as a result of an inconceivable set of circumstances.
-    // Dispense with the asynchronicity, since the put() operation cannot block.
     if let s = semaphore.get()
     {
       if self.writerCount == 0
@@ -195,58 +214,22 @@ final class QSingletonChan<T>: Chan<T>
   
   override func selectGet(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
   {
-    let threadLock = SemaphorePool.dequeue()
-    var cancel = false
-    var cancelable = true
-
-    dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
-      _ in
-      if self.closedState == 0
-      {
-        OSSpinLockLock(&self.lock)
-        self.readerQueue.enqueue(threadLock)
-        OSSpinLockUnlock(&self.lock)
-        dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
-        OSMemoryBarrier()
-        if cancel
-        {
-          SemaphorePool.enqueue(threadLock)
-          return
-        }
-
-        OSSpinLockLock(&self.lock)
-        if let rs = self.readerQueue.dequeue() { dispatch_semaphore_signal(rs) }
-        OSSpinLockUnlock(&self.lock)
-      }
-
-      cancelable = false
-      OSMemoryBarrier()
+    if closedState == 1
+    {
       if let s = semaphore.get()
       {
-        if self.readerCount == 0
-        {
-          let selection = Selection(id: selectionID)
-          dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
-        }
+        let selection = Selection(id: selectionID)
+        dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
         dispatch_semaphore_signal(s)
       }
-
-      SemaphorePool.enqueue(threadLock)
+    }
+    else
+    {
+      OSSpinLockLock(&lock)
+      readerQueue.enqueue(semaphore, id: selectionID)
+      OSSpinLockUnlock(&lock)
     }
 
-    return {
-      OSMemoryBarrier()
-      if cancelable
-      {
-        OSSpinLockLock(&self.lock)
-        if self.readerQueue.remove(threadLock)
-        {
-          cancel = true
-          OSMemoryBarrier()
-          dispatch_semaphore_signal(threadLock)
-        }
-        OSSpinLockUnlock(&self.lock)
-      }
-    }
+    return {}
   }
 }
