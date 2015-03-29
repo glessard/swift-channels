@@ -178,7 +178,7 @@ final class QSingletonChan<T>: Chan<T>
     return put(newElement)
   }
 
-  override func selectPut(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
+  override func selectPut(semaphore: SemaphoreChan, selectionID: Selectable)
   {
     // If we get here, it would be as a result of an inconceivable set of circumstances.
     if let s = semaphore.get()
@@ -190,8 +190,6 @@ final class QSingletonChan<T>: Chan<T>
       }
       dispatch_semaphore_signal(s)
     }
-
-    return {}
   }
 
   override func selectGetNow(selectionID: Selectable) -> Selection?
@@ -212,7 +210,7 @@ final class QSingletonChan<T>: Chan<T>
     return nil
   }
   
-  override func selectGet(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
+  override func selectGet(semaphore: SemaphoreChan, selectionID: Selectable)
   {
     if closedState == 1
     {
@@ -229,7 +227,5 @@ final class QSingletonChan<T>: Chan<T>
       readerQueue.enqueue(semaphore, id: selectionID)
       OSSpinLockUnlock(&lock)
     }
-
-    return {}
   }
 }

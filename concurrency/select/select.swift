@@ -44,7 +44,11 @@ public func select(options: [Selectable], withDefault: Selectable? = nil) -> Sel
   let semaphore = SemaphorePool.dequeue()
   let semaphoreChan = SemaphoreChan(semaphore)
 
-  let signals = map(shuffle(selectables)) { $0.selectNotify(semaphoreChan, selectionID: $0) }
+  for option in shuffle(selectables)
+  {
+    option.selectNotify(semaphoreChan, selectionID: option)
+    if semaphoreChan.isEmpty { break }
+  }
 
   dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)
   // We have a result
@@ -59,7 +63,6 @@ public func select(options: [Selectable], withDefault: Selectable? = nil) -> Sel
     selection = Selection(id: voidReceiver)
   }
 
-  for signal in signals { signal() }
   dispatch_set_context(semaphore, nil)
   SemaphorePool.enqueue(semaphore)
 

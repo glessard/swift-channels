@@ -9,20 +9,6 @@
 import Dispatch
 
 /**
-  An evocative name for a closure type sent back by a selectNotify() method.
-  Upon being run, a Signal should try to resume the thread spawned by selectNotify()
-  if said thread happens to be blocked.
-
-  This attempt may not always be directly successful, but in such cases the thread should
-  eventually be resumed, because there would be several threads contending for the channel.
-  There are situations where the Signal could be the only hope to resume the thread,
-  because it is the only one waiting on its channel. In all such cases the attempt must
-  unblock the thread successfully.
-*/
-
-public typealias Signal = () -> ()
-
-/**
   What a type needs to be usable in the Select() function.
 */
 
@@ -58,7 +44,7 @@ public protocol Selectable: class
     :return: a closure to be run once, which can unblock a stopped thread if needed.
   */
 
-  func selectNotify(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
+  func selectNotify(semaphore: SemaphoreChan, selectionID: Selectable)
 
   /*
     Select first iterates through its Selectables to find whether at least one of them is ready.
@@ -80,11 +66,11 @@ public protocol Selectable: class
 
 protocol SelectableChannelType: ChannelType
 {
-  func selectGet(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
+  func selectGet(semaphore: SemaphoreChan, selectionID: Selectable)
   func selectGetNow(selectionID: Selectable) -> Selection?
   func extract(selection: Selection) -> Element?
 
-  func selectPut(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
+  func selectPut(semaphore: SemaphoreChan, selectionID: Selectable)
   func selectPutNow(selectionID: Selectable) -> Selection?
   func insert(selection: Selection, newElement: Element) -> Bool
 }

@@ -304,7 +304,7 @@ final class QBufferedChan<T>: Chan<T>
     }
   }
 
-  override func selectPut(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
+  override func selectPut(semaphore: SemaphoreChan, selectionID: Selectable)
   {
     OSSpinLockLock(&lock)
     if !closed && head+capacity <= nextput
@@ -331,8 +331,6 @@ final class QBufferedChan<T>: Chan<T>
         OSSpinLockUnlock(&lock)
       }
     }
-
-    return {}
   }
 
   override func selectGetNow(selectionID: Selectable) -> Selection?
@@ -371,7 +369,7 @@ final class QBufferedChan<T>: Chan<T>
     }
   }
   
-  override func selectGet(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
+  override func selectGet(semaphore: SemaphoreChan, selectionID: Selectable)
   {
     OSSpinLockLock(&lock)
     if !closed && nextget >= tail
@@ -398,8 +396,6 @@ final class QBufferedChan<T>: Chan<T>
         OSSpinLockUnlock(&lock)
       }
     }
-
-    return {}
   }
 }
 

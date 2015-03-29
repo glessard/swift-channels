@@ -60,9 +60,9 @@ extension Receiver: Selectable
 {
   // MARK: Selectable implementation
   
-  public func selectNotify(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
+  public func selectNotify(semaphore: SemaphoreChan, selectionID: Selectable)
   {
-    return wrapped.selectGet(semaphore, selectionID: selectionID)
+    wrapped.selectGet(semaphore, selectionID: selectionID)
   }
 
   public func selectNow(selectionID: Selectable) -> Selection?

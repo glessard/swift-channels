@@ -372,7 +372,7 @@ final class QUnbufferedChan<T>: Chan<T>
     return false
   }
 
-  override func selectPut(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
+  override func selectPut(semaphore: SemaphoreChan, selectionID: Selectable)
   {
     OSSpinLockLock(&lock)
     if !readerQueue.isEmpty
@@ -386,13 +386,12 @@ final class QUnbufferedChan<T>: Chan<T>
         }
         OSSpinLockUnlock(&lock)
         dispatch_semaphore_signal(s)
-        return {}
       }
       else
       {
         OSSpinLockUnlock(&lock)
-        return {}
       }
+      return
     }
 
     if closed
@@ -402,14 +401,12 @@ final class QUnbufferedChan<T>: Chan<T>
       {
         dispatch_semaphore_signal(s)
       }
-      return {}
+      return
     }
 
     // enqueue the SemaphoreChan and hope for the best.
     writerQueue.enqueue(.selection(semaphore, selectionID))
     OSSpinLockUnlock(&lock)
-
-    return {}
   }
 
   override func selectGetNow(selectionID: Selectable) -> Selection?
@@ -481,7 +478,7 @@ final class QUnbufferedChan<T>: Chan<T>
     return nil
   }
 
-  override func selectGet(semaphore: SemaphoreChan, selectionID: Selectable) -> Signal
+  override func selectGet(semaphore: SemaphoreChan, selectionID: Selectable)
   {
     OSSpinLockLock(&lock)
     if !writerQueue.isEmpty
@@ -495,13 +492,12 @@ final class QUnbufferedChan<T>: Chan<T>
         }
         OSSpinLockUnlock(&lock)
         dispatch_semaphore_signal(s)
-        return {}
       }
       else
       {
         OSSpinLockUnlock(&lock)
-        return {}
       }
+      return
     }
 
     if closed
@@ -511,13 +507,11 @@ final class QUnbufferedChan<T>: Chan<T>
       {
         dispatch_semaphore_signal(s)
       }
-      return {}
+      return
     }
 
     // enqueue the SemaphoreChan and hope for the best.
     readerQueue.enqueue(.selection(semaphore, selectionID))
     OSSpinLockUnlock(&lock)
-
-    return {}
   }
 }
