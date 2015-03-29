@@ -15,6 +15,8 @@ final class FastQueue<T>: QueueType, SequenceType, GeneratorType
 
   private let pool = AtomicStackInit()
 
+  // MARK: init/deinit
+
   init() { }
 
   convenience init(_ newElement: T)
@@ -47,6 +49,8 @@ final class FastQueue<T>: QueueType, SequenceType, GeneratorType
     // release the pool stack structure
     AtomicStackRelease(pool)
   }
+
+  // MARK: QueueType interface
 
   var isEmpty: Bool { return head == nil }
 
@@ -106,10 +110,14 @@ final class FastQueue<T>: QueueType, SequenceType, GeneratorType
     return nil
   }
 
+  // MARK: GeneratorType implementation
+
   func next() -> T?
   {
     return dequeue()
   }
+
+  // MARK: SequenceType implementation
 
   func generate() -> Self
   {
