@@ -56,7 +56,7 @@ public func select(options: [Selectable], withDefault: Selectable? = nil) -> Sel
   }
   else
   {
-    selection = Selection(id: Receiver<Void>())
+    selection = Selection(id: voidReceiver)
   }
 
   for signal in signals { signal() }
@@ -65,3 +65,5 @@ public func select(options: [Selectable], withDefault: Selectable? = nil) -> Sel
 
   return selection
 }
+
+private let voidReceiver = Receiver<()>()
