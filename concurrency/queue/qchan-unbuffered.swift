@@ -281,59 +281,53 @@ final class QUnbufferedChan<T>: Chan<T>
   override func selectPutNow(selectionID: Selectable) -> Selection?
   {
     OSSpinLockLock(&lock)
-    if let rs = selectPutNow()
+    while let rss = readerQueue.dequeue()
     {
-      OSSpinLockUnlock(&lock)
-      return Selection(id: selectionID, semaphore: rs)
+      switch rss
+      {
+      case .semaphore(let rs):
+        OSSpinLockUnlock(&lock)
+        return Selection(id: selectionID, semaphore: rs)
+
+      case .selection(let c, let extractSelectionID):
+        if let extractSelect = c.get()
+        {
+          OSSpinLockUnlock(&lock)
+          return Selection(id: selectionID, semaphore: insertToExtract(extractSelect, id: extractSelectionID))
+        }
+        // try the next enqueued reader instead
+      }
     }
     OSSpinLockUnlock(&lock)
     return nil
   }
 
-  private func selectPutNow() -> dispatch_semaphore_t?
+  private func insertToExtract(extractSelect: dispatch_semaphore_t, id: Selectable) -> dispatch_semaphore_t
   {
-    precondition(lock != 0, __FUNCTION__)
-    while let ssema = readerQueue.dequeue()
-    {
-      switch ssema
-      {
-      case .semaphore(let rs):
-        return rs
+    // We have two select() functions talking to eath other. They need an intermediary.
+    let intermediary = SemaphorePool.dequeue()
+    let buffer = UnsafeMutablePointer<T>.alloc(1)
+    dispatch_set_context(intermediary, buffer)
 
-      case .selection(let c, let selectionID):
-        if let s = c.get()
-        {
-          OSSpinLockUnlock(&lock)
-          let mediator = SemaphorePool.dequeue()
-          let buffer = UnsafeMutablePointer<T>.alloc(1)
-          dispatch_set_context(mediator, buffer)
+    // two select()s talking to each other need a 3rd thread
+    dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
+      dispatch_semaphore_wait(intermediary, DISPATCH_TIME_FOREVER)
+      // got awoken by insert()
+      precondition(dispatch_get_context(intermediary) == buffer, "Unknown context in \(__FUNCTION__)")
 
-          // two select()s talking to each other need a 3rd thread
-          dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
-            dispatch_semaphore_wait(mediator, DISPATCH_TIME_FOREVER)
-            // got awoken by insert()
-            precondition(dispatch_get_context(mediator) == buffer, "Unknown context in \(__FUNCTION__)")
-
-            let selection = Selection(id: selectionID, semaphore: mediator)
-            dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
-            dispatch_semaphore_signal(s)
-            dispatch_semaphore_wait(mediator, DISPATCH_TIME_FOREVER)
-            // got awoken by extract()
-            buffer.destroy(1)
-            buffer.dealloc(1)
-            dispatch_set_context(mediator, nil)
-            SemaphorePool.enqueue(mediator)
-          }
-          OSSpinLockLock(&lock)
-          return mediator
-        }
-        else
-        { // try the next enqueued reader instead
-          continue
-        }
-      }
+      let selection = Selection(id: id, semaphore: intermediary)
+      dispatch_set_context(extractSelect, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
+      dispatch_semaphore_signal(extractSelect)
+      dispatch_semaphore_wait(intermediary, DISPATCH_TIME_FOREVER)
+      // got awoken by extract(). clean up.
+      buffer.destroy(1)
+      buffer.dealloc(1)
+      dispatch_set_context(intermediary, nil)
+      SemaphorePool.enqueue(intermediary)
     }
-    return nil
+
+    // this return value will be sent off to insert()
+    return intermediary
   }
 
   override func insert(selection: Selection, newElement: T) -> Bool
@@ -352,31 +346,54 @@ final class QUnbufferedChan<T>: Chan<T>
   override func selectPut(semaphore: SemaphoreChan, selectionID: Selectable)
   {
     OSSpinLockLock(&lock)
-    if !readerQueue.isEmpty
+    while let rss = readerQueue.dequeue()
     {
-      if let s = semaphore.get()
+      switch rss
       {
-        if let rs = selectPutNow()
+      case .semaphore(let rs):
+        if let select = semaphore.get()
         {
+          OSSpinLockUnlock(&lock)
           let selection = Selection(id: selectionID, semaphore: rs)
-          dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
+          dispatch_set_context(select, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
+          dispatch_semaphore_signal(select)
         }
-        OSSpinLockUnlock(&lock)
-        dispatch_semaphore_signal(s)
+        else
+        {
+          readerQueue.undequeue(rss)
+          OSSpinLockUnlock(&lock)
+        }
+        return
+
+      case .selection(let c, let extractSelectionID):
+        if !c.isEmpty
+        {
+          if let select = semaphore.get()
+          {
+            OSSpinLockUnlock(&lock)
+            if let extractSelect = c.get()
+            {
+              let selection = Selection(id: selectionID, semaphore: insertToExtract(extractSelect, id: extractSelectionID))
+              dispatch_set_context(select, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
+            }
+            dispatch_semaphore_signal(select)
+          }
+          else
+          {
+            readerQueue.undequeue(rss)
+            OSSpinLockUnlock(&lock)
+          }
+          return
+        }
       }
-      else
-      {
-        OSSpinLockUnlock(&lock)
-      }
-      return
     }
 
     if closed
     {
       OSSpinLockUnlock(&lock)
-      if let s = semaphore.get()
+      if let select = semaphore.get()
       {
-        dispatch_semaphore_signal(s)
+        dispatch_semaphore_signal(select)
       }
       return
     }
@@ -389,60 +406,56 @@ final class QUnbufferedChan<T>: Chan<T>
   override func selectGetNow(selectionID: Selectable) -> Selection?
   {
     OSSpinLockLock(&lock)
-    if let ws = selectGetNow()
+    while let wss = writerQueue.dequeue()
     {
-      OSSpinLockUnlock(&lock)
-      return Selection(id: selectionID, semaphore: ws)
+      switch wss
+      {
+      case .semaphore(let ws):
+        OSSpinLockUnlock(&lock)
+        return Selection(id: selectionID, semaphore: ws)
+
+      case .selection(let c, let insertSelectionID):
+        if let insertSelect = c.get()
+        {
+          OSSpinLockUnlock(&lock)
+          return Selection(id: selectionID, semaphore: extractFromInsert(insertSelect, id: insertSelectionID))
+        }
+        // try the next enqueued writer instead
+      }
     }
     OSSpinLockUnlock(&lock)
     return nil
   }
 
-  private func selectGetNow() -> dispatch_semaphore_t?
+  private func extractFromInsert(insertSelect: dispatch_semaphore_t, id: Selectable) -> dispatch_semaphore_t
   {
-    precondition(lock != 0, __FUNCTION__)
-    while let ssema = writerQueue.dequeue()
-    {
-      switch ssema
-      {
-      case .semaphore(let ws):
-        return ws
+    // We have two select() functions talking to eath other. They need an intermediary.
+    let intermediary = SemaphorePool.dequeue()
+    let buffer = UnsafeMutablePointer<T>.alloc(1)
+    dispatch_set_context(intermediary, buffer)
 
-      case .selection(let c, let selectionID):
-        if let s = c.get()
-        {
-          OSSpinLockUnlock(&lock)
-          let mediator = SemaphorePool.dequeue()
-          let buffer = UnsafeMutablePointer<T>.alloc(1)
-          dispatch_set_context(mediator, buffer)
-          let selection = Selection(id: selectionID, semaphore: mediator)
-          dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
-          dispatch_semaphore_signal(s)
-          dispatch_semaphore_wait(mediator, DISPATCH_TIME_FOREVER)
-          // got awoken by insert()
-          precondition(dispatch_get_context(mediator) == buffer, "Unknown context in \(__FUNCTION__)")
+    // get the buffer filled by insert()
+    let selection = Selection(id: id, semaphore: intermediary)
+    dispatch_set_context(insertSelect, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
+    dispatch_semaphore_signal(insertSelect)
+    dispatch_semaphore_wait(intermediary, DISPATCH_TIME_FOREVER)
+    // got awoken by insert()
+    precondition(dispatch_get_context(intermediary) == buffer, "Unknown context in \(__FUNCTION__)")
 
-          // two select()s talking to each other need a 3rd thread
-          dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0)) {
-            dispatch_semaphore_wait(mediator, DISPATCH_TIME_FOREVER)
-            // got awoken by extract()
-            buffer.destroy(1)
-            buffer.dealloc(1)
-            dispatch_set_context(mediator, nil)
-            SemaphorePool.enqueue(mediator)
-          }
-          OSSpinLockLock(&lock)
-          return mediator
-        }
-        else
-        { // try the next enqueued reader instead
-          continue
-        }
-      }
+    // two select()s talking to each other need a 3rd thread
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0)) {
+      dispatch_semaphore_wait(intermediary, DISPATCH_TIME_FOREVER)
+      // got awoken by extract(). clean up.
+      buffer.destroy(1)
+      buffer.dealloc(1)
+      dispatch_set_context(intermediary, nil)
+      SemaphorePool.enqueue(intermediary)
     }
-    return nil
+
+    // this return value will be sent off to extract()
+    return intermediary
   }
-  
+
   override func extract(selection: Selection) -> T?
   {
     if let ws = selection.semaphore
@@ -458,31 +471,54 @@ final class QUnbufferedChan<T>: Chan<T>
   override func selectGet(semaphore: SemaphoreChan, selectionID: Selectable)
   {
     OSSpinLockLock(&lock)
-    if !writerQueue.isEmpty
+    while let wss = writerQueue.dequeue()
     {
-      if let s = semaphore.get()
+      switch wss
       {
-        if let ws = selectGetNow()
+      case .semaphore(let ws):
+        if let select = semaphore.get()
         {
+          OSSpinLockUnlock(&lock)
           let selection = Selection(id: selectionID, semaphore: ws)
-          dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
+          dispatch_set_context(select, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
+          dispatch_semaphore_signal(select)
         }
-        OSSpinLockUnlock(&lock)
-        dispatch_semaphore_signal(s)
+        else
+        {
+          writerQueue.undequeue(wss)
+          OSSpinLockUnlock(&lock)
+        }
+        return
+
+      case .selection(let c, let insertSelectionID):
+        if !c.isEmpty
+        {
+          if let select = semaphore.get()
+          {
+            OSSpinLockUnlock(&lock)
+            if let insertSelect = c.get()
+            {
+              let selection = Selection(id: selectionID, semaphore: extractFromInsert(insertSelect, id: insertSelectionID))
+              dispatch_set_context(select, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
+            }
+            dispatch_semaphore_signal(select)
+          }
+          else
+          {
+            writerQueue.undequeue(wss)
+            OSSpinLockUnlock(&lock)
+          }
+          return
+        }
       }
-      else
-      {
-        OSSpinLockUnlock(&lock)
-      }
-      return
     }
 
     if closed
     {
       OSSpinLockUnlock(&lock)
-      if let s = semaphore.get()
+      if let select = semaphore.get()
       {
-        dispatch_semaphore_signal(s)
+        dispatch_semaphore_signal(select)
       }
       return
     }
