@@ -12,7 +12,7 @@ import Dispatch
 enum SuperSemaphore
 {
   case semaphore(dispatch_semaphore_t)
-  case selection(SemaphoreChan, Selectable)
+  case selection(SemaphoreChan, Selection)
 }
 
 final class SuperSemaphoreQueue: QueueType, SequenceType, GeneratorType
@@ -86,9 +86,9 @@ final class SuperSemaphoreQueue: QueueType, SequenceType, GeneratorType
     enqueue(.semaphore(newElement))
   }
 
-  func enqueue(newElement: SemaphoreChan, id: Selectable)
+  func enqueue(semaphore: SemaphoreChan, selection: Selection)
   {
-    enqueue(.selection(newElement, id))
+    enqueue(.selection(semaphore, selection))
   }
 
   func enqueue(newElement: SuperSemaphore)

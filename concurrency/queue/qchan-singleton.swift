@@ -86,22 +86,21 @@ final class QSingletonChan<T>: Chan<T>
   private func signalNextReader() -> Bool
   {
     OSSpinLockLock(&lock)
-    while let ssema = readerQueue.dequeue()
+    while let rss = readerQueue.dequeue()
     {
-      switch ssema
+      switch rss
       {
-      case .semaphore(let s):
+      case .semaphore(let rs):
         OSSpinLockUnlock(&lock)
-        dispatch_semaphore_signal(s)
+        dispatch_semaphore_signal(rs)
         return true
 
-      case .selection(let c, let selectionID):
-        if let s = c.get()
+      case .selection(let c, let selection):
+        if let select = c.get()
         {
           OSSpinLockUnlock(&lock)
-          let selection = Selection(id: selectionID)
-          dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
-          dispatch_semaphore_signal(s)
+          dispatch_set_context(select, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
+          dispatch_semaphore_signal(select)
           return true
         }
       }
@@ -226,7 +225,7 @@ final class QSingletonChan<T>: Chan<T>
     else
     {
       OSSpinLockLock(&lock)
-      readerQueue.enqueue(semaphore, id: selectionID)
+      readerQueue.enqueue(semaphore, selection: Selection(id: selectionID))
       OSSpinLockUnlock(&lock)
     }
   }
