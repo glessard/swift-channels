@@ -180,11 +180,10 @@ final class QSingletonChan<T>: Chan<T>
 
   override func selectPut(semaphore: SemaphoreChan, selectionID: Selectable)
   {
-    // If we get here, it would be as a result of an inconceivable set of circumstances.
     if let s = semaphore.get()
     {
-      if self.writerCount == 0
-      {
+      if writerCount == 0
+      { // There is no circumstance where this could be the case.
         let selection = Selection(id: selectionID)
         dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
       }
@@ -216,8 +215,11 @@ final class QSingletonChan<T>: Chan<T>
     {
       if let s = semaphore.get()
       {
-        let selection = Selection(id: selectionID)
-        dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
+        if readerCount == 0
+        {
+          let selection = Selection(id: selectionID)
+          dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
+        }
         dispatch_semaphore_signal(s)
       }
     }
