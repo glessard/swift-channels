@@ -113,12 +113,12 @@ final class QUnbufferedChan<T>: Chan<T>
 
     OSSpinLockLock(&lock)
 
-    if let ss = readerQueue.dequeue()
+    while let ss = readerQueue.dequeue()
     { // there is already an interested reader
-      OSSpinLockUnlock(&lock)
       switch ss
       {
       case .semaphore(let rs):
+        OSSpinLockUnlock(&lock)
         switch dispatch_get_context(rs)
         {
         case nil:
@@ -134,30 +134,19 @@ final class QUnbufferedChan<T>: Chan<T>
       case .selection(let c, let selectionID):
         if let s = c.get()
         { // pass the data on to an insert()
+          OSSpinLockUnlock(&lock)
           let threadLock = SemaphorePool.dequeue()
           dispatch_set_context(threadLock, &newElement)
           let selection = Selection(id: selectionID, semaphore: threadLock)
           dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
           dispatch_semaphore_signal(s)
           dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
+          // got awoken by insert()
+          precondition(dispatch_get_context(threadLock) == &newElement, "Unknown context in \(__FUNCTION__)")
 
-          // got awoken
-          let context = dispatch_get_context(threadLock)
           dispatch_set_context(threadLock, nil)
           SemaphorePool.enqueue(threadLock)
-
-          switch context
-          {
-          case &newElement:
-            return true
-
-          default:
-            preconditionFailure("Unknown context value (\(context)) in \(__FUNCTION__) on return from insert()")
-          }
-        }
-        else
-        {
-          return self.put(newElement)
+          return true
         }
       }
     }
@@ -210,28 +199,28 @@ final class QUnbufferedChan<T>: Chan<T>
 
     OSSpinLockLock(&lock)
 
-    if let ss = writerQueue.dequeue()
+    while let ss = writerQueue.dequeue()
     { // data is already available
-      OSSpinLockUnlock(&lock)
-
       switch ss
       {
       case .semaphore(let ws):
+        OSSpinLockUnlock(&lock)
         switch dispatch_get_context(ws)
         {
         case nil:
           preconditionFailure(__FUNCTION__)
 
-        case let context: // default
+        case let buffer: // default
           // copy data from a pointer to a variable stored "on the stack"
-          let element: T = UnsafePointer(context).memory
+          let element: T = UnsafePointer(buffer).memory
           dispatch_semaphore_signal(ws)
           return element
         }
 
       case .selection(let c, let selectionID):
         if let s = c.get()
-        { // pass the data on to an extract()
+        { // get data from an extract()
+          OSSpinLockUnlock(&lock)
           let buffer = UnsafeMutablePointer<T>.alloc(1)
           let threadLock = SemaphorePool.dequeue()
           dispatch_set_context(threadLock, buffer)
@@ -239,26 +228,14 @@ final class QUnbufferedChan<T>: Chan<T>
           dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
           dispatch_semaphore_signal(s)
           dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
+          // got awoken by extract()
+          precondition(dispatch_get_context(threadLock) == buffer, "Unknown context in \(__FUNCTION__)")
 
-          // got awoken
-          let context = dispatch_get_context(threadLock)
           dispatch_set_context(threadLock, nil)
           SemaphorePool.enqueue(threadLock)
-
-          switch context
-          {
-          case buffer:
-            let element = buffer.move()
-            buffer.dealloc(1)
-            return element
-
-          default:
-            preconditionFailure("Unknown context value (\(context)) in \(__FUNCTION__) on return from extract()")
-          }
-        }
-        else
-        {
-          return self.get()
+          let element = buffer.move()
+          buffer.dealloc(1)
+          return element
         }
       }
     }
@@ -485,7 +462,7 @@ final class QUnbufferedChan<T>: Chan<T>
     {
       if let s = semaphore.get()
       {
-        if let ws = selectPutNow()
+        if let ws = selectGetNow()
         {
           let selection = Selection(id: selectionID, semaphore: ws)
           dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
