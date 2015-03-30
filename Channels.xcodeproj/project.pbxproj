@@ -33,10 +33,6 @@
 		03AD47221A6743E500F4B44B /* chan-sender.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47041A6743E500F4B44B /* chan-sender.swift */; };
 		03AD47241A6743E500F4B44B /* chan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47061A6743E500F4B44B /* chan.swift */; };
 		03AD47251A6743E500F4B44B /* channel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47071A6743E500F4B44B /* channel.swift */; };
-		03AD472C1A6743E500F4B44B /* pchan-buffered1.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47101A6743E500F4B44B /* pchan-buffered1.swift */; };
-		03AD472D1A6743E500F4B44B /* pchan-bufferedN-queue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47111A6743E500F4B44B /* pchan-bufferedN-queue.swift */; };
-		03AD472E1A6743E500F4B44B /* pchan-bufferedN-buffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47121A6743E500F4B44B /* pchan-bufferedN-buffer.swift */; };
-		03AD472F1A6743E500F4B44B /* pchan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47131A6743E500F4B44B /* pchan.swift */; };
 		03AD47311A6743E500F4B44B /* qchan-buffered.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47161A6743E500F4B44B /* qchan-buffered.swift */; };
 		03AD47321A6743E500F4B44B /* qchan-unbuffered.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47171A6743E500F4B44B /* qchan-unbuffered.swift */; };
 		03AD47331A6743E500F4B44B /* qchan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47181A6743E500F4B44B /* qchan.swift */; };
@@ -50,8 +46,6 @@
 		03AD474D1A67447B00F4B44B /* BufferedChannelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD474C1A67447B00F4B44B /* BufferedChannelTests.swift */; };
 		03AD47501A67448400F4B44B /* SingletonChannelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD474E1A67448400F4B44B /* SingletonChannelTests.swift */; };
 		03AD47511A67448400F4B44B /* UnbufferedChannelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD474F1A67448400F4B44B /* UnbufferedChannelTests.swift */; };
-		03AD47551A6744DA00F4B44B /* PChanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47521A6744DA00F4B44B /* PChanTests.swift */; };
-		03AD47561A6744DA00F4B44B /* QChanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47531A6744DA00F4B44B /* QChanTests.swift */; };
 		03AD47571A6744DA00F4B44B /* SChanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47541A6744DA00F4B44B /* SChanTests.swift */; };
 		03AD475F1A68346300F4B44B /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD475E1A68346300F4B44B /* main.swift */; };
 		03AD47641A68347300F4B44B /* SimpleChannel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47631A68347300F4B44B /* SimpleChannel.swift */; };
@@ -577,7 +571,6 @@
 				03AD47311A6743E500F4B44B /* qchan-buffered.swift in Sources */,
 				03AD47251A6743E500F4B44B /* channel.swift in Sources */,
 				03AD47471A67441A00F4B44B /* queuetype.swift in Sources */,
-				03AD472F1A6743E500F4B44B /* pchan.swift in Sources */,
 				03AD474B1A67441A00F4B44B /* semaphorequeue.swift in Sources */,
 				03AD47331A6743E500F4B44B /* qchan.swift in Sources */,
 				034392C21A7A065200F4B44B /* select.swift in Sources */,
@@ -597,8 +590,6 @@
 				03AD47201A6743E500F4B44B /* chan-protocols.swift in Sources */,
 				03AD47241A6743E500F4B44B /* chan.swift in Sources */,
 				03AD47221A6743E500F4B44B /* chan-sender.swift in Sources */,
-				03AD472E1A6743E500F4B44B /* pchan-bufferedN-buffer.swift in Sources */,
-				03AD472D1A6743E500F4B44B /* pchan-bufferedN-queue.swift in Sources */,
 				03AD47B21A6890B100F4B44B /* merge.swift in Sources */,
 				03EEE5421AC60F8D00F4B44B /* supersemaphorequeue.swift in Sources */,
 				0335FBE31A8B2A9E00F4B44B /* semaphorestack.swift in Sources */,
@@ -624,7 +615,6 @@
 				033912031ABD3DC000F4B44B /* ChannelsExamples.swift in Sources */,
 				035B60711A67433800F4B44B /* ChannelsTests.swift in Sources */,
 				0336B9B51ABB1BF700F4B44B /* async.swift in Sources */,
-				03AD47561A6744DA00F4B44B /* QChanTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
