@@ -32,7 +32,7 @@ func AtomicQueueInit() -> QueueHead
   let h = UnsafeMutablePointer<Int>.alloc(4)
   for i in 0..<4
   {
-    h.advancedBy(i).initialize(0)
+    h.advancedBy(i).memory = 0
   }
 
   return COpaquePointer(h)
@@ -63,7 +63,7 @@ func AtomicStackInit() -> StackHead
   let h = UnsafeMutablePointer<Int>.alloc(2)
   for i in 0..<2
   {
-    h.advancedBy(i).initialize(0)
+    h.advancedBy(i).memory = 0
   }
 
   return COpaquePointer(h)

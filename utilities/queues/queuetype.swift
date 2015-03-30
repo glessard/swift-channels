@@ -6,6 +6,8 @@
 //  Copyright (c) 2014 Guillaume Lessard. All rights reserved.
 //
 
+// MARK: protocol QueueType
+
 protocol QueueType
 {
   typealias Element
