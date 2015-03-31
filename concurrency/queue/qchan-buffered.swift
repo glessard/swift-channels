@@ -267,14 +267,14 @@ final class QBufferedChan<T>: Chan<T>
 
   // MARK: SelectableChannelType methods
 
-  override func selectPutNow(selectionID: Selectable) -> Selection?
+  override func selectPutNow(selection: Selection) -> Selection?
   {
     OSSpinLockLock(&lock)
     if !closed && head+capacity > nextput
     {
       nextput += 1
       OSSpinLockUnlock(&lock)
-      return Selection(id: selectionID)
+      return selection
     }
     OSSpinLockUnlock(&lock)
     return nil
@@ -302,7 +302,7 @@ final class QBufferedChan<T>: Chan<T>
     }
   }
 
-  override func selectPut(semaphore: SemaphoreChan, selectionID: Selectable)
+  override func selectPut(semaphore: SemaphoreChan, selection: Selection)
   {
     OSSpinLockLock(&lock)
     if closed
@@ -319,7 +319,6 @@ final class QBufferedChan<T>: Chan<T>
       {
         nextput += 1
         OSSpinLockUnlock(&lock)
-        let selection = Selection(id: selectionID)
         dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
         dispatch_semaphore_signal(s)
       }
@@ -334,19 +333,19 @@ final class QBufferedChan<T>: Chan<T>
     }
     else
     {
-      writerQueue.enqueue(semaphore, selection: Selection(id: selectionID))
+      writerQueue.enqueue(semaphore, selection: selection)
       OSSpinLockUnlock(&lock)
     }
   }
 
-  override func selectGetNow(selectionID: Selectable) -> Selection?
+  override func selectGetNow(selection: Selection) -> Selection?
   {
     OSSpinLockLock(&lock)
     if nextget < tail
     {
       nextget += 1
       OSSpinLockUnlock(&lock)
-      return Selection(id: selectionID)
+      return selection
     }
     OSSpinLockUnlock(&lock)
     return nil
@@ -375,7 +374,7 @@ final class QBufferedChan<T>: Chan<T>
     }
   }
   
-  override func selectGet(semaphore: SemaphoreChan, selectionID: Selectable)
+  override func selectGet(semaphore: SemaphoreChan, selection: Selection)
   {
     OSSpinLockLock(&lock)
     if nextget < tail
@@ -384,7 +383,6 @@ final class QBufferedChan<T>: Chan<T>
       {
         nextget += 1
         OSSpinLockUnlock(&lock)
-        let selection = Selection(id: selectionID)
         dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
         dispatch_semaphore_signal(s)
       }
@@ -407,7 +405,7 @@ final class QBufferedChan<T>: Chan<T>
     }
     else
     {
-      readerQueue.enqueue(semaphore, selection: Selection(id: selectionID))
+      readerQueue.enqueue(semaphore, selection: selection)
       OSSpinLockUnlock(&lock)
     }
   }

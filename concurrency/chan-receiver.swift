@@ -60,14 +60,14 @@ extension Receiver: Selectable
 {
   // MARK: Selectable implementation
   
-  public func selectNotify(semaphore: SemaphoreChan, selectionID: Selectable)
+  public func selectNotify(semaphore: SemaphoreChan, selection: Selection)
   {
-    wrapped.selectGet(semaphore, selectionID: selectionID)
+    wrapped.selectGet(semaphore, selection: selection)
   }
 
-  public func selectNow(selectionID: Selectable) -> Selection?
+  public func selectNow(selection: Selection) -> Selection?
   {
-    return wrapped.selectGetNow(selectionID)
+    return wrapped.selectGetNow(selection)
   }
 
   public var selectable: Bool

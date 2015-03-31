@@ -19,24 +19,19 @@ public protocol Selectable: class
   /**
     Select registers its notification semaphore by calling an implementation's selectNotify() method.
 
-    -> whatever code sends a notification back must run asynchronously.
-
     Associated data can be sent back along with the semaphore by copying an 'Unmanaged' reference to
     a Selection via the semaphore's Context property (dispatch_set_context()).
 
     ***
-    let selection = Selection(selectionID: selectionID, selectionData: element)
+    let selection = Selection(selectionID: selectionID)
     let context = UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque())
     dispatch_set_context(s, context)
     dispatch_semaphore_signal(s)
     ***
 
-    Only one attempty to obtain the semaphore can succeed, thus one and only one Selectable can
+    Only one attempty to obtain the semaphore can succeed, since it is obtained from a buffered channel
+    that contains a single element and is closed. Therefore one and only one Selectable can
     return data for each given invocation of Select().
-
-    selectNotify launches a block of code for background execution, which is likely to block
-    while waiting for data. selectNotify must return a closure capable of unblocking a thread
-    waiting in the background. This paragraph is like word soup.
 
     :param: channel a channel from which to obtain a semaphore to use for a return notification.
     :param: message an identifier to be used to identify the return notification.
@@ -44,7 +39,7 @@ public protocol Selectable: class
     :return: a closure to be run once, which can unblock a stopped thread if needed.
   */
 
-  func selectNotify(semaphore: SemaphoreChan, selectionID: Selectable)
+  func selectNotify(semaphore: SemaphoreChan, selection: Selection)
 
   /*
     Select first iterates through its Selectables to find whether at least one of them is ready.
@@ -52,7 +47,7 @@ public protocol Selectable: class
     and then getting the N-1 losing threads to be canceled.
   */
 
-  func selectNow(selectionID: Selectable) -> Selection?
+  func selectNow(selection: Selection) -> Selection?
 
   /**
     If it makes no sense to invoke the selectNotify() method at this time, return false.
@@ -66,12 +61,12 @@ public protocol Selectable: class
 
 protocol SelectableChannelType: ChannelType
 {
-  func selectGet(semaphore: SemaphoreChan, selectionID: Selectable)
-  func selectGetNow(selectionID: Selectable) -> Selection?
+  func selectGet(semaphore: SemaphoreChan, selection: Selection)
+  func selectGetNow(selection: Selection) -> Selection?
   func extract(selection: Selection) -> Element?
 
-  func selectPut(semaphore: SemaphoreChan, selectionID: Selectable)
-  func selectPutNow(selectionID: Selectable) -> Selection?
+  func selectPut(semaphore: SemaphoreChan, selection: Selection)
+  func selectPutNow(selection: Selection) -> Selection?
   func insert(selection: Selection, newElement: Element) -> Bool
 }
 
@@ -109,5 +104,10 @@ public final class Selection
   {
     self.id = id
     semaphore = nil
+  }
+
+  public func withSemaphore(semaphore: dispatch_semaphore_t) -> Selection
+  {
+    return Selection(id: self.id, semaphore: semaphore)
   }
 }

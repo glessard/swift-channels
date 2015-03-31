@@ -29,7 +29,7 @@ public func select(options: [Selectable], withDefault: Selectable? = nil) -> Sel
   // The synchronous path
   for option in shuffle(selectables)
   {
-    if let selection = option.selectNow(option)
+    if let selection = option.selectNow(Selection(id: option))
     {
       return selection
     }
@@ -46,7 +46,7 @@ public func select(options: [Selectable], withDefault: Selectable? = nil) -> Sel
 
   for option in shuffle(selectables)
   {
-    option.selectNotify(semaphoreChan, selectionID: option)
+    option.selectNotify(semaphoreChan, selection: Selection(id: option))
     if semaphoreChan.isEmpty { break }
   }
 

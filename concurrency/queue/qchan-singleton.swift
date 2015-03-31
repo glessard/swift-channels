@@ -167,9 +167,9 @@ final class QSingletonChan<T>: Chan<T>
 
   // MARK: SelectableChannelType methods
 
-  override func selectPutNow(selectionID: Selectable) -> Selection?
+  override func selectPutNow(selection: Selection) -> Selection?
   {
-    return writerCount == 0 ? Selection(id: selectionID) : nil
+    return writerCount == 0 ? selection : nil
   }
 
   override func insert(selection: Selection, newElement: T) -> Bool
@@ -177,22 +177,21 @@ final class QSingletonChan<T>: Chan<T>
     return put(newElement)
   }
 
-  override func selectPut(semaphore: SemaphoreChan, selectionID: Selectable)
+  override func selectPut(semaphore: SemaphoreChan, selection: Selection)
   {
     if let s = semaphore.get()
     {
       if writerCount == 0
       { // There is no circumstance where this could be the case.
-        let selection = Selection(id: selectionID)
         dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
       }
       dispatch_semaphore_signal(s)
     }
   }
 
-  override func selectGetNow(selectionID: Selectable) -> Selection?
+  override func selectGetNow(selection: Selection) -> Selection?
   {
-    return readerCount == 0 ? Selection(id: selectionID) : nil
+    return readerCount == 0 ? selection : nil
   }
 
   override func extract(selection: Selection) -> T?
@@ -208,7 +207,7 @@ final class QSingletonChan<T>: Chan<T>
     return nil
   }
   
-  override func selectGet(semaphore: SemaphoreChan, selectionID: Selectable)
+  override func selectGet(semaphore: SemaphoreChan, selection: Selection)
   {
     if closedState == 1
     {
@@ -216,7 +215,6 @@ final class QSingletonChan<T>: Chan<T>
       {
         if readerCount == 0
         {
-          let selection = Selection(id: selectionID)
           dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
         }
         dispatch_semaphore_signal(s)
@@ -225,7 +223,7 @@ final class QSingletonChan<T>: Chan<T>
     else
     {
       OSSpinLockLock(&lock)
-      readerQueue.enqueue(semaphore, selection: Selection(id: selectionID))
+      readerQueue.enqueue(semaphore, selection: selection)
       OSSpinLockUnlock(&lock)
     }
   }

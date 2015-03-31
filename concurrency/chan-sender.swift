@@ -39,14 +39,14 @@ extension Sender: Selectable
   
   public var selectable: Bool { return !wrapped.isClosed }
 
-  public func selectNow(selectionID: Selectable) -> Selection?
+  public func selectNow(selection: Selection) -> Selection?
   {
-    return wrapped.selectPutNow(selectionID)
+    return wrapped.selectPutNow(selection)
   }
 
-  public func selectNotify(semaphore: SemaphoreChan, selectionID: Selectable)
+  public func selectNotify(semaphore: SemaphoreChan, selection: Selection)
   {
-    wrapped.selectPut(semaphore, selectionID: selectionID)
+    wrapped.selectPut(semaphore, selection: selection)
   }
 }
 

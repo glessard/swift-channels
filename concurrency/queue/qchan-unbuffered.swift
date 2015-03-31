@@ -278,7 +278,7 @@ final class QUnbufferedChan<T>: Chan<T>
 
   // MARK: SelectableChannelType methods
 
-  override func selectPutNow(selectionID: Selectable) -> Selection?
+  override func selectPutNow(selection: Selection) -> Selection?
   {
     OSSpinLockLock(&lock)
     while let rss = readerQueue.dequeue()
@@ -287,13 +287,13 @@ final class QUnbufferedChan<T>: Chan<T>
       {
       case .semaphore(let rs):
         OSSpinLockUnlock(&lock)
-        return Selection(id: selectionID, semaphore: rs)
+        return selection.withSemaphore(rs)
 
-      case .selection(let c, let selection):
+      case .selection(let c, let extractSelection):
         if let extractSelect = c.get()
         {
           OSSpinLockUnlock(&lock)
-          return Selection(id: selectionID, semaphore: insertToExtract(extractSelect, selection))
+          return selection.withSemaphore(insertToExtract(extractSelect, extractSelection))
         }
         // try the next enqueued reader instead
       }
@@ -343,7 +343,7 @@ final class QUnbufferedChan<T>: Chan<T>
     return false
   }
 
-  override func selectPut(semaphore: SemaphoreChan, selectionID: Selectable)
+  override func selectPut(semaphore: SemaphoreChan, selection: Selection)
   {
     OSSpinLockLock(&lock)
     while let rss = readerQueue.dequeue()
@@ -354,8 +354,8 @@ final class QUnbufferedChan<T>: Chan<T>
         if let select = semaphore.get()
         {
           OSSpinLockUnlock(&lock)
-          let selection = Selection(id: selectionID, semaphore: rs)
-          dispatch_set_context(select, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
+          let newSelection = selection.withSemaphore(rs)
+          dispatch_set_context(select, UnsafeMutablePointer<Void>(Unmanaged.passRetained(newSelection).toOpaque()))
           dispatch_semaphore_signal(select)
         }
         else
@@ -373,8 +373,8 @@ final class QUnbufferedChan<T>: Chan<T>
             OSSpinLockUnlock(&lock)
             if let extractSelect = c.get()
             {
-              let selection = Selection(id: selectionID, semaphore: insertToExtract(extractSelect, extractSelection))
-              dispatch_set_context(select, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
+              let newSelection = selection.withSemaphore(insertToExtract(extractSelect, extractSelection))
+              dispatch_set_context(select, UnsafeMutablePointer<Void>(Unmanaged.passRetained(newSelection).toOpaque()))
             }
             dispatch_semaphore_signal(select)
           }
@@ -399,11 +399,11 @@ final class QUnbufferedChan<T>: Chan<T>
     }
 
     // enqueue the SemaphoreChan and hope for the best.
-    writerQueue.enqueue(.selection(semaphore, Selection(id: selectionID)))
+    writerQueue.enqueue(.selection(semaphore, selection))
     OSSpinLockUnlock(&lock)
   }
 
-  override func selectGetNow(selectionID: Selectable) -> Selection?
+  override func selectGetNow(selection: Selection) -> Selection?
   {
     OSSpinLockLock(&lock)
     while let wss = writerQueue.dequeue()
@@ -412,13 +412,13 @@ final class QUnbufferedChan<T>: Chan<T>
       {
       case .semaphore(let ws):
         OSSpinLockUnlock(&lock)
-        return Selection(id: selectionID, semaphore: ws)
+        return selection.withSemaphore(ws)
 
       case .selection(let c, let insertSelection):
         if let insertSelect = c.get()
         {
           OSSpinLockUnlock(&lock)
-          return Selection(id: selectionID, semaphore: extractFromInsert(insertSelect, insertSelection))
+          return selection.withSemaphore(extractFromInsert(insertSelect, insertSelection))
         }
         // try the next enqueued writer instead
       }
@@ -468,7 +468,7 @@ final class QUnbufferedChan<T>: Chan<T>
     return nil
   }
 
-  override func selectGet(semaphore: SemaphoreChan, selectionID: Selectable)
+  override func selectGet(semaphore: SemaphoreChan, selection: Selection)
   {
     OSSpinLockLock(&lock)
     while let wss = writerQueue.dequeue()
@@ -479,8 +479,8 @@ final class QUnbufferedChan<T>: Chan<T>
         if let select = semaphore.get()
         {
           OSSpinLockUnlock(&lock)
-          let selection = Selection(id: selectionID, semaphore: ws)
-          dispatch_set_context(select, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
+          let newSelection = selection.withSemaphore(ws)
+          dispatch_set_context(select, UnsafeMutablePointer<Void>(Unmanaged.passRetained(newSelection).toOpaque()))
           dispatch_semaphore_signal(select)
         }
         else
@@ -498,8 +498,8 @@ final class QUnbufferedChan<T>: Chan<T>
             OSSpinLockUnlock(&lock)
             if let insertSelect = c.get()
             {
-              let selection = Selection(id: selectionID, semaphore: extractFromInsert(insertSelect, insertSelection))
-              dispatch_set_context(select, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
+              let newSelection = selection.withSemaphore(extractFromInsert(insertSelect, insertSelection))
+              dispatch_set_context(select, UnsafeMutablePointer<Void>(Unmanaged.passRetained(newSelection).toOpaque()))
             }
             dispatch_semaphore_signal(select)
           }
@@ -524,7 +524,7 @@ final class QUnbufferedChan<T>: Chan<T>
     }
 
     // enqueue the SemaphoreChan and hope for the best.
-    readerQueue.enqueue(.selection(semaphore, Selection(id: selectionID)))
+    readerQueue.enqueue(.selection(semaphore, selection))
     OSSpinLockUnlock(&lock)
   }
 }
