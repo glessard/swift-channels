@@ -305,12 +305,15 @@ final class QBufferedChan<T>: Chan<T>
   override func selectPut(semaphore: SemaphoreChan, selectionID: Selectable)
   {
     OSSpinLockLock(&lock)
-    if !closed && head+capacity <= nextput
+    if closed
     {
-      writerQueue.enqueue(semaphore, selection: Selection(id: selectionID))
       OSSpinLockUnlock(&lock)
+      if let s = semaphore.get()
+      {
+        dispatch_semaphore_signal(s)
+      }
     }
-    else
+    else if head+capacity > nextput // not full
     {
       if let s = semaphore.get()
       {
@@ -324,10 +327,15 @@ final class QBufferedChan<T>: Chan<T>
       {
         if !signalNextWriter()
         {
-          if nextget < tail || closed { signalNextReader() }
+          if nextget < tail { signalNextReader() }
         }
         OSSpinLockUnlock(&lock)
       }
+    }
+    else
+    {
+      writerQueue.enqueue(semaphore, selection: Selection(id: selectionID))
+      OSSpinLockUnlock(&lock)
     }
   }
 
@@ -370,12 +378,7 @@ final class QBufferedChan<T>: Chan<T>
   override func selectGet(semaphore: SemaphoreChan, selectionID: Selectable)
   {
     OSSpinLockLock(&lock)
-    if !closed && nextget >= tail
-    {
-      readerQueue.enqueue(semaphore, selection: Selection(id: selectionID))
-      OSSpinLockUnlock(&lock)
-    }
-    else
+    if nextget < tail
     {
       if let s = semaphore.get()
       {
@@ -393,6 +396,19 @@ final class QBufferedChan<T>: Chan<T>
         }
         OSSpinLockUnlock(&lock)
       }
+    }
+    else if closed
+    {
+      OSSpinLockUnlock(&lock)
+      if let s = semaphore.get()
+      {
+        dispatch_semaphore_signal(s)
+      }
+    }
+    else
+    {
+      readerQueue.enqueue(semaphore, selection: Selection(id: selectionID))
+      OSSpinLockUnlock(&lock)
     }
   }
 }
