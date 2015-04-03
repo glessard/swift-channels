@@ -133,4 +133,80 @@ final class SingletonChan<T>: Chan<T>
 
     return nil
   }
+
+  // MARK: SelectableChannelType methods
+
+  override func selectPutNow(selection: Selection) -> Selection?
+  {
+    return writerCount == 0 ? selection : nil
+  }
+
+  override func insert(selection: Selection, newElement: T) -> Bool
+  {
+    return put(newElement)
+  }
+
+  override func selectPut(semaphore: SemaphoreChan, selection: Selection)
+  {
+    // If we get here, it would be as a result of an inconceivable set of circumstances.
+    if let s = semaphore.get()
+    {
+      if self.writerCount == 0
+      {
+        dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
+      }
+      dispatch_semaphore_signal(s)
+    }
+  }
+
+  override func selectGetNow(selection: Selection) -> Selection?
+  {
+    return readerCount == 0 ? selection : nil
+  }
+
+  override func extract(selection: Selection) -> T?
+  {
+    if readerCount == 0 && writerCount == 1 && OSAtomicCompareAndSwap32Barrier(0, 1, &readerCount)
+    { // Only one thread can get here.
+      if let e = element
+      {
+        element = nil
+        return e
+      }
+    }
+    return nil
+  }
+
+  override func selectGet(semaphore: SemaphoreChan, selection: Selection)
+  {
+    if self.closedState != 0
+    {
+      if let s = semaphore.get()
+      {
+        if self.readerCount == 0
+        {
+          dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
+        }
+        dispatch_semaphore_signal(s)
+      }
+      return
+    }
+
+    dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
+      _ in
+      if self.closedState == 0
+      {
+        dispatch_group_wait(self.barrier, DISPATCH_TIME_FOREVER)
+      }
+
+      if let s = semaphore.get()
+      {
+        if self.readerCount == 0
+        {
+          dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
+        }
+        dispatch_semaphore_signal(s)
+      }
+    }
+  }
 }
