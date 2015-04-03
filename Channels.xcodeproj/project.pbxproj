@@ -101,7 +101,7 @@
 		03E50F911AC3E3DC00F4B44B /* schan-singleton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 034CABE21AC210BC00F4B44B /* schan-singleton.swift */; };
 		03E50F921AC3E3EA00F4B44B /* qchan-singleton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 034CABE41AC2166700F4B44B /* qchan-singleton.swift */; };
 		03E50F931AC3E3EB00F4B44B /* qchan-singleton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 034CABE41AC2166700F4B44B /* qchan-singleton.swift */; };
-		03E60E611AAC08CE00F4B44B /* SelectToSelectTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E60E601AAC08CE00F4B44B /* SelectToSelectTests.swift */; };
+		03E60E611AAC08CE00F4B44B /* SelectSingletonTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E60E601AAC08CE00F4B44B /* SelectSingletonTests.swift */; };
 		03EE7ECD1A94217000F4B44B /* select-types.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03F3FD691A69D90400F4B44B /* select-types.swift */; };
 		03EEE5421AC60F8D00F4B44B /* supersemaphorequeue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03EEE5411AC60F8D00F4B44B /* supersemaphorequeue.swift */; };
 		03EEE5431AC60F8D00F4B44B /* supersemaphorequeue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03EEE5411AC60F8D00F4B44B /* supersemaphorequeue.swift */; };
@@ -194,7 +194,7 @@
 		03AD47BF1A689E0900F4B44B /* MergeTest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MergeTest.swift; sourceTree = "<group>"; };
 		03B24C0B1A8AC01F00F4B44B /* pchan-bufferedN-array.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "pchan-bufferedN-array.swift"; sourceTree = "<group>"; };
 		03E50FA71AC4972700F4B44B /* semaphorechanqueue.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = semaphorechanqueue.swift; sourceTree = "<group>"; };
-		03E60E601AAC08CE00F4B44B /* SelectToSelectTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SelectToSelectTests.swift; sourceTree = "<group>"; };
+		03E60E601AAC08CE00F4B44B /* SelectSingletonTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SelectSingletonTests.swift; sourceTree = "<group>"; };
 		03EEE5411AC60F8D00F4B44B /* supersemaphorequeue.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = supersemaphorequeue.swift; sourceTree = "<group>"; };
 		03F3FD691A69D90400F4B44B /* select-types.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "select-types.swift"; path = "select/select-types.swift"; sourceTree = "<group>"; };
 		03F3FD6F1A6AF95400F4B44B /* select.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = select.swift; path = select/select.swift; sourceTree = "<group>"; };
@@ -289,7 +289,7 @@
 				03AD47BF1A689E0900F4B44B /* MergeTest.swift */,
 				03A21E391AB16E7900F4B44B /* SelectExamples.swift */,
 				03F3FD711A6B207E00F4B44B /* SelectTests.swift */,
-				03E60E601AAC08CE00F4B44B /* SelectToSelectTests.swift */,
+				03E60E601AAC08CE00F4B44B /* SelectSingletonTests.swift */,
 				035B606E1A67433800F4B44B /* Supporting Files */,
 			);
 			path = ChannelsTests;
@@ -601,7 +601,7 @@
 			files = (
 				03F3FD751A6D76B300F4B44B /* SelectTests.swift in Sources */,
 				03AD474D1A67447B00F4B44B /* BufferedChannelTests.swift in Sources */,
-				03E60E611AAC08CE00F4B44B /* SelectToSelectTests.swift in Sources */,
+				03E60E611AAC08CE00F4B44B /* SelectSingletonTests.swift in Sources */,
 				03A21E3A1AB16E7900F4B44B /* SelectExamples.swift in Sources */,
 				03AD47C01A689E0900F4B44B /* MergeTest.swift in Sources */,
 				03AD47511A67448400F4B44B /* UnbufferedChannelTests.swift in Sources */,

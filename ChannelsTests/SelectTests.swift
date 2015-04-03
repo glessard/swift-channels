@@ -12,23 +12,25 @@ import XCTest
 
 import Channels
 
-class SelectTests: XCTestCase
+class SelectUnbufferedTests: XCTestCase
 {
-  let selectableCount = 10
+  var selectableCount: Int { return 10 }
 
-  func SelectReceiverTest(#buffered: Bool, sleepInterval: NSTimeInterval = -1)
+  func MakeChannels() -> [Chan<Int>]
   {
-    let iterations = sleepInterval < 0 ? 10_000 : 100
+    return (0..<selectableCount).map { _ in Chan<Int>.Make() }
+  }
 
-    let channels: [Chan<Int>]
-    if buffered
-    {
-      channels  = map(0..<selectableCount) { _ in Chan<Int>.Make(buffered ? 1 : 0) }
-    }
-    else
-    {
-      channels  = Array(count: selectableCount, repeatedValue: Chan<Int>.Make(buffered ? 1 : 0))
-    }
+  func getIterations(sleepInterval: NSTimeInterval) -> Int
+  {
+    return sleepInterval < 0 ? 10_000 : 100
+  }
+
+  func SelectReceiverTest(sleepInterval: NSTimeInterval = -1)
+  {
+    let iterations = getIterations(sleepInterval)
+
+    let channels  = MakeChannels()
     let senders   = channels.map { Sender($0) }
     let receivers = channels.map { Receiver($0) }
 
@@ -59,38 +61,26 @@ class SelectTests: XCTestCase
     XCTAssert(i == iterations, "Received \(i) messages; expected \(iterations)")
   }
 
-  func testPerformanceSelectBufferedReceiver()
+  func testPerformanceSelectReceiver()
   {
     self.measureBlock {
-      self.SelectReceiverTest(buffered: true)
+      self.SelectReceiverTest()
     }
   }
 
-  func testSelectBufferedReceiverWithSleep()
+  func testSelectReceiverWithSleep()
   {
-    SelectReceiverTest(buffered: true, sleepInterval: 0.01)
-  }
-
-  func testPerformanceSelectUnbufferedReceiver()
-  {
-    self.measureBlock {
-      self.SelectReceiverTest(buffered: false)
-    }
-  }
-
-  func testSelectUnbufferedReceiverWithSleep()
-  {
-    SelectReceiverTest(buffered: false, sleepInterval: 0.01)
+    SelectReceiverTest(sleepInterval: 0.01)
   }
 
 
-  func SelectSenderTest(#buffered: Bool, sleepInterval: NSTimeInterval = -1)
+  func SelectSenderTest(sleepInterval: NSTimeInterval = -1)
   {
-    let iterations = sleepInterval < 0 ? 10_000 : 100
+    let iterations = getIterations(sleepInterval)
 
-    let chan     = Chan<Int>.Make(buffered ? 1 : 0)
-    let senders  = map(0..<selectableCount) { _ in Sender(chan) }
-    let receiver = Receiver(chan)
+    let channels  = MakeChannels()
+    let senders   = channels.map { Sender($0) }
+    let receivers = channels.map { Receiver($0) }
 
     async {
       var i = 0
@@ -112,6 +102,8 @@ class SelectTests: XCTestCase
       }
     }
 
+    let receiver = merge(receivers)
+
     var i=0
     while let element = <-receiver
     {
@@ -125,27 +117,100 @@ class SelectTests: XCTestCase
     XCTAssert(i == iterations, "Received \(i) messages; expected \(iterations)")
   }
 
-  func testPerformanceSelectBufferedSender()
+  func testPerformanceSelectSender()
   {
     self.measureBlock {
-      self.SelectSenderTest(buffered: true)
+      self.SelectSenderTest()
     }
   }
 
-  func testSelectBufferedSenderWithSleep()
+  func testSelectSenderWithSleep()
   {
-    SelectSenderTest(buffered: true, sleepInterval: 0.01)
+    SelectSenderTest(sleepInterval: 0.01)
   }
 
-  func testPerformanceSelectUnbufferedSender()
+  private enum Sleeper { case Receiver; case Sender; case None }
+
+  private func DoubleSelectTest(#sleeper: Sleeper)
+  {
+    let sleepInterval = (sleeper == .None) ? -1.0 : 0.01
+    let iterations = getIterations(sleepInterval)
+
+    let channels  = MakeChannels()
+    let senders   = channels.map { Sender($0) }
+    let receivers = channels.map { Receiver($0) }
+
+    async {
+      var i = 0
+      // Currently required to avoid a runtime crash:
+      let selectables = senders.map { $0 as Selectable }
+      while let selection = select(selectables)
+      {
+        if let sender = selection.id as? Sender<Int>
+        {
+          if sender.insert(selection, newElement: i)
+          {
+            i++
+            if sleeper == .Sender { NSThread.sleepForTimeInterval(sleepInterval) }
+            if i >= iterations { break }
+          }
+        }
+      }
+      for sender in senders { sender.close() }
+    }
+
+    var i = 0
+    // Currently required to avoid a runtime crash:
+    let selectables = receivers.map { $0 as Selectable }
+    while let selection = select(selectables)
+    {
+      if let receiver = selection.id as? Receiver<Int>
+      {
+        if let message = receiver.extract(selection)
+        {
+          i++
+          if sleeper == .Receiver { NSThread.sleepForTimeInterval(sleepInterval) }
+        }
+      }
+    }
+
+    syncprintwait()
+
+    XCTAssert(i == iterations, "Received \(i) messages; expected \(iterations)")
+  }
+
+  func testPerformanceDoubleSelect()
   {
     self.measureBlock {
-      self.SelectSenderTest(buffered: false)
+      self.DoubleSelectTest(sleeper: .None)
     }
   }
 
-  func testSelectUnbufferedSenderWithSleep()
+  func testDoubleSelectSlowGet()
   {
-    SelectSenderTest(buffered: false, sleepInterval: 0.01)
+    DoubleSelectTest(sleeper: .Receiver)
+  }
+
+  func testDoubleSelectSlowPut()
+  {
+    DoubleSelectTest(sleeper: .Sender)
+  }
+}
+
+class SelectBufferedTests: SelectUnbufferedTests
+{
+  override func MakeChannels() -> [Chan<Int>]
+  {
+    return (0..<selectableCount).map { _ in Chan<Int>.Make(1) }
+  }
+}
+
+class SelectSChanBufferedTests: SelectUnbufferedTests
+{
+  override var selectableCount: Int { return 4 }
+
+  override func MakeChannels() -> [Chan<Int>]
+  {
+    return (0..<selectableCount).map { _ in SChan<Int>.Make(1) }
   }
 }
