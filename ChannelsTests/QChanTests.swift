@@ -23,7 +23,7 @@ class QUnbufferedChannelTests: UnbufferedChannelTests
   }
 }
 
-class QBufferedNChannelTests: BufferedNChannelTests
+class QBufferedNChannelTests: BufferedChannelTests
 {
   override var id: String  { return "Queue Buffered(N)" }
 

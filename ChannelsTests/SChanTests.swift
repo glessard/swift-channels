@@ -13,7 +13,7 @@ import XCTest
 
 import Channels
 
-class SBufferedChannelTests: BufferedNChannelTests
+class SBufferedChannelTests: BufferedChannelTests
 {
   override var id: String  { return "Semaphore Buffered(N)" }
 
