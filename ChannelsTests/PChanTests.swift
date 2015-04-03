@@ -13,9 +13,10 @@ import XCTest
 
 import Channels
 
-class PBuffered1ChannelTests: Buffered1ChannelTests
+class PBuffered1ChannelTests: BufferedChannelTests
 {
   override var id: String { return "pthreads Buffered(1)" }
+  override var buflen: Int { return 1 }
 
   override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
   {
@@ -23,7 +24,7 @@ class PBuffered1ChannelTests: Buffered1ChannelTests
   }
 }
 
-class PBufferedQChannelTests: BufferedNChannelTests
+class PBufferedQChannelTests: BufferedChannelTests
 {
   override var id: String  { return "pthreads Buffered(N-Queue)" }
 
@@ -33,7 +34,7 @@ class PBufferedQChannelTests: BufferedNChannelTests
   }
 }
 
-class PBufferedBChannelTests: BufferedNChannelTests
+class PBufferedBChannelTests: BufferedChannelTests
 {
   override var id: String { return "pthreads Buffered(N-UnsafePointer)" }
 
@@ -43,7 +44,7 @@ class PBufferedBChannelTests: BufferedNChannelTests
   }
 }
 
-class PBufferedAChannelTests: BufferedNChannelTests
+class PBufferedAChannelTests: BufferedChannelTests
 {
   override var id: String { return "pthreads Buffered(N-UnsafePointer)" }
 

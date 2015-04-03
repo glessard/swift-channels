@@ -11,9 +11,14 @@ import XCTest
 
 import Channels
 
-class Buffered1ChannelTests: UnbufferedChannelTests
+class BufferedChannelTests: UnbufferedChannelTests
 {
-  override var buflen: Int { return 1 }
+  var singleElementCase = false
+
+  override var buflen: Int {
+    if singleElementCase { return 1 }
+    else                 { return performanceTestIterations / 1000 }
+  }
 
   /**
     Performance test when avoiding thread contention, while keeping the channel at never more than 1 item full.
@@ -31,16 +36,6 @@ class Buffered1ChannelTests: UnbufferedChannelTests
   func testSendReceive()
   {
     ChannelTestSendReceive()
-  }
-}
-
-class BufferedNChannelTests: Buffered1ChannelTests
-{
-  var singleElementCase = false
-
-  override var buflen: Int {
-    if singleElementCase { return 1 }
-    else                 { return performanceTestIterations / 1000 }
   }
 
   /**
