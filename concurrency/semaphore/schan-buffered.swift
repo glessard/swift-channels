@@ -228,8 +228,8 @@ final class SBufferedChan<T>: Chan<T>
     {
       if let s = semaphore.get()
       {
-        dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
-        dispatch_semaphore_signal(s)
+        s.setStatus(.Select(selection))
+        s.signal()
       }
       else
       { // let another reader through
@@ -247,13 +247,13 @@ final class SBufferedChan<T>: Chan<T>
         OSMemoryBarrier()
         if !self.closed
         {
-          dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
-          dispatch_semaphore_signal(s)
+          s.setStatus(.Select(selection))
+          s.signal()
         }
         else
         {
           dispatch_semaphore_signal(self.empty)
-          dispatch_semaphore_signal(s)
+          s.signal()
         }
       }
       else
@@ -302,8 +302,8 @@ final class SBufferedChan<T>: Chan<T>
     {
       if let s = semaphore.get()
       {
-        dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
-        dispatch_semaphore_signal(s)
+        s.setStatus(.Select(selection))
+        s.signal()
       }
       else
       { // let another reader through
@@ -322,14 +322,14 @@ final class SBufferedChan<T>: Chan<T>
         OSMemoryBarrier()
         if self.head < self.tail
         {
-          dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
-          dispatch_semaphore_signal(s)
+          s.setStatus(.Select(selection))
+          s.signal()
         }
         else
         {
           assert(self.closed, __FUNCTION__)
           dispatch_semaphore_signal(self.filled)
-          dispatch_semaphore_signal(s)
+          s.signal()
         }
       }
       else

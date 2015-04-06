@@ -149,8 +149,8 @@ final class QBufferedChan<T>: Chan<T>
         if let select = c.get()
         {
           nextget += 1
-          dispatch_set_context(select, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
-          dispatch_semaphore_signal(select)
+          select.setStatus(.Select(selection))
+          select.signal()
           return true
         }
       }
@@ -171,8 +171,8 @@ final class QBufferedChan<T>: Chan<T>
         if let select = c.get()
         {
           nextput += 1
-          dispatch_set_context(select, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
-          dispatch_semaphore_signal(select)
+          select.setStatus(.Select(selection))
+          select.signal()
           return true
         }
       }
@@ -308,7 +308,7 @@ final class QBufferedChan<T>: Chan<T>
       OSSpinLockUnlock(&lock)
       if let s = semaphore.get()
       {
-        dispatch_semaphore_signal(s)
+        s.signal()
       }
     }
     else if head+capacity > nextput // not full
@@ -317,8 +317,8 @@ final class QBufferedChan<T>: Chan<T>
       {
         nextput += 1
         OSSpinLockUnlock(&lock)
-        dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
-        dispatch_semaphore_signal(s)
+        s.setStatus(.Select(selection))
+        s.signal()
       }
       else
       {
@@ -381,8 +381,8 @@ final class QBufferedChan<T>: Chan<T>
       {
         nextget += 1
         OSSpinLockUnlock(&lock)
-        dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
-        dispatch_semaphore_signal(s)
+        s.setStatus(.Select(selection))
+        s.signal()
       }
       else
       {
@@ -398,7 +398,7 @@ final class QBufferedChan<T>: Chan<T>
       OSSpinLockUnlock(&lock)
       if let s = semaphore.get()
       {
-        dispatch_semaphore_signal(s)
+        s.signal()
       }
     }
     else

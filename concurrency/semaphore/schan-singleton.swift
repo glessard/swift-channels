@@ -153,9 +153,9 @@ final class SingletonChan<T>: Chan<T>
     {
       if self.writerCount == 0
       {
-        dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
+        s.setStatus(.Select(selection))
       }
-      dispatch_semaphore_signal(s)
+      s.signal()
     }
   }
 
@@ -185,9 +185,9 @@ final class SingletonChan<T>: Chan<T>
       {
         if self.readerCount == 0
         {
-          dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
+          s.setStatus(.Select(selection))
         }
-        dispatch_semaphore_signal(s)
+        s.signal()
       }
       return
     }
@@ -203,9 +203,9 @@ final class SingletonChan<T>: Chan<T>
       {
         if self.readerCount == 0
         {
-          dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
+          s.setStatus(.Select(selection))
         }
-        dispatch_semaphore_signal(s)
+        s.signal()
       }
     }
   }

@@ -41,7 +41,7 @@ public func select(options: [Selectable], withDefault: Selectable? = nil) -> Sel
   }
 
   // The asynchronous path
-  let semaphore = dispatch_semaphore_create(0)!
+  let semaphore = SemaphorePool.Obtain()
   let semaphoreChan = SemaphoreChan(semaphore)
 
   for option in shuffle(selectables)
@@ -50,21 +50,20 @@ public func select(options: [Selectable], withDefault: Selectable? = nil) -> Sel
     if semaphoreChan.isEmpty { break }
   }
 
-  dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)
+  semaphore.wait()
   // We have a result
-  let context = COpaquePointer(dispatch_get_context(semaphore))
   let selection: Selection
-  if context != nil
+  switch semaphore.status
   {
-    selection = Unmanaged<Selection>.fromOpaque(context).takeRetainedValue()
-  }
-  else
-  {
+  case .Select(let newSelection):
+    selection = newSelection
+
+  default:
     selection = Selection(id: voidReceiver)
   }
 
-//  dispatch_set_context(semaphore, nil)
-//  SemaphorePool.enqueue(semaphore)
+  semaphore.setStatus(.Invalidated)
+  SemaphorePool.Return(semaphore)
 
   return selection
 }

@@ -75,7 +75,7 @@ final class QUnbufferedChan<T>: Chan<T>
       case .selection(let c, _):
         if let s = c.get()
         {
-          dispatch_semaphore_signal(s)
+          s.signal()
         }
       }
     }
@@ -90,7 +90,7 @@ final class QUnbufferedChan<T>: Chan<T>
       case .selection(let c, _):
         if let s = c.get()
         {
-          dispatch_semaphore_signal(s)
+          s.signal()
         }
       }
     }
@@ -132,14 +132,14 @@ final class QUnbufferedChan<T>: Chan<T>
         }
 
       case .selection(let c, let originalSelection):
-        if let s = c.get()
+        if let select = c.get()
         { // pass the data on to an insert()
           OSSpinLockUnlock(&lock)
           let threadLock = SemaphorePool.Obtain()
           threadLock.setStatus(.Pointer(&newElement))
-          let selection = Selection(id: originalSelection.id, semaphore: threadLock)
-          dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
-          dispatch_semaphore_signal(s)
+          let selection = originalSelection.withSemaphore(threadLock)
+          select.setStatus(.Select(selection))
+          select.signal()
           threadLock.wait()
 
           // got awoken by insert()
@@ -225,15 +225,15 @@ final class QUnbufferedChan<T>: Chan<T>
         }
 
       case .selection(let c, let originalSelection):
-        if let s = c.get()
+        if let select = c.get()
         { // get data from an extract()
           OSSpinLockUnlock(&lock)
           let buffer = UnsafeMutablePointer<T>.alloc(1)
           let threadLock = SemaphorePool.Obtain()
           threadLock.setStatus(.Pointer(buffer))
-          let selection = Selection(id: originalSelection.id, semaphore: threadLock)
-          dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
-          dispatch_semaphore_signal(s)
+          let selection = originalSelection.withSemaphore(threadLock)
+          select.setStatus(.Select(selection))
+          select.signal()
           threadLock.wait()
           // got awoken by extract()
           // precondition(dispatch_get_context(threadLock) == buffer, "Unknown context in \(__FUNCTION__)")
@@ -310,7 +310,7 @@ final class QUnbufferedChan<T>: Chan<T>
     return nil
   }
 
-  private func insertToExtract(extractSelect: dispatch_semaphore_t, _ extractSelection: Selection) -> ChannelSemaphore
+  private func insertToExtract(extractSelect: ChannelSemaphore, _ extractSelection: Selection) -> ChannelSemaphore
   {
     // We have two select() functions talking to eath other. They need an intermediary.
     let intermediary = SemaphorePool.Obtain()
@@ -323,9 +323,9 @@ final class QUnbufferedChan<T>: Chan<T>
       // got awoken by insert()
       // precondition(dispatch_get_context(intermediary) == buffer, "Unknown context in \(__FUNCTION__)")
 
-      let selection = Selection(id: extractSelection.id, semaphore: intermediary)
-      dispatch_set_context(extractSelect, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
-      dispatch_semaphore_signal(extractSelect)
+      let selection = extractSelection.withSemaphore(intermediary)
+      extractSelect.setStatus(.Select(selection))
+      extractSelect.signal()
       intermediary.wait()
       // got awoken by extract(). clean up.
       buffer.destroy(1)
@@ -369,8 +369,8 @@ final class QUnbufferedChan<T>: Chan<T>
         {
           OSSpinLockUnlock(&lock)
           let newSelection = selection.withSemaphore(rs)
-          dispatch_set_context(select, UnsafeMutablePointer<Void>(Unmanaged.passRetained(newSelection).toOpaque()))
-          dispatch_semaphore_signal(select)
+          select.setStatus(.Select(newSelection))
+          select.signal()
         }
         else
         {
@@ -388,9 +388,9 @@ final class QUnbufferedChan<T>: Chan<T>
             if let extractSelect = c.get()
             {
               let newSelection = selection.withSemaphore(insertToExtract(extractSelect, extractSelection))
-              dispatch_set_context(select, UnsafeMutablePointer<Void>(Unmanaged.passRetained(newSelection).toOpaque()))
+              select.setStatus(.Select(newSelection))
             }
-            dispatch_semaphore_signal(select)
+            select.signal()
           }
           else
           {
@@ -407,7 +407,7 @@ final class QUnbufferedChan<T>: Chan<T>
       OSSpinLockUnlock(&lock)
       if let select = semaphore.get()
       {
-        dispatch_semaphore_signal(select)
+        select.signal()
       }
       return
     }
@@ -441,7 +441,7 @@ final class QUnbufferedChan<T>: Chan<T>
     return nil
   }
 
-  private func extractFromInsert(insertSelect: dispatch_semaphore_t, _ insertSelection: Selection) -> ChannelSemaphore
+  private func extractFromInsert(insertSelect: ChannelSemaphore, _ insertSelection: Selection) -> ChannelSemaphore
   {
     // We have two select() functions talking to eath other. They need an intermediary.
     let intermediary = SemaphorePool.Obtain()
@@ -449,9 +449,9 @@ final class QUnbufferedChan<T>: Chan<T>
     intermediary.setStatus(.Pointer(buffer))
 
     // get the buffer filled by insert()
-    let selection = Selection(id: insertSelection.id, semaphore: intermediary)
-    dispatch_set_context(insertSelect, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
-    dispatch_semaphore_signal(insertSelect)
+    let selection = insertSelection.withSemaphore(intermediary)
+    insertSelect.setStatus(.Select(selection))
+    insertSelect.signal()
     intermediary.wait()
     // got awoken by insert()
     // precondition(dispatch_get_context(intermediary) == buffer, "Unknown context in \(__FUNCTION__)")
@@ -501,8 +501,8 @@ final class QUnbufferedChan<T>: Chan<T>
         {
           OSSpinLockUnlock(&lock)
           let newSelection = selection.withSemaphore(ws)
-          dispatch_set_context(select, UnsafeMutablePointer<Void>(Unmanaged.passRetained(newSelection).toOpaque()))
-          dispatch_semaphore_signal(select)
+          select.setStatus(.Select(newSelection))
+          select.signal()
         }
         else
         {
@@ -520,9 +520,9 @@ final class QUnbufferedChan<T>: Chan<T>
             if let insertSelect = c.get()
             {
               let newSelection = selection.withSemaphore(extractFromInsert(insertSelect, insertSelection))
-              dispatch_set_context(select, UnsafeMutablePointer<Void>(Unmanaged.passRetained(newSelection).toOpaque()))
+              select.setStatus(.Select(newSelection))
             }
-            dispatch_semaphore_signal(select)
+            select.signal()
           }
           else
           {
@@ -539,7 +539,7 @@ final class QUnbufferedChan<T>: Chan<T>
       OSSpinLockUnlock(&lock)
       if let select = semaphore.get()
       {
-        dispatch_semaphore_signal(select)
+        select.signal()
       }
       return
     }

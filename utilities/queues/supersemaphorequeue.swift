@@ -43,7 +43,7 @@ final class SuperSemaphoreQueue: QueueType, SequenceType, GeneratorType
       case .semaphore(let s):
         s.signal()
       case .selection(let c, _):
-        if let s = c.get() { dispatch_semaphore_signal(s) }
+        if let s = c.get() { s.signal() }
       }
       node.destroy()
       node.dealloc(1)

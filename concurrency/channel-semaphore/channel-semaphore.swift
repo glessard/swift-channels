@@ -80,8 +80,9 @@ case Empty
 // Unbuffered channel cases
 case Pointer(UnsafeMutablePointer<Void>)
 
+// Select() cases
 case WaitSelect
-case Selected //(Selection)
+case Select(Selection)
 case Invalidated
 }
 

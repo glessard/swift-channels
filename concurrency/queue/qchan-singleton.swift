@@ -99,9 +99,9 @@ final class QSingletonChan<T>: Chan<T>
         {
           if readerCount == 0
           {
-            dispatch_set_context(select, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
+            select.setStatus(.Select(selection))
           }
-          dispatch_semaphore_signal(select)
+          select.signal()
         }
       }
     }
@@ -187,9 +187,9 @@ final class QSingletonChan<T>: Chan<T>
     {
       if writerCount == 0
       { // There is no circumstance where this could be the case.
-        dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
+        s.setStatus(.Select(selection))
       }
-      dispatch_semaphore_signal(s)
+      s.signal()
     }
   }
 
@@ -219,9 +219,9 @@ final class QSingletonChan<T>: Chan<T>
       {
         if readerCount == 0
         {
-          dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
+          s.setStatus(.Select(selection))
         }
-        dispatch_semaphore_signal(s)
+        s.signal()
       }
     }
     else
