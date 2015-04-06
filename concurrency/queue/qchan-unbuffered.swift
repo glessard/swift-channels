@@ -66,12 +66,12 @@ final class QUnbufferedChan<T>: Chan<T>
     // Unblock the threads waiting on our conditions.
     while let rs = readerQueue.dequeue()
     {
-      rs.status = .Invalidated
+      rs.setStatus(.Empty)
       rs.signal()
     }
     while let ws = writerQueue.dequeue()
     {
-      ws.status = .Invalidated
+      ws.setStatus(.Empty)
       ws.signal()
     }
     OSSpinLockUnlock(&lock)
@@ -117,19 +117,19 @@ final class QUnbufferedChan<T>: Chan<T>
 
     // make our data available for a reader
     let threadLock = SemaphorePool.Obtain()
-    threadLock.status = .Address(&newElement)
+    threadLock.setStatus(.Address(&newElement))
     writerQueue.enqueue(threadLock)
     OSSpinLockUnlock(&lock)
     threadLock.wait()
 
     // got awoken
     let status = threadLock.status
-    threadLock.status = .Empty
+    threadLock.setStatus(.Empty)
     SemaphorePool.Return(threadLock)
 
     switch status
     {
-    case .Invalidated:
+    case .Empty:
       // thread was awoken by close() and put() has failed
       return false
 
@@ -181,19 +181,19 @@ final class QUnbufferedChan<T>: Chan<T>
     // wait for data from a writer
     let threadLock = SemaphorePool.Obtain()
     let buffer = UnsafeMutablePointer<T>.alloc(1)
-    threadLock.status = .Pointer(buffer)
+    threadLock.setStatus(.Pointer(buffer))
     readerQueue.enqueue(threadLock)
     OSSpinLockUnlock(&lock)
     threadLock.wait()
 
     // got awoken
     let status = threadLock.status
-    threadLock.status = .Empty
+    threadLock.setStatus(.Empty)
     SemaphorePool.Return(threadLock)
 
     switch status
     {
-    case .Invalidated:
+    case .Empty:
       // thread was awoken by close(): no more data on the channel.
       buffer.dealloc(1)
       return nil

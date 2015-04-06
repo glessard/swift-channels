@@ -39,7 +39,7 @@ struct SemaphorePool
         let s = buffer.advancedBy(cursor).move()
         OSSpinLockUnlock(&lock)
         s.svalue = 0
-        s.status = .Empty
+        s.internalStatus = .Empty
         return s
       }
       else
@@ -52,7 +52,7 @@ struct SemaphorePool
             buffer[i] = buffer.advancedBy(cursor).move()
             OSSpinLockUnlock(&lock)
             s.svalue = 0
-            s.status = .Empty
+            s.internalStatus = .Empty
             return s
           }
         }
@@ -91,7 +91,9 @@ final class ChannelSemaphore
   private var svalue: Int32
   private let semp: semaphore_t
 
-  var status = ChannelSemaphoreStatus.Empty
+  private var internalStatus = ChannelSemaphoreStatus.Empty
+
+  var status: ChannelSemaphoreStatus { return internalStatus }
 
   init(value: Int32)
   {
@@ -111,6 +113,16 @@ final class ChannelSemaphore
   {
     let kr = semaphore_destroy(mach_task_self_, semp)
     assert(kr == KERN_SUCCESS, __FUNCTION__)
+  }
+
+  func setStatus(status: ChannelSemaphoreStatus) -> Bool
+  {
+    switch status
+    {
+    default:
+      internalStatus = status
+      return true
+    }
   }
 
   func signal() -> Bool
