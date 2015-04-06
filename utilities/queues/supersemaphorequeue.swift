@@ -12,7 +12,7 @@ import Dispatch
 enum SuperSemaphore
 {
   case semaphore(ChannelSemaphore)
-  case selection(SemaphoreChan, Selection)
+  case selection(ChannelSemaphore, Selection)
 }
 
 final class SuperSemaphoreQueue: QueueType, SequenceType, GeneratorType
@@ -42,8 +42,8 @@ final class SuperSemaphoreQueue: QueueType, SequenceType, GeneratorType
       {
       case .semaphore(let s):
         s.signal()
-      case .selection(let c, _):
-        if let s = c.get() { s.signal() }
+      case .selection(let s, _):
+        s.signal()
       }
       node.destroy()
       node.dealloc(1)
@@ -86,7 +86,7 @@ final class SuperSemaphoreQueue: QueueType, SequenceType, GeneratorType
     enqueue(.semaphore(newElement))
   }
 
-  func enqueue(semaphore: SemaphoreChan, selection: Selection)
+  func enqueue(semaphore: ChannelSemaphore, selection: Selection)
   {
     enqueue(.selection(semaphore, selection))
   }

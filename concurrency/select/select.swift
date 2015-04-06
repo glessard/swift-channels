@@ -42,12 +42,12 @@ public func select(options: [Selectable], withDefault: Selectable? = nil) -> Sel
 
   // The asynchronous path
   let semaphore = SemaphorePool.Obtain()
-  let semaphoreChan = SemaphoreChan(semaphore)
+  semaphore.setStatus(.WaitSelect)
 
   for option in shuffle(selectables)
   {
-    option.selectNotify(semaphoreChan, selection: Selection(id: option))
-    if semaphoreChan.isEmpty { break }
+    option.selectNotify(semaphore, selection: Selection(id: option))
+    if semaphore.isSelected { break }
   }
 
   semaphore.wait()
@@ -58,11 +58,13 @@ public func select(options: [Selectable], withDefault: Selectable? = nil) -> Sel
   case .Select(let newSelection):
     selection = newSelection
 
-  default:
+  case .Invalidated:
     selection = Selection(id: voidReceiver)
+
+  case let status: // default
+    preconditionFailure("Unexpected ChannelSemaphore state (\(status)) in __FUNCTION__")
   }
 
-  semaphore.setStatus(.Invalidated)
   SemaphorePool.Return(semaphore)
 
   return selection

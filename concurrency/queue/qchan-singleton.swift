@@ -94,12 +94,12 @@ final class QSingletonChan<T>: Chan<T>
       case .semaphore(let rs):
         rs.signal()
 
-      case .selection(let c, let selection):
-        if let select = c.get()
+      case .selection(let select, let selection):
+        if select.setStatus(.Select(selection))
         {
-          if readerCount == 0
-          {
-            select.setStatus(.Select(selection))
+          if readerCount != 0
+          { // invalidate the status if this thread lost the race
+            select.setStatus(.WaitSelect)
           }
           select.signal()
         }
@@ -181,15 +181,15 @@ final class QSingletonChan<T>: Chan<T>
     return put(newElement)
   }
 
-  override func selectPut(semaphore: SemaphoreChan, selection: Selection)
+  override func selectPut(select: ChannelSemaphore, selection: Selection)
   {
-    if let s = semaphore.get()
+    if select.setStatus(.Select(selection))
     {
-      if writerCount == 0
-      { // There is no circumstance where this could be the case.
-        s.setStatus(.Select(selection))
+      if writerCount != 0
+      { // this might always be the case
+        select.setStatus(.WaitSelect)
       }
-      s.signal()
+      select.signal()
     }
   }
 
@@ -211,7 +211,7 @@ final class QSingletonChan<T>: Chan<T>
     return nil
   }
   
-  override func selectGet(semaphore: SemaphoreChan, selection: Selection)
+  override func selectGet(select: ChannelSemaphore, selection: Selection)
   {
     if closedState != 0
     {

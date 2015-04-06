@@ -22,6 +22,7 @@ struct SemaphorePool
     OSSpinLockLock(&lock)
     if cursor < capacity
     {
+      s.internalStatus = .Invalidated
       buffer.advancedBy(cursor).initialize(s)
       cursor += 1
     }
@@ -39,6 +40,7 @@ struct SemaphorePool
         let s = buffer.advancedBy(cursor).move()
         OSSpinLockUnlock(&lock)
         s.svalue = 0
+        s.selected = 0
         s.internalStatus = .Empty
         return s
       }
@@ -52,6 +54,7 @@ struct SemaphorePool
             buffer[i] = buffer.advancedBy(cursor).move()
             OSSpinLockUnlock(&lock)
             s.svalue = 0
+            s.selected = 0
             s.internalStatus = .Empty
             return s
           }
@@ -64,8 +67,8 @@ struct SemaphorePool
 //          buffer.advancedBy(capacity-16).destroy(16)
 //          cursor -= 16
 //        }
-//        cursor += 1
-        buffer.advancedBy(cursor).destroy()
+        cursor += 1
+//        buffer.advancedBy(cursor).destroy()
       }
     }
     OSSpinLockUnlock(&lock)
@@ -92,6 +95,7 @@ final public class ChannelSemaphore
   private let semp: semaphore_t
 
   private var internalStatus = ChannelSemaphoreStatus.Empty
+  private var selected: Int32 = 0
 
   var status: ChannelSemaphoreStatus { return internalStatus }
 
@@ -115,13 +119,56 @@ final public class ChannelSemaphore
     assert(kr == KERN_SUCCESS, __FUNCTION__)
   }
 
-  func setStatus(status: ChannelSemaphoreStatus) -> Bool
+  final var isSelected: Bool { return selected != 0 }
+
+  private var lock = OS_SPINLOCK_INIT
+
+  func setStatus(newStatus: ChannelSemaphoreStatus) -> Bool
   {
-    switch status
+//    OSSpinLockLock(&lock)
+    let result: Bool
+    switch (newStatus, internalStatus)
     {
+//    case (.Select(let new), .Select(let old)) where new.semaphore === old.semaphore:
+//      // this matches nil semaphores; don't allow it.
+//      if let _ = new.semaphore
+//      {
+//        selected = 1
+//        internalStatus = newStatus
+//        return true
+//      }
+//      return false
+
+    case (_, .Select(_)), (_, .Invalidated):
+      result = false
+
+    case (.Select(_), _), (.Invalidated, _):
+      if selected == 0 && OSAtomicCompareAndSwap32Barrier(0, 1, &selected)
+      {
+        internalStatus = newStatus
+        result = true
+      }
+      else { result = false }
+
     default:
-      internalStatus = status
+      internalStatus = newStatus
+      result = true
+    }
+//    OSSpinLockUnlock(&lock)
+    return result
+  }
+
+  func invalidate(match semaphore: ChannelSemaphore) -> Bool
+  {
+    switch internalStatus
+    {
+    case .Select(let old) where old.semaphore === semaphore:
+      internalStatus = .Invalidated
+      selected = 1
       return true
+
+    default:
+      return false
     }
   }
 

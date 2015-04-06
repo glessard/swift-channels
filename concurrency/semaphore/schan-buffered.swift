@@ -222,14 +222,13 @@ final class SBufferedChan<T>: Chan<T>
     }
   }
 
-  override func selectPut(semaphore: SemaphoreChan, selection: Selection)
+  override func selectPut(select: ChannelSemaphore, selection: Selection)
   {
     if dispatch_semaphore_wait(empty, DISPATCH_TIME_NOW) == 0
     {
-      if let s = semaphore.get()
+      if select.setStatus(.Select(selection))
       {
-        s.setStatus(.Select(selection))
-        s.signal()
+        select.signal()
       }
       else
       { // let another reader through
@@ -242,19 +241,9 @@ final class SBufferedChan<T>: Chan<T>
       _ in
       dispatch_semaphore_wait(self.empty, DISPATCH_TIME_FOREVER)
 
-      if let s = semaphore.get()
+      if select.setStatus(.Select(selection))
       {
-        OSMemoryBarrier()
-        if !self.closed
-        {
-          s.setStatus(.Select(selection))
-          s.signal()
-        }
-        else
-        {
-          dispatch_semaphore_signal(self.empty)
-          s.signal()
-        }
+        select.signal()
       }
       else
       { // let another writer through
@@ -296,14 +285,13 @@ final class SBufferedChan<T>: Chan<T>
     }
   }
 
-  override func selectGet(semaphore: SemaphoreChan, selection: Selection)
+  override func selectGet(select: ChannelSemaphore, selection: Selection)
   {
     if dispatch_semaphore_wait(filled, DISPATCH_TIME_NOW) == 0
     {
-      if let s = semaphore.get()
+      if select.setStatus(.Select(selection))
       {
-        s.setStatus(.Select(selection))
-        s.signal()
+        select.signal()
       }
       else
       { // let another reader through
@@ -317,20 +305,9 @@ final class SBufferedChan<T>: Chan<T>
       dispatch_semaphore_wait(self.filled, DISPATCH_TIME_FOREVER)
 
       OSMemoryBarrier()
-      if let s = semaphore.get()
+      if select.setStatus(.Select(selection))
       {
-        OSMemoryBarrier()
-        if self.head < self.tail
-        {
-          s.setStatus(.Select(selection))
-          s.signal()
-        }
-        else
-        {
-          assert(self.closed, __FUNCTION__)
-          dispatch_semaphore_signal(self.filled)
-          s.signal()
-        }
+        select.signal()
       }
       else
       { // let another reader through

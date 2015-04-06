@@ -146,16 +146,12 @@ final class SingletonChan<T>: Chan<T>
     return put(newElement)
   }
 
-  override func selectPut(semaphore: SemaphoreChan, selection: Selection)
+  override func selectPut(select: ChannelSemaphore, selection: Selection)
   {
     // If we get here, it would be as a result of an inconceivable set of circumstances.
-    if let s = semaphore.get()
+    if select.setStatus(.Select(selection))
     {
-      if self.writerCount == 0
-      {
-        s.setStatus(.Select(selection))
-      }
-      s.signal()
+      select.signal()
     }
   }
 
@@ -177,35 +173,13 @@ final class SingletonChan<T>: Chan<T>
     return nil
   }
 
-  override func selectGet(semaphore: SemaphoreChan, selection: Selection)
+  override func selectGet(select: ChannelSemaphore, selection: Selection)
   {
-    if self.closedState != 0
-    {
-      if let s = semaphore.get()
-      {
-        if self.readerCount == 0
-        {
-          s.setStatus(.Select(selection))
-        }
-        s.signal()
-      }
-      return
-    }
-
-    dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
+    dispatch_group_notify(barrier, dispatch_get_global_queue(qos_class_self(), 0)) {
       _ in
-      if self.closedState == 0
+      if select.setStatus(.Select(selection))
       {
-        dispatch_group_wait(self.barrier, DISPATCH_TIME_FOREVER)
-      }
-
-      if let s = semaphore.get()
-      {
-        if self.readerCount == 0
-        {
-          s.setStatus(.Select(selection))
-        }
-        s.signal()
+        select.signal()
       }
     }
   }

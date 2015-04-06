@@ -29,13 +29,13 @@ public class QChan<T>
     }
   }
 
-  public class func MakeSingleton() -> Chan<T>
-  {
-    return QSingletonChan()
-  }
-
-  public class func MakeSingleton(element: T) -> Chan<T>
-  {
-    return QSingletonChan(element)
-  }
+//  public class func MakeSingleton() -> Chan<T>
+//  {
+//    return QSingletonChan()
+//  }
+//
+//  public class func MakeSingleton(element: T) -> Chan<T>
+//  {
+//    return QSingletonChan(element)
+//  }
 }

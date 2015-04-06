@@ -18,7 +18,7 @@ class SelectSingletonTests: XCTestCase
 
   func MakeChannels() -> [Chan<Int>]
   {
-    return (0..<selectableCount).map { _ in QChan<Int>.MakeSingleton() }
+    return (0..<selectableCount).map { _ in SChan<Int>.MakeSingleton() }
   }
   
   func testDoubleSelect()
