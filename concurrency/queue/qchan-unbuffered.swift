@@ -66,13 +66,13 @@ final class QUnbufferedChan<T>: Chan<T>
     // Unblock the threads waiting on our conditions.
     while let rs = readerQueue.dequeue()
     {
-      dispatch_set_context(rs, nil)
-      dispatch_semaphore_signal(rs)
+      rs.status = .Invalidated
+      rs.signal()
     }
     while let ws = writerQueue.dequeue()
     {
-      dispatch_set_context(ws, nil)
-      dispatch_semaphore_signal(ws)
+      ws.status = .Invalidated
+      ws.signal()
     }
     OSSpinLockUnlock(&lock)
   }
@@ -96,16 +96,16 @@ final class QUnbufferedChan<T>: Chan<T>
     if let rs = readerQueue.dequeue()
     { // there is already an interested reader
       OSSpinLockUnlock(&lock)
-      switch dispatch_get_context(rs)
+      switch rs.status
       {
-      case nil:
-        preconditionFailure(__FUNCTION__)
-
-      case let buffer: // default
+      case .Pointer(let buffer):
         // attach a new copy of our data to the reader's semaphore
         UnsafeMutablePointer<T>(buffer).initialize(newElement)
-        dispatch_semaphore_signal(rs)
+        rs.signal()
         return true
+
+      case let status: // default
+        preconditionFailure("Unexpected Semaphore status \(status) in \(__FUNCTION__)")
       }
     }
 
@@ -117,28 +117,28 @@ final class QUnbufferedChan<T>: Chan<T>
 
     // make our data available for a reader
     let threadLock = SemaphorePool.Obtain()
-    dispatch_set_context(threadLock, &newElement)
+    threadLock.status = .Address(&newElement)
     writerQueue.enqueue(threadLock)
     OSSpinLockUnlock(&lock)
-    dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
+    threadLock.wait()
 
     // got awoken
-    let context = dispatch_get_context(threadLock)
-    dispatch_set_context(threadLock, nil)
+    let status = threadLock.status
+    threadLock.status = .Empty
     SemaphorePool.Return(threadLock)
 
-    switch context
+    switch status
     {
-    case nil:
+    case .Invalidated:
       // thread was awoken by close() and put() has failed
       return false
 
-    case &newElement:
+    case .Address(let pointer) where pointer == &newElement:
       // the message was succesfully passed.
       return true
 
     default:
-      preconditionFailure("Unknown context value in \(__FUNCTION__)")
+      preconditionFailure("Unexpected Semaphore status \(status) in \(__FUNCTION__)")
     }
   }
 
@@ -160,15 +160,15 @@ final class QUnbufferedChan<T>: Chan<T>
     if let ws = writerQueue.dequeue()
     { // data is already available
       OSSpinLockUnlock(&lock)
-      switch dispatch_get_context(ws)
+      switch ws.status
       {
-      case nil:
-        preconditionFailure(__FUNCTION__)
-
-      case let buffer: // default
+      case .Address(let buffer):
         let element: T = UnsafePointer(buffer).memory
-        dispatch_semaphore_signal(ws)
+        ws.signal()
         return element
+
+      case let status:
+        preconditionFailure("Unexpected Semaphore status \(status) in \(__FUNCTION__)")
       }
     }
 
@@ -181,24 +181,24 @@ final class QUnbufferedChan<T>: Chan<T>
     // wait for data from a writer
     let threadLock = SemaphorePool.Obtain()
     let buffer = UnsafeMutablePointer<T>.alloc(1)
-    dispatch_set_context(threadLock, buffer)
+    threadLock.status = .Pointer(buffer)
     readerQueue.enqueue(threadLock)
     OSSpinLockUnlock(&lock)
-    dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
+    threadLock.wait()
 
     // got awoken
-    let context = dispatch_get_context(threadLock)
-    dispatch_set_context(threadLock, nil)
+    let status = threadLock.status
+    threadLock.status = .Empty
     SemaphorePool.Return(threadLock)
 
-    switch context
+    switch status
     {
-    case nil:
+    case .Invalidated:
       // thread was awoken by close(): no more data on the channel.
       buffer.dealloc(1)
       return nil
 
-    case buffer:
+    case .Pointer(let pointer) where pointer == buffer:
       let element = buffer.move()
       buffer.dealloc(1)
       return element

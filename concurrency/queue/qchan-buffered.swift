@@ -109,11 +109,11 @@ final class QBufferedChan<T>: Chan<T>
     // Unblock waiting threads.
     if let rs = readerQueue.dequeue()
     {
-      dispatch_semaphore_signal(rs)
+      rs.signal()
     }
     else if let ws = writerQueue.dequeue()
     {
-      dispatch_semaphore_signal(ws)
+      ws.signal()
     }
     OSSpinLockUnlock(&lock)
   }
@@ -135,7 +135,7 @@ final class QBufferedChan<T>: Chan<T>
     let threadLock = SemaphorePool.Obtain()
     queue.enqueue(threadLock)
     OSSpinLockUnlock(&lock)
-    dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
+    threadLock.wait()
     SemaphorePool.Return(threadLock)
     OSSpinLockLock(&lock)
   }
@@ -169,11 +169,11 @@ final class QBufferedChan<T>: Chan<T>
 
     if let rs = readerQueue.dequeue()
     {
-      dispatch_semaphore_signal(rs)
+      rs.signal()
     }
     else if head+capacity > tail || closed, let ws = writerQueue.dequeue()
     {
-      dispatch_semaphore_signal(ws)
+      ws.signal()
     }
 
     OSSpinLockUnlock(&lock)
@@ -207,11 +207,11 @@ final class QBufferedChan<T>: Chan<T>
 
       if let ws = writerQueue.dequeue()
       {
-        dispatch_semaphore_signal(ws)
+        ws.signal()
       }
       else if head < tail || closed, let rs = readerQueue.dequeue()
       {
-        dispatch_semaphore_signal(rs)
+        rs.signal()
       }
       OSSpinLockUnlock(&lock)
       return element
@@ -221,14 +221,27 @@ final class QBufferedChan<T>: Chan<T>
       assert(closed, __FUNCTION__)
       if let ws = writerQueue.dequeue()
       {
-        dispatch_semaphore_signal(ws)
+        ws.signal()
       }
       else if let rs = readerQueue.dequeue()
       {
-        dispatch_semaphore_signal(rs)
+        rs.signal()
       }
       OSSpinLockUnlock(&lock)
       return nil
     }
+  }
+}
+
+
+private extension SemaphoreQueue
+{
+  private func signalNext() -> Bool
+  {
+    if let s = dequeue()
+    {
+      return s.signal()
+    }
+    return false
   }
 }

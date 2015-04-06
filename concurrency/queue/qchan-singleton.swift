@@ -82,7 +82,7 @@ final class QSingletonChan<T>: Chan<T>
       OSSpinLockLock(&lock)
       if let rs = readerQueue.dequeue()
       {
-        dispatch_semaphore_signal(rs)
+        rs.signal()
       }
       OSSpinLockUnlock(&lock)
     }
@@ -121,17 +121,21 @@ final class QSingletonChan<T>: Chan<T>
 
   override func get() -> T?
   {
-    if closedState == 0
+    while closedState == 0
     {
-      let s = dispatch_semaphore_create(0)!
+      let s = SemaphorePool.Obtain()
       OSSpinLockLock(&lock)
       readerQueue.enqueue(s)
       OSSpinLockUnlock(&lock)
-      dispatch_semaphore_wait(s, DISPATCH_TIME_FOREVER)
+      s.wait()
+      SemaphorePool.Return(s)
 
-      OSSpinLockLock(&lock)
-      if let rs = readerQueue.dequeue() { dispatch_semaphore_signal(rs) }
-      OSSpinLockUnlock(&lock)
+      if closedState != 0
+      {
+        OSSpinLockLock(&lock)
+        if let rs = readerQueue.dequeue() { rs.signal() }
+        OSSpinLockUnlock(&lock)
+      }
     }
 
     if readerCount == 0 && OSAtomicCompareAndSwap32Barrier(0, 1, &readerCount)
