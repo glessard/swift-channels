@@ -69,8 +69,8 @@ final class QUnbufferedChan<T>: Chan<T>
       switch rs
       {
       case .semaphore(let s):
-        dispatch_set_context(s, nil)
-        dispatch_semaphore_signal(s)
+        s.setStatus(.Empty)
+        s.signal()
 
       case .selection(let c, _):
         if let s = c.get()
@@ -84,8 +84,8 @@ final class QUnbufferedChan<T>: Chan<T>
       switch ws
       {
       case .semaphore(let s):
-        dispatch_set_context(s, nil)
-        dispatch_semaphore_signal(s)
+        s.setStatus(.Empty)
+        s.signal()
 
       case .selection(let c, _):
         if let s = c.get()
@@ -119,23 +119,23 @@ final class QUnbufferedChan<T>: Chan<T>
       {
       case .semaphore(let rs):
         OSSpinLockUnlock(&lock)
-        switch dispatch_get_context(rs)
+        switch rs.status
         {
-        case nil:
-          preconditionFailure(__FUNCTION__)
-
-        case let buffer: // default
+        case .Pointer(let buffer):
           // attach a new copy of our data to the reader's semaphore
           UnsafeMutablePointer<T>(buffer).initialize(newElement)
-          dispatch_semaphore_signal(rs)
+          rs.signal()
           return true
+
+        case let status: // default
+          preconditionFailure("Unexpected Semaphore status \(status) in \(__FUNCTION__)")
         }
 
       case .selection(let c, let originalSelection):
         if let s = c.get()
         { // pass the data on to an insert()
           OSSpinLockUnlock(&lock)
-          let threadLock = SemaphorePool.dequeue()
+          let threadLock = dispatch_semaphore_create(0)!
           dispatch_set_context(threadLock, &newElement)
           let selection = Selection(id: originalSelection.id, semaphore: threadLock)
           dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
@@ -143,9 +143,6 @@ final class QUnbufferedChan<T>: Chan<T>
           dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
           // got awoken by insert()
           precondition(dispatch_get_context(threadLock) == &newElement, "Unknown context in \(__FUNCTION__)")
-
-          dispatch_set_context(threadLock, nil)
-          SemaphorePool.enqueue(threadLock)
           return true
         }
       }
@@ -158,29 +155,29 @@ final class QUnbufferedChan<T>: Chan<T>
     }
 
     // make our data available for a reader
-    let threadLock = SemaphorePool.dequeue()
-    dispatch_set_context(threadLock, &newElement)
+    let threadLock = SemaphorePool.Obtain()
+    threadLock.setStatus(.Address(&newElement))
     writerQueue.enqueue(threadLock)
     OSSpinLockUnlock(&lock)
-    dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
+    threadLock.wait()
 
     // got awoken
-    let context = dispatch_get_context(threadLock)
-    dispatch_set_context(threadLock, nil)
-    SemaphorePool.enqueue(threadLock)
+    let status = threadLock.status
+    threadLock.setStatus(.Empty)
+    SemaphorePool.Return(threadLock)
 
-    switch context
+    switch status
     {
-    case nil:
+    case .Empty:
       // thread was awoken by close() and put() has failed
       return false
 
-    case &newElement:
+    case .Address(let pointer) where pointer == &newElement:
       // the message was succesfully passed.
       return true
 
     default:
-      preconditionFailure("Unknown context value (\(context)) after sleep state in \(__FUNCTION__)")
+      preconditionFailure("Unexpected Semaphore status \(status) in \(__FUNCTION__)")
     }
   }
 
@@ -205,16 +202,15 @@ final class QUnbufferedChan<T>: Chan<T>
       {
       case .semaphore(let ws):
         OSSpinLockUnlock(&lock)
-        switch dispatch_get_context(ws)
+        switch ws.status
         {
-        case nil:
-          preconditionFailure(__FUNCTION__)
-
-        case let buffer: // default
-          // copy data from a pointer to a variable stored "on the stack"
+        case .Address(let buffer):
           let element: T = UnsafePointer(buffer).memory
-          dispatch_semaphore_signal(ws)
+          ws.signal()
           return element
+
+        case let status:
+          preconditionFailure("Unexpected Semaphore status \(status) in \(__FUNCTION__)")
         }
 
       case .selection(let c, let originalSelection):
@@ -222,7 +218,7 @@ final class QUnbufferedChan<T>: Chan<T>
         { // get data from an extract()
           OSSpinLockUnlock(&lock)
           let buffer = UnsafeMutablePointer<T>.alloc(1)
-          let threadLock = SemaphorePool.dequeue()
+          let threadLock = dispatch_semaphore_create(0)!
           dispatch_set_context(threadLock, buffer)
           let selection = Selection(id: originalSelection.id, semaphore: threadLock)
           dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
@@ -231,8 +227,6 @@ final class QUnbufferedChan<T>: Chan<T>
           // got awoken by extract()
           precondition(dispatch_get_context(threadLock) == buffer, "Unknown context in \(__FUNCTION__)")
 
-          dispatch_set_context(threadLock, nil)
-          SemaphorePool.enqueue(threadLock)
           let element = buffer.move()
           buffer.dealloc(1)
           return element
@@ -247,32 +241,32 @@ final class QUnbufferedChan<T>: Chan<T>
     }
 
     // wait for data from a writer
-    let threadLock = SemaphorePool.dequeue()
+    let threadLock = SemaphorePool.Obtain()
     let buffer = UnsafeMutablePointer<T>.alloc(1)
-    dispatch_set_context(threadLock, buffer)
+    threadLock.setStatus(.Pointer(buffer))
     readerQueue.enqueue(threadLock)
     OSSpinLockUnlock(&lock)
-    dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
+    threadLock.wait()
 
     // got awoken
-    let context = dispatch_get_context(threadLock)
-    dispatch_set_context(threadLock, nil)
-    SemaphorePool.enqueue(threadLock)
+    let status = threadLock.status
+    threadLock.setStatus(.Empty)
+    SemaphorePool.Return(threadLock)
 
-    switch context
+    switch status
     {
-    case nil:
+    case .Empty:
       // thread was awoken by close(): no more data on the channel.
       buffer.dealloc(1)
       return nil
 
-    case buffer:
+    case .Pointer(let pointer) where pointer == buffer:
       let element = buffer.move()
       buffer.dealloc(1)
       return element
 
     default:
-      preconditionFailure("Unknown context value (\(context)) after sleep state in \(__FUNCTION__)")
+      preconditionFailure("Unknown status (\(status)) after sleep state in \(__FUNCTION__)")
     }
   }
 
@@ -305,7 +299,7 @@ final class QUnbufferedChan<T>: Chan<T>
   private func insertToExtract(extractSelect: dispatch_semaphore_t, _ extractSelection: Selection) -> dispatch_semaphore_t
   {
     // We have two select() functions talking to eath other. They need an intermediary.
-    let intermediary = SemaphorePool.dequeue()
+    let intermediary = dispatch_semaphore_create(0)!
     let buffer = UnsafeMutablePointer<T>.alloc(1)
     dispatch_set_context(intermediary, buffer)
 
@@ -322,8 +316,8 @@ final class QUnbufferedChan<T>: Chan<T>
       // got awoken by extract(). clean up.
       buffer.destroy(1)
       buffer.dealloc(1)
-      dispatch_set_context(intermediary, nil)
-      SemaphorePool.enqueue(intermediary)
+//      dispatch_set_context(intermediary, nil)
+//      SemaphorePool.enqueue(intermediary)
     }
 
     // this return value will be sent off to insert()
@@ -430,7 +424,7 @@ final class QUnbufferedChan<T>: Chan<T>
   private func extractFromInsert(insertSelect: dispatch_semaphore_t, _ insertSelection: Selection) -> dispatch_semaphore_t
   {
     // We have two select() functions talking to eath other. They need an intermediary.
-    let intermediary = SemaphorePool.dequeue()
+    let intermediary = dispatch_semaphore_create(0)!
     let buffer = UnsafeMutablePointer<T>.alloc(1)
     dispatch_set_context(intermediary, buffer)
 
@@ -448,8 +442,8 @@ final class QUnbufferedChan<T>: Chan<T>
       // got awoken by extract(). clean up.
       buffer.destroy(1)
       buffer.dealloc(1)
-      dispatch_set_context(intermediary, nil)
-      SemaphorePool.enqueue(intermediary)
+//      dispatch_set_context(intermediary, nil)
+//      SemaphorePool.enqueue(intermediary)
     }
 
     // this return value will be sent off to extract()

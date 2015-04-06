@@ -9,13 +9,7 @@
 import Darwin
 import Dispatch
 
-enum SuperSemaphore
-{
-  case semaphore(ChannelSemaphore)
-  case selection(SemaphoreChan, Selection)
-}
-
-final class SuperSemaphoreQueue: QueueType, SequenceType, GeneratorType
+final class SemaphoreQueue: QueueType, SequenceType, GeneratorType
 {
   private var head: UnsafeMutablePointer<SemaphoreNode> = nil
   private var tail: UnsafeMutablePointer<SemaphoreNode> = nil
@@ -26,7 +20,7 @@ final class SuperSemaphoreQueue: QueueType, SequenceType, GeneratorType
 
   init() { }
 
-  convenience init(_ newElement: SuperSemaphore)
+  convenience init(_ newElement: ChannelSemaphore)
   {
     self.init()
     enqueue(newElement)
@@ -38,13 +32,7 @@ final class SuperSemaphoreQueue: QueueType, SequenceType, GeneratorType
     {
       let node = head
       head = node.memory.next
-      switch node.memory.elem
-      {
-      case .semaphore(let s):
-        s.signal()
-      case .selection(let c, _):
-        if let s = c.get() { dispatch_semaphore_signal(s) }
-      }
+      node.memory.elem.signal()
       node.destroy()
       node.dealloc(1)
     }
@@ -83,16 +71,6 @@ final class SuperSemaphoreQueue: QueueType, SequenceType, GeneratorType
 
   func enqueue(newElement: ChannelSemaphore)
   {
-    enqueue(.semaphore(newElement))
-  }
-
-  func enqueue(semaphore: SemaphoreChan, selection: Selection)
-  {
-    enqueue(.selection(semaphore, selection))
-  }
-
-  func enqueue(newElement: SuperSemaphore)
-  {
     var node = UnsafeMutablePointer<SemaphoreNode>(OSAtomicDequeue(pool, 0))
     if node == nil
     {
@@ -112,28 +90,7 @@ final class SuperSemaphoreQueue: QueueType, SequenceType, GeneratorType
     }
   }
 
-  func undequeue(newElement: SuperSemaphore)
-  {
-    var node = UnsafeMutablePointer<SemaphoreNode>(OSAtomicDequeue(pool, 0))
-    if node == nil
-    {
-      node = UnsafeMutablePointer<SemaphoreNode>.alloc(1)
-    }
-    node.initialize(SemaphoreNode(newElement))
-
-    if head == nil
-    {
-      head = node
-      tail = node
-    }
-    else
-    {
-      node.memory.next = head
-      head = node
-    }
-  }
-  
-  func dequeue() -> SuperSemaphore?
+  func dequeue() -> ChannelSemaphore?
   {
     let node = head
     if node != nil
@@ -150,7 +107,7 @@ final class SuperSemaphoreQueue: QueueType, SequenceType, GeneratorType
 
   // MARK: GeneratorType implementation
 
-  func next() -> SuperSemaphore?
+  func next() -> ChannelSemaphore?
   {
     return dequeue()
   }
@@ -166,10 +123,10 @@ final class SuperSemaphoreQueue: QueueType, SequenceType, GeneratorType
 private struct SemaphoreNode
 {
   var next: UnsafeMutablePointer<SemaphoreNode> = nil
-  let elem: SuperSemaphore
+  let elem: ChannelSemaphore
 
-  init(_ s: SuperSemaphore)
+  init(_ e: ChannelSemaphore)
   {
-    elem = s
+    elem = e
   }
 }

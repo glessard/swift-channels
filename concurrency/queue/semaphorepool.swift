@@ -10,23 +10,34 @@ import Dispatch
 
 struct SemaphorePool
 {
-  static let poolq = SemaphoreStack()
+  static private let capacity = 256
+  static private let buffer = UnsafeMutablePointer<dispatch_semaphore_t>.alloc(capacity)
+  static private var cursor = 0
 
-  static func enqueue(s: dispatch_semaphore_t)
+  static private var lock = OS_SPINLOCK_INIT
+
+  static func Return(s: dispatch_semaphore_t)
   {
-    if dispatch_get_context(s) == nil
+    OSSpinLockLock(&lock)
+    if cursor < capacity
     {
-      poolq.enqueue(s)
+      buffer.advancedBy(cursor).initialize(s)
+      cursor += 1
     }
+    OSSpinLockUnlock(&lock)
   }
 
-  static func dequeue() -> dispatch_semaphore_t
+  static func Obtain() -> dispatch_semaphore_t
   {
-    if let semaphore = poolq.dequeue()
+    OSSpinLockLock(&lock)
+    if cursor > 0
     {
-      return semaphore
+      cursor -= 1
+      let s = buffer.advancedBy(cursor).move()
+      OSSpinLockUnlock(&lock)
+      return s
     }
-
-    return dispatch_semaphore_create(0)!
+    OSSpinLockUnlock(&lock)
+    return dispatch_semaphore_create(0)
   }
 }

@@ -128,11 +128,11 @@ final class QBufferedChan<T>: Chan<T>
   {
     precondition(lock != 0, "Lock must be locked upon entering \(__FUNCTION__)")
 
-    let threadLock = SemaphorePool.dequeue()
+    let threadLock = SemaphorePool.Obtain()
     queue.enqueue(.semaphore(threadLock))
     OSSpinLockUnlock(&lock)
-    dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
-    SemaphorePool.enqueue(threadLock)
+    threadLock.wait()
+    SemaphorePool.Return(threadLock)
     OSSpinLockLock(&lock)
   }
 
@@ -143,8 +143,7 @@ final class QBufferedChan<T>: Chan<T>
       switch rss
       {
       case .semaphore(let rs):
-        dispatch_semaphore_signal(rs)
-        return true
+        return rs.signal()
 
       case .selection(let c, let selection):
         if let select = c.get()
@@ -166,8 +165,7 @@ final class QBufferedChan<T>: Chan<T>
       switch wss
       {
       case .semaphore(let ws):
-        dispatch_semaphore_signal(ws)
-        return true
+        return ws.signal()
 
       case .selection(let c, let selection):
         if let select = c.get()
@@ -413,19 +411,24 @@ final class QBufferedChan<T>: Chan<T>
 
 private extension SemaphoreQueue
 {
-  /**
-    Signal the next valid semaphore from the SemaphoreQueue.
-  
-    For some reason, this is cost-free as an extension, but costly as a method of QBufferedChan.
-  */
-
   private func signalNext() -> Bool
   {
-    while let s = dequeue()
+    if let s = dequeue()
     {
-      dispatch_semaphore_signal(s)
-      return true
+      return s.signal()
     }
     return false
+  }
+
+  private func wait(lock: UnsafeMutablePointer<Int32>)
+  {
+    assert(lock.memory != 0, "Lock must be locked upon entering \(__FUNCTION__)")
+
+    let threadLock = SemaphorePool.Obtain()
+    enqueue(threadLock)
+    OSSpinLockUnlock(lock)
+    threadLock.wait()
+    SemaphorePool.Return(threadLock)
+    OSSpinLockLock(lock)
   }
 }

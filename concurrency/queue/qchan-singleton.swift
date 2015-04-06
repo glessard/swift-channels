@@ -79,33 +79,32 @@ final class QSingletonChan<T>: Chan<T>
     if closedState == 0 && OSAtomicCompareAndSwap32Barrier(0, 1, &closedState)
     { // Only one thread can get here
       // Unblock waiting threads.
-      signalNextReader()
+      OSSpinLockLock(&lock)
+      signalAllReaders()
+      OSSpinLockUnlock(&lock)
     }
   }
 
-  private func signalNextReader() -> Bool
+  private func signalAllReaders() -> Bool
   {
-    OSSpinLockLock(&lock)
     while let rss = readerQueue.dequeue()
     {
       switch rss
       {
       case .semaphore(let rs):
-        OSSpinLockUnlock(&lock)
-        dispatch_semaphore_signal(rs)
-        return true
+        rs.signal()
 
       case .selection(let c, let selection):
         if let select = c.get()
         {
-          OSSpinLockUnlock(&lock)
-          dispatch_set_context(select, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
+          if readerCount == 0
+          {
+            dispatch_set_context(select, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
+          }
           dispatch_semaphore_signal(select)
-          return true
         }
       }
     }
-    OSSpinLockUnlock(&lock)
     return false
   }
   
@@ -142,15 +141,21 @@ final class QSingletonChan<T>: Chan<T>
 
   override func get() -> T?
   {
-    if closedState == 0
+    while closedState == 0
     {
-      let s = dispatch_semaphore_create(0)!
+      let s = SemaphorePool.Obtain()
       OSSpinLockLock(&lock)
       readerQueue.enqueue(s)
       OSSpinLockUnlock(&lock)
-      dispatch_semaphore_wait(s, DISPATCH_TIME_FOREVER)
+      s.wait()
+      SemaphorePool.Return(s)
 
-      signalNextReader()
+      if closedState != 0
+      {
+        OSSpinLockLock(&lock)
+        signalAllReaders()
+        OSSpinLockUnlock(&lock)
+      }
     }
 
     if readerCount == 0 && OSAtomicCompareAndSwap32Barrier(0, 1, &readerCount)
@@ -209,7 +214,7 @@ final class QSingletonChan<T>: Chan<T>
   
   override func selectGet(semaphore: SemaphoreChan, selection: Selection)
   {
-    if closedState == 1
+    if closedState != 0
     {
       if let s = semaphore.get()
       {
