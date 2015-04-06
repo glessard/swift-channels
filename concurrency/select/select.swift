@@ -41,7 +41,7 @@ public func select(options: [Selectable], withDefault: Selectable? = nil) -> Sel
   }
 
   // The asynchronous path
-  let semaphore = SemaphorePool.dequeue()
+  let semaphore = dispatch_semaphore_create(0)!
   let semaphoreChan = SemaphoreChan(semaphore)
 
   for option in shuffle(selectables)
@@ -63,8 +63,8 @@ public func select(options: [Selectable], withDefault: Selectable? = nil) -> Sel
     selection = Selection(id: voidReceiver)
   }
 
-  dispatch_set_context(semaphore, nil)
-  SemaphorePool.enqueue(semaphore)
+//  dispatch_set_context(semaphore, nil)
+//  SemaphorePool.enqueue(semaphore)
 
   return selection
 }

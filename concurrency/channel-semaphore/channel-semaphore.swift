@@ -78,7 +78,6 @@ enum ChannelSemaphoreStatus
 case Empty
 
 // Unbuffered channel cases
-case Address(UnsafePointer<Void>)
 case Pointer(UnsafeMutablePointer<Void>)
 
 case WaitSelect

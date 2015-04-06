@@ -135,15 +135,26 @@ final class QUnbufferedChan<T>: Chan<T>
         if let s = c.get()
         { // pass the data on to an insert()
           OSSpinLockUnlock(&lock)
-          let threadLock = dispatch_semaphore_create(0)!
-          dispatch_set_context(threadLock, &newElement)
+          let threadLock = SemaphorePool.Obtain()
+          threadLock.setStatus(.Pointer(&newElement))
           let selection = Selection(id: originalSelection.id, semaphore: threadLock)
           dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
           dispatch_semaphore_signal(s)
-          dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
+          threadLock.wait()
+
           // got awoken by insert()
-          precondition(dispatch_get_context(threadLock) == &newElement, "Unknown context in \(__FUNCTION__)")
-          return true
+          let status = threadLock.status
+          threadLock.setStatus(.Empty)
+          SemaphorePool.Return(threadLock)
+
+          switch status
+          {
+          case .Pointer(let pointer) where pointer == &newElement:
+            return true
+
+          default:
+            preconditionFailure("Unexpected Semaphore status \(status) in \(__FUNCTION__)")
+          }
         }
       }
     }
@@ -156,7 +167,7 @@ final class QUnbufferedChan<T>: Chan<T>
 
     // make our data available for a reader
     let threadLock = SemaphorePool.Obtain()
-    threadLock.setStatus(.Address(&newElement))
+    threadLock.setStatus(.Pointer(&newElement))
     writerQueue.enqueue(threadLock)
     OSSpinLockUnlock(&lock)
     threadLock.wait()
@@ -172,7 +183,7 @@ final class QUnbufferedChan<T>: Chan<T>
       // thread was awoken by close() and put() has failed
       return false
 
-    case .Address(let pointer) where pointer == &newElement:
+    case .Pointer(let pointer) where pointer == &newElement:
       // the message was succesfully passed.
       return true
 
@@ -204,8 +215,8 @@ final class QUnbufferedChan<T>: Chan<T>
         OSSpinLockUnlock(&lock)
         switch ws.status
         {
-        case .Address(let buffer):
-          let element: T = UnsafePointer(buffer).memory
+        case .Pointer(let pointer):
+          let element: T = UnsafePointer(pointer).memory
           ws.signal()
           return element
 
@@ -218,14 +229,17 @@ final class QUnbufferedChan<T>: Chan<T>
         { // get data from an extract()
           OSSpinLockUnlock(&lock)
           let buffer = UnsafeMutablePointer<T>.alloc(1)
-          let threadLock = dispatch_semaphore_create(0)!
-          dispatch_set_context(threadLock, buffer)
+          let threadLock = SemaphorePool.Obtain()
+          threadLock.setStatus(.Pointer(buffer))
           let selection = Selection(id: originalSelection.id, semaphore: threadLock)
           dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
           dispatch_semaphore_signal(s)
-          dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
+          threadLock.wait()
           // got awoken by extract()
-          precondition(dispatch_get_context(threadLock) == buffer, "Unknown context in \(__FUNCTION__)")
+          // precondition(dispatch_get_context(threadLock) == buffer, "Unknown context in \(__FUNCTION__)")
+
+          threadLock.setStatus(.Empty)
+          SemaphorePool.Return(threadLock)
 
           let element = buffer.move()
           buffer.dealloc(1)
@@ -296,28 +310,28 @@ final class QUnbufferedChan<T>: Chan<T>
     return nil
   }
 
-  private func insertToExtract(extractSelect: dispatch_semaphore_t, _ extractSelection: Selection) -> dispatch_semaphore_t
+  private func insertToExtract(extractSelect: dispatch_semaphore_t, _ extractSelection: Selection) -> ChannelSemaphore
   {
     // We have two select() functions talking to eath other. They need an intermediary.
-    let intermediary = dispatch_semaphore_create(0)!
+    let intermediary = SemaphorePool.Obtain()
     let buffer = UnsafeMutablePointer<T>.alloc(1)
-    dispatch_set_context(intermediary, buffer)
+    intermediary.setStatus(.Pointer(buffer))
 
     // two select()s talking to each other need a 3rd thread
     dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
-      dispatch_semaphore_wait(intermediary, DISPATCH_TIME_FOREVER)
+      intermediary.wait()
       // got awoken by insert()
-      precondition(dispatch_get_context(intermediary) == buffer, "Unknown context in \(__FUNCTION__)")
+      // precondition(dispatch_get_context(intermediary) == buffer, "Unknown context in \(__FUNCTION__)")
 
       let selection = Selection(id: extractSelection.id, semaphore: intermediary)
       dispatch_set_context(extractSelect, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
       dispatch_semaphore_signal(extractSelect)
-      dispatch_semaphore_wait(intermediary, DISPATCH_TIME_FOREVER)
+      intermediary.wait()
       // got awoken by extract(). clean up.
       buffer.destroy(1)
       buffer.dealloc(1)
-//      dispatch_set_context(intermediary, nil)
-//      SemaphorePool.enqueue(intermediary)
+      intermediary.setStatus(.Empty)
+      SemaphorePool.Return(intermediary)
     }
 
     // this return value will be sent off to insert()
@@ -328,10 +342,16 @@ final class QUnbufferedChan<T>: Chan<T>
   {
     if let rs = selection.semaphore
     {
-      let buffer = UnsafeMutablePointer<T>(dispatch_get_context(rs))
-      buffer.initialize(newElement)
-      dispatch_semaphore_signal(rs)
-      return true
+      switch rs.status
+      {
+      case .Pointer(let pointer):
+        UnsafeMutablePointer<T>(pointer).initialize(newElement)
+        rs.signal()
+        return true
+
+      case let status: // default
+        preconditionFailure("Unexpected status (\(status)) in \(__FUNCTION__)")
+      }
     }
     assert(false, "Thread left hanging in \(__FUNCTION__), semaphore not found in \(selection)")
     return false
@@ -421,29 +441,29 @@ final class QUnbufferedChan<T>: Chan<T>
     return nil
   }
 
-  private func extractFromInsert(insertSelect: dispatch_semaphore_t, _ insertSelection: Selection) -> dispatch_semaphore_t
+  private func extractFromInsert(insertSelect: dispatch_semaphore_t, _ insertSelection: Selection) -> ChannelSemaphore
   {
     // We have two select() functions talking to eath other. They need an intermediary.
-    let intermediary = dispatch_semaphore_create(0)!
+    let intermediary = SemaphorePool.Obtain()
     let buffer = UnsafeMutablePointer<T>.alloc(1)
-    dispatch_set_context(intermediary, buffer)
+    intermediary.setStatus(.Pointer(buffer))
 
     // get the buffer filled by insert()
     let selection = Selection(id: insertSelection.id, semaphore: intermediary)
     dispatch_set_context(insertSelect, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
     dispatch_semaphore_signal(insertSelect)
-    dispatch_semaphore_wait(intermediary, DISPATCH_TIME_FOREVER)
+    intermediary.wait()
     // got awoken by insert()
-    precondition(dispatch_get_context(intermediary) == buffer, "Unknown context in \(__FUNCTION__)")
+    // precondition(dispatch_get_context(intermediary) == buffer, "Unknown context in \(__FUNCTION__)")
 
     // two select()s talking to each other need a 3rd thread
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0)) {
-      dispatch_semaphore_wait(intermediary, DISPATCH_TIME_FOREVER)
+      intermediary.wait()
       // got awoken by extract(). clean up.
       buffer.destroy(1)
       buffer.dealloc(1)
-//      dispatch_set_context(intermediary, nil)
-//      SemaphorePool.enqueue(intermediary)
+      intermediary.setStatus(.Empty)
+      SemaphorePool.Return(intermediary)
     }
 
     // this return value will be sent off to extract()
@@ -454,9 +474,16 @@ final class QUnbufferedChan<T>: Chan<T>
   {
     if let ws = selection.semaphore
     {
-      let element: T = UnsafePointer(dispatch_get_context(ws)).memory
-      dispatch_semaphore_signal(ws)
-      return element
+      switch ws.status
+      {
+      case .Pointer(let pointer):
+        let element: T = UnsafePointer(pointer).memory
+        ws.signal()
+        return element
+
+      case let status: // default
+        preconditionFailure("Unexpected status (\(status)) in \(__FUNCTION__)")
+      }
     }
     assert(false, "Thread left hanging in \(__FUNCTION__), semaphore not found in \(selection)")
     return nil

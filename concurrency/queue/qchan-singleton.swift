@@ -85,7 +85,7 @@ final class QSingletonChan<T>: Chan<T>
     }
   }
 
-  private func signalAllReaders() -> Bool
+  private func signalAllReaders()
   {
     while let rss = readerQueue.dequeue()
     {
@@ -105,7 +105,6 @@ final class QSingletonChan<T>: Chan<T>
         }
       }
     }
-    return false
   }
   
   /**

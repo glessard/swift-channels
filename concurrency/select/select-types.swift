@@ -92,9 +92,9 @@ public protocol SelectableSenderType: SenderType, Selectable
 public final class Selection
 {
   public unowned let id: Selectable
-  public let semaphore: dispatch_semaphore_t?
+  public let semaphore: ChannelSemaphore?
 
-  public init(id: Selectable, semaphore: dispatch_semaphore_t)
+  public init(id: Selectable, semaphore: ChannelSemaphore)
   {
     self.id = id
     self.semaphore = semaphore
@@ -106,7 +106,7 @@ public final class Selection
     semaphore = nil
   }
 
-  public func withSemaphore(semaphore: dispatch_semaphore_t) -> Selection
+  public func withSemaphore(semaphore: ChannelSemaphore) -> Selection
   {
     return Selection(id: self.id, semaphore: semaphore)
   }
