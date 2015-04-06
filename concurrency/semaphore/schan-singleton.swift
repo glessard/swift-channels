@@ -95,7 +95,7 @@ final class SingletonChan<T>: Chan<T>
 
   override func put(newElement: T) -> Bool
   {
-    if writerCount == 0 && OSAtomicCompareAndSwap32Barrier(0, 1, &writerCount)
+    if writerCount == 0 && closedState == 0 && OSAtomicCompareAndSwap32Barrier(0, 1, &writerCount)
     { // Only one thread can get here
       element = newElement
       close() // also increments the 'barrier' semaphore
@@ -117,10 +117,11 @@ final class SingletonChan<T>: Chan<T>
 
   override func get() -> T?
   {
-    if closedState == 0
+    if closedState == 0 && writerCount == 0
     {
       dispatch_group_wait(barrier, DISPATCH_TIME_FOREVER)
     }
+    assert(writerCount != 0 || closedState != 0, __FUNCTION__)
 
     if readerCount == 0 && OSAtomicCompareAndSwap32Barrier(0, 1, &readerCount)
     { // Only one thread can get here.
@@ -138,7 +139,7 @@ final class SingletonChan<T>: Chan<T>
 
   override func selectPutNow(selection: Selection) -> Selection?
   {
-    return writerCount == 0 ? selection : nil
+    return closedState == 0 && writerCount == 0 ? selection : nil
   }
 
   override func insert(selection: Selection, newElement: T) -> Bool
@@ -149,7 +150,7 @@ final class SingletonChan<T>: Chan<T>
   override func selectPut(select: ChannelSemaphore, selection: Selection)
   {
     // If we get here, it would be as a result of an inconceivable set of circumstances.
-    if select.setStatus(.Select(selection))
+    if closedState == 0 && writerCount == 0 && select.setStatus(.Select(selection))
     {
       select.signal()
     }
@@ -157,12 +158,13 @@ final class SingletonChan<T>: Chan<T>
 
   override func selectGetNow(selection: Selection) -> Selection?
   {
-    return readerCount == 0 ? selection : nil
+    return closedState != 0 || writerCount != 0 ? selection : nil
   }
 
   override func extract(selection: Selection) -> T?
   {
-    if readerCount == 0 && writerCount == 1 && OSAtomicCompareAndSwap32Barrier(0, 1, &readerCount)
+    assert(writerCount != 0 || closedState != 0, __FUNCTION__)
+    if readerCount == 0 && OSAtomicCompareAndSwap32Barrier(0, 1, &readerCount)
     { // Only one thread can get here.
       if let e = element
       {
@@ -175,6 +177,12 @@ final class SingletonChan<T>: Chan<T>
 
   override func selectGet(select: ChannelSemaphore, selection: Selection)
   {
+    if closedState != 0 && select.setStatus(.Select(selection))
+    {
+      select.signal()
+      return
+    }
+
     dispatch_group_notify(barrier, dispatch_get_global_queue(qos_class_self(), 0)) {
       _ in
       if select.setStatus(.Select(selection))
