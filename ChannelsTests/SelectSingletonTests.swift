@@ -16,16 +16,16 @@ class SelectSingletonTests: XCTestCase
 {
   var selectableCount: Int { return 10 }
 
-  func MakeChannels() -> [Chan<Int>]
+  func MakeChannels() -> [(tx: Sender<Int>, rx: Receiver<Int>)]
   {
-    return (0..<selectableCount).map { _ in QChan<Int>.MakeSingleton() }
+    return (0..<selectableCount).map { _ in Channel<Int>.MakeSingleton() }
   }
   
   func testDoubleSelect()
   {
     let channels  = MakeChannels()
-    let senders   = channels.map { Sender($0) }
-    let receivers = channels.map { Receiver($0) }
+    let senders   = channels.map { $0.tx }
+    let receivers = channels.map { $0.rx }
 
     async {
       var i = 0
@@ -63,8 +63,8 @@ class SelectSingletonTests: XCTestCase
   func testSelectReceivers()
   {
     let channels  = MakeChannels()
-    let senders   = channels.map { Sender($0) }
-    let receivers = channels.map { Receiver($0) }
+    let senders   = channels.map { $0.tx }
+    let receivers = channels.map { $0.rx }
 
     async {
       for (i,sender) in enumerate(senders) { sender <- i }
@@ -93,8 +93,8 @@ class SelectSingletonTests: XCTestCase
   func testSelectSenders()
   {
     let channels  = MakeChannels()
-    let senders   = channels.map { Sender($0) }
-    let receivers = channels.map { Receiver($0) }
+    let senders   = channels.map { $0.tx }
+    let receivers = channels.map { $0.rx }
 
     async {
       var i = 0
@@ -121,13 +121,5 @@ class SelectSingletonTests: XCTestCase
     println()
 
     XCTAssert(i == selectableCount, "Received \(i) messages; expected \(selectableCount)")
-  }
-}
-
-class SelectSchanSingletonTests: SelectSingletonTests
-{
-  override func MakeChannels() -> [Chan<Int>]
-  {
-    return (0..<selectableCount).map { _ in SChan<Int>.MakeSingleton() }
   }
 }

@@ -95,7 +95,7 @@ final class SingletonChan<T>: Chan<T>
 
   override func put(newElement: T) -> Bool
   {
-    if writerCount == 0 && OSAtomicCompareAndSwap32Barrier(0, 1, &writerCount)
+    if writerCount == 0 && closedState == 0 && OSAtomicCompareAndSwap32Barrier(0, 1, &writerCount)
     { // Only one thread can get here
       element = newElement
       close() // also increments the 'barrier' semaphore
@@ -121,6 +121,7 @@ final class SingletonChan<T>: Chan<T>
     {
       dispatch_group_wait(barrier, DISPATCH_TIME_FOREVER)
     }
+    assert(writerCount != 0 || closedState != 0, __FUNCTION__)
 
     if readerCount == 0 && OSAtomicCompareAndSwap32Barrier(0, 1, &readerCount)
     { // Only one thread can get here.
@@ -138,7 +139,7 @@ final class SingletonChan<T>: Chan<T>
 
   override func selectPutNow(selection: Selection) -> Selection?
   {
-    return writerCount == 0 ? selection : nil
+    return closedState == 0 && writerCount == 0 ? selection : nil
   }
 
   override func insert(selection: Selection, newElement: T) -> Bool
@@ -151,7 +152,7 @@ final class SingletonChan<T>: Chan<T>
     // If we get here, it would be as a result of an inconceivable set of circumstances.
     if let s = semaphore.get()
     {
-      if self.writerCount == 0
+      if writerCount == 0 && closedState == 0
       {
         dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
       }
@@ -161,12 +162,13 @@ final class SingletonChan<T>: Chan<T>
 
   override func selectGetNow(selection: Selection) -> Selection?
   {
-    return readerCount == 0 ? selection : nil
+    return closedState != 0 || writerCount != 0 ? selection : nil
   }
 
   override func extract(selection: Selection) -> T?
   {
-    if readerCount == 0 && writerCount == 1 && OSAtomicCompareAndSwap32Barrier(0, 1, &readerCount)
+    assert(writerCount != 0 || closedState != 0, __FUNCTION__)
+    if readerCount == 0 && OSAtomicCompareAndSwap32Barrier(0, 1, &readerCount)
     { // Only one thread can get here.
       if let e = element
       {
@@ -179,32 +181,21 @@ final class SingletonChan<T>: Chan<T>
 
   override func selectGet(semaphore: SemaphoreChan, selection: Selection)
   {
-    if self.closedState != 0
+    if closedState != 0
     {
       if let s = semaphore.get()
       {
-        if self.readerCount == 0
-        {
-          dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
-        }
+        dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
         dispatch_semaphore_signal(s)
       }
       return
     }
 
-    dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
+    dispatch_group_notify(barrier, dispatch_get_global_queue(qos_class_self(), 0)) {
       _ in
-      if self.closedState == 0
-      {
-        dispatch_group_wait(self.barrier, DISPATCH_TIME_FOREVER)
-      }
-
       if let s = semaphore.get()
       {
-        if self.readerCount == 0
-        {
-          dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
-        }
+        dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
         dispatch_semaphore_signal(s)
       }
     }
