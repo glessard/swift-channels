@@ -130,7 +130,7 @@ final class QBufferedChan<T>: Chan<T>
 
   private func wait(queue: SemaphoreQueue)
   {
-    precondition(lock != 0, "Lock must be locked upon entering \(__FUNCTION__)")
+    assert(lock != 0, "Lock must be locked upon entering \(__FUNCTION__)")
 
     let threadLock = SemaphorePool.Obtain()
     queue.enqueue(threadLock)
@@ -243,5 +243,17 @@ private extension SemaphoreQueue
       return s.signal()
     }
     return false
+  }
+
+  private func wait(lock: UnsafeMutablePointer<Int32>)
+  {
+    assert(lock.memory != 0, "Lock must be locked upon entering \(__FUNCTION__)")
+
+    let threadLock = SemaphorePool.Obtain()
+    enqueue(threadLock)
+    OSSpinLockUnlock(lock)
+    threadLock.wait()
+    SemaphorePool.Return(threadLock)
+    OSSpinLockLock(lock)
   }
 }
