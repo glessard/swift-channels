@@ -22,7 +22,6 @@ struct SemaphorePool
     OSSpinLockLock(&lock)
     if cursor < capacity
     {
-      s.internalStatus = .Invalidated
       buffer.advancedBy(cursor).initialize(s)
       cursor += 1
     }
@@ -41,52 +40,61 @@ struct SemaphorePool
         OSSpinLockUnlock(&lock)
         s.svalue = 0
         s.selected = 0
-        s.internalStatus = .Empty
+        s.currentState = .Ready
         return s
       }
-      else
+
+      // for i in reverse(0..<cursor)
+      for var i=cursor-1; i>=0; i--
       {
-        for var i=cursor-1; i>=0; i--
+        if isUniquelyReferencedNonObjC(&buffer[i])
         {
-          if isUniquelyReferencedNonObjC(&buffer[i])
-          {
-            let s = buffer[i]
-            buffer[i] = buffer.advancedBy(cursor).move()
-            OSSpinLockUnlock(&lock)
-            s.svalue = 0
-            s.selected = 0
-            s.internalStatus = .Empty
-            return s
-          }
+          let s = buffer[i]
+          buffer[i] = buffer.advancedBy(cursor).move()
+          OSSpinLockUnlock(&lock)
+          s.svalue = 0
+          s.selected = 0
+          s.currentState = .Ready
+          return s
         }
-//        if cursor == capacity-1
-//        { // clear some pool space
-//          let shift = 16
-//          // the following line slows things down even if it never gets called.
-//          // buffer.assignFrom(buffer.advancedBy(shift), count: capacity-shift)
-//          buffer.advancedBy(capacity-16).destroy(16)
-//          cursor -= 16
-//        }
-        cursor += 1
-//        buffer.advancedBy(cursor).destroy()
       }
+      cursor += 1
     }
     OSSpinLockUnlock(&lock)
     return ChannelSemaphore(value: 0)
   }
 }
 
-enum ChannelSemaphoreStatus
-{
-case Empty
+// MARK: ChannelSemaphoreState
 
-// Unbuffered channel cases
+enum ChannelSemaphoreState: Equatable
+{
+case Ready
+
+// Unbuffered channel data
 case Pointer(UnsafeMutablePointer<Void>)
 
-// Select() cases
+// Select() case
 case WaitSelect
 case Select(Selection)
 case Invalidated
+
+// End state
+case Done
+}
+
+func ==(ls: ChannelSemaphoreState, rs: ChannelSemaphoreState) -> Bool
+{
+  switch (ls, rs)
+  {
+  case (.Ready, .Ready): return true
+  case (.Pointer(let p1), .Pointer(let p2)) where p1 == p2: return true
+  case (.WaitSelect, .WaitSelect): return true
+  case (.Select(let s1), .Select(let s2)) where s1.id === s2.id: return s1.semaphore === s2.semaphore
+  case (.Invalidated, .Invalidated): return true
+  case (.Done, .Done): return true
+  default: return false
+  }
 }
 
 final public class ChannelSemaphore
@@ -94,21 +102,23 @@ final public class ChannelSemaphore
   private var svalue: Int32
   private let semp: semaphore_t
 
-  private var internalStatus = ChannelSemaphoreStatus.Empty
-  private var selected: Int32 = 0
+  private var currentState = ChannelSemaphoreState.Ready
+  private var selected = 0
 
-  var status: ChannelSemaphoreStatus { return internalStatus }
+  private var statelock = OS_SPINLOCK_INIT
 
-  init(value: Int32)
+  private init(value: Int32)
   {
     svalue = (value > 0) ? value : 0
-    var tmpSemp = semaphore_t()
-    let kr = semaphore_create(mach_task_self_, &tmpSemp, SYNC_POLICY_FIFO, 0)
-    assert(kr == KERN_SUCCESS, __FUNCTION__)
-    semp = tmpSemp
+    semp = {
+      var newport = semaphore_t()
+      let kr = semaphore_create(mach_task_self_, &newport, SYNC_POLICY_FIFO, 0)
+      assert(kr == KERN_SUCCESS, __FUNCTION__)
+      return newport
+    }()
   }
 
-  convenience init()
+  private convenience init()
   {
     self.init(value: 0)
   }
@@ -121,55 +131,36 @@ final public class ChannelSemaphore
 
   final var isSelected: Bool { return selected != 0 }
 
-  private var lock = OS_SPINLOCK_INIT
-
-  func setStatus(newStatus: ChannelSemaphoreStatus) -> Bool
-  {
-//    OSSpinLockLock(&lock)
-    let result: Bool
-    switch (newStatus, internalStatus)
-    {
-//    case (.Select(let new), .Select(let old)) where new.semaphore === old.semaphore:
-//      // this matches nil semaphores; don't allow it.
-//      if let _ = new.semaphore
-//      {
-//        selected = 1
-//        internalStatus = newStatus
-//        return true
-//      }
-//      return false
-
-    case (_, .Select(_)), (_, .Invalidated):
-      result = false
-
-    case (.Select(_), _), (.Invalidated, _):
-      if selected == 0 && OSAtomicCompareAndSwap32Barrier(0, 1, &selected)
-      {
-        internalStatus = newStatus
-        result = true
-      }
-      else { result = false }
-
-    default:
-      internalStatus = newStatus
-      result = true
-    }
-//    OSSpinLockUnlock(&lock)
-    return result
+  final var state: ChannelSemaphoreState {
+    OSSpinLockLock(&statelock)
+    let internalState = currentState
+    OSSpinLockUnlock(&statelock)
+    return internalState
   }
 
-  func invalidate(match semaphore: ChannelSemaphore) -> Bool
+  func setState(newState: ChannelSemaphoreState) -> Bool
   {
-    switch internalStatus
+    OSSpinLockLock(&statelock)
+    let copy: Bool
+    switch (currentState, newState)
     {
-    case .Select(let old) where old.semaphore === semaphore:
-      internalStatus = .Invalidated
-      selected = 1
-      return true
+    case (.WaitSelect, .Select), (.WaitSelect, .Invalidated):
+        copy = true
+        selected = 1
+
+    case (.Ready, .WaitSelect), (.Ready, .Pointer):
+      copy = true
+
+    case (_, .Done):
+      copy = true
 
     default:
-      return false
+      copy = false
     }
+
+    if copy { currentState = newState }
+    OSSpinLockUnlock(&statelock)
+    return copy
   }
 
   func signal() -> Bool

@@ -146,7 +146,7 @@ final class QBufferedChan<T>: Chan<T>
         return reader.signal()
 
       case .selection(let select, let selection):
-        if select.setStatus(.Select(selection))
+        if select.setState(.Select(selection))
         {
           nextget += 1
           select.signal()
@@ -167,7 +167,7 @@ final class QBufferedChan<T>: Chan<T>
         return writer.signal()
 
       case .selection(let select, let selection):
-        if select.setStatus(.Select(selection))
+        if select.setState(.Select(selection))
         {
           nextput += 1
           select.signal()
@@ -304,14 +304,14 @@ final class QBufferedChan<T>: Chan<T>
     if closed
     {
       OSSpinLockUnlock(&lock)
-      if select.setStatus(.Invalidated)
+      if select.setState(.Invalidated)
       {
         select.signal()
       }
     }
     else if head+capacity > nextput // not full
     {
-      if select.setStatus(.Select(selection))
+      if select.setState(.Select(selection))
       {
         nextput += 1
         OSSpinLockUnlock(&lock)
@@ -374,7 +374,7 @@ final class QBufferedChan<T>: Chan<T>
     OSSpinLockLock(&lock)
     if nextget < tail
     {
-      if select.setStatus(.Select(selection))
+      if select.setState(.Select(selection))
       {
         nextget += 1
         OSSpinLockUnlock(&lock)
@@ -392,7 +392,7 @@ final class QBufferedChan<T>: Chan<T>
     else if closed
     {
       OSSpinLockUnlock(&lock)
-      if select.setStatus(.Invalidated)
+      if select.setState(.Invalidated)
       {
         select.signal()
       }

@@ -226,7 +226,7 @@ final class SBufferedChan<T>: Chan<T>
   {
     if dispatch_semaphore_wait(empty, DISPATCH_TIME_NOW) == 0
     {
-      if select.setStatus(.Select(selection))
+      if select.setState(.Select(selection))
       {
         select.signal()
       }
@@ -241,7 +241,7 @@ final class SBufferedChan<T>: Chan<T>
       _ in
       dispatch_semaphore_wait(self.empty, DISPATCH_TIME_FOREVER)
 
-      if select.setStatus(.Select(selection))
+      if select.setState(.Select(selection))
       {
         select.signal()
       }
@@ -289,7 +289,7 @@ final class SBufferedChan<T>: Chan<T>
   {
     if dispatch_semaphore_wait(filled, DISPATCH_TIME_NOW) == 0
     {
-      if select.setStatus(.Select(selection))
+      if select.setState(.Select(selection))
       {
         select.signal()
       }
@@ -304,8 +304,7 @@ final class SBufferedChan<T>: Chan<T>
       _ in
       dispatch_semaphore_wait(self.filled, DISPATCH_TIME_FOREVER)
 
-      OSMemoryBarrier()
-      if select.setStatus(.Select(selection))
+      if select.setState(.Select(selection))
       {
         select.signal()
       }

@@ -42,7 +42,7 @@ public func select(options: [Selectable], withDefault: Selectable? = nil) -> Sel
 
   // The asynchronous path
   let semaphore = SemaphorePool.Obtain()
-  semaphore.setStatus(.WaitSelect)
+  semaphore.setState(.WaitSelect)
 
   for option in shuffle(selectables)
   {
@@ -53,12 +53,13 @@ public func select(options: [Selectable], withDefault: Selectable? = nil) -> Sel
   semaphore.wait()
   // We have a result
   let selection: Selection
-  switch semaphore.status
+  switch semaphore.state
   {
   case .Select(let newSelection):
     selection = newSelection
+    semaphore.setState(.Done)
 
-  case .Invalidated:
+  case .Invalidated, .Done:
     selection = Selection(id: voidReceiver)
 
   case let status: // default
