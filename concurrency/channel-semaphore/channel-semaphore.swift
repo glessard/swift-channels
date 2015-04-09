@@ -39,51 +39,52 @@ struct SemaphorePool
         let s = buffer.advancedBy(cursor).move()
         OSSpinLockUnlock(&lock)
         s.svalue = 0
-        s.internalStatus = .Empty
+        s.currentState = .Ready
         return s
       }
-      else
+
+      // for i in reverse(0..<cursor)
+      for var i=cursor-1; i>=0; i--
       {
-        for var i=cursor-1; i>=0; i--
+        if isUniquelyReferencedNonObjC(&buffer[i])
         {
-          if isUniquelyReferencedNonObjC(&buffer[i])
-          {
-            let s = buffer[i]
-            buffer[i] = buffer.advancedBy(cursor).move()
-            OSSpinLockUnlock(&lock)
-            s.svalue = 0
-            s.internalStatus = .Empty
-            return s
-          }
+          let s = buffer[i]
+          buffer[i] = buffer.advancedBy(cursor).move()
+          OSSpinLockUnlock(&lock)
+          s.svalue = 0
+          s.currentState = .Ready
+          return s
         }
-//        if cursor == capacity-1
-//        { // clear some pool space
-//          let shift = 16
-//          // the following line slows things down even if it never gets called.
-//          // buffer.assignFrom(buffer.advancedBy(shift), count: capacity-shift)
-//          buffer.advancedBy(capacity-16).destroy(16)
-//          cursor -= 16
-//        }
-//        cursor += 1
-        buffer.advancedBy(cursor).destroy()
       }
+      cursor += 1
     }
     OSSpinLockUnlock(&lock)
     return ChannelSemaphore(value: 0)
   }
 }
 
-enum ChannelSemaphoreStatus
-{
-case Empty
+// MARK: ChannelSemaphoreState
 
-// Unbuffered channel cases
-case Address(UnsafePointer<Void>)
+enum ChannelSemaphoreState: Equatable
+{
+case Ready
+
+// Unbuffered channel data
 case Pointer(UnsafeMutablePointer<Void>)
 
-case WaitSelect
-case Selected //(Selection)
-case Invalidated
+// End state
+case Done
+}
+
+func ==(ls: ChannelSemaphoreState, rs: ChannelSemaphoreState) -> Bool
+{
+  switch (ls, rs)
+  {
+  case (.Ready, .Ready): return true
+  case (.Pointer(let p1), .Pointer(let p2)) where p1 == p2: return true
+  case (.Done, .Done): return true
+  default: return false
+  }
 }
 
 final class ChannelSemaphore
@@ -91,20 +92,20 @@ final class ChannelSemaphore
   private var svalue: Int32
   private let semp: semaphore_t
 
-  private var internalStatus = ChannelSemaphoreStatus.Empty
+  private var currentState = ChannelSemaphoreState.Ready
 
-  var status: ChannelSemaphoreStatus { return internalStatus }
-
-  init(value: Int32)
+  private init(value: Int32)
   {
     svalue = (value > 0) ? value : 0
-    var tmpSemp = semaphore_t()
-    let kr = semaphore_create(mach_task_self_, &tmpSemp, SYNC_POLICY_FIFO, 0)
-    assert(kr == KERN_SUCCESS, __FUNCTION__)
-    semp = tmpSemp
+    semp = {
+      var newport = semaphore_t()
+      let kr = semaphore_create(mach_task_self_, &newport, SYNC_POLICY_FIFO, 0)
+      assert(kr == KERN_SUCCESS, __FUNCTION__)
+      return newport
+    }()
   }
 
-  convenience init()
+  private convenience init()
   {
     self.init(value: 0)
   }
@@ -115,14 +116,25 @@ final class ChannelSemaphore
     assert(kr == KERN_SUCCESS, __FUNCTION__)
   }
 
-  func setStatus(status: ChannelSemaphoreStatus) -> Bool
+  var state: ChannelSemaphoreState { return currentState }
+
+  func setState(newState: ChannelSemaphoreState) -> Bool
   {
-    switch status
+    let copy: Bool
+    switch (currentState, newState)
     {
+    case (.Ready, .Pointer):
+      copy = true
+
+    case (_, .Done):
+      copy = true
+
     default:
-      internalStatus = status
-      return true
+      copy = false
     }
+
+    if copy { currentState = newState }
+    return copy
   }
 
   func signal() -> Bool
