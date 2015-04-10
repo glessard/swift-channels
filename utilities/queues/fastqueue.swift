@@ -10,8 +10,8 @@ import Darwin
 
 final class FastQueue<T>: QueueType, SequenceType, GeneratorType
 {
-  private var head: UnsafeMutablePointer<Node> = nil
-  private var tail: UnsafeMutablePointer<Node> = nil
+  private var head: UnsafeMutablePointer<Node<T>> = nil
+  private var tail: UnsafeMutablePointer<Node<T>> = nil
 
   private let pool = AtomicStackInit()
 
@@ -32,18 +32,16 @@ final class FastQueue<T>: QueueType, SequenceType, GeneratorType
     {
       let node = head
       head = node.memory.next
-      let elem = node.memory.elem() as UnsafeMutablePointer<T>
-      elem.destroy()
-      elem.dealloc(1)
+      node.memory.elem.destroy()
+      node.memory.elem.dealloc(1)
       node.dealloc(1)
     }
 
     // drain the pool
     while UnsafePointer<COpaquePointer>(pool).memory != nil
     {
-      let node = UnsafeMutablePointer<Node>(OSAtomicDequeue(pool, 0))
-      let elem = node.memory.elem() as UnsafeMutablePointer<T>
-      elem.dealloc(1)
+      let node = UnsafeMutablePointer<Node<T>>(OSAtomicDequeue(pool, 0))
+      node.memory.elem.dealloc(1)
       node.dealloc(1)
     }
     // release the pool stack structure
@@ -75,14 +73,14 @@ final class FastQueue<T>: QueueType, SequenceType, GeneratorType
 
   func enqueue(newElement: T)
   {
-    var node = UnsafeMutablePointer<Node>(OSAtomicDequeue(pool, 0))
+    var node = UnsafeMutablePointer<Node<T>>(OSAtomicDequeue(pool, 0))
     if node == nil
     {
-      node = UnsafeMutablePointer<Node>.alloc(1)
+      node = UnsafeMutablePointer<Node<T>>.alloc(1)
       node.memory = Node(UnsafeMutablePointer<T>.alloc(1))
     }
     node.memory.next = nil
-    node.memory.elem().initialize(newElement)
+    node.memory.elem.initialize(newElement)
 
     if head == nil
     {
@@ -103,7 +101,7 @@ final class FastQueue<T>: QueueType, SequenceType, GeneratorType
     { // Promote the 2nd item to 1st
       head = node.memory.next
 
-      let element: T = node.memory.elem().move()
+      let element = node.memory.elem.move()
       OSAtomicEnqueue(pool, node, 0)
       return element
     }
@@ -125,18 +123,13 @@ final class FastQueue<T>: QueueType, SequenceType, GeneratorType
   }
 }
 
-private struct Node
+private struct Node<T>
 {
-  var next: UnsafeMutablePointer<Node> = nil
-  var p: COpaquePointer
+  var next: UnsafeMutablePointer<Node<T>> = nil
+  let elem: UnsafeMutablePointer<T>
 
-  init<T>(_ p: UnsafeMutablePointer<T>)
+  init(_ p: UnsafeMutablePointer<T>)
   {
-    self.p = COpaquePointer(p)
-  }
-
-  func elem<T>() -> UnsafeMutablePointer<T>
-  {
-    return UnsafeMutablePointer<T>(p)
+    elem = p
   }
 }
