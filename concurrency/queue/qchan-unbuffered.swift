@@ -135,7 +135,7 @@ final class QUnbufferedChan<T>: Chan<T>
         if let s = c.get()
         { // pass the data on to an insert()
           OSSpinLockUnlock(&lock)
-          let threadLock = SemaphorePool.dequeue()
+          let threadLock = SemaphorePool.Obtain()
           dispatch_set_context(threadLock, &newElement)
           let selection = Selection(id: originalSelection.id, semaphore: threadLock)
           dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
@@ -145,7 +145,7 @@ final class QUnbufferedChan<T>: Chan<T>
           precondition(dispatch_get_context(threadLock) == &newElement, "Unknown context in \(__FUNCTION__)")
 
           dispatch_set_context(threadLock, nil)
-          SemaphorePool.enqueue(threadLock)
+          SemaphorePool.Return(threadLock)
           return true
         }
       }
@@ -222,7 +222,7 @@ final class QUnbufferedChan<T>: Chan<T>
         { // get data from an extract()
           OSSpinLockUnlock(&lock)
           let buffer = UnsafeMutablePointer<T>.alloc(1)
-          let threadLock = SemaphorePool.dequeue()
+          let threadLock = SemaphorePool.Obtain()
           dispatch_set_context(threadLock, buffer)
           let selection = Selection(id: originalSelection.id, semaphore: threadLock)
           dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
@@ -232,7 +232,7 @@ final class QUnbufferedChan<T>: Chan<T>
           precondition(dispatch_get_context(threadLock) == buffer, "Unknown context in \(__FUNCTION__)")
 
           dispatch_set_context(threadLock, nil)
-          SemaphorePool.enqueue(threadLock)
+          SemaphorePool.Return(threadLock)
           let element = buffer.move()
           buffer.dealloc(1)
           return element
@@ -305,7 +305,7 @@ final class QUnbufferedChan<T>: Chan<T>
   private func insertToExtract(extractSelect: dispatch_semaphore_t, _ extractSelection: Selection) -> dispatch_semaphore_t
   {
     // We have two select() functions talking to eath other. They need an intermediary.
-    let intermediary = SemaphorePool.dequeue()
+    let intermediary = SemaphorePool.Obtain()
     let buffer = UnsafeMutablePointer<T>.alloc(1)
     dispatch_set_context(intermediary, buffer)
 
@@ -323,7 +323,7 @@ final class QUnbufferedChan<T>: Chan<T>
       buffer.destroy(1)
       buffer.dealloc(1)
       dispatch_set_context(intermediary, nil)
-      SemaphorePool.enqueue(intermediary)
+      SemaphorePool.Return(intermediary)
     }
 
     // this return value will be sent off to insert()
@@ -430,7 +430,7 @@ final class QUnbufferedChan<T>: Chan<T>
   private func extractFromInsert(insertSelect: dispatch_semaphore_t, _ insertSelection: Selection) -> dispatch_semaphore_t
   {
     // We have two select() functions talking to eath other. They need an intermediary.
-    let intermediary = SemaphorePool.dequeue()
+    let intermediary = SemaphorePool.Obtain()
     let buffer = UnsafeMutablePointer<T>.alloc(1)
     dispatch_set_context(intermediary, buffer)
 
@@ -449,7 +449,7 @@ final class QUnbufferedChan<T>: Chan<T>
       buffer.destroy(1)
       buffer.dealloc(1)
       dispatch_set_context(intermediary, nil)
-      SemaphorePool.enqueue(intermediary)
+      SemaphorePool.Return(intermediary)
     }
 
     // this return value will be sent off to extract()
