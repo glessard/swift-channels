@@ -139,7 +139,6 @@
 		0336B9B41ABB1BF700F4B44B /* async.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = async.swift; path = utilities/async.swift; sourceTree = "<group>"; };
 		033912021ABD3DC000F4B44B /* ChannelsExamples.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChannelsExamples.swift; sourceTree = "<group>"; };
 		034CABE21AC210BC00F4B44B /* schan-singleton.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "schan-singleton.swift"; sourceTree = "<group>"; };
-		034CABE41AC2166700F4B44B /* qchan-singleton.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "qchan-singleton.swift"; sourceTree = "<group>"; };
 		0359EAFB1A8C77D300F4B44B /* semaphore-chan.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "semaphore-chan.swift"; path = "select/semaphore-chan.swift"; sourceTree = "<group>"; };
 		035B605E1A67433800F4B44B /* Channels.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Channels.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		035B60621A67433800F4B44B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -184,7 +183,6 @@
 		03AD47B11A6890B100F4B44B /* merge.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = merge.swift; sourceTree = "<group>"; };
 		03AD47BF1A689E0900F4B44B /* MergeTest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MergeTest.swift; sourceTree = "<group>"; };
 		03B24C0B1A8AC01F00F4B44B /* pchan-bufferedN-array.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "pchan-bufferedN-array.swift"; sourceTree = "<group>"; };
-		03E50FA71AC4972700F4B44B /* semaphorechanqueue.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = semaphorechanqueue.swift; sourceTree = "<group>"; };
 		03E60E601AAC08CE00F4B44B /* SelectSingletonTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SelectSingletonTests.swift; sourceTree = "<group>"; };
 		03EDB5F01AD22B6F00F4B44B /* channel-semaphore.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "channel-semaphore.swift"; path = "channel-semaphore/channel-semaphore.swift"; sourceTree = "<group>"; };
 		03EEE5411AC60F8D00F4B44B /* supersemaphorequeue.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = supersemaphorequeue.swift; sourceTree = "<group>"; };
@@ -341,7 +339,6 @@
 			children = (
 				03AD47181A6743E500F4B44B /* qchan.swift */,
 				03AD47161A6743E500F4B44B /* qchan-buffered.swift */,
-				034CABE41AC2166700F4B44B /* qchan-singleton.swift */,
 				03AD47171A6743E500F4B44B /* qchan-unbuffered.swift */,
 			);
 			path = queue;
@@ -375,8 +372,6 @@
 				03AD473C1A67441A00F4B44B /* fastqueue.swift */,
 				03AD47421A67441A00F4B44B /* semaphorequeue.swift */,
 				03EEE5411AC60F8D00F4B44B /* supersemaphorequeue.swift */,
-				03E50FA71AC4972700F4B44B /* semaphorechanqueue.swift */,
-				03AD47411A67441A00F4B44B /* semaphorestack.swift */,
 			);
 			name = queues;
 			path = ../utilities/queues;
@@ -664,6 +659,7 @@
 				03AD47A21A6836B300F4B44B /* timing.swift in Sources */,
 				03AD478F1A68369C00F4B44B /* chan-operators.swift in Sources */,
 				03AD479B1A68369C00F4B44B /* qchan.swift in Sources */,
+				0372014D1AD7BC8A00F4B44B /* supersemaphorequeue.swift in Sources */,
 				03AD47971A68369C00F4B44B /* pchan-buffered1.swift in Sources */,
 				0336B9B71ABB1BF700F4B44B /* async.swift in Sources */,
 				03AD479F1A68369C00F4B44B /* schan.swift in Sources */,
