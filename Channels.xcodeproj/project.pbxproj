@@ -11,9 +11,6 @@
 		032DEC241A8D84F600F4B44B /* semaphore-chan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0359EAFB1A8C77D300F4B44B /* semaphore-chan.swift */; };
 		0335FBE11A8B277500F4B44B /* pchan-bufferedN-array.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B24C0B1A8AC01F00F4B44B /* pchan-bufferedN-array.swift */; };
 		0335FBE21A8B277600F4B44B /* pchan-bufferedN-array.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B24C0B1A8AC01F00F4B44B /* pchan-bufferedN-array.swift */; };
-		0335FBE31A8B2A9E00F4B44B /* semaphorestack.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47411A67441A00F4B44B /* semaphorestack.swift */; };
-		0335FBE41A8B2A9F00F4B44B /* semaphorestack.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47411A67441A00F4B44B /* semaphorestack.swift */; };
-		0335FBE51A8B2A9F00F4B44B /* semaphorestack.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47411A67441A00F4B44B /* semaphorestack.swift */; };
 		0336B9B51ABB1BF700F4B44B /* async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0336B9B41ABB1BF700F4B44B /* async.swift */; };
 		0336B9B61ABB1BF700F4B44B /* async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0336B9B41ABB1BF700F4B44B /* async.swift */; };
 		0336B9B71ABB1BF700F4B44B /* async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0336B9B41ABB1BF700F4B44B /* async.swift */; };
@@ -170,7 +167,6 @@
 		03AD473A1A67441A00F4B44B /* atomicqueue.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = atomicqueue.swift; sourceTree = "<group>"; };
 		03AD473C1A67441A00F4B44B /* fastqueue.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = fastqueue.swift; sourceTree = "<group>"; };
 		03AD473E1A67441A00F4B44B /* queuetype.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = queuetype.swift; sourceTree = "<group>"; };
-		03AD47411A67441A00F4B44B /* semaphorestack.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = semaphorestack.swift; sourceTree = "<group>"; };
 		03AD47421A67441A00F4B44B /* semaphorequeue.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = semaphorequeue.swift; sourceTree = "<group>"; };
 		03AD474C1A67447B00F4B44B /* BufferedChannelTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BufferedChannelTests.swift; sourceTree = "<group>"; };
 		03AD474E1A67448400F4B44B /* SingletonChannelTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SingletonChannelTests.swift; sourceTree = "<group>"; };
@@ -370,7 +366,6 @@
 				03AD47421A67441A00F4B44B /* semaphorequeue.swift */,
 				03EEE5411AC60F8D00F4B44B /* supersemaphorequeue.swift */,
 				03E50FA71AC4972700F4B44B /* semaphorechanqueue.swift */,
-				03AD47411A67441A00F4B44B /* semaphorestack.swift */,
 			);
 			name = queues;
 			path = ../utilities/queues;
@@ -583,7 +578,6 @@
 				03AD47221A6743E500F4B44B /* chan-sender.swift in Sources */,
 				03AD47B21A6890B100F4B44B /* merge.swift in Sources */,
 				03EEE5421AC60F8D00F4B44B /* supersemaphorequeue.swift in Sources */,
-				0335FBE31A8B2A9E00F4B44B /* semaphorestack.swift in Sources */,
 				03AD47361A6743E500F4B44B /* schan-buffered.swift in Sources */,
 				03AD47431A67441A00F4B44B /* atomicqueue.swift in Sources */,
 			);
@@ -641,7 +635,6 @@
 				03F3FD6E1A6A4E7900F4B44B /* select-types.swift in Sources */,
 				032DEC241A8D84F600F4B44B /* semaphore-chan.swift in Sources */,
 				03AD47671A68348C00F4B44B /* chan-protocols.swift in Sources */,
-				0335FBE41A8B2A9F00F4B44B /* semaphorestack.swift in Sources */,
 				03AD477E1A68354F00F4B44B /* atomicqueue.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -654,7 +647,6 @@
 				03AD47981A68369C00F4B44B /* pchan-bufferedN-queue.swift in Sources */,
 				03AD47A11A6836B300F4B44B /* logging.swift in Sources */,
 				03AD479E1A68369C00F4B44B /* semaphorepool.swift in Sources */,
-				0335FBE51A8B2A9F00F4B44B /* semaphorestack.swift in Sources */,
 				03AD47951A68369C00F4B44B /* channel.swift in Sources */,
 				03AD47A01A68369C00F4B44B /* schan-buffered.swift in Sources */,
 				0335FBE21A8B277600F4B44B /* pchan-bufferedN-array.swift in Sources */,

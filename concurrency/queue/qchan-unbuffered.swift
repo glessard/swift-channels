@@ -158,7 +158,7 @@ final class QUnbufferedChan<T>: Chan<T>
     }
 
     // make our data available for a reader
-    let threadLock = SemaphorePool.dequeue()
+    let threadLock = SemaphorePool.Obtain()
     dispatch_set_context(threadLock, &newElement)
     writerQueue.enqueue(threadLock)
     OSSpinLockUnlock(&lock)
@@ -167,7 +167,7 @@ final class QUnbufferedChan<T>: Chan<T>
     // got awoken
     let context = dispatch_get_context(threadLock)
     dispatch_set_context(threadLock, nil)
-    SemaphorePool.enqueue(threadLock)
+    SemaphorePool.Return(threadLock)
 
     switch context
     {
@@ -247,7 +247,7 @@ final class QUnbufferedChan<T>: Chan<T>
     }
 
     // wait for data from a writer
-    let threadLock = SemaphorePool.dequeue()
+    let threadLock = SemaphorePool.Obtain()
     let buffer = UnsafeMutablePointer<T>.alloc(1)
     dispatch_set_context(threadLock, buffer)
     readerQueue.enqueue(threadLock)
@@ -257,7 +257,7 @@ final class QUnbufferedChan<T>: Chan<T>
     // got awoken
     let context = dispatch_get_context(threadLock)
     dispatch_set_context(threadLock, nil)
-    SemaphorePool.enqueue(threadLock)
+    SemaphorePool.Return(threadLock)
 
     switch context
     {

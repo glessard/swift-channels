@@ -128,11 +128,11 @@ final class QBufferedChan<T>: Chan<T>
   {
     precondition(lock != 0, "Lock must be locked upon entering \(__FUNCTION__)")
 
-    let threadLock = SemaphorePool.dequeue()
+    let threadLock = SemaphorePool.Obtain()
     queue.enqueue(.semaphore(threadLock))
     OSSpinLockUnlock(&lock)
     dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
-    SemaphorePool.enqueue(threadLock)
+    SemaphorePool.Return(threadLock)
     OSSpinLockLock(&lock)
   }
 
