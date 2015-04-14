@@ -8,6 +8,7 @@
 
 import Darwin.Mach
 import Dispatch.time
+import Foundation.NSThread
 
 struct SemaphorePool
 {
@@ -100,7 +101,7 @@ func ==(ls: ChannelSemaphoreState, rs: ChannelSemaphoreState) -> Bool
 final public class ChannelSemaphore
 {
   private var svalue: Int32
-  private let semp: semaphore_t
+  private var semp = semaphore_t()
 
   private var currentState = ChannelSemaphoreState.Ready
   private var selected = 0
@@ -110,12 +111,12 @@ final public class ChannelSemaphore
   private init(value: Int32)
   {
     svalue = (value > 0) ? value : 0
-    semp = {
-      var newport = semaphore_t()
-      let kr = semaphore_create(mach_task_self_, &newport, SYNC_POLICY_FIFO, 0)
-      assert(kr == KERN_SUCCESS, __FUNCTION__)
-      return newport
-    }()
+//    semp = {
+//      var newport = semaphore_t()
+//      let kr = semaphore_create(mach_task_self_, &newport, SYNC_POLICY_FIFO, 0)
+//      assert(kr == KERN_SUCCESS, __FUNCTION__)
+//      return newport
+//    }()
   }
 
   private convenience init()
@@ -127,6 +128,25 @@ final public class ChannelSemaphore
   {
     let kr = semaphore_destroy(mach_task_self_, semp)
     assert(kr == KERN_SUCCESS, __FUNCTION__)
+  }
+
+  final private func initSemaphorePort()
+  {
+    var semaphore = semaphore_t()
+    let kr = semaphore_create(mach_task_self_, &semaphore, SYNC_POLICY_FIFO, 0)
+    assert(kr == KERN_SUCCESS, __FUNCTION__)
+
+    func atomicAssignPort(port: semaphore_t, assignee: UnsafeMutablePointer<Void>) -> Bool
+    { // succeed only if 'semp' is still zero
+      return OSAtomicCompareAndSwap32Barrier(0, unsafeBitCast(port, Int32.self),
+                                             UnsafeMutablePointer<Int32>(assignee))
+    }
+
+    if !atomicAssignPort(semaphore, &semp)
+    { // another initialization attempt succeeded concurrently. Don't leak the port; return it.
+      let kr = semaphore_destroy(mach_task_self_, semaphore)
+      assert(kr == KERN_SUCCESS, __FUNCTION__)
+    }
   }
 
   final var isSelected: Bool { return selected != 0 }
@@ -167,6 +187,12 @@ final public class ChannelSemaphore
   {
     if OSAtomicIncrement32Barrier(&svalue) <= 0
     {
+      while semp == 0
+      { // if svalue was previously less than zero, there must be a wait() call
+        // currently in the process of initializing semp.
+        NSThread.sleepForTimeInterval(1e-10)
+      }
+
       let kr = semaphore_signal(semp)
       assert(kr == KERN_SUCCESS, __FUNCTION__)
       return kr == KERN_SUCCESS
@@ -185,6 +211,8 @@ final public class ChannelSemaphore
     {
       return true
     }
+
+    if semp == 0 { initSemaphorePort() }
 
     var kr: kern_return_t
     switch timeout
