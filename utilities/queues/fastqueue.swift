@@ -32,8 +32,7 @@ final class FastQueue<T>: QueueType, SequenceType, GeneratorType
     {
       let node = head
       head = node.memory.next
-      node.memory.elem.destroy()
-      node.memory.elem.dealloc(1)
+      node.destroy()
       node.dealloc(1)
     }
 
@@ -41,7 +40,6 @@ final class FastQueue<T>: QueueType, SequenceType, GeneratorType
     while UnsafePointer<COpaquePointer>(pool).memory != nil
     {
       let node = UnsafeMutablePointer<Node<T>>(OSAtomicDequeue(pool, 0))
-      node.memory.elem.dealloc(1)
       node.dealloc(1)
     }
     // release the pool stack structure
@@ -77,10 +75,8 @@ final class FastQueue<T>: QueueType, SequenceType, GeneratorType
     if node == nil
     {
       node = UnsafeMutablePointer<Node<T>>.alloc(1)
-      node.memory = Node(UnsafeMutablePointer<T>.alloc(1))
     }
-    node.memory.next = nil
-    node.memory.elem.initialize(newElement)
+    node.initialize(Node(newElement))
 
     if head == nil
     {
@@ -101,7 +97,8 @@ final class FastQueue<T>: QueueType, SequenceType, GeneratorType
     { // Promote the 2nd item to 1st
       head = node.memory.next
 
-      let element = node.memory.elem.move()
+      let element = node.memory.elem
+      node.destroy()
       OSAtomicEnqueue(pool, node, 0)
       return element
     }
@@ -125,11 +122,16 @@ final class FastQueue<T>: QueueType, SequenceType, GeneratorType
 
 private struct Node<T>
 {
-  var next: UnsafeMutablePointer<Node<T>> = nil
-  let elem: UnsafeMutablePointer<T>
+  var nptr: UnsafeMutablePointer<Void> = nil
+  let elem: T
 
-  init(_ p: UnsafeMutablePointer<T>)
+  init(_ e: T)
   {
-    elem = p
+    elem = e
+  }
+
+  var next: UnsafeMutablePointer<Node<T>> {
+    get { return UnsafeMutablePointer<Node<T>>(nptr) }
+    set { nptr = UnsafeMutablePointer<Void>(newValue) }
   }
 }
