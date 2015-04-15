@@ -6,6 +6,7 @@
 //  Copyright (c) 2014 Guillaume Lessard. All rights reserved.
 //
 
+import Darwin
 import Dispatch
 
 /**
@@ -327,7 +328,6 @@ final class QUnbufferedChan<T>: Chan<T>
     dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
       intermediary.wait()
       // got awoken by insert()
-      // precondition(dispatch_get_context(intermediary) == buffer, "Unknown context in \(__FUNCTION__)")
 
       extractSelect.signal()
       intermediary.wait()
@@ -458,7 +458,6 @@ final class QUnbufferedChan<T>: Chan<T>
     insertSelect.signal()
     intermediary.wait()
     // got awoken by insert()
-    // precondition(dispatch_get_context(intermediary) == buffer, "Unknown context in \(__FUNCTION__)")
 
     // two select()s talking to each other need a 3rd thread
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0)) {

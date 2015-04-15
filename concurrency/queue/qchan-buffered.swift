@@ -6,7 +6,7 @@
 //  Copyright (c) 2014 Guillaume Lessard. All rights reserved.
 //
 
-import Dispatch
+import Darwin
 
 /**
   A channel that uses a queue of semaphores for scheduling.
