@@ -410,22 +410,3 @@ final class QBufferedChan<T>: Chan<T>
     }
   }
 }
-
-private extension SemaphoreQueue
-{
-  /**
-    Signal the next valid semaphore from the SemaphoreQueue.
-  
-    For some reason, this is cost-free as an extension, but costly as a method of QBufferedChan.
-  */
-
-  private func signalNext() -> Bool
-  {
-    while let s = dequeue()
-    {
-      dispatch_semaphore_signal(s)
-      return true
-    }
-    return false
-  }
-}

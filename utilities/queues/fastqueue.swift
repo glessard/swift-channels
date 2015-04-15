@@ -39,8 +39,7 @@ final class FastQueue<T>: QueueType, SequenceType, GeneratorType
     // drain the pool
     while UnsafePointer<COpaquePointer>(pool).memory != nil
     {
-      let node = UnsafeMutablePointer<Node<T>>(OSAtomicDequeue(pool, 0))
-      node.dealloc(1)
+      UnsafeMutablePointer<Node<T>>(OSAtomicDequeue(pool, 0)).dealloc(1)
     }
     // release the pool stack structure
     AtomicStackRelease(pool)
