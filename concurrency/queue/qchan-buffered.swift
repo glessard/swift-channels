@@ -6,7 +6,7 @@
 //  Copyright (c) 2014 Guillaume Lessard. All rights reserved.
 //
 
-import Dispatch
+import Darwin
 
 /**
   A channel that uses a queue of semaphores for scheduling.
@@ -24,8 +24,8 @@ final class QBufferedChan<T>: Chan<T>
   private var head: Int64 = 0
   private var tail: Int64 = 0
 
-  private let readerQueue = SemaphoreQueue()
-  private let writerQueue = SemaphoreQueue()
+  private let readerQueue = FastQueue<ChannelSemaphore>()
+  private let writerQueue = FastQueue<ChannelSemaphore>()
 
   private var lock = OS_SPINLOCK_INIT
 
@@ -128,7 +128,7 @@ final class QBufferedChan<T>: Chan<T>
     :param: queue the queue to which the signal should be appended
   */
 
-  private func wait(queue: SemaphoreQueue)
+  private func wait(queue: FastQueue<ChannelSemaphore>)
   {
     assert(lock != 0, "Lock must be locked upon entering \(__FUNCTION__)")
 

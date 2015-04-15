@@ -95,7 +95,7 @@ final class SingletonChan<T>: Chan<T>
 
   override func put(newElement: T) -> Bool
   {
-    if writerCount == 0 && OSAtomicCompareAndSwap32Barrier(0, 1, &writerCount)
+    if writerCount == 0 && closedState == 0 && OSAtomicCompareAndSwap32Barrier(0, 1, &writerCount)
     { // Only one thread can get here
       element = newElement
       close() // also increments the 'barrier' semaphore
@@ -121,6 +121,7 @@ final class SingletonChan<T>: Chan<T>
     {
       dispatch_group_wait(barrier, DISPATCH_TIME_FOREVER)
     }
+    assert(writerCount != 0 || closedState != 0, __FUNCTION__)
 
     if readerCount == 0 && OSAtomicCompareAndSwap32Barrier(0, 1, &readerCount)
     { // Only one thread can get here.

@@ -6,7 +6,7 @@
 //  Copyright (c) 2014 Guillaume Lessard. All rights reserved.
 //
 
-import Dispatch
+import Darwin
 
 /**
   An unbuffered channel that uses a queue of semaphores for scheduling.
@@ -16,8 +16,8 @@ final class QUnbufferedChan<T>: Chan<T>
 {
   // MARK: private housekeeping
 
-  private let readerQueue = SemaphoreQueue()
-  private let writerQueue = SemaphoreQueue()
+  private let readerQueue = FastQueue<ChannelSemaphore>()
+  private let writerQueue = FastQueue<ChannelSemaphore>()
 
   private var lock = OS_SPINLOCK_INIT
 
