@@ -16,8 +16,8 @@ final class QUnbufferedChan<T>: Chan<T>
 {
   // MARK: private housekeeping
 
-  private let readerQueue = SuperSemaphoreQueue()
-  private let writerQueue = SuperSemaphoreQueue()
+  private let readerQueue = FastQueue<SuperSemaphore>()
+  private let writerQueue = FastQueue<SuperSemaphore>()
 
   private var lock = OS_SPINLOCK_INIT
 
@@ -160,7 +160,7 @@ final class QUnbufferedChan<T>: Chan<T>
     // make our data available for a reader
     let threadLock = SemaphorePool.Obtain()
     dispatch_set_context(threadLock, &newElement)
-    writerQueue.enqueue(threadLock)
+    writerQueue.enqueue(.semaphore(threadLock))
     OSSpinLockUnlock(&lock)
     dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
 
@@ -250,7 +250,7 @@ final class QUnbufferedChan<T>: Chan<T>
     let threadLock = SemaphorePool.Obtain()
     let buffer = UnsafeMutablePointer<T>.alloc(1)
     dispatch_set_context(threadLock, buffer)
-    readerQueue.enqueue(threadLock)
+    readerQueue.enqueue(.semaphore(threadLock))
     OSSpinLockUnlock(&lock)
     dispatch_semaphore_wait(threadLock, DISPATCH_TIME_FOREVER)
 

@@ -27,8 +27,8 @@ final class QBufferedChan<T>: Chan<T>
   private var nextput: Int64 = 0
   private var nextget: Int64 = 0
 
-  private let readerQueue = SuperSemaphoreQueue()
-  private let writerQueue = SuperSemaphoreQueue()
+  private let readerQueue = FastQueue<SuperSemaphore>()
+  private let writerQueue = FastQueue<SuperSemaphore>()
 
   private var lock = OS_SPINLOCK_INIT
 
@@ -124,7 +124,7 @@ final class QBufferedChan<T>: Chan<T>
     :param: queue the queue to which the signal should be appended
   */
 
-  private func wait(queue: SuperSemaphoreQueue)
+  private func wait(queue: FastQueue<SuperSemaphore>)
   {
     precondition(lock != 0, "Lock must be locked upon entering \(__FUNCTION__)")
 
@@ -333,7 +333,7 @@ final class QBufferedChan<T>: Chan<T>
     }
     else
     {
-      writerQueue.enqueue(semaphore, selection: selection)
+      writerQueue.enqueue(.selection(semaphore, selection))
       OSSpinLockUnlock(&lock)
     }
   }
@@ -405,7 +405,7 @@ final class QBufferedChan<T>: Chan<T>
     }
     else
     {
-      readerQueue.enqueue(semaphore, selection: selection)
+      readerQueue.enqueue(.selection(semaphore, selection))
       OSSpinLockUnlock(&lock)
     }
   }

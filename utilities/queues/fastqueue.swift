@@ -89,6 +89,27 @@ final class FastQueue<T>: QueueType, SequenceType, GeneratorType
     }
   }
 
+  func undequeue(oldElement: T)
+  {
+    var node = UnsafeMutablePointer<Node<T>>(OSAtomicDequeue(pool, 0))
+    if node == nil
+    {
+      node = UnsafeMutablePointer<Node<T>>.alloc(1)
+    }
+    node.initialize(Node(oldElement))
+
+    if head == nil
+    {
+      head = node
+      tail = node
+    }
+    else
+    {
+      node.memory.next = head
+      head = node
+    }
+  }
+
   func dequeue() -> T?
   {
     let node = head
