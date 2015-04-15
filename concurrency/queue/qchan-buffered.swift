@@ -232,28 +232,3 @@ final class QBufferedChan<T>: Chan<T>
     }
   }
 }
-
-
-private extension SemaphoreQueue
-{
-  private func signalNext() -> Bool
-  {
-    if let s = dequeue()
-    {
-      return s.signal()
-    }
-    return false
-  }
-
-  private func wait(lock: UnsafeMutablePointer<Int32>)
-  {
-    assert(lock.memory != 0, "Lock must be locked upon entering \(__FUNCTION__)")
-
-    let threadLock = SemaphorePool.Obtain()
-    enqueue(threadLock)
-    OSSpinLockUnlock(lock)
-    threadLock.wait()
-    SemaphorePool.Return(threadLock)
-    OSSpinLockLock(lock)
-  }
-}
