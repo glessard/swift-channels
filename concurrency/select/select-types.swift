@@ -111,3 +111,9 @@ public final class Selection
     return Selection(id: self.id, semaphore: semaphore)
   }
 }
+
+enum SuperSemaphore
+{
+  case semaphore(ChannelSemaphore)
+  case selection(ChannelSemaphore, Selection)
+}
