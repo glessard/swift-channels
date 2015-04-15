@@ -16,8 +16,8 @@ final class QUnbufferedChan<T>: Chan<T>
 {
   // MARK: private housekeeping
 
-  private let readerQueue = SemaphoreQueue()
-  private let writerQueue = SemaphoreQueue()
+  private let readerQueue = FastQueue<dispatch_semaphore_t>()
+  private let writerQueue = FastQueue<dispatch_semaphore_t>()
 
   private var lock = OS_SPINLOCK_INIT
 
