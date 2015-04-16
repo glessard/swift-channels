@@ -150,8 +150,9 @@ final class SingletonChan<T>: Chan<T>
   override func selectPut(select: ChannelSemaphore, selection: Selection)
   {
     // If we get here, it would be as a result of an inconceivable set of circumstances.
-    if closedState == 0 && writerCount == 0 && select.setState(.Select(selection))
+    if closedState == 0 && writerCount == 0 && select.setState(.Select)
     {
+      select.selection = selection
       select.signal()
     }
   }
@@ -177,16 +178,18 @@ final class SingletonChan<T>: Chan<T>
 
   override func selectGet(select: ChannelSemaphore, selection: Selection)
   {
-    if closedState != 0 && select.setState(.Select(selection))
+    if closedState != 0 && select.setState(.Select)
     {
+      select.selection = selection
       select.signal()
       return
     }
 
     dispatch_group_notify(barrier, dispatch_get_global_queue(qos_class_self(), 0)) {
       _ in
-      if select.setState(.Select(selection))
+      if select.setState(.Select)
       {
+        select.selection = selection
         select.signal()
       }
     }

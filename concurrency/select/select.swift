@@ -47,7 +47,7 @@ public func select(options: [Selectable], withDefault: Selectable? = nil) -> Sel
   for option in shuffle(selectables)
   {
     option.selectNotify(semaphore, selection: Selection(id: option))
-    if semaphore.isSelected { break }
+    if semaphore.state != .WaitSelect { break }
   }
 
   semaphore.wait()
@@ -55,8 +55,9 @@ public func select(options: [Selectable], withDefault: Selectable? = nil) -> Sel
   let selection: Selection
   switch semaphore.state
   {
-  case .Select(let newSelection):
-    selection = newSelection
+  case .Select:
+    selection = semaphore.selection ?? Selection(id: voidReceiver)
+    semaphore.selection = nil
     semaphore.setState(.Done)
 
   case .Invalidated, .Done:

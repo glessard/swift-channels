@@ -89,7 +89,7 @@ public protocol SelectableSenderType: SenderType, Selectable
   Selection is used to communicate references back to the select() function.
 */
 
-public final class Selection
+public struct Selection
 {
   public unowned let id: Selectable
   public let semaphore: ChannelSemaphore?

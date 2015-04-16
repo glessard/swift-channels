@@ -352,8 +352,9 @@ final class QUnbufferedChan<T>: Chan<T>
     {
       switch rs.state
       {
-      case .Pointer(let pointer):
-        UnsafeMutablePointer<T>(pointer).initialize(newElement)
+      case .Pointer:
+        // attach a new copy of our data to the reader's semaphore
+        rs.getPointer().initialize(newElement)
         rs.signal()
         return true
 
@@ -487,8 +488,8 @@ final class QUnbufferedChan<T>: Chan<T>
     {
       switch ws.state
       {
-      case .Pointer(let pointer):
-        let element: T = UnsafePointer(pointer).memory
+      case .Pointer:
+        let element: T = ws.getPointer().memory
         ws.signal()
         return element
 
