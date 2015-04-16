@@ -40,7 +40,7 @@ struct SemaphorePool
         let s = buffer.advancedBy(cursor).move()
         OSSpinLockUnlock(&lock)
         s.svalue = 0
-        s.currentState = .Ready
+        s.currentState = ChannelSemaphoreState.Ready.rawValue
         return s
       }
 
@@ -53,7 +53,7 @@ struct SemaphorePool
           buffer[i] = buffer.advancedBy(cursor).move()
           OSSpinLockUnlock(&lock)
           s.svalue = 0
-          s.currentState = .Ready
+          s.currentState = ChannelSemaphoreState.Ready.rawValue
           return s
         }
       }
@@ -66,26 +66,15 @@ struct SemaphorePool
 
 // MARK: ChannelSemaphoreState
 
-enum ChannelSemaphoreState: Equatable
+enum ChannelSemaphoreState: Int32
 {
 case Ready
 
 // Unbuffered channel data
-case Pointer(UnsafeMutablePointer<Void>)
+case Pointer
 
 // End state
 case Done
-}
-
-func ==(ls: ChannelSemaphoreState, rs: ChannelSemaphoreState) -> Bool
-{
-  switch (ls, rs)
-  {
-  case (.Ready, .Ready): return true
-  case (.Pointer(let p1), .Pointer(let p2)) where p1 == p2: return true
-  case (.Done, .Done): return true
-  default: return false
-  }
 }
 
 final class ChannelSemaphore
@@ -93,7 +82,8 @@ final class ChannelSemaphore
   private var svalue: Int32
   private var semp = semaphore_t()
 
-  private var currentState = ChannelSemaphoreState.Ready
+  private var currentState = ChannelSemaphoreState.Ready.rawValue
+  private var pointer: UnsafeMutablePointer<Void> = nil
 
   private init(value: Int32)
   {
@@ -130,25 +120,43 @@ final class ChannelSemaphore
     }
   }
 
-  var state: ChannelSemaphoreState { return currentState }
+  var rawState: Int32 { return currentState }
+  var state: ChannelSemaphoreState { return ChannelSemaphoreState(rawValue: currentState)! }
 
   func setState(newState: ChannelSemaphoreState) -> Bool
   {
-    let copy: Bool
-    switch (currentState, newState)
+    switch newState
     {
-    case (.Ready, .Pointer):
-      copy = true
+    case .Pointer:
+      return OSAtomicCompareAndSwap32Barrier(ChannelSemaphoreState.Ready.rawValue, newState.rawValue, &currentState)
 
-    case (_, .Done):
-      copy = true
+    case .Done:
+      currentState = ChannelSemaphoreState.Done.rawValue
+      OSMemoryBarrier()
+      return true
 
     default:
-      copy = false
+      return false
     }
+  }
 
-    if copy { currentState = newState }
-    return copy
+  func setPointer<T>(p: UnsafeMutablePointer<T>) -> Bool
+  {
+    if setState(.Pointer)
+    {
+      pointer = UnsafeMutablePointer<Void>(p)
+      return true
+    }
+    return false
+  }
+
+  func getPointer<T>() -> UnsafeMutablePointer<T>
+  {
+    if currentState == ChannelSemaphoreState.Pointer.rawValue
+    {
+      return UnsafeMutablePointer<T>(pointer)
+    }
+    return nil
   }
 
   func signal() -> Bool
