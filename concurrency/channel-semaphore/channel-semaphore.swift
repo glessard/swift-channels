@@ -40,8 +40,7 @@ struct SemaphorePool
         let s = buffer.advancedBy(cursor).move()
         OSSpinLockUnlock(&lock)
         s.svalue = 0
-        s.selected = 0
-        s.currentState = .Ready
+        s.currentState = ChannelSemaphoreState.Ready.rawValue
         return s
       }
 
@@ -54,8 +53,7 @@ struct SemaphorePool
           buffer[i] = buffer.advancedBy(cursor).move()
           OSSpinLockUnlock(&lock)
           s.svalue = 0
-          s.selected = 0
-          s.currentState = .Ready
+          s.currentState = ChannelSemaphoreState.Ready.rawValue
           return s
         }
       }
@@ -68,34 +66,20 @@ struct SemaphorePool
 
 // MARK: ChannelSemaphoreState
 
-enum ChannelSemaphoreState: Equatable
+enum ChannelSemaphoreState: Int32
 {
 case Ready
 
 // Unbuffered channel data
-case Pointer(UnsafeMutablePointer<Void>)
+case Pointer
 
 // Select() case
 case WaitSelect
-case Select(Selection)
+case Select
 case Invalidated
 
 // End state
 case Done
-}
-
-func ==(ls: ChannelSemaphoreState, rs: ChannelSemaphoreState) -> Bool
-{
-  switch (ls, rs)
-  {
-  case (.Ready, .Ready): return true
-  case (.Pointer(let p1), .Pointer(let p2)) where p1 == p2: return true
-  case (.WaitSelect, .WaitSelect): return true
-  case (.Select(let s1), .Select(let s2)) where s1.id === s2.id: return s1.semaphore === s2.semaphore
-  case (.Invalidated, .Invalidated): return true
-  case (.Done, .Done): return true
-  default: return false
-  }
 }
 
 final public class ChannelSemaphore
@@ -103,20 +87,13 @@ final public class ChannelSemaphore
   private var svalue: Int32
   private var semp = semaphore_t()
 
-  private var currentState = ChannelSemaphoreState.Ready
-  private var selected = 0
-
-  private var statelock = OS_SPINLOCK_INIT
+  private var currentState = ChannelSemaphoreState.Ready.rawValue
+  private var pointer: UnsafeMutablePointer<Void> = nil
+  private var seln: Selection? = nil
 
   private init(value: Int32)
   {
     svalue = (value > 0) ? value : 0
-//    semp = {
-//      var newport = semaphore_t()
-//      let kr = semaphore_create(mach_task_self_, &newport, SYNC_POLICY_FIFO, 0)
-//      assert(kr == KERN_SUCCESS, __FUNCTION__)
-//      return newport
-//    }()
   }
 
   private convenience init()
@@ -149,38 +126,51 @@ final public class ChannelSemaphore
     }
   }
 
-  final var isSelected: Bool { return selected != 0 }
-
-  final var state: ChannelSemaphoreState {
-    OSSpinLockLock(&statelock)
-    let internalState = currentState
-    OSSpinLockUnlock(&statelock)
-    return internalState
-  }
+  var rawState: Int32 { return currentState }
+  var state: ChannelSemaphoreState { return ChannelSemaphoreState(rawValue: currentState)! }
 
   func setState(newState: ChannelSemaphoreState) -> Bool
   {
-    OSSpinLockLock(&statelock)
-    let copy: Bool
-    switch (currentState, newState)
+    switch newState
     {
-    case (.WaitSelect, .Select), (.WaitSelect, .Invalidated):
-        copy = true
-        selected = 1
+    case .Pointer, .WaitSelect:
+      return OSAtomicCompareAndSwap32Barrier(ChannelSemaphoreState.Ready.rawValue, newState.rawValue, &currentState)
 
-    case (.Ready, .WaitSelect), (.Ready, .Pointer):
-      copy = true
+    case .Select, .Invalidated:
+      return OSAtomicCompareAndSwap32Barrier(ChannelSemaphoreState.WaitSelect.rawValue, newState.rawValue, &currentState)
 
-    case (_, .Done):
-      copy = true
+    case .Done:
+      currentState = ChannelSemaphoreState.Done.rawValue
+      OSMemoryBarrier()
+      return true
 
     default:
-      copy = false
+      return false
     }
+  }
 
-    if copy { currentState = newState }
-    OSSpinLockUnlock(&statelock)
-    return copy
+  func setPointer<T>(p: UnsafeMutablePointer<T>) -> Bool
+  {
+    if setState(.Pointer)
+    {
+      pointer = UnsafeMutablePointer<Void>(p)
+      return true
+    }
+    return false
+  }
+
+  func getPointer<T>() -> UnsafeMutablePointer<T>
+  {
+    if currentState == ChannelSemaphoreState.Pointer.rawValue
+    {
+      return UnsafeMutablePointer<T>(pointer)
+    }
+    return nil
+  }
+
+  var selection: Selection? {
+    get { return seln }
+    set { if currentState == ChannelSemaphoreState.Select.rawValue { seln = newValue } }
   }
 
   func signal() -> Bool

@@ -122,9 +122,9 @@ final class QUnbufferedChan<T>: Chan<T>
         OSSpinLockUnlock(&lock)
         switch rs.state
         {
-        case .Pointer(let buffer):
+        case .Pointer:
           // attach a new copy of our data to the reader's semaphore
-          UnsafeMutablePointer<T>(buffer).initialize(newElement)
+          rs.getPointer().initialize(newElement)
           rs.signal()
           return true
 
@@ -134,21 +134,23 @@ final class QUnbufferedChan<T>: Chan<T>
 
       case .selection(let select, let selection):
         let threadLock = SemaphorePool.Obtain()
-        if select.setState(.Select(selection.withSemaphore(threadLock)))
+        if select.setState(.Select)
         { // pass the data on to an insert()
           OSSpinLockUnlock(&lock)
-          threadLock.setState(.Pointer(&newElement))
+          select.selection = selection.withSemaphore(threadLock)
+          threadLock.setPointer(&newElement)
           select.signal()
           threadLock.wait()
 
           // got awoken by insert()
           let state = threadLock.state
+          let match = threadLock.getPointer() == &newElement
           threadLock.setState(.Done)
           SemaphorePool.Return(threadLock)
 
           switch state
           {
-          case .Pointer(let pointer) where pointer == &newElement:
+          case .Pointer(let pointer) where match:
             return true
 
           default:
@@ -167,13 +169,14 @@ final class QUnbufferedChan<T>: Chan<T>
 
     // make our data available for a reader
     let threadLock = SemaphorePool.Obtain()
-    threadLock.setState(.Pointer(&newElement))
+    threadLock.setPointer(&newElement)
     writerQueue.enqueue(.semaphore(threadLock))
     OSSpinLockUnlock(&lock)
     threadLock.wait()
 
     // got awoken
     let state = threadLock.state
+    let match = threadLock.getPointer() == &newElement
     threadLock.setState(.Done)
     SemaphorePool.Return(threadLock)
 
@@ -183,9 +186,9 @@ final class QUnbufferedChan<T>: Chan<T>
       // thread was awoken by close() and put() has failed
       return false
 
-    case .Pointer(let pointer) where pointer == &newElement:
+    case .Pointer where match:
       // the message was succesfully passed.
-      return true
+      return match
 
     default:
       preconditionFailure("Unexpected Semaphore state \(state) in \(__FUNCTION__)")
@@ -215,8 +218,8 @@ final class QUnbufferedChan<T>: Chan<T>
         OSSpinLockUnlock(&lock)
         switch ws.state
         {
-        case .Pointer(let pointer):
-          let element: T = UnsafePointer(pointer).memory
+        case .Pointer:
+          let element: T = ws.getPointer().memory
           ws.signal()
           return element
 
@@ -226,22 +229,24 @@ final class QUnbufferedChan<T>: Chan<T>
 
       case .selection(let select, let selection):
         let threadLock = SemaphorePool.Obtain()
-        if select.setState(.Select(selection.withSemaphore(threadLock)))
+        if select.setState(.Select)
         { // get data from an extract()
           OSSpinLockUnlock(&lock)
+          select.selection = selection.withSemaphore(threadLock)
           let buffer = UnsafeMutablePointer<T>.alloc(1)
-          threadLock.setState(.Pointer(buffer))
+          threadLock.setPointer(buffer)
           select.signal()
           threadLock.wait()
 
           // got awoken by extract()
           let state = threadLock.state
+          let match = threadLock.getPointer() == buffer
           threadLock.setState(.Done)
           SemaphorePool.Return(threadLock)
 
           switch state
           {
-          case .Pointer(let pointer) where pointer == buffer:
+          case .Pointer(let pointer) where match:
             let element = buffer.move()
             buffer.dealloc(1)
             return element
@@ -263,13 +268,14 @@ final class QUnbufferedChan<T>: Chan<T>
     // wait for data from a writer
     let threadLock = SemaphorePool.Obtain()
     let buffer = UnsafeMutablePointer<T>.alloc(1)
-    threadLock.setState(.Pointer(buffer))
+    threadLock.setPointer(buffer)
     readerQueue.enqueue(.semaphore(threadLock))
     OSSpinLockUnlock(&lock)
     threadLock.wait()
 
     // got awoken
     let state = threadLock.state
+    let match = threadLock.getPointer() == buffer
     threadLock.setState(.Done)
     SemaphorePool.Return(threadLock)
 
@@ -280,7 +286,7 @@ final class QUnbufferedChan<T>: Chan<T>
       buffer.dealloc(1)
       return nil
 
-    case .Pointer(let pointer) where pointer == buffer:
+    case .Pointer where match:
       let element = buffer.move()
       buffer.dealloc(1)
       return element
@@ -305,9 +311,10 @@ final class QUnbufferedChan<T>: Chan<T>
 
       case .selection(let extractSelect, let extractSelection):
         let intermediary = SemaphorePool.Obtain()
-        if extractSelect.setState(.Select(extractSelection.withSemaphore(intermediary)))
+        if extractSelect.setState(.Select)
         {
           OSSpinLockUnlock(&lock)
+          extractSelect.selection = extractSelection.withSemaphore(intermediary)
           insertToExtract(extractSelect, intermediary)
           return selection.withSemaphore(intermediary)
         }
@@ -322,7 +329,7 @@ final class QUnbufferedChan<T>: Chan<T>
   private func insertToExtract(extractSelect: ChannelSemaphore, _ intermediary: ChannelSemaphore)
   {
     let buffer = UnsafeMutablePointer<T>.alloc(1)
-    intermediary.setState(.Pointer(buffer))
+    intermediary.setPointer(buffer)
 
     // two select()s talking to each other need a 3rd thread
     dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
@@ -366,9 +373,10 @@ final class QUnbufferedChan<T>: Chan<T>
       switch rss
       {
       case .semaphore(let rs):
-        if select.setState(.Select(selection.withSemaphore(rs)))
+        if select.setState(.Select)
         {
           OSSpinLockUnlock(&lock)
+          select.selection = selection.withSemaphore(rs)
           select.signal()
         }
         else
@@ -379,15 +387,17 @@ final class QUnbufferedChan<T>: Chan<T>
         return
 
       case .selection(let extractSelect, let extractSelection):
-        if !extractSelect.isSelected
+        if extractSelect.state == .WaitSelect
         {
           let intermediary = SemaphorePool.Obtain()
-          if select.setState(.Select(selection.withSemaphore(intermediary)))
+          if select.setState(.Select)
           {
             OSSpinLockUnlock(&lock)
-            if extractSelect.setState(.Select(extractSelection.withSemaphore(intermediary)))
+            if extractSelect.setState(.Select)
             {
+              extractSelect.selection = extractSelection.withSemaphore(intermediary)
               insertToExtract(extractSelect, intermediary)
+              select.selection = selection.withSemaphore(intermediary)
             }
             else
             {
@@ -435,9 +445,10 @@ final class QUnbufferedChan<T>: Chan<T>
 
       case .selection(let insertSelect, let insertSelection):
         let intermediary = SemaphorePool.Obtain()
-        if insertSelect.setState(.Select(insertSelection.withSemaphore(intermediary)))
+        if insertSelect.setState(.Select)
         {
           OSSpinLockUnlock(&lock)
+          insertSelect.selection = insertSelection.withSemaphore(intermediary)
           extractFromInsert(insertSelect, intermediary)
           return selection.withSemaphore(intermediary)
         }
@@ -452,7 +463,7 @@ final class QUnbufferedChan<T>: Chan<T>
   private func extractFromInsert(insertSelect: ChannelSemaphore, _ intermediary: ChannelSemaphore)
   {
     let buffer = UnsafeMutablePointer<T>.alloc(1)
-    intermediary.setState(.Pointer(buffer))
+    intermediary.setPointer(buffer)
 
     // get the buffer filled by insert()
     insertSelect.signal()
@@ -497,9 +508,10 @@ final class QUnbufferedChan<T>: Chan<T>
       switch wss
       {
       case .semaphore(let ws):
-        if select.setState(.Select(selection.withSemaphore(ws)))
+        if select.setState(.Select)
         {
           OSSpinLockUnlock(&lock)
+          select.selection = selection.withSemaphore(ws)
           select.signal()
         }
         else
@@ -510,15 +522,17 @@ final class QUnbufferedChan<T>: Chan<T>
         return
 
       case .selection(let insertSelect, let insertSelection):
-        if !insertSelect.isSelected
+        if insertSelect.state == .WaitSelect
         {
           let intermediary = SemaphorePool.Obtain()
-          if select.setState(.Select(selection.withSemaphore(intermediary)))
+          if select.setState(.Select)
           {
             OSSpinLockUnlock(&lock)
-            if insertSelect.setState(.Select(insertSelection.withSemaphore(intermediary)))
+            if insertSelect.setState(.Select)
             {
+              insertSelect.selection = insertSelection.withSemaphore(intermediary)
               extractFromInsert(insertSelect, intermediary)
+              select.selection = selection.withSemaphore(intermediary)
             }
             else
             {
