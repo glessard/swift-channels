@@ -140,22 +140,21 @@ final class QUnbufferedChan<T>: Chan<T>
           select.selection = selection.withSemaphore(threadLock)
           threadLock.setPointer(&newElement)
           select.signal()
-          threadLock.wait()
 
-          // got awoken by insert()
-          let state = threadLock.state
-          let match = threadLock.getPointer() == &newElement
-          threadLock.setState(.Done)
-          SemaphorePool.Return(threadLock)
+          dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0)) {
+            threadLock.wait()
 
-          switch state
-          {
-          case .Pointer(let pointer) where match:
-            return true
+            // got awoken by insert(). clean up.
+            let state = threadLock.state
+            let match = threadLock.getPointer() == &newElement
+            threadLock.setState(.Done)
+            SemaphorePool.Return(threadLock)
 
-          default:
-            preconditionFailure("Unexpected Semaphore state \(state) in \(__FUNCTION__)")
+            precondition(state == .Pointer && match, "Unexpected Semaphore state \(state) in \(__FUNCTION__)")
           }
+
+          // assume success and complain asynchronously if appropriate
+          return true
         }
         SemaphorePool.Return(threadLock)
       }
@@ -191,7 +190,7 @@ final class QUnbufferedChan<T>: Chan<T>
       return match
 
     default:
-      preconditionFailure("Unexpected Semaphore state \(state) in \(__FUNCTION__)")
+      preconditionFailure("Unexpected Semaphore state \(state) after wait in \(__FUNCTION__)")
     }
   }
 
@@ -246,7 +245,7 @@ final class QUnbufferedChan<T>: Chan<T>
 
           switch state
           {
-          case .Pointer(let pointer) where match:
+          case .Pointer where match:
             let element = buffer.move()
             buffer.dealloc(1)
             return element
@@ -292,7 +291,7 @@ final class QUnbufferedChan<T>: Chan<T>
       return element
 
     default:
-      preconditionFailure("Unknown state (\(state)) after sleep state in \(__FUNCTION__)")
+      preconditionFailure("Unknown state (\(state)) after wait in \(__FUNCTION__)")
     }
   }
 
@@ -310,15 +309,12 @@ final class QUnbufferedChan<T>: Chan<T>
         return selection.withSemaphore(rs)
 
       case .selection(let extractSelect, let extractSelection):
-        let intermediary = SemaphorePool.Obtain()
         if extractSelect.setState(.Select)
         {
           OSSpinLockUnlock(&lock)
-          extractSelect.selection = extractSelection.withSemaphore(intermediary)
-          insertToExtract(extractSelect, intermediary)
-          return selection.withSemaphore(intermediary)
+          extractDoubleSelect(extractSelect, extractSelection)
+          return selection.withSemaphore(extractSelect)
         }
-        SemaphorePool.Return(intermediary)
         // try the next enqueued reader instead
       }
     }
@@ -326,17 +322,19 @@ final class QUnbufferedChan<T>: Chan<T>
     return nil
   }
 
-  private func insertToExtract(extractSelect: ChannelSemaphore, _ intermediary: ChannelSemaphore)
+  private func extractDoubleSelect(select: ChannelSemaphore, _ selection: Selection)
   {
+    let intermediary = SemaphorePool.Obtain()
+
     let buffer = UnsafeMutablePointer<T>.alloc(1)
     intermediary.setPointer(buffer)
 
-    // two select()s talking to each other need a 3rd thread
-    dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
-      intermediary.wait()
-      // got awoken by insert()
+    select.selection = selection.withSemaphore(intermediary)
+    select.setState(.DoubleSelect)
+    select.pointer = UnsafeMutablePointer(buffer)
 
-      extractSelect.signal()
+    // clean up asynchronously
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0)) {
       intermediary.wait()
       // got awoken by extract(). clean up.
       buffer.destroy(1)
@@ -345,14 +343,14 @@ final class QUnbufferedChan<T>: Chan<T>
       SemaphorePool.Return(intermediary)
     }
   }
-
+  
   override func insert(selection: Selection, newElement: T) -> Bool
   {
     if let rs = selection.semaphore
     {
       switch rs.state
       {
-      case .Pointer:
+      case .Pointer, .DoubleSelect:
         // attach a new copy of our data to the reader's semaphore
         rs.getPointer().initialize(newElement)
         rs.signal()
@@ -390,20 +388,17 @@ final class QUnbufferedChan<T>: Chan<T>
       case .selection(let extractSelect, let extractSelection):
         if extractSelect.state == .WaitSelect
         {
-          let intermediary = SemaphorePool.Obtain()
           if select.setState(.Select)
           {
             OSSpinLockUnlock(&lock)
             if extractSelect.setState(.Select)
             {
-              extractSelect.selection = extractSelection.withSemaphore(intermediary)
-              insertToExtract(extractSelect, intermediary)
-              select.selection = selection.withSemaphore(intermediary)
+              extractDoubleSelect(extractSelect, extractSelection)
+              select.selection = selection.withSemaphore(extractSelect)
             }
             else
             {
               select.setState(.Done)
-              SemaphorePool.Return(intermediary)
             }
             select.signal()
           }
@@ -411,7 +406,6 @@ final class QUnbufferedChan<T>: Chan<T>
           {
             readerQueue.undequeue(rss)
             OSSpinLockUnlock(&lock)
-            SemaphorePool.Return(intermediary)
           }
           return
         }
@@ -444,17 +438,14 @@ final class QUnbufferedChan<T>: Chan<T>
         OSSpinLockUnlock(&lock)
         return selection.withSemaphore(ws)
 
-      case .selection(let insertSelect, let insertSelection):
-        let intermediary = SemaphorePool.Obtain()
-        if insertSelect.setState(.Select)
-        {
+      case .selection(let insertSelect, _):
+        if insertSelect.state == .WaitSelect
+        { // the "get" side of a double select *cannot* complete in a reasonable time
+          // defer until the asynchronous phase of select. the insert side might win the race?
+          writerQueue.undequeue(wss)
           OSSpinLockUnlock(&lock)
-          insertSelect.selection = insertSelection.withSemaphore(intermediary)
-          extractFromInsert(insertSelect, intermediary)
-          return selection.withSemaphore(intermediary)
+          return nil
         }
-        SemaphorePool.Return(intermediary)
-        // try the next enqueued writer instead
       }
     }
     OSSpinLockUnlock(&lock)
@@ -471,7 +462,7 @@ final class QUnbufferedChan<T>: Chan<T>
     intermediary.wait()
     // got awoken by insert()
 
-    // two select()s talking to each other need a 3rd thread
+    // two select()s talking to each other need a 3rd thread to clean up.
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0)) {
       intermediary.wait()
       // got awoken by extract(). clean up.
@@ -525,28 +516,25 @@ final class QUnbufferedChan<T>: Chan<T>
       case .selection(let insertSelect, let insertSelection):
         if insertSelect.state == .WaitSelect
         {
-          let intermediary = SemaphorePool.Obtain()
           if select.setState(.Select)
           {
             OSSpinLockUnlock(&lock)
             if insertSelect.setState(.Select)
             {
-              insertSelect.selection = insertSelection.withSemaphore(intermediary)
-              extractFromInsert(insertSelect, intermediary)
-              select.selection = selection.withSemaphore(intermediary)
+              extractDoubleSelect(select, selection)
+              insertSelect.selection = insertSelection.withSemaphore(select)
+              insertSelect.signal()
             }
             else
             {
               select.setState(.Done)
-              SemaphorePool.Return(intermediary)
+              select.signal()
             }
-            select.signal()
           }
           else
           {
             writerQueue.undequeue(wss)
             OSSpinLockUnlock(&lock)
-            SemaphorePool.Return(intermediary)
           }
           return
         }

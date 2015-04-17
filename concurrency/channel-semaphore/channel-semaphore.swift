@@ -76,6 +76,7 @@ case Pointer
 // Select() case
 case WaitSelect
 case Select
+case DoubleSelect
 case Invalidated
 
 // End state
@@ -88,7 +89,7 @@ final public class ChannelSemaphore
   private var semp = semaphore_t()
 
   private var currentState = ChannelSemaphoreState.Ready.rawValue
-  private var pointer: UnsafeMutablePointer<Void> = nil
+  private var iptr: UnsafeMutablePointer<Void> = nil
   private var seln: Selection? = nil
 
   private init(value: Int32)
@@ -139,6 +140,9 @@ final public class ChannelSemaphore
     case .Select, .Invalidated:
       return OSAtomicCompareAndSwap32Barrier(ChannelSemaphoreState.WaitSelect.rawValue, newState.rawValue, &currentState)
 
+    case .DoubleSelect:
+      return OSAtomicCompareAndSwap32Barrier(ChannelSemaphoreState.Select.rawValue, newState.rawValue, &currentState)
+
     case .Done:
       currentState = ChannelSemaphoreState.Done.rawValue
       OSMemoryBarrier()
@@ -161,16 +165,35 @@ final public class ChannelSemaphore
 
   func getPointer<T>() -> UnsafeMutablePointer<T>
   {
-    if currentState == ChannelSemaphoreState.Pointer.rawValue
-    {
-      return UnsafeMutablePointer<T>(pointer)
+    return UnsafeMutablePointer<T>(pointer)
+  }
+
+  var pointer: UnsafeMutablePointer<Void> {
+    get {
+      if currentState == ChannelSemaphoreState.Pointer.rawValue ||
+         currentState == ChannelSemaphoreState.DoubleSelect.rawValue
+      { return iptr }
+      else
+      { return nil }
     }
-    return nil
+    set {
+      if currentState == ChannelSemaphoreState.Pointer.rawValue ||
+         currentState == ChannelSemaphoreState.DoubleSelect.rawValue
+      { iptr = newValue }
+      else
+      { iptr = nil }
+    }
   }
 
   var selection: Selection? {
     get { return seln }
-    set { if currentState == ChannelSemaphoreState.Select.rawValue { seln = newValue } }
+    set {
+      if currentState == ChannelSemaphoreState.Select.rawValue ||
+         currentState == ChannelSemaphoreState.DoubleSelect.rawValue
+      { seln = newValue }
+      else
+      { seln = nil }
+    }
   }
 
   func signal() -> Bool

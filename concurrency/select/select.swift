@@ -55,7 +55,7 @@ public func select(options: [Selectable], withDefault: Selectable? = nil) -> Sel
   let selection: Selection
   switch semaphore.state
   {
-  case .Select:
+  case .Select, .DoubleSelect:
     selection = semaphore.selection ?? Selection(id: voidReceiver)
     semaphore.selection = nil
     semaphore.setState(.Done)
