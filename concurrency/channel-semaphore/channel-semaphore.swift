@@ -25,6 +25,7 @@ struct SemaphorePool
     {
       buffer.advancedBy(cursor).initialize(s)
       cursor += 1
+      assert(s.svalue == 0, "Non-zero user-space semaphore count of \(s.svalue) in \(__FUNCTION__)")
     }
     OSSpinLockUnlock(&lock)
   }
