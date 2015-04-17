@@ -83,6 +83,8 @@ case Invalidated
 case Done
 }
 
+// MARK: ChannelSemaphore
+
 final public class ChannelSemaphore
 {
   private var svalue: Int32
@@ -91,6 +93,8 @@ final public class ChannelSemaphore
   private var currentState = ChannelSemaphoreState.Ready.rawValue
   private var iptr: UnsafeMutablePointer<Void> = nil
   private var seln: Selection? = nil
+
+  // MARK: init/deinit
 
   private init(value: Int32)
   {
@@ -127,6 +131,8 @@ final public class ChannelSemaphore
     }
   }
 
+  // MARK: State Handling
+
   var rawState: Int32 { return currentState }
   var state: ChannelSemaphoreState { return ChannelSemaphoreState(rawValue: currentState)! }
 
@@ -152,6 +158,8 @@ final public class ChannelSemaphore
       return false
     }
   }
+
+  // MARK: Data handling
 
   func setPointer<T>(p: UnsafeMutablePointer<T>) -> Bool
   {
@@ -195,6 +203,8 @@ final public class ChannelSemaphore
       { seln = nil }
     }
   }
+
+  // MARK: Semaphore functionality
 
   func signal() -> Bool
   {
@@ -263,7 +273,7 @@ private var scale: mach_timebase_info = {
   var info = mach_timebase_info(numer: 0, denom: 0)
   mach_timebase_info(&info)
   return info
-  }()
+}()
 
 // more or less copied from libdispatch/Source/time.c, _dispatch_timeout()
 
