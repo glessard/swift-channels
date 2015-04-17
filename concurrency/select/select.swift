@@ -55,13 +55,17 @@ public func select(options: [Selectable], withDefault: Selectable? = nil) -> Sel
   let selection: Selection
   switch semaphore.state
   {
-  case .Select, .DoubleSelect:
-    selection = semaphore.selection ?? Selection(id: voidReceiver)
+  case .Select:
+    selection = semaphore.selection ?? voidSelection
     semaphore.selection = nil
     semaphore.setState(.Done)
 
+  case .DoubleSelect:
+    // this is specific to the extract() side of a double select.
+    selection = semaphore.selection ?? voidSelection
+
   case .Invalidated, .Done:
-    selection = Selection(id: voidReceiver)
+    selection = voidSelection
 
   case let status: // default
     preconditionFailure("Unexpected ChannelSemaphore state (\(status)) in __FUNCTION__")
@@ -73,3 +77,4 @@ public func select(options: [Selectable], withDefault: Selectable? = nil) -> Sel
 }
 
 private let voidReceiver = Receiver<()>()
+private let voidSelection = Selection(id: voidReceiver)

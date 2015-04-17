@@ -143,11 +143,8 @@ final public class ChannelSemaphore
     case .Pointer, .WaitSelect:
       return OSAtomicCompareAndSwap32Barrier(ChannelSemaphoreState.Ready.rawValue, newState.rawValue, &currentState)
 
-    case .Select, .Invalidated:
+    case .Select, .Invalidated, .DoubleSelect:
       return OSAtomicCompareAndSwap32Barrier(ChannelSemaphoreState.WaitSelect.rawValue, newState.rawValue, &currentState)
-
-    case .DoubleSelect:
-      return OSAtomicCompareAndSwap32Barrier(ChannelSemaphoreState.Select.rawValue, newState.rawValue, &currentState)
 
     case .Done:
       currentState = ChannelSemaphoreState.Done.rawValue
@@ -161,14 +158,9 @@ final public class ChannelSemaphore
 
   // MARK: Data handling
 
-  func setPointer<T>(p: UnsafeMutablePointer<T>) -> Bool
+  func setPointer<T>(p: UnsafeMutablePointer<T>)
   {
-    if setState(.Pointer)
-    {
-      pointer = UnsafeMutablePointer<Void>(p)
-      return true
-    }
-    return false
+    pointer = UnsafeMutablePointer(p)
   }
 
   func getPointer<T>() -> UnsafeMutablePointer<T>

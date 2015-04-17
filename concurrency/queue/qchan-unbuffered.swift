@@ -7,7 +7,6 @@
 //
 
 import Darwin
-import Dispatch
 
 /**
   An unbuffered channel that uses a queue of semaphores for scheduling.
@@ -133,30 +132,21 @@ final class QUnbufferedChan<T>: Chan<T>
         }
 
       case .selection(let select, let selection):
-        let threadLock = SemaphorePool.Obtain()
-        if select.setState(.Select)
-        { // pass the data on to an insert()
+        if select.setState(.DoubleSelect)
+        { // pass the data on to an extract()
           OSSpinLockUnlock(&lock)
-          select.selection = selection.withSemaphore(threadLock)
-          threadLock.setPointer(&newElement)
+          let buffer = UnsafeMutablePointer<T>.alloc(1)
+          buffer.initialize(newElement)
+          // buffer will be cleaned up in the .DoubleSelect case of extract()
+
+          select.selection = selection.withSemaphore(select)
+          select.setPointer(buffer)
           select.signal()
 
-          dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0)) {
-            threadLock.wait()
-
-            // got awoken by insert(). clean up.
-            let state = threadLock.state
-            let match = threadLock.getPointer() == &newElement
-            threadLock.setState(.Done)
-            SemaphorePool.Return(threadLock)
-
-            precondition(state == .Pointer && match, "Unexpected Semaphore state \(state) in \(__FUNCTION__)")
-          }
-
-          // assume success and complain asynchronously if appropriate
+          // the data was passed on; it must have been successful.
+          // if not, select() or extract() are likely to complain, or memory will leak.
           return true
         }
-        SemaphorePool.Return(threadLock)
       }
     }
 
@@ -168,6 +158,7 @@ final class QUnbufferedChan<T>: Chan<T>
 
     // make our data available for a reader
     let threadLock = SemaphorePool.Obtain()
+    threadLock.setState(.Pointer)
     threadLock.setPointer(&newElement)
     writerQueue.enqueue(.semaphore(threadLock))
     OSSpinLockUnlock(&lock)
@@ -229,15 +220,16 @@ final class QUnbufferedChan<T>: Chan<T>
       case .selection(let select, let selection):
         let threadLock = SemaphorePool.Obtain()
         if select.setState(.Select)
-        { // get data from an extract()
+        { // get data from an insert()
           OSSpinLockUnlock(&lock)
           select.selection = selection.withSemaphore(threadLock)
           let buffer = UnsafeMutablePointer<T>.alloc(1)
+          threadLock.setState(.Pointer)
           threadLock.setPointer(buffer)
           select.signal()
           threadLock.wait()
 
-          // got awoken by extract()
+          // got awoken by insert()
           let state = threadLock.state
           let match = threadLock.getPointer() == buffer
           threadLock.setState(.Done)
@@ -267,6 +259,7 @@ final class QUnbufferedChan<T>: Chan<T>
     // wait for data from a writer
     let threadLock = SemaphorePool.Obtain()
     let buffer = UnsafeMutablePointer<T>.alloc(1)
+    threadLock.setState(.Pointer)
     threadLock.setPointer(buffer)
     readerQueue.enqueue(.semaphore(threadLock))
     OSSpinLockUnlock(&lock)
@@ -309,10 +302,12 @@ final class QUnbufferedChan<T>: Chan<T>
         return selection.withSemaphore(rs)
 
       case .selection(let extractSelect, let extractSelection):
-        if extractSelect.setState(.Select)
+        if extractSelect.setState(.DoubleSelect)
         {
           OSSpinLockUnlock(&lock)
-          extractDoubleSelect(extractSelect, extractSelection)
+          extractSelect.selection = extractSelection.withSemaphore(extractSelect)
+          extractSelect.setPointer(UnsafeMutablePointer<T>.alloc(1))
+
           return selection.withSemaphore(extractSelect)
         }
         // try the next enqueued reader instead
@@ -322,28 +317,6 @@ final class QUnbufferedChan<T>: Chan<T>
     return nil
   }
 
-  private func extractDoubleSelect(select: ChannelSemaphore, _ selection: Selection)
-  {
-    let intermediary = SemaphorePool.Obtain()
-
-    let buffer = UnsafeMutablePointer<T>.alloc(1)
-    intermediary.setPointer(buffer)
-
-    select.selection = selection.withSemaphore(intermediary)
-    select.setState(.DoubleSelect)
-    select.pointer = UnsafeMutablePointer(buffer)
-
-    // clean up asynchronously
-    dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0)) {
-      intermediary.wait()
-      // got awoken by extract(). clean up.
-      buffer.destroy(1)
-      buffer.dealloc(1)
-      intermediary.setState(.Done)
-      SemaphorePool.Return(intermediary)
-    }
-  }
-  
   override func insert(selection: Selection, newElement: T) -> Bool
   {
     if let rs = selection.semaphore
@@ -391,16 +364,19 @@ final class QUnbufferedChan<T>: Chan<T>
           if select.setState(.Select)
           {
             OSSpinLockUnlock(&lock)
-            if extractSelect.setState(.Select)
+            if extractSelect.setState(.DoubleSelect)
             {
-              extractDoubleSelect(extractSelect, extractSelection)
+              extractSelect.selection = extractSelection.withSemaphore(extractSelect)
+              extractSelect.setPointer(UnsafeMutablePointer<T>.alloc(1))
+
               select.selection = selection.withSemaphore(extractSelect)
+              select.signal()
             }
             else
-            {
+            { // failed to get both semaphores in the appropriate state at the same time
               select.setState(.Done)
+              select.signal()
             }
-            select.signal()
           }
           else
           {
@@ -440,8 +416,9 @@ final class QUnbufferedChan<T>: Chan<T>
 
       case .selection(let insertSelect, _):
         if insertSelect.state == .WaitSelect
-        { // the "get" side of a double select *cannot* complete in a reasonable time
-          // defer until the asynchronous phase of select. the insert side might win the race?
+        { // the "get" side of a double select *cannot* complete in a reasonable time,
+          // therefore defer until the asynchronous phase of select.
+          // the insert side might win the race?
           writerQueue.undequeue(wss)
           OSSpinLockUnlock(&lock)
           return nil
@@ -450,27 +427,6 @@ final class QUnbufferedChan<T>: Chan<T>
     }
     OSSpinLockUnlock(&lock)
     return nil
-  }
-
-  private func extractFromInsert(insertSelect: ChannelSemaphore, _ intermediary: ChannelSemaphore)
-  {
-    let buffer = UnsafeMutablePointer<T>.alloc(1)
-    intermediary.setPointer(buffer)
-
-    // get the buffer filled by insert()
-    insertSelect.signal()
-    intermediary.wait()
-    // got awoken by insert()
-
-    // two select()s talking to each other need a 3rd thread to clean up.
-    dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0)) {
-      intermediary.wait()
-      // got awoken by extract(). clean up.
-      buffer.destroy(1)
-      buffer.dealloc(1)
-      intermediary.setState(.Done)
-      SemaphorePool.Return(intermediary)
-    }
   }
 
   override func extract(selection: Selection) -> T?
@@ -482,6 +438,15 @@ final class QUnbufferedChan<T>: Chan<T>
       case .Pointer:
         let element: T = ws.getPointer().memory
         ws.signal()
+        return element
+
+      case .DoubleSelect:
+        let pointer = UnsafeMutablePointer<T>(ws.pointer)
+        let element: T = pointer.move()
+        pointer.dealloc(1)
+        ws.pointer = nil
+        ws.selection = nil
+        ws.setState(.Done)
         return element
 
       case let state: // default
@@ -516,17 +481,19 @@ final class QUnbufferedChan<T>: Chan<T>
       case .selection(let insertSelect, let insertSelection):
         if insertSelect.state == .WaitSelect
         {
-          if select.setState(.Select)
+          if select.setState(.DoubleSelect)
           {
             OSSpinLockUnlock(&lock)
             if insertSelect.setState(.Select)
-            {
-              extractDoubleSelect(select, selection)
+            { // prepare select
+              select.selection = selection.withSemaphore(select)
+              select.setPointer(UnsafeMutablePointer<T>.alloc(1))
+
               insertSelect.selection = insertSelection.withSemaphore(select)
               insertSelect.signal()
             }
             else
-            {
+            { // failed to get both semaphores in the right state at the same time
               select.setState(.Done)
               select.signal()
             }
