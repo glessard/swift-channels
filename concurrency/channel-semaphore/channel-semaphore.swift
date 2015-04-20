@@ -119,11 +119,9 @@ final public class ChannelSemaphore
     let kr = semaphore_create(mach_task_self_, &port, SYNC_POLICY_FIFO, 0)
     assert(kr == KERN_SUCCESS, __FUNCTION__)
 
-    func atomicAssignPort(port: semaphore_t, assignee: UnsafeMutablePointer<Void>) -> Bool
-    { // succeed only if 'semp' is still zero
-      return OSAtomicCompareAndSwap32Barrier(0, unsafeBitCast(port, Int32.self),
-                                             UnsafeMutablePointer<Int32>(assignee))
-    }
+    let success: Bool = { (ptr: UnsafeMutablePointer<UInt32>) -> Bool in
+      return OSAtomicCompareAndSwap32Barrier(0, unsafeBitCast(port, Int32.self), UnsafeMutablePointer<Int32>(ptr))
+    }(&semp)
 
     if !success
     { // another initialization attempt succeeded concurrently. Don't leak the port; return it.
@@ -207,6 +205,7 @@ final public class ChannelSemaphore
       { // if svalue was previously less than zero, there must be a wait() call
         // currently in the process of initializing semp.
         NSThread.sleepForTimeInterval(1e-10)
+        OSMemoryBarrier()
       }
 
       let kr = semaphore_signal(semp)
