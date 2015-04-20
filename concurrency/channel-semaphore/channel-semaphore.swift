@@ -108,19 +108,17 @@ final public class ChannelSemaphore
 
   final private func initSemaphorePort()
   {
-    var semaphore = semaphore_t()
-    let kr = semaphore_create(mach_task_self_, &semaphore, SYNC_POLICY_FIFO, 0)
+    var port = semaphore_t()
+    let kr = semaphore_create(mach_task_self_, &port, SYNC_POLICY_FIFO, 0)
     assert(kr == KERN_SUCCESS, __FUNCTION__)
 
-    func atomicAssignPort(port: semaphore_t, assignee: UnsafeMutablePointer<Void>) -> Bool
-    { // succeed only if 'semp' is still zero
-      return OSAtomicCompareAndSwap32Barrier(0, unsafeBitCast(port, Int32.self),
-        UnsafeMutablePointer<Int32>(assignee))
-    }
+    let success: Bool = { (ptr: UnsafeMutablePointer<UInt32>) -> Bool in
+      return OSAtomicCompareAndSwap32Barrier(0, unsafeBitCast(port, Int32.self), UnsafeMutablePointer<Int32>(ptr))
+    }(&semp)
 
-    if !atomicAssignPort(semaphore, &semp)
+    if !success
     { // another initialization attempt succeeded concurrently. Don't leak the port; return it.
-      let kr = semaphore_destroy(mach_task_self_, semaphore)
+      let kr = semaphore_destroy(mach_task_self_, port)
       assert(kr == KERN_SUCCESS, __FUNCTION__)
     }
   }
