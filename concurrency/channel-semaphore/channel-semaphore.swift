@@ -86,7 +86,7 @@ final public class ChannelSemaphore
   private var semp = semaphore_t()
 
   private var currentState = ChannelSemaphoreState.Ready.rawValue
-  private var pointer: UnsafeMutablePointer<Void> = nil
+  private var iptr: UnsafeMutablePointer<Void> = nil
 
   // MARK: init/deinit
 
@@ -147,25 +147,31 @@ final public class ChannelSemaphore
 
   // MARK: Data handling
 
-  func setPointer<T>(p: UnsafeMutablePointer<T>) -> Bool
+  func setPointer<T>(p: UnsafeMutablePointer<T>)
   {
-    if setState(.Pointer)
-    {
-      pointer = UnsafeMutablePointer<Void>(p)
-      return true
-    }
-    return false
+    pointer = UnsafeMutablePointer(p)
   }
 
   func getPointer<T>() -> UnsafeMutablePointer<T>
   {
-    if currentState == ChannelSemaphoreState.Pointer.rawValue
-    {
-      return UnsafeMutablePointer<T>(pointer)
-    }
-    return nil
+    return UnsafeMutablePointer<T>(pointer)
   }
 
+  var pointer: UnsafeMutablePointer<Void> {
+    get {
+      if currentState == ChannelSemaphoreState.Pointer.rawValue
+      { return iptr }
+      else
+      { return nil }
+    }
+    set {
+      if currentState == ChannelSemaphoreState.Pointer.rawValue
+      { iptr = newValue }
+      else
+      { iptr = nil }
+    }
+  }
+  
   // MARK: Semaphore functionality
 
   func signal() -> Bool

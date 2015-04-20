@@ -117,6 +117,7 @@ final class QUnbufferedChan<T>: Chan<T>
 
     // make our data available for a reader
     let threadLock = SemaphorePool.Obtain()
+    threadLock.setState(.Pointer)
     threadLock.setPointer(&newElement)
     writerQueue.enqueue(threadLock)
     OSSpinLockUnlock(&lock)
@@ -182,6 +183,7 @@ final class QUnbufferedChan<T>: Chan<T>
     // wait for data from a writer
     let threadLock = SemaphorePool.Obtain()
     let buffer = UnsafeMutablePointer<T>.alloc(1)
+    threadLock.setState(.Pointer)
     threadLock.setPointer(buffer)
     readerQueue.enqueue(threadLock)
     OSSpinLockUnlock(&lock)
