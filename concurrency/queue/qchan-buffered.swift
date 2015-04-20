@@ -109,91 +109,36 @@ final class QBufferedChan<T>: Chan<T>
     OSSpinLockLock(&lock)
     closed = true
 
-    // Unblock waiting threads.
-    signalNextReader() || signalNextWriter()
-    OSSpinLockUnlock(&lock)
-  }
-
-  /**
-    Stop the thread on a new semaphore obtained from the SemaphorePool
-
-    The new semaphore is enqueued to readerQueue or writerQueue, and
-    will be used as a signal to resume the thread at a later time.
-
-    :param: lock a semaphore that is currently held by the calling thread.
-    :param: queue the queue to which the signal should be appended
-  */
-
-  private func wait(queue: FastQueue<SuperSemaphore>)
-  {
-    precondition(lock != 0, "Lock must be locked upon entering \(__FUNCTION__)")
-
-    let threadLock = SemaphorePool.Obtain()
-    queue.enqueue(.semaphore(threadLock))
-    OSSpinLockUnlock(&lock)
-    threadLock.wait()
-    SemaphorePool.Return(threadLock)
-    OSSpinLockLock(&lock)
-  }
-  
-  private func wait(queue: FastQueue<QueuedSemaphore>)
-  {
-    precondition(lock != 0, "Lock must be locked upon entering \(__FUNCTION__)")
-
-    let threadLock = SemaphorePool.Obtain()
-    queue.enqueue(QueuedSemaphore(threadLock))
-    OSSpinLockUnlock(&lock)
-    threadLock.wait()
-    SemaphorePool.Return(threadLock)
-    OSSpinLockLock(&lock)
-  }
-  
-  private func signalNextReader() -> Bool
-  {
+    // Unblock every waiting thread.
     while let reader = readerQueue.dequeue()
     {
       switch reader.sem.state
       {
       case .Ready:
-        return reader.sem.signal()
+        reader.sem.signal()
 
       case .WaitSelect:
-        if reader.sem.setState(.Select)
-        {
-          nextget += 1
-          reader.sem.selection = reader.sel!
-          return reader.sem.signal()
-        }
+        if reader.sem.setState(.Invalidated) { reader.sem.signal() }
 
       default:
         assertionFailure("Unexpected case \(reader.sem.state.rawValue) in \(__FUNCTION__)")
       }
     }
-    return false
-  }
-
-  private func signalNextWriter() -> Bool
-  {
     while let writer = writerQueue.dequeue()
     {
       switch writer.sem.state
       {
       case .Ready:
-        return writer.sem.signal()
+        writer.sem.signal()
 
       case .WaitSelect:
-        if writer.sem.setState(.Select)
-        {
-          nextput += 1
-          writer.sem.selection = writer.sel!
-          return writer.sem.signal()
-        }
+        if writer.sem.setState(.Invalidated) { writer.sem.signal() }
 
       default:
         assertionFailure("Unexpected case \(writer.sem.state.rawValue) in \(__FUNCTION__)")
       }
     }
-    return false
+    OSSpinLockUnlock(&lock)
   }
 
   /**
@@ -211,9 +156,16 @@ final class QBufferedChan<T>: Chan<T>
 
     OSSpinLockLock(&lock)
 
-    while !closed && head+capacity <= nextput
+    if !closed && head+capacity <= nextput
     {
-      wait(writerQueue)
+      let threadLock = SemaphorePool.Obtain()
+      do {
+        writerQueue.enqueue(QueuedSemaphore(threadLock))
+        OSSpinLockUnlock(&lock)
+        threadLock.wait()
+        OSSpinLockLock(&lock)
+      } while !closed && head+capacity <= nextput
+      SemaphorePool.Return(threadLock)
     }
 
     if !closed
@@ -339,9 +291,16 @@ final class QBufferedChan<T>: Chan<T>
 
     OSSpinLockLock(&lock)
 
-    while !closed && nextget >= tail
+    if !closed && nextget >= tail
     {
-      wait(readerQueue)
+      let threadLock = SemaphorePool.Obtain()
+      do {
+        readerQueue.enqueue(QueuedSemaphore(threadLock))
+        OSSpinLockUnlock(&lock)
+        threadLock.wait()
+        OSSpinLockLock(&lock)
+      } while !closed && nextget >= tail
+      SemaphorePool.Return(threadLock)
     }
 
     if nextget < tail
@@ -476,9 +435,51 @@ final class QBufferedChan<T>: Chan<T>
       buffer.advancedBy(Int(tail&mask)).initialize(newElement)
       tail += 1
 
-      if !signalNextReader()
+      while let reader = readerQueue.dequeue()
       {
-        if head+capacity > nextput || closed { signalNextWriter() }
+        switch reader.sem.state
+        {
+        case .Ready:
+          reader.sem.signal()
+          OSSpinLockUnlock(&lock)
+          return true
+
+        case .WaitSelect:
+          if reader.sem.setState(.Select)
+          {
+            nextget += 1
+            reader.sem.selection = reader.sel!
+            reader.sem.signal()
+            OSSpinLockUnlock(&lock)
+            return true
+          }
+
+        default:
+          assertionFailure("Unexpected case \(reader.sem.state.rawValue) in \(__FUNCTION__)")
+        }
+      }
+      while head+capacity > nextput || closed, let writer = writerQueue.dequeue()
+      {
+        switch writer.sem.state
+        {
+        case .Ready:
+          writer.sem.signal()
+          OSSpinLockUnlock(&lock)
+          return true
+
+        case .WaitSelect:
+          if writer.sem.setState(.Select)
+          {
+            nextput += 1
+            writer.sem.selection = writer.sel!
+            writer.sem.signal()
+            OSSpinLockUnlock(&lock)
+            return true
+          }
+
+        default:
+          assertionFailure("Unexpected case \(writer.sem.state.rawValue) in \(__FUNCTION__)")
+        }
       }
       OSSpinLockUnlock(&lock)
       return true
@@ -512,9 +513,51 @@ final class QBufferedChan<T>: Chan<T>
       }
       else
       {
-        if !signalNextWriter()
+        while let writer = writerQueue.dequeue()
         {
-          if nextget < tail { signalNextReader() }
+          switch writer.sem.state
+          {
+          case .Ready:
+            writer.sem.signal()
+            OSSpinLockUnlock(&lock)
+            return
+
+          case .WaitSelect:
+            if writer.sem.setState(.Select)
+            {
+              nextput += 1
+              writer.sem.selection = writer.sel!
+              writer.sem.signal()
+              OSSpinLockUnlock(&lock)
+              return
+            }
+
+          default:
+            assertionFailure("Unexpected case \(writer.sem.state.rawValue) in \(__FUNCTION__)")
+          }
+        }
+        while nextget < tail || closed, let reader = readerQueue.dequeue()
+        {
+          switch reader.sem.state
+          {
+          case .Ready:
+            reader.sem.signal()
+            OSSpinLockUnlock(&lock)
+            return
+
+          case .WaitSelect:
+            if reader.sem.setState(.Select)
+            {
+              nextget += 1
+              reader.sem.selection = reader.sel!
+              reader.sem.signal()
+              OSSpinLockUnlock(&lock)
+              return
+            }
+
+          default:
+            assertionFailure("Unexpected case \(reader.sem.state.rawValue) in \(__FUNCTION__)")
+          }
         }
         OSSpinLockUnlock(&lock)
       }
@@ -547,9 +590,51 @@ final class QBufferedChan<T>: Chan<T>
       let element = buffer.advancedBy(Int(head&mask)).move()
       head += 1
 
-      if !signalNextWriter()
+      while let writer = writerQueue.dequeue()
       {
-        if nextget < tail || closed { signalNextReader() }
+        switch writer.sem.state
+        {
+        case .Ready:
+          writer.sem.signal()
+          OSSpinLockUnlock(&lock)
+          return element
+
+        case .WaitSelect:
+          if writer.sem.setState(.Select)
+          {
+            nextput += 1
+            writer.sem.selection = writer.sel!
+            writer.sem.signal()
+            OSSpinLockUnlock(&lock)
+            return element
+          }
+
+        default:
+          assertionFailure("Unexpected case \(writer.sem.state.rawValue) in \(__FUNCTION__)")
+        }
+      }
+      while nextget < tail || closed, let reader = readerQueue.dequeue()
+      {
+        switch reader.sem.state
+        {
+        case .Ready:
+          reader.sem.signal()
+          OSSpinLockUnlock(&lock)
+          return element
+
+        case .WaitSelect:
+          if reader.sem.setState(.Select)
+          {
+            nextget += 1
+            reader.sem.selection = reader.sel!
+            reader.sem.signal()
+            OSSpinLockUnlock(&lock)
+            return element
+          }
+
+        default:
+          assertionFailure("Unexpected case \(reader.sem.state.rawValue) in \(__FUNCTION__)")
+        }
       }
       OSSpinLockUnlock(&lock)
       return element
@@ -576,9 +661,51 @@ final class QBufferedChan<T>: Chan<T>
       }
       else
       {
-        if !signalNextReader()
+        while let reader = readerQueue.dequeue()
         {
-          if head+capacity > nextput || closed { signalNextWriter() }
+          switch reader.sem.state
+          {
+          case .Ready:
+            reader.sem.signal()
+            OSSpinLockUnlock(&lock)
+            return
+
+          case .WaitSelect:
+            if reader.sem.setState(.Select)
+            {
+              nextget += 1
+              reader.sem.selection = reader.sel!
+              reader.sem.signal()
+              OSSpinLockUnlock(&lock)
+              return
+            }
+
+          default:
+            assertionFailure("Unexpected case \(reader.sem.state.rawValue) in \(__FUNCTION__)")
+          }
+        }
+        while head+capacity > nextput || closed, let writer = writerQueue.dequeue()
+        {
+          switch writer.sem.state
+          {
+          case .Ready:
+            writer.sem.signal()
+            OSSpinLockUnlock(&lock)
+            return
+
+          case .WaitSelect:
+            if writer.sem.setState(.Select)
+            {
+              nextput += 1
+              writer.sem.selection = writer.sel!
+              writer.sem.signal()
+              OSSpinLockUnlock(&lock)
+              return
+            }
+
+          default:
+            assertionFailure("Unexpected case \(writer.sem.state.rawValue) in \(__FUNCTION__)")
+          }
         }
         OSSpinLockUnlock(&lock)
       }
