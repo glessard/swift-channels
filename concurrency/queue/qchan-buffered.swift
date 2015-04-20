@@ -109,16 +109,17 @@ final class QBufferedChan<T>: Chan<T>
     OSSpinLockLock(&lock)
     closed = true
 
-    // Unblock every waiting thread.
+    // Unblock a waiting thread.
     while let reader = readerQueue.dequeue()
     {
       switch reader.sem.state
       {
       case .Ready:
         reader.sem.signal()
+        break
 
       case .WaitSelect:
-        if reader.sem.setState(.Invalidated) { reader.sem.signal() }
+        if reader.sem.setState(.Invalidated) { reader.sem.signal(); break }
 
       default:
         assertionFailure("Unexpected case \(reader.sem.state.rawValue) in \(__FUNCTION__)")
@@ -130,9 +131,10 @@ final class QBufferedChan<T>: Chan<T>
       {
       case .Ready:
         writer.sem.signal()
+        break
 
       case .WaitSelect:
-        if writer.sem.setState(.Invalidated) { writer.sem.signal() }
+        if writer.sem.setState(.Invalidated) { writer.sem.signal(); break }
 
       default:
         assertionFailure("Unexpected case \(writer.sem.state.rawValue) in \(__FUNCTION__)")
