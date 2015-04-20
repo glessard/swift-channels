@@ -25,6 +25,7 @@ struct SemaphorePool
     {
       buffer.advancedBy(cursor).initialize(s)
       cursor += 1
+      assert(s.svalue == 0, "Non-zero user-space semaphore count of \(s.svalue) in \(__FUNCTION__)")
     }
     OSSpinLockUnlock(&lock)
   }
@@ -114,8 +115,8 @@ final public class ChannelSemaphore
 
   final private func initSemaphorePort()
   {
-    var semaphore = semaphore_t()
-    let kr = semaphore_create(mach_task_self_, &semaphore, SYNC_POLICY_FIFO, 0)
+    var port = semaphore_t()
+    let kr = semaphore_create(mach_task_self_, &port, SYNC_POLICY_FIFO, 0)
     assert(kr == KERN_SUCCESS, __FUNCTION__)
 
     func atomicAssignPort(port: semaphore_t, assignee: UnsafeMutablePointer<Void>) -> Bool
@@ -124,9 +125,9 @@ final public class ChannelSemaphore
                                              UnsafeMutablePointer<Int32>(assignee))
     }
 
-    if !atomicAssignPort(semaphore, &semp)
+    if !success
     { // another initialization attempt succeeded concurrently. Don't leak the port; return it.
-      let kr = semaphore_destroy(mach_task_self_, semaphore)
+      let kr = semaphore_destroy(mach_task_self_, port)
       assert(kr == KERN_SUCCESS, __FUNCTION__)
     }
   }
