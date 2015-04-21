@@ -42,31 +42,39 @@ public func select(options: [Selectable], withDefault: Selectable? = nil) -> Sel
 
   // The asynchronous path
   let semaphore = SemaphorePool.Obtain()
-  let semaphoreChan = SemaphoreChan(semaphore)
+  semaphore.setState(.WaitSelect)
 
   for option in shuffle(selectables)
   {
-    option.selectNotify(semaphoreChan, selection: Selection(id: option))
-    if semaphoreChan.isEmpty { break }
+    option.selectNotify(semaphore, selection: Selection(id: option))
+    if semaphore.state != .WaitSelect { break }
   }
 
-  dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)
+  semaphore.wait()
   // We have a result
-  let context = COpaquePointer(dispatch_get_context(semaphore))
   let selection: Selection
-  if context != nil
+  switch semaphore.state
   {
-    selection = Unmanaged<Selection>.fromOpaque(context).takeRetainedValue()
-  }
-  else
-  {
-    selection = Selection(id: voidReceiver)
+  case .Select:
+    selection = semaphore.selection ?? voidSelection
+    semaphore.selection = nil
+    semaphore.setState(.Done)
+
+  case .DoubleSelect:
+    // this is specific to the extract() side of a double select.
+    selection = semaphore.selection ?? voidSelection
+
+  case .Invalidated, .Done:
+    selection = voidSelection
+
+  case let status: // default
+    preconditionFailure("Unexpected ChannelSemaphore state (\(status)) in __FUNCTION__")
   }
 
-  dispatch_set_context(semaphore, nil)
   SemaphorePool.Return(semaphore)
 
   return selection
 }
 
 private let voidReceiver = Receiver<()>()
+private let voidSelection = Selection(id: voidReceiver)

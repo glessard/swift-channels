@@ -81,7 +81,7 @@ public class Chan<T>: ChannelType, SelectableChannelType
 
   // MARK: SelectableChannelType interface
 
-  func selectGet(semaphore: SemaphoreChan, selection: Selection) {}
+  func selectGet(select: ChannelSemaphore, selection: Selection) {}
 
   func selectGetNow(selection: Selection) -> Selection?
   {
@@ -93,7 +93,7 @@ public class Chan<T>: ChannelType, SelectableChannelType
     return nil
   }
 
-  func selectPut(semaphore: SemaphoreChan, selection: Selection) {}
+  func selectPut(select: ChannelSemaphore, selection: Selection) {}
 
   func selectPutNow(selection: Selection) -> Selection?
   {

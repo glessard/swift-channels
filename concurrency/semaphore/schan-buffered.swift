@@ -222,14 +222,14 @@ final class SBufferedChan<T>: Chan<T>
     }
   }
 
-  override func selectPut(semaphore: SemaphoreChan, selection: Selection)
+  override func selectPut(select: ChannelSemaphore, selection: Selection)
   {
     if dispatch_semaphore_wait(empty, DISPATCH_TIME_NOW) == 0
     {
-      if let s = semaphore.get()
+      if select.setState(.Select)
       {
-        dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
-        dispatch_semaphore_signal(s)
+        select.selection = selection
+        select.signal()
       }
       else
       { // let another reader through
@@ -242,19 +242,10 @@ final class SBufferedChan<T>: Chan<T>
       _ in
       dispatch_semaphore_wait(self.empty, DISPATCH_TIME_FOREVER)
 
-      if let s = semaphore.get()
+      if select.setState(.Select)
       {
-        OSMemoryBarrier()
-        if !self.closed
-        {
-          dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
-          dispatch_semaphore_signal(s)
-        }
-        else
-        {
-          dispatch_semaphore_signal(self.empty)
-          dispatch_semaphore_signal(s)
-        }
+        select.selection = selection
+        select.signal()
       }
       else
       { // let another writer through
@@ -296,14 +287,14 @@ final class SBufferedChan<T>: Chan<T>
     }
   }
 
-  override func selectGet(semaphore: SemaphoreChan, selection: Selection)
+  override func selectGet(select: ChannelSemaphore, selection: Selection)
   {
     if dispatch_semaphore_wait(filled, DISPATCH_TIME_NOW) == 0
     {
-      if let s = semaphore.get()
+      if select.setState(.Select)
       {
-        dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
-        dispatch_semaphore_signal(s)
+        select.selection = selection
+        select.signal()
       }
       else
       { // let another reader through
@@ -316,21 +307,10 @@ final class SBufferedChan<T>: Chan<T>
       _ in
       dispatch_semaphore_wait(self.filled, DISPATCH_TIME_FOREVER)
 
-      OSMemoryBarrier()
-      if let s = semaphore.get()
+      if select.setState(.Select)
       {
-        OSMemoryBarrier()
-        if self.head < self.tail
-        {
-          dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
-          dispatch_semaphore_signal(s)
-        }
-        else
-        {
-          assert(self.closed, __FUNCTION__)
-          dispatch_semaphore_signal(self.filled)
-          dispatch_semaphore_signal(s)
-        }
+        select.selection = selection
+        select.signal()
       }
       else
       { // let another reader through

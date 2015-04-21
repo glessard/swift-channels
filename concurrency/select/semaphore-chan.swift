@@ -14,10 +14,10 @@ import Dispatch
 
 final public class SemaphoreChan: ChannelType
 {
-  private let semaphore: dispatch_semaphore_t
+  private let semaphore: ChannelSemaphore
   private var lock: Int32 = 0
 
-  public init(_ newElement: dispatch_semaphore_t)
+  public init(_ newElement: ChannelSemaphore)
   {
     semaphore = newElement
   }
@@ -45,7 +45,7 @@ final public class SemaphoreChan: ChannelType
     :return: false
   */
 
-  public func put(newElement: dispatch_semaphore_t) -> Bool
+  public func put(newElement: ChannelSemaphore) -> Bool
   {
     return false
   }
@@ -59,7 +59,7 @@ final public class SemaphoreChan: ChannelType
     :return: the element transmitted through the channel, or nil
   */
 
-  public func get() -> dispatch_semaphore_t?
+  public func get() -> ChannelSemaphore?
   {
     if lock == 0 && OSAtomicCompareAndSwap32Barrier(0, 1, &lock)
     {

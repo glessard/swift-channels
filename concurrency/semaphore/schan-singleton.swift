@@ -117,7 +117,7 @@ final class SingletonChan<T>: Chan<T>
 
   override func get() -> T?
   {
-    if closedState == 0
+    if closedState == 0 && writerCount == 0
     {
       dispatch_group_wait(barrier, DISPATCH_TIME_FOREVER)
     }
@@ -147,16 +147,13 @@ final class SingletonChan<T>: Chan<T>
     return put(newElement)
   }
 
-  override func selectPut(semaphore: SemaphoreChan, selection: Selection)
+  override func selectPut(select: ChannelSemaphore, selection: Selection)
   {
     // If we get here, it would be as a result of an inconceivable set of circumstances.
-    if let s = semaphore.get()
+    if closedState == 0 && writerCount == 0 && select.setState(.Select)
     {
-      if writerCount == 0 && closedState == 0
-      {
-        dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
-      }
-      dispatch_semaphore_signal(s)
+      select.selection = selection
+      select.signal()
     }
   }
 
@@ -179,24 +176,21 @@ final class SingletonChan<T>: Chan<T>
     return nil
   }
 
-  override func selectGet(semaphore: SemaphoreChan, selection: Selection)
+  override func selectGet(select: ChannelSemaphore, selection: Selection)
   {
-    if closedState != 0
+    if closedState != 0 && select.setState(.Select)
     {
-      if let s = semaphore.get()
-      {
-        dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
-        dispatch_semaphore_signal(s)
-      }
+      select.selection = selection
+      select.signal()
       return
     }
 
     dispatch_group_notify(barrier, dispatch_get_global_queue(qos_class_self(), 0)) {
       _ in
-      if let s = semaphore.get()
+      if select.setState(.Select)
       {
-        dispatch_set_context(s, UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque()))
-        dispatch_semaphore_signal(s)
+        select.selection = selection
+        select.signal()
       }
     }
   }

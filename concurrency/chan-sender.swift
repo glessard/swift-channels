@@ -44,9 +44,9 @@ extension Sender: Selectable
     return wrapped.selectPutNow(selection)
   }
 
-  public func selectNotify(semaphore: SemaphoreChan, selection: Selection)
+  public func selectNotify(select: ChannelSemaphore, selection: Selection)
   {
-    wrapped.selectPut(semaphore, selection: selection)
+    wrapped.selectPut(select, selection: selection)
   }
 }
 

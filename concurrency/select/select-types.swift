@@ -39,7 +39,7 @@ public protocol Selectable: class
     :return: a closure to be run once, which can unblock a stopped thread if needed.
   */
 
-  func selectNotify(semaphore: SemaphoreChan, selection: Selection)
+  func selectNotify(select: ChannelSemaphore, selection: Selection)
 
   /*
     Select first iterates through its Selectables to find whether at least one of them is ready.
@@ -61,11 +61,11 @@ public protocol Selectable: class
 
 protocol SelectableChannelType: ChannelType
 {
-  func selectGet(semaphore: SemaphoreChan, selection: Selection)
+  func selectGet(select: ChannelSemaphore, selection: Selection)
   func selectGetNow(selection: Selection) -> Selection?
   func extract(selection: Selection) -> Element?
 
-  func selectPut(semaphore: SemaphoreChan, selection: Selection)
+  func selectPut(select: ChannelSemaphore, selection: Selection)
   func selectPutNow(selection: Selection) -> Selection?
   func insert(selection: Selection, newElement: Element) -> Bool
 }
@@ -89,12 +89,12 @@ public protocol SelectableSenderType: SenderType, Selectable
   Selection is used to communicate references back to the select() function.
 */
 
-public final class Selection
+public struct Selection
 {
   public unowned let id: Selectable
-  public let semaphore: dispatch_semaphore_t?
+  public let semaphore: ChannelSemaphore?
 
-  public init(id: Selectable, semaphore: dispatch_semaphore_t)
+  public init(id: Selectable, semaphore: ChannelSemaphore)
   {
     self.id = id
     self.semaphore = semaphore
@@ -106,7 +106,7 @@ public final class Selection
     semaphore = nil
   }
 
-  public func withSemaphore(semaphore: dispatch_semaphore_t) -> Selection
+  public func withSemaphore(semaphore: ChannelSemaphore) -> Selection
   {
     return Selection(id: self.id, semaphore: semaphore)
   }
@@ -114,6 +114,24 @@ public final class Selection
 
 enum SuperSemaphore
 {
-  case semaphore(dispatch_semaphore_t)
-  case selection(SemaphoreChan, Selection)
+  case semaphore(ChannelSemaphore)
+  case selection(ChannelSemaphore, Selection)
+}
+
+struct QueuedSemaphore
+{
+  let sem: ChannelSemaphore
+  let sel: Selection!
+
+  init(_ s: ChannelSemaphore)
+  {
+    sem = s
+    sel = nil
+  }
+
+  init(_ sem: ChannelSemaphore, _ sel: Selection)
+  {
+    self.sem = sem
+    self.sel = sel
+  }
 }
