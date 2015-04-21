@@ -26,6 +26,7 @@ struct SemaphorePool
       buffer.advancedBy(cursor).initialize(s)
       cursor += 1
       assert(s.svalue == 0, "Non-zero user-space semaphore count of \(s.svalue) in \(__FUNCTION__)")
+      assert(s.seln == nil || s.state == .DoubleSelect, "Unexpectedly non-nil Selection in \(__FUNCTION__)")
     }
     OSSpinLockUnlock(&lock)
   }
