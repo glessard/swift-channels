@@ -189,7 +189,7 @@ final class QBufferedChan<T>: Chan<T>
           if reader.sem.setState(.Select)
           {
             nextget += 1
-            reader.sem.selection = reader.sel!
+            reader.sem.selection = reader.sel
             reader.sem.signal()
             OSSpinLockUnlock(&lock)
             return true
@@ -212,7 +212,7 @@ final class QBufferedChan<T>: Chan<T>
           if writer.sem.setState(.Select)
           {
             nextput += 1
-            writer.sem.selection = writer.sel!
+            writer.sem.selection = writer.sel
             writer.sem.signal()
             OSSpinLockUnlock(&lock)
             return true
@@ -240,7 +240,7 @@ final class QBufferedChan<T>: Chan<T>
           if reader.sem.setState(.Select)
           {
             nextget += 1
-            reader.sem.selection = reader.sel!
+            reader.sem.selection = reader.sel
             reader.sem.signal()
             OSSpinLockUnlock(&lock)
             return false
@@ -263,7 +263,7 @@ final class QBufferedChan<T>: Chan<T>
           if writer.sem.setState(.Select)
           {
             nextput += 1
-            writer.sem.selection = writer.sel!
+            writer.sem.selection = writer.sel
             writer.sem.signal()
             OSSpinLockUnlock(&lock)
             return false
@@ -324,7 +324,7 @@ final class QBufferedChan<T>: Chan<T>
           if writer.sem.setState(.Select)
           {
             nextput += 1
-            writer.sem.selection = writer.sel!
+            writer.sem.selection = writer.sel
             writer.sem.signal()
             OSSpinLockUnlock(&lock)
             return element
@@ -347,7 +347,7 @@ final class QBufferedChan<T>: Chan<T>
           if reader.sem.setState(.Select)
           {
             nextget += 1
-            reader.sem.selection = reader.sel!
+            reader.sem.selection = reader.sel
             reader.sem.signal()
             OSSpinLockUnlock(&lock)
             return element
@@ -376,7 +376,7 @@ final class QBufferedChan<T>: Chan<T>
           if writer.sem.setState(.Select)
           {
             nextput += 1
-            writer.sem.selection = writer.sel!
+            writer.sem.selection = writer.sel
             writer.sem.signal()
             OSSpinLockUnlock(&lock)
             return nil
@@ -399,7 +399,7 @@ final class QBufferedChan<T>: Chan<T>
           if reader.sem.setState(.Select)
           {
             nextget += 1
-            reader.sem.selection = reader.sel!
+            reader.sem.selection = reader.sel
             reader.sem.signal()
             OSSpinLockUnlock(&lock)
             return nil
@@ -450,7 +450,7 @@ final class QBufferedChan<T>: Chan<T>
           if reader.sem.setState(.Select)
           {
             nextget += 1
-            reader.sem.selection = reader.sel!
+            reader.sem.selection = reader.sel
             reader.sem.signal()
             OSSpinLockUnlock(&lock)
             return true
@@ -473,7 +473,7 @@ final class QBufferedChan<T>: Chan<T>
           if writer.sem.setState(.Select)
           {
             nextput += 1
-            writer.sem.selection = writer.sel!
+            writer.sem.selection = writer.sel
             writer.sem.signal()
             OSSpinLockUnlock(&lock)
             return true
@@ -528,7 +528,7 @@ final class QBufferedChan<T>: Chan<T>
             if writer.sem.setState(.Select)
             {
               nextput += 1
-              writer.sem.selection = writer.sel!
+              writer.sem.selection = writer.sel
               writer.sem.signal()
               OSSpinLockUnlock(&lock)
               return
@@ -551,7 +551,7 @@ final class QBufferedChan<T>: Chan<T>
             if reader.sem.setState(.Select)
             {
               nextget += 1
-              reader.sem.selection = reader.sel!
+              reader.sem.selection = reader.sel
               reader.sem.signal()
               OSSpinLockUnlock(&lock)
               return
@@ -605,7 +605,7 @@ final class QBufferedChan<T>: Chan<T>
           if writer.sem.setState(.Select)
           {
             nextput += 1
-            writer.sem.selection = writer.sel!
+            writer.sem.selection = writer.sel
             writer.sem.signal()
             OSSpinLockUnlock(&lock)
             return element
@@ -628,7 +628,7 @@ final class QBufferedChan<T>: Chan<T>
           if reader.sem.setState(.Select)
           {
             nextget += 1
-            reader.sem.selection = reader.sel!
+            reader.sem.selection = reader.sel
             reader.sem.signal()
             OSSpinLockUnlock(&lock)
             return element
@@ -676,7 +676,7 @@ final class QBufferedChan<T>: Chan<T>
             if reader.sem.setState(.Select)
             {
               nextget += 1
-              reader.sem.selection = reader.sel!
+              reader.sem.selection = reader.sel
               reader.sem.signal()
               OSSpinLockUnlock(&lock)
               return
@@ -699,7 +699,7 @@ final class QBufferedChan<T>: Chan<T>
             if writer.sem.setState(.Select)
             {
               nextput += 1
-              writer.sem.selection = writer.sel!
+              writer.sem.selection = writer.sel
               writer.sem.signal()
               OSSpinLockUnlock(&lock)
               return

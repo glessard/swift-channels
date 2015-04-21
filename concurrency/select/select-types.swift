@@ -121,7 +121,7 @@ enum SuperSemaphore
 struct QueuedSemaphore
 {
   let sem: ChannelSemaphore
-  let sel: Selection?
+  let sel: Selection!
 
   init(_ s: ChannelSemaphore)
   {
