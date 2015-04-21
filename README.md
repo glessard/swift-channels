@@ -26,10 +26,9 @@ channel a receive operation will block until a sender is ready (and
 vice-versa). A buffered channel can store a certain number of
 elements, after which the next send operation will block.
 
-Thread synchronization and blocking is implemented with libdispatch semaphores
-(`dispatch_semaphore_t`); an implementation based on pthreads mutexes exists
-in subclasses of `PChan`. The pthreads implementation is significantly slower
-than the the libdispatch semaphore version.
+Thread synchronization and blocking is implemented as a lightweight wrapper
+around mach semaphores. The implementation is similar to
+`dispatch_semaphore_t`, but allows better type safety with equal speed.
 
 Missing from this is a powerful construct such as the Select keyword
 from Go, which would be quite useful when dealing with multiple
@@ -72,11 +71,11 @@ message transmission with no thread contention is slightly faster as
 it would be in Go 1.4, e.g. 140 vs. 160 nanoseconds on a 2008 Mac Pro
 (2.8 GHz Xeon "Harpertown" (E5462)).
 With thread contention, Go channels are *much* faster (about 10x),
-due to the context switching time involving dispatch semaphores. Go has a
-very lightweight concurrency system, while dispatch_semaphore pause and
-resume system threads.
+due to the context switching time involving threads. Go has a
+very lightweight concurrency system, while this library pauses and
+resumes system threads.
 
-Message transmission through this library's unbuffered channel type
+When under contention, message transmission through an unbuffered channel
 takes about the same time as two context switches, and that
 is about as good as can be expected.
 
