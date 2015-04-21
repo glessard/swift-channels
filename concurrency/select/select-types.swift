@@ -112,12 +112,6 @@ public struct Selection
   }
 }
 
-enum SuperSemaphore
-{
-  case semaphore(ChannelSemaphore)
-  case selection(ChannelSemaphore, Selection)
-}
-
 struct QueuedSemaphore
 {
   let sem: ChannelSemaphore
