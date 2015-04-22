@@ -26,7 +26,7 @@ channel a receive operation will block until a sender is ready (and
 vice-versa). A buffered channel can store a certain number of
 elements, after which the next send operation will block.
 
-Thread synchronization and blocking is implemented as a lightweight wrapper
+Thread synchronization and blocking is implemented with a lightweight wrapper
 around mach semaphores. The implementation is similar to
 `dispatch_semaphore_t`, but allows better type safety with equal speed.
 
