@@ -56,8 +56,6 @@ class SelectUnbufferedTests: XCTestCase
       }
     }
 
-    syncprintwait()
-    
     XCTAssert(i == iterations, "Received \(i) messages; expected \(iterations)")
   }
 
@@ -86,35 +84,47 @@ class SelectUnbufferedTests: XCTestCase
       var i = 0
       // Currently required to avoid a runtime crash:
       let selectables = senders.map { $0 as Selectable }
-      while let selection = select(selectables)
+      while i < iterations, let selection = select(selectables)
       {
         if let sender = selection.id as? Sender<Int>
         {
-          if sender.insert(selection, newElement: i)
-          {
-            i++
-            if i >= iterations
-            {
-              for sender in senders { sender.close() }
-            }
-          }
+          if sender.insert(selection, newElement: i) { i++ }
         }
       }
+      for sender in senders { sender.close() }
     }
 
-    let receiver = merge(receivers)
-
-    var i=0
-    while let element = <-receiver
+    var m = 0
+    if sleepInterval > 0
     {
-      i++
-      if sleepInterval > 0 { NSThread.sleepForTimeInterval(sleepInterval) }
+      let receiver = merge(receivers)
+
+      while let element = <-receiver
+      {
+        m++
+        NSThread.sleepForTimeInterval(sleepInterval)
+      }
+    }
+    else
+    {
+      let result = Channel<Int>.Make(channels.count)
+
+      let g = dispatch_group_create()!
+      for i in 0..<channels.count
+      {
+        let receiver = receivers[i]
+        dispatch_group_async(g, dispatch_get_global_queue(qos_class_self(), 0)) {
+          var i = 0
+          while let element = <-receiver { i++ }
+          result.tx <- i
+        }
+      }
+      dispatch_group_notify(g, dispatch_get_global_queue(qos_class_self(), 0)) { result.tx.close() }
+
+      while let count = <-result.rx { m += count }
     }
 
-//    syncprint("\(i) messages received")
-    syncprintwait()
-
-    XCTAssert(i == iterations, "Received \(i) messages; expected \(iterations)")
+    XCTAssert(m == iterations, "Received \(m) messages; expected \(iterations)")
   }
 
   func testPerformanceSelectSender()
@@ -173,8 +183,6 @@ class SelectUnbufferedTests: XCTestCase
         }
       }
     }
-
-    syncprintwait()
 
     XCTAssert(i == iterations, "Received \(i) messages; expected \(iterations)")
   }
