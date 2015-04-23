@@ -56,21 +56,19 @@ class SingletonChannelTests: ChannelsTests
   {
     var (tx,rx) = InstantiateTestChannel(Int)
 
+    let delay = dispatch_time(DISPATCH_TIME_NOW, 1_000_000)
     for i in 1...10
     {
-      let delay = dispatch_time(DISPATCH_TIME_NOW, 1000 + Int64(arc4random_uniform(1000)))
-      dispatch_after(delay, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-        _ = { tx <- i }()
-      }
+      dispatch_after(delay, dispatch_get_global_queue(qos_class_self(), 0)) { tx <- i }
     }
 
-    var last = -1
-    for (i,r) in enumerate(rx)
+    var last = 0
+    while let r = <-rx
     {
-      last = i
+      last += 1
     }
 
-    XCTAssert(last == 0, "Incorrect number of messages received from \(id) channel")
+    XCTAssert(last == 1, "Incorrect number of messages received from \(id) channel")
   }
   
   /**
