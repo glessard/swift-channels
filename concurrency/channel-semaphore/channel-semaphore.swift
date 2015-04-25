@@ -6,7 +6,10 @@
 //  Copyright (c) 2015 Guillaume Lessard. All rights reserved.
 //
 
-import Darwin.Mach
+import Darwin.Mach.task
+import Darwin.Mach.semaphore
+import Darwin.Mach.mach_time
+import Darwin.libkern.OSAtomic
 import Dispatch.time
 import Foundation.NSThread
 
@@ -42,6 +45,7 @@ struct SemaphorePool
         let s = buffer.advancedBy(cursor).move()
         OSSpinLockUnlock(&lock)
         s.svalue = 0
+        s.iptr = nil
         s.currentState = ChannelSemaphoreState.Ready.rawValue
         return s
       }
@@ -55,6 +59,7 @@ struct SemaphorePool
           buffer[i] = buffer.advancedBy(cursor).move()
           OSSpinLockUnlock(&lock)
           s.svalue = 0
+          s.iptr = nil
           s.currentState = ChannelSemaphoreState.Ready.rawValue
           return s
         }
@@ -87,6 +92,11 @@ case Done
 
 // MARK: ChannelSemaphore
 
+/**
+  A benaphore: http://www.haiku-os.org/legacy-docs/benewsletter/Issue1-26.html
+  Much like dispatch_semaphore_t, with native Swift typing.
+*/
+
 final public class ChannelSemaphore
 {
   private var svalue: Int32
@@ -110,8 +120,11 @@ final public class ChannelSemaphore
 
   deinit
   {
-    let kr = semaphore_destroy(mach_task_self_, semp)
-    assert(kr == KERN_SUCCESS, __FUNCTION__)
+    if semp != 0
+    {
+      let kr = semaphore_destroy(mach_task_self_, semp)
+      assert(kr == KERN_SUCCESS, __FUNCTION__)
+    }
   }
 
   final private func initSemaphorePort()
@@ -147,8 +160,8 @@ final public class ChannelSemaphore
       return OSAtomicCompareAndSwap32Barrier(ChannelSemaphoreState.WaitSelect.rawValue, newState.rawValue, &currentState)
 
     case .Done:
-      currentState = ChannelSemaphoreState.Done.rawValue
-      OSMemoryBarrier()
+      // Ideally it would be: __sync_swap(&currentState, ChannelSemaphoreState.Done.rawValue)
+      while OSAtomicCompareAndSwap32Barrier(currentState, ChannelSemaphoreState.Done.rawValue, &currentState) == false {}
       return true
 
     default:
