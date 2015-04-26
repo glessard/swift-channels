@@ -100,12 +100,12 @@ final public class ChannelSemaphore
 
   // MARK: init/deinit
 
-  private init(value: Int32)
+  init(value: Int32)
   {
     svalue = (value > 0) ? value : 0
   }
 
-  private convenience init()
+  convenience init()
   {
     self.init(value: 0)
   }
