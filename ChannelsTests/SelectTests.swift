@@ -35,14 +35,29 @@ class SelectUnbufferedTests: XCTestCase
     let receivers = channels.map { Receiver($0) }
 
     async {
-      for i in 0..<iterations
+      if sleepInterval > 0
       {
-        if sleepInterval > 0 { NSThread.sleepForTimeInterval(sleepInterval) }
-        let index = Int(arc4random_uniform(UInt32(senders.count)))
-        senders[index] <- i
+        for i in 0..<iterations
+        {
+          NSThread.sleepForTimeInterval(sleepInterval)
+          let index = Int(arc4random_uniform(UInt32(senders.count)))
+          senders[index] <- i
+        }
+        NSThread.sleepForTimeInterval(sleepInterval > 0 ? sleepInterval : 1e-6)
+        for sender in senders { sender.close() }
       }
-      NSThread.sleepForTimeInterval(sleepInterval > 0 ? sleepInterval : 1e-6)
-      for sender in senders { sender.close() }
+      else
+      {
+        dispatch_apply(senders.count, dispatch_get_global_queue(qos_class_self(), 0)) {
+          i in
+          let messages = iterations/senders.count + ((i < iterations%senders.count) ? 1:0)
+          for m in 0..<messages
+          {
+            senders[i] <- m
+          }
+        }
+        for sender in senders { sender.close() }
+      }
     }
 
     var i = 0
