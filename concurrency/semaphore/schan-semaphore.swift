@@ -8,7 +8,6 @@
 
 import Darwin.Mach
 import Dispatch.time
-import Foundation.NSThread
 
 struct SChanSemaphore
 {
@@ -65,7 +64,7 @@ struct SChanSemaphore
     while semp == 0
     { // if svalue was previously less than zero, there must be a wait() call
       // currently in the process of initializing semp.
-      NSThread.sleepForTimeInterval(1e-10)
+      usleep(1)
       OSMemoryBarrier()
     }
 
