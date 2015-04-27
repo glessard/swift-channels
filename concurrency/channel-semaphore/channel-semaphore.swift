@@ -11,7 +11,6 @@ import Darwin.Mach.semaphore
 import Darwin.Mach.mach_time
 import Darwin.libkern.OSAtomic
 import Dispatch.time
-import Foundation.NSThread
 
 struct SemaphorePool
 {
@@ -100,12 +99,12 @@ final public class ChannelSemaphore
 
   // MARK: init/deinit
 
-  private init(value: Int32)
+  init(value: Int32)
   {
     svalue = (value > 0) ? value : 0
   }
 
-  private convenience init()
+  convenience init()
   {
     self.init(value: 0)
   }
@@ -197,7 +196,7 @@ final public class ChannelSemaphore
     while semp == 0
     { // if svalue was previously less than zero, there must be a wait() call
       // currently in the process of initializing semp.
-      NSThread.sleepForTimeInterval(1e-10)
+      usleep(1)
       OSMemoryBarrier()
     }
 
