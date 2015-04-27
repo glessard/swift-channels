@@ -33,7 +33,43 @@ dt = tic.toc
 syncprint("\(dt)\t\t(\(dt/iterations) per message)")
 
 
+buffered = Channel.Wrap(SChan<Int>.Make(1))
+
+tic = Time()
+
+for i in 0..<iterations
+{
+  buffered.tx <- i
+  if let r = <-buffered.rx
+  {
+    _ = r
+  }
+}
+buffered.tx.close()
+
+dt = tic.toc
+syncprint("\(dt)\t\t(\(dt/iterations) per message)")
+
+
 buffered = Channel<Int>.Make(1)
+
+tic = Time()
+
+async {
+  for i in 0..<iterations
+  {
+    buffered.tx <- i
+  }
+  buffered.tx.close()
+}
+
+while let a = <-buffered.rx { _ = a }
+
+dt = tic.toc
+syncprint("\(dt)\t\t(\(dt/iterations) per message)")
+
+
+buffered = Channel.Wrap(SChan<Int>.Make(1))
 
 tic = Time()
 
