@@ -229,7 +229,8 @@ final public class ChannelSemaphore
 
     default: // a timed wait
       do {
-        let delta = timeoutDelta(timeout)
+        let now = mach_absolute_time()*dispatch_time_t(scale.numer)/dispatch_time_t(scale.denom)
+        let delta = (timeout > now) ? (timeout - now) : 0
         let tspec = mach_timespec_t(tv_sec: UInt32(delta/NSEC_PER_SEC), tv_nsec: Int32(delta%NSEC_PER_SEC))
         kr = semaphore_timedwait(semp, tspec)
       } while kr == KERN_ABORTED
@@ -256,21 +257,3 @@ private var scale: mach_timebase_info = {
   mach_timebase_info(&info)
   return info
 }()
-
-// more or less copied from libdispatch/Source/time.c, _dispatch_timeout()
-
-private func timeoutDelta(time: dispatch_time_t) -> dispatch_time_t
-{
-  switch time
-  {
-  case DISPATCH_TIME_FOREVER:
-    return DISPATCH_TIME_FOREVER
-
-  case 0: // DISPATCH_TIME_NOW
-    return 0
-
-  default:
-    let now = mach_absolute_time()*dispatch_time_t(scale.numer)/dispatch_time_t(scale.denom)
-    return (time > now) ? (time - now) : 0
-  }
-}
