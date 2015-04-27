@@ -10,7 +10,7 @@
   Sender<T> is the sending endpoint for a Channel, Chan<T>.
 */
 
-public struct Sender<T>: SenderType
+public final class Sender<T>: SenderType
 {
   private let wrapped: Chan<T>
 
@@ -31,6 +31,34 @@ public struct Sender<T>: SenderType
   public func close()  { wrapped.close() }
 
   public func send(newElement: T) -> Bool { return wrapped.put(newElement) }
+}
+
+extension Sender: Selectable
+{
+  // MARK: Selectable implementation
+  
+  public var selectable: Bool { return !wrapped.isClosed }
+
+  public func selectNow(selection: Selection) -> Selection?
+  {
+    return wrapped.selectPutNow(selection)
+  }
+
+  public func selectNotify(select: ChannelSemaphore, selection: Selection)
+  {
+    wrapped.selectPut(select, selection: selection)
+  }
+}
+
+extension Sender: SelectableSenderType
+{
+  // MARK: SelectableSenderType implementation
+
+  public func insert(selection: Selection, newElement: T) -> Bool
+  {
+    precondition(selection.id === self, __FUNCTION__)
+    return wrapped.insert(selection, newElement: newElement)
+  }
 }
 
 /**

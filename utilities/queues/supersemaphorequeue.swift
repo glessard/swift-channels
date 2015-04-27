@@ -1,5 +1,5 @@
 //
-//  fastqueue.swift
+//  semaphorequeue.swift
 //  QQ
 //
 //  Created by Guillaume Lessard on 2014-08-16.
@@ -7,11 +7,18 @@
 //
 
 import Darwin
+import Dispatch
 
-final class FastQueue<T>: QueueType, SequenceType, GeneratorType
+enum SuperSemaphore
 {
-  private var head: UnsafeMutablePointer<Node<T>> = nil
-  private var tail: UnsafeMutablePointer<Node<T>> = nil
+  case semaphore(ChannelSemaphore)
+  case selection(ChannelSemaphore, Selection)
+}
+
+final class SuperSemaphoreQueue: QueueType, SequenceType, GeneratorType
+{
+  private var head: UnsafeMutablePointer<SemaphoreNode> = nil
+  private var tail: UnsafeMutablePointer<SemaphoreNode> = nil
 
   private let pool = AtomicStackInit()
 
@@ -19,7 +26,7 @@ final class FastQueue<T>: QueueType, SequenceType, GeneratorType
 
   init() { }
 
-  convenience init(_ newElement: T)
+  convenience init(_ newElement: SuperSemaphore)
   {
     self.init()
     enqueue(newElement)
@@ -27,27 +34,33 @@ final class FastQueue<T>: QueueType, SequenceType, GeneratorType
 
   deinit
   {
-    // empty the queue
     while head != nil
     {
       let node = head
       head = node.memory.next
+      switch node.memory.elem
+      {
+      case .semaphore(let s):
+        s.signal()
+      case .selection(let s, _):
+        s.signal()
+      }
       node.destroy()
       node.dealloc(1)
     }
 
-    // drain the pool
     while UnsafePointer<COpaquePointer>(pool).memory != nil
     {
-      UnsafeMutablePointer<Node<T>>(OSAtomicDequeue(pool, 0)).dealloc(1)
+      UnsafeMutablePointer<SemaphoreNode>(OSAtomicDequeue(pool, 0)).dealloc(1)
     }
-    // release the pool stack structure
     AtomicStackRelease(pool)
   }
 
   // MARK: QueueType interface
 
-  var isEmpty: Bool { return head == nil }
+  var isEmpty: Bool {
+    return (head == nil)
+  }
 
   var count: Int {
     return (head == nil) ? 0 : countElements()
@@ -68,14 +81,24 @@ final class FastQueue<T>: QueueType, SequenceType, GeneratorType
     return i
   }
 
-  func enqueue(newElement: T)
+  func enqueue(newElement: ChannelSemaphore)
   {
-    var node = UnsafeMutablePointer<Node<T>>(OSAtomicDequeue(pool, 0))
+    enqueue(.semaphore(newElement))
+  }
+
+  func enqueue(semaphore: ChannelSemaphore, selection: Selection)
+  {
+    enqueue(.selection(semaphore, selection))
+  }
+
+  func enqueue(newElement: SuperSemaphore)
+  {
+    var node = UnsafeMutablePointer<SemaphoreNode>(OSAtomicDequeue(pool, 0))
     if node == nil
     {
-      node = UnsafeMutablePointer<Node<T>>.alloc(1)
+      node = UnsafeMutablePointer<SemaphoreNode>.alloc(1)
     }
-    node.initialize(Node(newElement))
+    node.initialize(SemaphoreNode(newElement))
 
     if head == nil
     {
@@ -89,14 +112,14 @@ final class FastQueue<T>: QueueType, SequenceType, GeneratorType
     }
   }
 
-  func undequeue(oldElement: T)
+  func undequeue(newElement: SuperSemaphore)
   {
-    var node = UnsafeMutablePointer<Node<T>>(OSAtomicDequeue(pool, 0))
+    var node = UnsafeMutablePointer<SemaphoreNode>(OSAtomicDequeue(pool, 0))
     if node == nil
     {
-      node = UnsafeMutablePointer<Node<T>>.alloc(1)
+      node = UnsafeMutablePointer<SemaphoreNode>.alloc(1)
     }
-    node.initialize(Node(oldElement))
+    node.initialize(SemaphoreNode(newElement))
 
     if head == nil
     {
@@ -109,8 +132,8 @@ final class FastQueue<T>: QueueType, SequenceType, GeneratorType
       head = node
     }
   }
-
-  func dequeue() -> T?
+  
+  func dequeue() -> SuperSemaphore?
   {
     let node = head
     if node != nil
@@ -127,7 +150,7 @@ final class FastQueue<T>: QueueType, SequenceType, GeneratorType
 
   // MARK: GeneratorType implementation
 
-  func next() -> T?
+  func next() -> SuperSemaphore?
   {
     return dequeue()
   }
@@ -140,18 +163,13 @@ final class FastQueue<T>: QueueType, SequenceType, GeneratorType
   }
 }
 
-private struct Node<T>
+private struct SemaphoreNode
 {
-  var nptr: UnsafeMutablePointer<Void> = nil
-  let elem: T
+  var next: UnsafeMutablePointer<SemaphoreNode> = nil
+  let elem: SuperSemaphore
 
-  init(_ e: T)
+  init(_ s: SuperSemaphore)
   {
-    elem = e
-  }
-
-  var next: UnsafeMutablePointer<Node<T>> {
-    get { return UnsafeMutablePointer<Node<T>>(nptr) }
-    set { nptr = UnsafeMutablePointer<Void>(newValue) }
+    elem = s
   }
 }

@@ -12,9 +12,9 @@ import Darwin
   The input collection is not modified in any way.
 */
 
-func shuffle<C: CollectionType>(c: C) -> PermutationGenerator<C, IndexShuffler<C.Index>>
+func shuffle<C: CollectionType>(c: C) -> PermutationGenerator<C, SequenceOf<C.Index>>
 {
-  return PermutationGenerator(elements: c, indices: IndexShuffler(indices(c)))
+  return PermutationGenerator(elements: c, indices: SequenceOf(IndexShuffler(indices(c))))
 }
 
 /**

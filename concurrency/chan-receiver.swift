@@ -10,7 +10,7 @@
   Receiver<T> is the receiving endpoint for a ChannelType.
 */
 
-public struct Receiver<T>: ReceiverType, GeneratorType, SequenceType
+public final class Receiver<T>: ReceiverType, GeneratorType, SequenceType
 {
   private let wrapped: Chan<T>
 
@@ -50,9 +50,40 @@ public struct Receiver<T>: ReceiverType, GeneratorType, SequenceType
 
   // MARK: SequenceType implementation
 
-  public func generate() -> Receiver
+  public func generate() -> Self
   {
     return self
+  }
+}
+
+extension Receiver: Selectable
+{
+  // MARK: Selectable implementation
+  
+  public func selectNotify(select: ChannelSemaphore, selection: Selection)
+  {
+    wrapped.selectGet(select, selection: selection)
+  }
+
+  public func selectNow(selection: Selection) -> Selection?
+  {
+    return wrapped.selectGetNow(selection)
+  }
+
+  public var selectable: Bool
+  {
+    return !(wrapped.isClosed && wrapped.isEmpty)
+  }
+}
+
+extension Receiver: SelectableReceiverType
+{
+  // MARK: SelectableReceiverType implementation
+  
+  public func extract(selection: Selection) -> T?
+  {
+    precondition(selection.id === self, __FUNCTION__)
+    return wrapped.extract(selection)
   }
 }
 

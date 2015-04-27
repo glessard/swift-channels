@@ -28,6 +28,7 @@ struct SemaphorePool
       buffer.advancedBy(cursor).initialize(s)
       cursor += 1
       assert(s.svalue == 0, "Non-zero user-space semaphore count of \(s.svalue) in \(__FUNCTION__)")
+      assert(s.seln == nil || s.state == .DoubleSelect, "Unexpectedly non-nil Selection in \(__FUNCTION__)")
     }
     OSSpinLockUnlock(&lock)
   }
@@ -78,6 +79,12 @@ case Ready
 // Unbuffered channel data
 case Pointer
 
+// Select() case
+case WaitSelect
+case Select
+case DoubleSelect
+case Invalidated
+
 // End state
 case Done
 }
@@ -96,6 +103,7 @@ final public class ChannelSemaphore
 
   private var currentState = ChannelSemaphoreState.Ready.rawValue
   private var iptr: UnsafeMutablePointer<Void> = nil
+  private var seln: Selection? = nil
 
   // MARK: init/deinit
 
@@ -144,8 +152,11 @@ final public class ChannelSemaphore
   {
     switch newState
     {
-    case .Pointer:
+    case .Pointer, .WaitSelect:
       return OSAtomicCompareAndSwap32Barrier(ChannelSemaphoreState.Ready.rawValue, newState.rawValue, &currentState)
+
+    case .Select, .Invalidated, .DoubleSelect:
+      return OSAtomicCompareAndSwap32Barrier(ChannelSemaphoreState.WaitSelect.rawValue, newState.rawValue, &currentState)
 
     case .Done:
       // Ideally it would be: __sync_swap(&currentState, ChannelSemaphoreState.Done.rawValue)
@@ -171,19 +182,32 @@ final public class ChannelSemaphore
 
   var pointer: UnsafeMutablePointer<Void> {
     get {
-      if currentState == ChannelSemaphoreState.Pointer.rawValue
+      if currentState == ChannelSemaphoreState.Pointer.rawValue ||
+         currentState == ChannelSemaphoreState.DoubleSelect.rawValue
       { return iptr }
       else
       { return nil }
     }
     set {
-      if currentState == ChannelSemaphoreState.Pointer.rawValue
+      if currentState == ChannelSemaphoreState.Pointer.rawValue ||
+         currentState == ChannelSemaphoreState.DoubleSelect.rawValue
       { iptr = newValue }
       else
       { iptr = nil }
     }
   }
-  
+
+  var selection: Selection? {
+    get { return seln }
+    set {
+      if currentState == ChannelSemaphoreState.Select.rawValue ||
+         currentState == ChannelSemaphoreState.DoubleSelect.rawValue
+      { seln = newValue }
+      else
+      { seln = nil }
+    }
+  }
+
   // MARK: Semaphore functionality
 
   func signal() -> Bool

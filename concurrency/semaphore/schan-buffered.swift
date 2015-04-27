@@ -188,4 +188,136 @@ final class SBufferedChan<T>: Chan<T>
       return nil
     }
   }
+
+  // MARK: SelectableChannelType methods
+
+  override func selectPutNow(selection: Selection) -> Selection?
+  {
+    if empty.wait(DISPATCH_TIME_NOW)
+    {
+      return selection
+    }
+    else
+    {
+      return nil
+    }
+  }
+
+  override func insert(selection: Selection, newElement: T) -> Bool
+  {
+    // the `empty` semaphore has already been decremented for this operation.
+    OSSpinLockLock(&wlock)
+    if !closed && head+capacity > tail
+    {
+      buffer.advancedBy(Int(tail&mask)).initialize(newElement)
+      tail += 1
+
+      OSSpinLockUnlock(&wlock)
+      filled.signal()
+      return true
+    }
+    else
+    {
+      OSSpinLockUnlock(&wlock)
+      empty.signal()
+      return false
+    }
+  }
+
+  override func selectPut(select: ChannelSemaphore, selection: Selection)
+  {
+    if empty.wait(DISPATCH_TIME_NOW)
+    {
+      if select.setState(.Select)
+      {
+        select.selection = selection
+        select.signal()
+      }
+      else
+      { // let another reader through
+        empty.signal()
+      }
+      return
+    }
+
+    dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
+      _ in
+      self.empty.wait()
+
+      if select.setState(.Select)
+      {
+        select.selection = selection
+        select.signal()
+      }
+      else
+      { // let another writer through
+        self.empty.signal()
+      }
+    }
+  }
+
+  override func selectGetNow(selection: Selection) -> Selection?
+  {
+    if filled.wait(DISPATCH_TIME_NOW)
+    {
+      return selection
+    }
+    else
+    {
+      return nil
+    }
+  }
+
+  override func extract(selection: Selection) -> T?
+  {
+    // the `filled` semaphore has already been decremented for this operation.
+    OSSpinLockLock(&rlock)
+    if head < tail
+    {
+      let element = buffer.advancedBy(Int(head&mask)).move()
+      head += 1
+      OSSpinLockUnlock(&rlock)
+      empty.signal()
+      return element
+    }
+    else
+    {
+      assert(closed, __FUNCTION__)
+      OSSpinLockUnlock(&rlock)
+      filled.signal()
+      return nil
+    }
+  }
+
+  override func selectGet(select: ChannelSemaphore, selection: Selection)
+  {
+    if filled.wait(DISPATCH_TIME_NOW)
+    {
+      if select.setState(.Select)
+      {
+        select.selection = selection
+        select.signal()
+      }
+      else
+      { // let another reader through
+        filled.signal()
+      }
+      return
+    }
+
+    dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
+      _ in
+      self.filled.wait()
+
+      if select.setState(.Select)
+      {
+        select.selection = selection
+        select.signal()
+      }
+      else
+      { // let another reader through
+        self.filled.signal()
+      }
+    }
+  }
 }

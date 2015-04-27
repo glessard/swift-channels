@@ -117,7 +117,7 @@ final class SingletonChan<T>: Chan<T>
 
   override func get() -> T?
   {
-    if closedState == 0
+    if closedState == 0 && writerCount == 0
     {
       dispatch_group_wait(barrier, DISPATCH_TIME_FOREVER)
     }
@@ -133,5 +133,65 @@ final class SingletonChan<T>: Chan<T>
     }
 
     return nil
+  }
+
+  // MARK: SelectableChannelType methods
+
+  override func selectPutNow(selection: Selection) -> Selection?
+  {
+    return closedState == 0 && writerCount == 0 ? selection : nil
+  }
+
+  override func insert(selection: Selection, newElement: T) -> Bool
+  {
+    return put(newElement)
+  }
+
+  override func selectPut(select: ChannelSemaphore, selection: Selection)
+  {
+    // If we get here, it would be as a result of an inconceivable set of circumstances.
+    if closedState == 0 && writerCount == 0 && select.setState(.Select)
+    {
+      select.selection = selection
+      select.signal()
+    }
+  }
+
+  override func selectGetNow(selection: Selection) -> Selection?
+  {
+    return closedState != 0 || writerCount != 0 ? selection : nil
+  }
+
+  override func extract(selection: Selection) -> T?
+  {
+    assert(writerCount != 0 || closedState != 0, __FUNCTION__)
+    if readerCount == 0 && OSAtomicCompareAndSwap32Barrier(0, 1, &readerCount)
+    { // Only one thread can get here.
+      if let e = element
+      {
+        element = nil
+        return e
+      }
+    }
+    return nil
+  }
+
+  override func selectGet(select: ChannelSemaphore, selection: Selection)
+  {
+    if closedState != 0 && select.setState(.Select)
+    {
+      select.selection = selection
+      select.signal()
+      return
+    }
+
+    dispatch_group_notify(barrier, dispatch_get_global_queue(qos_class_self(), 0)) {
+      _ in
+      if select.setState(.Select)
+      {
+        select.selection = selection
+        select.signal()
+      }
+    }
   }
 }

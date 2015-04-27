@@ -15,11 +15,11 @@
   of the factory function returns an unbuffered channel.
 */
 
-public class Chan<T>: ChannelType
+public class Chan<T>: ChannelType, SelectableChannelType
 {
   init() {}
 
-  // Computed properties
+  // MARK: ChannelType interface
 
   /**
     Determine whether the channel is empty (and therefore can't be received from)
@@ -79,6 +79,31 @@ public class Chan<T>: ChannelType
     return nil
   }
 
+  // MARK: SelectableChannelType interface
+
+  func selectGet(select: ChannelSemaphore, selection: Selection) {}
+
+  func selectGetNow(selection: Selection) -> Selection?
+  {
+    return nil
+  }
+
+  func extract(selection: Selection) -> T?
+  {
+    return nil
+  }
+
+  func selectPut(select: ChannelSemaphore, selection: Selection) {}
+
+  func selectPutNow(selection: Selection) -> Selection?
+  {
+    return nil
+  }
+
+  func insert(selection: Selection, newElement: T) -> Bool
+  {
+    return false
+  }
 
   // MARK: Chan Factory Functions
 
