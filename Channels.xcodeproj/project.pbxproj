@@ -80,6 +80,9 @@
 		03AD47AF1A688BE900F4B44B /* shuffle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47AD1A688BE900F4B44B /* shuffle.swift */; };
 		03AD47B21A6890B100F4B44B /* merge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47B11A6890B100F4B44B /* merge.swift */; };
 		03AD47C01A689E0900F4B44B /* MergeTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47BF1A689E0900F4B44B /* MergeTest.swift */; };
+		03DE6C141AEE936900F4B44B /* schan-semaphore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03DE6C131AEE936900F4B44B /* schan-semaphore.swift */; };
+		03DE6C151AEE936900F4B44B /* schan-semaphore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03DE6C131AEE936900F4B44B /* schan-semaphore.swift */; };
+		03DE6C161AEE936900F4B44B /* schan-semaphore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03DE6C131AEE936900F4B44B /* schan-semaphore.swift */; };
 		03E50F901AC3E3DC00F4B44B /* schan-singleton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 034CABE21AC210BC00F4B44B /* schan-singleton.swift */; };
 		03E50F911AC3E3DC00F4B44B /* schan-singleton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 034CABE21AC210BC00F4B44B /* schan-singleton.swift */; };
 		03EDB5F11AD22B6F00F4B44B /* channel-semaphore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03EDB5F01AD22B6F00F4B44B /* channel-semaphore.swift */; };
@@ -163,6 +166,7 @@
 		03AD47B11A6890B100F4B44B /* merge.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = merge.swift; sourceTree = "<group>"; };
 		03AD47BF1A689E0900F4B44B /* MergeTest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MergeTest.swift; sourceTree = "<group>"; };
 		03B24C0B1A8AC01F00F4B44B /* pchan-bufferedN-array.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "pchan-bufferedN-array.swift"; sourceTree = "<group>"; };
+		03DE6C131AEE936900F4B44B /* schan-semaphore.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "schan-semaphore.swift"; sourceTree = "<group>"; };
 		03EDB5F01AD22B6F00F4B44B /* channel-semaphore.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "channel-semaphore.swift"; path = "channel-semaphore/channel-semaphore.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -319,6 +323,7 @@
 			children = (
 				03AD471D1A6743E500F4B44B /* schan.swift */,
 				03AD471C1A6743E500F4B44B /* schan-buffered.swift */,
+				03DE6C131AEE936900F4B44B /* schan-semaphore.swift */,
 				034CABE21AC210BC00F4B44B /* schan-singleton.swift */,
 			);
 			path = semaphore;
@@ -532,6 +537,7 @@
 				03AD47451A67441A00F4B44B /* fastqueue.swift in Sources */,
 				03AD47201A6743E500F4B44B /* chan-protocols.swift in Sources */,
 				03AD47241A6743E500F4B44B /* chan.swift in Sources */,
+				03DE6C141AEE936900F4B44B /* schan-semaphore.swift in Sources */,
 				03AD47221A6743E500F4B44B /* chan-sender.swift in Sources */,
 				03AD47B21A6890B100F4B44B /* merge.swift in Sources */,
 				03EDB5F11AD22B6F00F4B44B /* channel-semaphore.swift in Sources */,
@@ -572,6 +578,7 @@
 				03AD47771A68348C00F4B44B /* schan-buffered.swift in Sources */,
 				03AD477C1A68354F00F4B44B /* queuetype.swift in Sources */,
 				03AD476E1A68348C00F4B44B /* pchan-buffered1.swift in Sources */,
+				03DE6C151AEE936900F4B44B /* schan-semaphore.swift in Sources */,
 				03AD47691A68348C00F4B44B /* chan-sender.swift in Sources */,
 				03AD476C1A68348C00F4B44B /* channel.swift in Sources */,
 				03AD477B1A6834FE00F4B44B /* logging.swift in Sources */,
@@ -594,6 +601,7 @@
 			files = (
 				03AD479D1A68369C00F4B44B /* qchan-unbuffered.swift in Sources */,
 				03AD47981A68369C00F4B44B /* pchan-bufferedN-queue.swift in Sources */,
+				03DE6C161AEE936900F4B44B /* schan-semaphore.swift in Sources */,
 				03AD47A11A6836B300F4B44B /* logging.swift in Sources */,
 				03AD47951A68369C00F4B44B /* channel.swift in Sources */,
 				03AD47A01A68369C00F4B44B /* schan-buffered.swift in Sources */,

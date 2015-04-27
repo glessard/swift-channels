@@ -26,8 +26,8 @@ final class SBufferedChan<T>: Chan<T>
   private var head: Int64 = 0
   private var tail: Int64 = 0
 
-  private let filled: ChannelSemaphore
-  private let empty:  ChannelSemaphore
+  private var filled: SChanSemaphore
+  private var empty:  SChanSemaphore
 
   private var wlock = OS_SPINLOCK_INIT
   private var rlock = OS_SPINLOCK_INIT
@@ -43,8 +43,8 @@ final class SBufferedChan<T>: Chan<T>
   {
     self.capacity = (capacity < 1) ? 1 : Int64(capacity)
 
-    filled = ChannelSemaphore(value: 0)
-    empty =  ChannelSemaphore(value: Int32(self.capacity))
+    filled = SChanSemaphore(value: 0)
+    empty =  SChanSemaphore(value: Int32(self.capacity))
 
     // find the next power of 2 that is >= self.capacity
     var v = self.capacity - 1
@@ -76,6 +76,8 @@ final class SBufferedChan<T>: Chan<T>
       empty.signal()
     }
     buffer.dealloc(Int(mask+1))
+    empty.destroy()
+    filled.destroy()
   }
 
   // MARK: ChannelType properties
