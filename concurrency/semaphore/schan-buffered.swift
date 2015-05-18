@@ -29,10 +29,7 @@ final class SBufferedChan<T>: Chan<T>
   private var filled: SChanSemaphore
   private var empty:  SChanSemaphore
 
-  private var wlock = OS_SPINLOCK_INIT
-  private var rlock = OS_SPINLOCK_INIT
-
-  private var closed = false
+  private var closed = 0
 
   // Used to elucidate/troubleshoot message arrival order
   // private var readerCount: Int32 = -1
@@ -44,7 +41,7 @@ final class SBufferedChan<T>: Chan<T>
     self.capacity = (capacity < 1) ? 1 : min(capacity, 32768)
 
     filled = SChanSemaphore(value: 0)
-    empty =  SChanSemaphore(value: Int32(self.capacity))
+    empty =  SChanSemaphore(value: self.capacity)
 
     // find the next power of 2 that is >= self.capacity
     var v = self.capacity - 1
@@ -68,11 +65,11 @@ final class SBufferedChan<T>: Chan<T>
   {
     while tail &- head > 0
     {
+      OSAtomicIncrementLongBarrier(&head)
       buffer.advancedBy(head&mask).destroy()
-      head = head &+ 1
       empty.signal()
     }
-    buffer.dealloc(Int(mask+1))
+    buffer.dealloc(mask+1)
     empty.destroy()
     filled.destroy()
   }
@@ -86,14 +83,14 @@ final class SBufferedChan<T>: Chan<T>
 
   final override var isFull: Bool
   {
-      return (tail &- head) >= capacity
+      return Int(tail &- head) >= capacity
   }
 
   /**
     Determine whether the channel has been closed
   */
 
-  final override var isClosed: Bool { return closed }
+  final override var isClosed: Bool { return closed != 0 }
 
   // MARK: ChannelType methods
 
@@ -109,14 +106,11 @@ final class SBufferedChan<T>: Chan<T>
 
   final override func close()
   {
-    if closed { return }
-
-    OSSpinLockLock(&wlock)
-    closed = true
-    OSSpinLockUnlock(&wlock)
-
-    filled.signal()
-    empty.signal()
+    if OSAtomicCompareAndSwapLongBarrier(0, 1, &closed)
+    {
+      filled.signal()
+      empty.signal()
+    }
   }
 
   /**
@@ -130,23 +124,20 @@ final class SBufferedChan<T>: Chan<T>
 
   final override func put(newElement: T) -> Bool
   {
-    if closed { return false }
+    if closed != 0 { return false }
 
     empty.wait()
-    OSSpinLockLock(&wlock)
 
-    if !closed
+    if closed == 0
     {
-      buffer.advancedBy(tail&mask).initialize(newElement)
-      tail = tail &+ 1
+      let index = OSAtomicIncrementLongBarrier(&tail)
+      buffer.advancedBy(index&mask).initialize(newElement)
 
-      OSSpinLockUnlock(&wlock)
       filled.signal()
       return true
     }
     else
     {
-      OSSpinLockUnlock(&wlock)
       empty.signal()
       return false
     }
@@ -163,24 +154,22 @@ final class SBufferedChan<T>: Chan<T>
 
   final override func get() -> T?
   {
-    if closed && (tail &- head) <= 0 { return nil }
+    if closed != 0 && (tail &- head) <= 0 { return nil }
 
     filled.wait()
-    OSSpinLockLock(&rlock)
 
-    if (tail &- head) > 0
+    let index = OSAtomicIncrementLongBarrier(&head)
+    if (tail &- index) >= 0
     {
-      let element = buffer.advancedBy(head&mask).move()
-      head = head &+ 1
+      let element = buffer.advancedBy(index&mask).move()
 
-      OSSpinLockUnlock(&rlock)
       empty.signal()
       return element
     }
     else
     {
-      assert(closed, __FUNCTION__)
-      OSSpinLockUnlock(&rlock)
+      assert(closed != 0, __FUNCTION__)
+      OSAtomicDecrementLongBarrier(&head)
       filled.signal()
       return nil
     }
@@ -203,19 +192,17 @@ final class SBufferedChan<T>: Chan<T>
   override func insert(selection: Selection, newElement: T) -> Bool
   {
     // the `empty` semaphore has already been decremented for this operation.
-    OSSpinLockLock(&wlock)
-    if !closed && head+capacity > tail
+    let index = OSAtomicIncrementLongBarrier(&tail)
+    if closed == 0 && index &- head <= capacity
     {
-      buffer.advancedBy(tail&mask).initialize(newElement)
-      tail = tail &+ 1
+      buffer.advancedBy(index&mask).initialize(newElement)
 
-      OSSpinLockUnlock(&wlock)
       filled.signal()
       return true
     }
     else
     {
-      OSSpinLockUnlock(&wlock)
+      OSAtomicDecrementLongBarrier(&tail)
       empty.signal()
       return false
     }
@@ -268,19 +255,18 @@ final class SBufferedChan<T>: Chan<T>
   override func extract(selection: Selection) -> T?
   {
     // the `filled` semaphore has already been decremented for this operation.
-    OSSpinLockLock(&rlock)
-    if head < tail
+    let index = OSAtomicIncrementLongBarrier(&head)
+    if (tail &- index) >= 0
     {
-      let element = buffer.advancedBy(head&mask).move()
-      head = head &+ 1
-      OSSpinLockUnlock(&rlock)
+      let element = buffer.advancedBy(index&mask).move()
+
       empty.signal()
       return element
     }
     else
     {
-      assert(closed, __FUNCTION__)
-      OSSpinLockUnlock(&rlock)
+      assert(closed != 0, __FUNCTION__)
+      OSAtomicDecrementLongBarrier(&head)
       filled.signal()
       return nil
     }
@@ -317,4 +303,22 @@ final class SBufferedChan<T>: Chan<T>
       }
     }
   }
+}
+
+@inline(__always) private func OSAtomicIncrementLongBarrier(pointer: UnsafeMutablePointer<Int>) -> Int
+{
+  #if arch(x86_64) || arch(arm64) // 64-bit architecture
+    return Int(OSAtomicIncrement64Barrier(UnsafeMutablePointer<Int64>(pointer)))
+  #else // 32-bit architecture
+    return Int(OSAtomicIncrement32Barrier(UnsafeMutablePointer<Int32>(pointer)))
+  #endif
+}
+
+@inline(__always) private func OSAtomicDecrementLongBarrier(pointer: UnsafeMutablePointer<Int>) -> Int
+{
+  #if arch(x86_64) || arch(arm64) // 64-bit architecture
+    return Int(OSAtomicDecrement64Barrier(UnsafeMutablePointer<Int64>(pointer)))
+  #else // 32-bit architecture
+    return Int(OSAtomicDecrement32Barrier(UnsafeMutablePointer<Int32>(pointer)))
+  #endif
 }
