@@ -5,8 +5,8 @@
 //  Copyright (c) 2014 Guillaume Lessard. All rights reserved.
 //
 
-import Foundation.NSDate
-import Foundation.NSThread
+import Darwin.Mach.mach_time
+import Darwin.C.time
 import AppKit.AppKitDefines
 
 /**
@@ -154,22 +154,34 @@ extension Time
 {
   public static func Wait(interval: Interval)
   {
-    Time.Wait(interval.interval)
+    if interval.ns >= 0
+    {
+      var dt = timespec(tv_sec: Int(interval.ns/1_000_000_000), tv_nsec: Int(interval.ns%1_000_000_000))
+      nanosleep(&dt, nil)
+    }
   }
 
   public static func Wait(#ms: Int)
   {
-    Time.Wait(Double(ms)/1000)
+    if ms >= 0
+    {
+      var dt = timespec(tv_sec: Int(ms/1000), tv_nsec: Int(ms%1000)*1_000_000)
+      Time.Wait(Double(ms)/1000)
+    }
   }
 
   public static func Wait(#ms: UInt32)
   {
-    Time.Wait(Double(ms)/1000)
+    Time.Wait(ms: Int(ms))
   }
 
   public static func Wait(seconds: CFTimeInterval)
   {
     if seconds > 0
-    { NSThread.sleepForTimeInterval(seconds) }
+    {
+      let wholeseconds = floor(seconds)
+      var dt = timespec(tv_sec: Int(wholeseconds), tv_nsec: Int((seconds-wholeseconds)*1_000_000_000))
+      nanosleep(&dt, nil)
+    }
   }
 }

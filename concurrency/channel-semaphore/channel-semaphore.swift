@@ -11,7 +11,6 @@ import Darwin.Mach.semaphore
 import Darwin.Mach.mach_time
 import Darwin.libkern.OSAtomic
 import Dispatch.time
-import Foundation.NSThread
 
 struct SemaphorePool
 {
@@ -108,12 +107,12 @@ final public class ChannelSemaphore
 
   // MARK: init/deinit
 
-  private init(value: Int32)
+  init(value: Int32)
   {
     svalue = (value > 0) ? value : 0
   }
 
-  private convenience init()
+  convenience init()
   {
     self.init(value: 0)
   }
@@ -213,25 +212,21 @@ final public class ChannelSemaphore
 
   func signal() -> Bool
   {
-    if OSAtomicIncrement32Barrier(&svalue) <= 0
+    if OSAtomicIncrement32Barrier(&svalue) > 0
     {
-      while semp == 0
-      { // if svalue was previously less than zero, there must be a wait() call
-        // currently in the process of initializing semp.
-        NSThread.sleepForTimeInterval(1e-10)
-        OSMemoryBarrier()
-      }
-
-      let kr = semaphore_signal(semp)
-      assert(kr == KERN_SUCCESS, __FUNCTION__)
-      return kr == KERN_SUCCESS
+      return false
     }
-    return false
-  }
 
-  func wait() -> Bool
-  {
-    return wait(DISPATCH_TIME_FOREVER)
+    while semp == 0
+    { // if svalue was previously less than zero, there must be a wait() call
+      // currently in the process of initializing semp.
+      usleep(1)
+      OSMemoryBarrier()
+    }
+
+    let kr = semaphore_signal(semp)
+    assert(kr == KERN_SUCCESS, __FUNCTION__)
+    return kr == KERN_SUCCESS
   }
 
   func wait(timeout: dispatch_time_t) -> Bool
@@ -272,6 +267,11 @@ final public class ChannelSemaphore
     }
 
     return kr == KERN_SUCCESS
+  }
+
+  func wait() -> Bool
+  {
+    return wait(DISPATCH_TIME_FOREVER)
   }
 }
 
