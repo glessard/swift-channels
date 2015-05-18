@@ -14,9 +14,9 @@ struct SChanSemaphore
   private var svalue: Int32
   private var semp = semaphore_t()
 
-  init(value: Int32)
+  init(value: Int)
   {
-    svalue = (value > 0) ? value : 0
+    svalue = (value < 0) ? 0 : Int32(min(value, Int(Int32.max)))
     semp = 0
   }
 
