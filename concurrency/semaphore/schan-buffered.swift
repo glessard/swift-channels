@@ -20,11 +20,11 @@ final class SBufferedChan<T>: Chan<T>
 
   // MARK: private housekeeping
 
-  private let capacity: Int64
-  private let mask: Int64
+  private let capacity: Int
+  private let mask: Int
 
-  private var head: Int64 = 0
-  private var tail: Int64 = 0
+  private var head = 0
+  private var tail = 0
 
   private var filled: SChanSemaphore
   private var empty:  SChanSemaphore
@@ -41,7 +41,7 @@ final class SBufferedChan<T>: Chan<T>
 
   init(_ capacity: Int)
   {
-    self.capacity = (capacity < 1) ? 1 : Int64(capacity)
+    self.capacity = (capacity < 1) ? 1 : min(capacity, 32768)
 
     filled = SChanSemaphore(value: 0)
     empty =  SChanSemaphore(value: Int32(self.capacity))
@@ -52,12 +52,9 @@ final class SBufferedChan<T>: Chan<T>
     v |= v >> 2
     v |= v >> 4
     v |= v >> 8
-    v |= v >> 16
-    v |= v >> 32
-    // the answer is v+1
 
     mask = v // buffer size -1
-    buffer = UnsafeMutablePointer.alloc(Int(mask+1))
+    buffer = UnsafeMutablePointer.alloc(mask+1)
 
     super.init()
   }
@@ -69,10 +66,10 @@ final class SBufferedChan<T>: Chan<T>
 
   deinit
   {
-    precondition(head <= tail, __FUNCTION__)
-    for i in head..<tail
+    while tail &- head > 0
     {
-      buffer.advancedBy(Int(i&mask)).destroy()
+      buffer.advancedBy(head&mask).destroy()
+      head = head &+ 1
       empty.signal()
     }
     buffer.dealloc(Int(mask+1))
@@ -84,14 +81,14 @@ final class SBufferedChan<T>: Chan<T>
 
   final override var isEmpty: Bool
   {
-    return head >= tail
+      return (tail &- head) <= 0
   }
 
   final override var isFull: Bool
   {
-    return head+capacity <= tail
+      return (tail &- head) >= capacity
   }
-  
+
   /**
     Determine whether the channel has been closed
   */
@@ -140,8 +137,8 @@ final class SBufferedChan<T>: Chan<T>
 
     if !closed
     {
-      buffer.advancedBy(Int(tail&mask)).initialize(newElement)
-      tail += 1
+      buffer.advancedBy(tail&mask).initialize(newElement)
+      tail = tail &+ 1
 
       OSSpinLockUnlock(&wlock)
       filled.signal()
@@ -166,15 +163,15 @@ final class SBufferedChan<T>: Chan<T>
 
   final override func get() -> T?
   {
-    if closed && head >= tail { return nil }
+    if closed && (tail &- head) <= 0 { return nil }
 
     filled.wait()
     OSSpinLockLock(&rlock)
 
-    if head < tail
+    if (tail &- head) > 0
     {
-      let element = buffer.advancedBy(Int(head&mask)).move()
-      head += 1
+      let element = buffer.advancedBy(head&mask).move()
+      head = head &+ 1
 
       OSSpinLockUnlock(&rlock)
       empty.signal()
@@ -209,8 +206,8 @@ final class SBufferedChan<T>: Chan<T>
     OSSpinLockLock(&wlock)
     if !closed && head+capacity > tail
     {
-      buffer.advancedBy(Int(tail&mask)).initialize(newElement)
-      tail += 1
+      buffer.advancedBy(tail&mask).initialize(newElement)
+      tail = tail &+ 1
 
       OSSpinLockUnlock(&wlock)
       filled.signal()
@@ -274,8 +271,8 @@ final class SBufferedChan<T>: Chan<T>
     OSSpinLockLock(&rlock)
     if head < tail
     {
-      let element = buffer.advancedBy(Int(head&mask)).move()
-      head += 1
+      let element = buffer.advancedBy(head&mask).move()
+      head = head &+ 1
       OSSpinLockUnlock(&rlock)
       empty.signal()
       return element
