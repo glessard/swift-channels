@@ -17,7 +17,6 @@ struct SChanSemaphore
   init(value: Int)
   {
     svalue = (value < 0) ? 0 : Int32(min(value, Int(Int32.max)))
-    semp = 0
   }
 
   init()

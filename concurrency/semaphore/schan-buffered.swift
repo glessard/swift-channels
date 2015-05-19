@@ -44,7 +44,7 @@ final class SBufferedChan<T>: Chan<T>
     self.capacity = (capacity < 1) ? 1 : min(capacity, 32768)
 
     filled = SChanSemaphore(value: 0)
-    empty =  SChanSemaphore(value: Int32(self.capacity))
+    empty =  SChanSemaphore(value: self.capacity)
 
     // find the next power of 2 that is >= self.capacity
     var v = self.capacity - 1
