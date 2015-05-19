@@ -102,9 +102,9 @@ final public class ChannelSemaphore
 
   // MARK: init/deinit
 
-  init(value: Int32)
+  init(value: Int)
   {
-    svalue = (value > 0) ? value : 0
+    svalue = (value < 0) ? 0 : Int32(min(value, Int(Int32.max)))
   }
 
   convenience init()
