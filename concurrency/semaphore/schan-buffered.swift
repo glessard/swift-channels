@@ -32,7 +32,7 @@ final class SBufferedChan<T>: Chan<T>
   private var wlock = OS_SPINLOCK_INIT
   private var rlock = OS_SPINLOCK_INIT
 
-  private var closed = false
+  private var closed = 0
 
   // Used to elucidate/troubleshoot message arrival order
   // private var readerCount: Int32 = -1
@@ -91,7 +91,7 @@ final class SBufferedChan<T>: Chan<T>
     Determine whether the channel has been closed
   */
 
-  final override var isClosed: Bool { return closed }
+  final override var isClosed: Bool { return closed != 0 }
 
   // MARK: ChannelType methods
 
@@ -107,14 +107,11 @@ final class SBufferedChan<T>: Chan<T>
 
   final override func close()
   {
-    if closed { return }
-
-    OSSpinLockLock(&wlock)
-    closed = true
-    OSSpinLockUnlock(&wlock)
-
-    dispatch_semaphore_signal(filled)
-    dispatch_semaphore_signal(empty)
+    if OSAtomicCompareAndSwapLongBarrier(0, 1, &closed)
+    {
+      dispatch_semaphore_signal(filled)
+      dispatch_semaphore_signal(empty)
+    }
   }
 
   /**
@@ -128,12 +125,12 @@ final class SBufferedChan<T>: Chan<T>
 
   final override func put(newElement: T) -> Bool
   {
-    if closed { return false }
+    if closed != 0 { return false }
 
     dispatch_semaphore_wait(empty, DISPATCH_TIME_FOREVER)
     OSSpinLockLock(&wlock)
 
-    if !closed
+    if closed == 0
     {
       buffer.advancedBy(tail&mask).initialize(newElement)
       tail = tail &+ 1
@@ -161,7 +158,7 @@ final class SBufferedChan<T>: Chan<T>
 
   final override func get() -> T?
   {
-    if closed && (tail &- head) <= 0 { return nil }
+    if closed != 0 && (tail &- head) <= 0 { return nil }
 
     dispatch_semaphore_wait(filled, DISPATCH_TIME_FOREVER)
     OSSpinLockLock(&rlock)
@@ -177,7 +174,7 @@ final class SBufferedChan<T>: Chan<T>
     }
     else
     {
-      assert(closed, __FUNCTION__)
+      assert(closed != 0, __FUNCTION__)
       OSSpinLockUnlock(&rlock)
       dispatch_semaphore_signal(filled)
       return nil
