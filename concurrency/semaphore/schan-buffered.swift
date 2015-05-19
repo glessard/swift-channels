@@ -66,7 +66,7 @@ final class SBufferedChan<T>: Chan<T>
 
   deinit
   {
-    while tail &- head > 0
+    while (tail &- head) > 0
     {
       buffer.advancedBy(head&mask).destroy()
       head = head &+ 1
@@ -202,7 +202,7 @@ final class SBufferedChan<T>: Chan<T>
   {
     // the `empty` semaphore has already been decremented for this operation.
     OSSpinLockLock(&wlock)
-    if !closed && head+capacity > tail
+    if !closed && (tail &- head) < capacity
     {
       buffer.advancedBy(tail&mask).initialize(newElement)
       tail = tail &+ 1
@@ -267,7 +267,7 @@ final class SBufferedChan<T>: Chan<T>
   {
     // the `filled` semaphore has already been decremented for this operation.
     OSSpinLockLock(&rlock)
-    if head < tail
+    if (tail &- head) > 0
     {
       let element = buffer.advancedBy(head&mask).move()
       head = head &+ 1

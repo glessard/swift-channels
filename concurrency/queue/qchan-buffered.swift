@@ -63,7 +63,7 @@ final class QBufferedChan<T>: Chan<T>
 
   deinit
   {
-    while tail &- head > 0
+    while (tail &- head) > 0
     {
       buffer.advancedBy(head&mask).destroy()
       head = head &+ 1
