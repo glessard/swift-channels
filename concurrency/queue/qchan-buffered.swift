@@ -121,7 +121,7 @@ final class QBufferedChan<T>: Chan<T>
         if reader.sem.setState(.Invalidated) { reader.sem.signal(); break }
 
       default:
-        assertionFailure("Unexpected case \(reader.sem.state.rawValue) in \(__FUNCTION__)")
+        continue
       }
     }
     while let writer = writerQueue.dequeue()
@@ -136,7 +136,7 @@ final class QBufferedChan<T>: Chan<T>
         if writer.sem.setState(.Invalidated) { writer.sem.signal(); break }
 
       default:
-        assertionFailure("Unexpected case \(writer.sem.state.rawValue) in \(__FUNCTION__)")
+        continue
       }
     }
     OSSpinLockUnlock(&lock)
@@ -195,7 +195,7 @@ final class QBufferedChan<T>: Chan<T>
           }
 
         default:
-          assertionFailure("Unexpected case \(reader.sem.state.rawValue) in \(__FUNCTION__)")
+          continue
         }
       }
       while (nextput &- head) < capacity || closed, let writer = writerQueue.dequeue()
@@ -218,7 +218,7 @@ final class QBufferedChan<T>: Chan<T>
           }
 
         default:
-          assertionFailure("Unexpected case \(writer.sem.state.rawValue) in \(__FUNCTION__)")
+          continue
         }
       }
       OSSpinLockUnlock(&lock)
@@ -246,7 +246,7 @@ final class QBufferedChan<T>: Chan<T>
           }
 
         default:
-          assertionFailure("Unexpected case \(reader.sem.state.rawValue) in \(__FUNCTION__)")
+          continue
         }
       }
       while let writer = writerQueue.dequeue()
@@ -269,7 +269,7 @@ final class QBufferedChan<T>: Chan<T>
           }
 
         default:
-          assertionFailure("Unexpected case \(writer.sem.state.rawValue) in \(__FUNCTION__)")
+          continue
         }
       }
       OSSpinLockUnlock(&lock)
@@ -330,7 +330,7 @@ final class QBufferedChan<T>: Chan<T>
           }
 
         default:
-          assertionFailure("Unexpected case \(writer.sem.state.rawValue) in \(__FUNCTION__)")
+          continue
         }
       }
       while (tail &- nextget) > 0 || closed, let reader = readerQueue.dequeue()
@@ -353,7 +353,7 @@ final class QBufferedChan<T>: Chan<T>
           }
 
         default:
-          assertionFailure("Unexpected case \(reader.sem.state.rawValue) in \(__FUNCTION__)")
+          continue
         }
       }
       OSSpinLockUnlock(&lock)
@@ -382,7 +382,7 @@ final class QBufferedChan<T>: Chan<T>
           }
 
         default:
-          assertionFailure("Unexpected case \(writer.sem.state.rawValue) in \(__FUNCTION__)")
+          continue
         }
       }
       while let reader = readerQueue.dequeue()
@@ -405,7 +405,7 @@ final class QBufferedChan<T>: Chan<T>
           }
 
         default:
-          assertionFailure("Unexpected case \(reader.sem.state.rawValue) in \(__FUNCTION__)")
+          continue
         }
       }
       OSSpinLockUnlock(&lock)
@@ -456,7 +456,7 @@ final class QBufferedChan<T>: Chan<T>
           }
 
         default:
-          assertionFailure("Unexpected case \(reader.sem.state.rawValue) in \(__FUNCTION__)")
+          continue
         }
       }
       while (nextput &- head) < capacity || closed, let writer = writerQueue.dequeue()
@@ -479,7 +479,7 @@ final class QBufferedChan<T>: Chan<T>
           }
 
         default:
-          assertionFailure("Unexpected case \(writer.sem.state.rawValue) in \(__FUNCTION__)")
+          continue
         }
       }
       OSSpinLockUnlock(&lock)
@@ -534,7 +534,7 @@ final class QBufferedChan<T>: Chan<T>
             }
 
           default:
-            assertionFailure("Unexpected case \(writer.sem.state.rawValue) in \(__FUNCTION__)")
+            continue
           }
         }
         while (tail &- nextget) > 0 || closed, let reader = readerQueue.dequeue()
@@ -557,7 +557,7 @@ final class QBufferedChan<T>: Chan<T>
             }
 
           default:
-            assertionFailure("Unexpected case \(reader.sem.state.rawValue) in \(__FUNCTION__)")
+            continue
           }
         }
         OSSpinLockUnlock(&lock)
@@ -611,7 +611,7 @@ final class QBufferedChan<T>: Chan<T>
           }
 
         default:
-          assertionFailure("Unexpected case \(writer.sem.state.rawValue) in \(__FUNCTION__)")
+          continue
         }
       }
       while (tail &- nextget) > 0 || closed, let reader = readerQueue.dequeue()
@@ -634,7 +634,7 @@ final class QBufferedChan<T>: Chan<T>
           }
 
         default:
-          assertionFailure("Unexpected case \(reader.sem.state.rawValue) in \(__FUNCTION__)")
+          continue
         }
       }
       OSSpinLockUnlock(&lock)
@@ -682,7 +682,7 @@ final class QBufferedChan<T>: Chan<T>
             }
 
           default:
-            assertionFailure("Unexpected case \(reader.sem.state.rawValue) in \(__FUNCTION__)")
+            continue
           }
         }
         while (nextput &- head) < capacity || closed, let writer = writerQueue.dequeue()
@@ -705,7 +705,7 @@ final class QBufferedChan<T>: Chan<T>
             }
 
           default:
-            assertionFailure("Unexpected case \(writer.sem.state.rawValue) in \(__FUNCTION__)")
+            continue
           }
         }
         OSSpinLockUnlock(&lock)
