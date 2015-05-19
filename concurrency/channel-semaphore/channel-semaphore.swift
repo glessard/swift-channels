@@ -191,9 +191,15 @@ final public class ChannelSemaphore
 
   func signal() -> Bool
   {
-    if OSAtomicIncrement32Barrier(&svalue) > 0
+    switch OSAtomicIncrement32Barrier(&svalue)
     {
+    case let v where v > 0:
       return false
+
+    case Int32.min:
+      preconditionFailure("Semaphore signaled too many times")
+
+    default: break
     }
 
     while semp == 0
