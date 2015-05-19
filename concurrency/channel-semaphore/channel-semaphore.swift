@@ -86,7 +86,10 @@ case Done
 
 /**
   A benaphore: http://www.haiku-os.org/legacy-docs/benewsletter/Issue1-26.html
-  Much like dispatch_semaphore_t, with native Swift typing.
+  Also: http://preshing.com/20120226/roll-your-own-lightweight-mutex/
+
+  Much like dispatch_semaphore_t, with native Swift typing. (And state information.)
+  An older version of libdispatch is at: http://libdispatch.macosforge.org/
 */
 
 final public class ChannelSemaphore
