@@ -72,7 +72,7 @@ final class SBufferedChan<T>: Chan<T>
       head = head &+ 1
       empty.signal()
     }
-    buffer.dealloc(Int(mask+1))
+    buffer.dealloc(mask+1)
     empty.destroy()
     filled.destroy()
   }
