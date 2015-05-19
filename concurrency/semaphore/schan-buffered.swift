@@ -177,7 +177,7 @@ final class SBufferedChan<T>: Chan<T>
     }
     else
     {
-      assert(closed, __FUNCTION__)
+      precondition(closed, __FUNCTION__)
       OSSpinLockUnlock(&rlock)
       dispatch_semaphore_signal(filled)
       return nil
@@ -277,7 +277,7 @@ final class SBufferedChan<T>: Chan<T>
     }
     else
     {
-      assert(closed, __FUNCTION__)
+      precondition(closed, __FUNCTION__)
       OSSpinLockUnlock(&rlock)
       dispatch_semaphore_signal(filled)
       return nil

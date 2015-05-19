@@ -361,7 +361,7 @@ final class QBufferedChan<T>: Chan<T>
     }
     else
     {
-      assert(closed, __FUNCTION__)
+      precondition(closed, __FUNCTION__)
       while let writer = writerQueue.dequeue()
       {
         switch writer.sem.state
@@ -642,7 +642,7 @@ final class QBufferedChan<T>: Chan<T>
     }
     else
     {
-      assert(closed, __FUNCTION__)
+      precondition(closed, __FUNCTION__)
       OSSpinLockUnlock(&lock)
       return nil
     }
