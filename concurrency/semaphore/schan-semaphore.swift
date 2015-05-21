@@ -65,7 +65,6 @@ struct SChanSemaphore
 
     default: break
     }
-    
 
     while semp == 0
     { // if svalue was previously less than zero, there must be a wait() call
@@ -88,33 +87,49 @@ struct SChanSemaphore
 
     if semp == 0 { initSemaphorePort() }
 
-    var kr: kern_return_t
+    var kr = KERN_ABORTED
     switch timeout
     {
-    case DISPATCH_TIME_NOW: // will not wait
-      kr = semaphore_timedwait(semp, mach_timespec_t())
-      assert(kr == KERN_SUCCESS || kr == KERN_OPERATION_TIMED_OUT, __FUNCTION__)
-
-    case DISPATCH_TIME_FOREVER: // will wait forever
-      do {
-        kr = semaphore_wait(semp)
-      } while kr == KERN_ABORTED
-      assert(kr == KERN_SUCCESS, __FUNCTION__)
-
-    default: // a timed wait
-      do {
+    case let _ where timeout != DISPATCH_TIME_NOW && timeout != DISPATCH_TIME_FOREVER:
+      // a timed wait
+      while kr == KERN_ABORTED
+      {
         let now = mach_absolute_time()*dispatch_time_t(scale.numer)/dispatch_time_t(scale.denom)
         let delta = (timeout > now) ? (timeout - now) : 0
         let tspec = mach_timespec_t(tv_sec: UInt32(delta/NSEC_PER_SEC), tv_nsec: Int32(delta%NSEC_PER_SEC))
         kr = semaphore_timedwait(semp, tspec)
-      } while kr == KERN_ABORTED
+      }
       assert(kr == KERN_SUCCESS || kr == KERN_OPERATION_TIMED_OUT, __FUNCTION__)
-    }
 
-    if kr == KERN_OPERATION_TIMED_OUT
-    {
-      OSAtomicIncrement32Barrier(&svalue)
-      return false
+      if kr != KERN_OPERATION_TIMED_OUT { break }
+      fallthrough
+
+    case DISPATCH_TIME_NOW:
+      // will not wait
+      while true
+      { // check the state of svalue
+        let v = OSAtomicAdd32(0, &svalue)
+        if v >= 0
+        {
+          // An intervening call to semaphore_signal() must be canceled.
+          // We need to call semaphore_wait() for the accounting to add up.
+          fallthrough
+        }
+        else
+        { // re-increment svalue prudently
+          if OSAtomicCompareAndSwap32Barrier(v, v+1, &svalue) { return false }
+        }
+      }
+
+    case DISPATCH_TIME_FOREVER:
+      // will wait forever
+      while kr == KERN_ABORTED
+      {
+        kr = semaphore_wait(semp)
+      }
+      assert(kr == KERN_SUCCESS, __FUNCTION__)
+
+    default: break
     }
 
     return kr == KERN_SUCCESS
