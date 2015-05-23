@@ -6,13 +6,21 @@
 //  Copyright (c) 2015 Guillaume Lessard. All rights reserved.
 //
 
-import Darwin.Mach.task
-import Dispatch.time
+import Dispatch
+
+enum WaitType
+{
+  case Wait
+  case Notify(()->Void)
+}
 
 struct SChanSemaphore
 {
-  private var svalue: Int32
+  var svalue: Int32
   private var semp = semaphore_t()
+
+  private var lock = OS_SPINLOCK_INIT
+  private let waiters = FastQueue<WaitType>()
 
   init(value: Int)
   {
@@ -23,6 +31,8 @@ struct SChanSemaphore
   {
     self.init(value: 0)
   }
+
+  // MARK: Kernel port management
 
   func destroy()
   {
@@ -50,14 +60,16 @@ struct SChanSemaphore
     }
   }
   
-
+  
   // MARK: Semaphore functionality
 
   mutating func signal() -> Bool
   {
+    OSSpinLockLock(&lock)
     switch OSAtomicIncrement32Barrier(&svalue)
     {
     case let v where v > 0:
+      OSSpinLockUnlock(&lock)
       return false
 
     case Int32.min:
@@ -66,83 +78,70 @@ struct SChanSemaphore
     default: break
     }
 
-    while semp == 0
-    { // if svalue was previously less than zero, there must be a wait() call
-      // currently in the process of initializing semp.
-      usleep(1)
-      OSMemoryBarrier()
-    }
-
-    let kr = semaphore_signal(semp)
-    assert(kr == KERN_SUCCESS, __FUNCTION__)
-    return kr == KERN_SUCCESS
-  }
-
-  mutating func wait(timeout: dispatch_time_t) -> Bool
-  {
-    if OSAtomicDecrement32Barrier(&svalue) >= 0
+    if let waiter = waiters.dequeue()
     {
-      return true
+      OSSpinLockUnlock(&lock)
+      switch waiter
+      {
+      case .Wait:
+        while semp == 0
+        { // if svalue was previously less than zero, there must be a wait() call
+          // currently in the process of initializing semp.
+          usleep(1)
+          OSMemoryBarrier()
+        }
+        return semaphore_signal(semp) == KERN_SUCCESS
+
+      case .Notify(let block):
+        dispatch_async(dispatch_get_global_queue(qos_class_self(), 0), block)
+        return true
+      }
     }
-
-    if semp == 0 { initSemaphorePort() }
-
-    var kr = KERN_ABORTED
-    switch timeout
+    else
     {
-    case let _ where timeout != DISPATCH_TIME_NOW && timeout != DISPATCH_TIME_FOREVER:
-      // a timed wait
-      while kr == KERN_ABORTED
-      {
-        let now = mach_absolute_time()*dispatch_time_t(scale.numer)/dispatch_time_t(scale.denom)
-        let delta = (timeout > now) ? (timeout - now) : 0
-        let tspec = mach_timespec_t(tv_sec: UInt32(delta/NSEC_PER_SEC), tv_nsec: Int32(delta%NSEC_PER_SEC))
-        kr = semaphore_timedwait(semp, tspec)
-      }
-      assert(kr == KERN_SUCCESS || kr == KERN_OPERATION_TIMED_OUT, __FUNCTION__)
-
-      if kr != KERN_OPERATION_TIMED_OUT { break }
-      fallthrough
-
-    case DISPATCH_TIME_NOW:
-      // will not wait
-      while true
-      { // check the state of svalue
-        let v = OSAtomicAdd32(0, &svalue)
-        if v >= 0
-        {
-          // An intervening call to semaphore_signal() must be canceled.
-          // We need to call semaphore_wait() for the accounting to add up.
-          fallthrough
-        }
-        else
-        { // re-increment svalue prudently
-          if OSAtomicCompareAndSwap32Barrier(v, v+1, &svalue) { return false }
-        }
-      }
-
-    case DISPATCH_TIME_FOREVER:
-      // will wait forever
-      while kr == KERN_ABORTED
-      {
-        kr = semaphore_wait(semp)
-      }
-      assert(kr == KERN_SUCCESS, __FUNCTION__)
-
-    default: break
+      OSSpinLockUnlock(&lock)
+      assertionFailure("Missing waiter in \(__FUNCTION__)")
+      return false
     }
-
-    return kr == KERN_SUCCESS
   }
 
   mutating func wait() -> Bool
   {
-    return wait(DISPATCH_TIME_FOREVER)
+    OSSpinLockLock(&lock)
+    if OSAtomicDecrement32Barrier(&svalue) >= 0
+    {
+      OSSpinLockUnlock(&lock)
+      return true
+    }
+
+    waiters.enqueue(.Wait)
+    OSSpinLockUnlock(&lock)
+
+    if semp == 0 { initSemaphorePort() }
+
+    while true
+    {
+      switch semaphore_wait(semp)
+      {
+      case KERN_ABORTED: continue
+      case KERN_SUCCESS: return true
+      default: preconditionFailure("Bad reply from semaphore_wait() in \(__FUNCTION__)")
+      }
+    }
+  }
+
+  mutating func notify(block: () -> ())
+  {
+    OSSpinLockLock(&lock)
+    if OSAtomicDecrement32Barrier(&svalue) >= 0
+    {
+      OSSpinLockUnlock(&lock)
+      block()
+    }
+    else
+    {
+      waiters.enqueue(.Notify(block))
+      OSSpinLockUnlock(&lock)
+    }
   }
 }
-
-private var scale: mach_timebase_info = {
-  var info = mach_timebase_info(numer: 0, denom: 0)
-  mach_timebase_info(&info)
-  return info
-}()

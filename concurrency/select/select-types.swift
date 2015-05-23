@@ -41,14 +41,6 @@ public protocol Selectable: class
 
   func selectNotify(select: ChannelSemaphore, selection: Selection)
 
-  /*
-    Select first iterates through its Selectables to find whether at least one of them is ready.
-    This is much faster than launching N threads, having them race to get the semaphore,
-    and then getting the N-1 losing threads to be canceled.
-  */
-
-  func selectNow(selection: Selection) -> Selection?
-
   /**
     If it makes no sense to invoke the selectNotify() method at this time, return false.
     If every Selectable in the list returns false, Select will stop by returning nil.
@@ -62,11 +54,9 @@ public protocol Selectable: class
 protocol SelectableChannelType: ChannelType
 {
   func selectGet(select: ChannelSemaphore, selection: Selection)
-  func selectGetNow(selection: Selection) -> Selection?
   func extract(selection: Selection) -> Element?
 
   func selectPut(select: ChannelSemaphore, selection: Selection)
-  func selectPutNow(selection: Selection) -> Selection?
   func insert(selection: Selection, newElement: Element) -> Bool
 }
 

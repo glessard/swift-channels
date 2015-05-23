@@ -6,8 +6,6 @@
 //  Copyright (c) 2014 Guillaume Lessard. All rights reserved.
 //
 
-import Dispatch
-
 /**
   Select gets notified of events by the first of a list of Selectable items.
 */
@@ -26,21 +24,6 @@ public func select(options: [Selectable], withDefault: Selectable? = nil) -> Sel
     return nil
   }
 
-  // The synchronous path
-  for option in shuffle(selectables)
-  {
-    if let selection = option.selectNow(Selection(id: option))
-    {
-      return selection
-    }
-  }
-
-  if let d = withDefault
-  {
-    return Selection(id: d)
-  }
-
-  // The asynchronous path
   let semaphore = SemaphorePool.Obtain()
   semaphore.setState(.WaitSelect)
 
@@ -48,6 +31,12 @@ public func select(options: [Selectable], withDefault: Selectable? = nil) -> Sel
   {
     option.selectNotify(semaphore, selection: Selection(id: option))
     if semaphore.state != .WaitSelect { break }
+  }
+
+  if let def = withDefault where semaphore.setState(.Invalidated)
+  {
+    SemaphorePool.Return(semaphore)
+    return Selection(id: def)
   }
 
   semaphore.wait()

@@ -176,7 +176,7 @@ final class SBufferedChan<T>: Chan<T>
     }
     else
     {
-      assert(closed != 0, __FUNCTION__)
+      precondition(closed != 0, __FUNCTION__)
       OSSpinLockUnlock(&rlock)
       filled.signal()
       return nil
@@ -184,18 +184,6 @@ final class SBufferedChan<T>: Chan<T>
   }
 
   // MARK: SelectableChannelType methods
-
-  override func selectPutNow(selection: Selection) -> Selection?
-  {
-    if empty.wait(DISPATCH_TIME_NOW)
-    {
-      return selection
-    }
-    else
-    {
-      return nil
-    }
-  }
 
   override func insert(selection: Selection, newElement: T) -> Bool
   {
@@ -220,23 +208,8 @@ final class SBufferedChan<T>: Chan<T>
 
   override func selectPut(select: ChannelSemaphore, selection: Selection)
   {
-    if empty.wait(DISPATCH_TIME_NOW)
-    {
-      if select.setState(.Select)
-      {
-        select.selection = selection
-        select.signal()
-      }
-      else
-      { // let another reader through
-        empty.signal()
-      }
-      return
-    }
-
-    dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
-      _ in
-      self.empty.wait()
+    empty.notify {
+//      [unowned self] in
 
       if select.setState(.Select)
       {
@@ -250,18 +223,6 @@ final class SBufferedChan<T>: Chan<T>
     }
   }
 
-  override func selectGetNow(selection: Selection) -> Selection?
-  {
-    if filled.wait(DISPATCH_TIME_NOW)
-    {
-      return selection
-    }
-    else
-    {
-      return nil
-    }
-  }
-
   override func extract(selection: Selection) -> T?
   {
     // the `filled` semaphore has already been decremented for this operation.
@@ -270,13 +231,14 @@ final class SBufferedChan<T>: Chan<T>
     {
       let element = buffer.advancedBy(head&mask).move()
       head = head &+ 1
+
       OSSpinLockUnlock(&rlock)
       empty.signal()
       return element
     }
     else
     {
-      assert(closed != 0, __FUNCTION__)
+      precondition(closed != 0, __FUNCTION__)
       OSSpinLockUnlock(&rlock)
       filled.signal()
       return nil
@@ -285,23 +247,8 @@ final class SBufferedChan<T>: Chan<T>
 
   override func selectGet(select: ChannelSemaphore, selection: Selection)
   {
-    if filled.wait(DISPATCH_TIME_NOW)
-    {
-      if select.setState(.Select)
-      {
-        select.selection = selection
-        select.signal()
-      }
-      else
-      { // let another reader through
-        filled.signal()
-      }
-      return
-    }
-
-    dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
-      _ in
-      self.filled.wait()
+    filled.notify {
+//      [unowned self] in
 
       if select.setState(.Select)
       {
