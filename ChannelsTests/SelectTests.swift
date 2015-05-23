@@ -230,29 +230,8 @@ class SelectBufferedTests: SelectUnbufferedTests
 
 class SelectSChanBufferedTests: SelectUnbufferedTests
 {
-  var sleepCase = false
-
-  override var selectableCount: Int {
-    if sleepCase { return 3 }
-    else { return super.selectableCount }
-  }
-
   override func MakeChannels() -> [Chan<Int>]
   {
     return (0..<selectableCount).map { _ in SChan<Int>.Make(1) }
-  }
-
-  override func testSelectReceiverWithSleep()
-  {
-    sleepCase = true
-    super.testSelectReceiverWithSleep()
-    sleepCase = false
-  }
-
-  override func testSelectSenderWithSleep()
-  {
-    sleepCase = true
-    super.testSelectSenderWithSleep()
-    sleepCase = false
   }
 }
