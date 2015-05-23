@@ -65,11 +65,6 @@ extension Receiver: Selectable
     wrapped.selectGet(select, selection: selection)
   }
 
-  public func selectNow(selection: Selection) -> Selection?
-  {
-    return wrapped.selectGetNow(selection)
-  }
-
   public var selectable: Bool
   {
     return !(wrapped.isClosed && wrapped.isEmpty)

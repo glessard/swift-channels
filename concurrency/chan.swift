@@ -83,22 +83,12 @@ public class Chan<T>: ChannelType, SelectableChannelType
 
   func selectGet(select: ChannelSemaphore, selection: Selection) {}
 
-  func selectGetNow(selection: Selection) -> Selection?
-  {
-    return nil
-  }
-
   func extract(selection: Selection) -> T?
   {
     return nil
   }
 
   func selectPut(select: ChannelSemaphore, selection: Selection) {}
-
-  func selectPutNow(selection: Selection) -> Selection?
-  {
-    return nil
-  }
 
   func insert(selection: Selection, newElement: T) -> Bool
   {

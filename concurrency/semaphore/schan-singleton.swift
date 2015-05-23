@@ -137,11 +137,6 @@ final class SingletonChan<T>: Chan<T>
 
   // MARK: SelectableChannelType methods
 
-  override func selectPutNow(selection: Selection) -> Selection?
-  {
-    return closedState == 0 && writerCount == 0 ? selection : nil
-  }
-
   override func insert(selection: Selection, newElement: T) -> Bool
   {
     return put(newElement)
@@ -149,17 +144,11 @@ final class SingletonChan<T>: Chan<T>
 
   override func selectPut(select: ChannelSemaphore, selection: Selection)
   {
-    // If we get here, it would be as a result of an inconceivable set of circumstances.
     if closedState == 0 && writerCount == 0 && select.setState(.Select)
     {
       select.selection = selection
       select.signal()
     }
-  }
-
-  override func selectGetNow(selection: Selection) -> Selection?
-  {
-    return closedState != 0 || writerCount != 0 ? selection : nil
   }
 
   override func extract(selection: Selection) -> T?

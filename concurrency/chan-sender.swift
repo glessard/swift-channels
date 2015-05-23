@@ -39,11 +39,6 @@ extension Sender: Selectable
   
   public var selectable: Bool { return !wrapped.isClosed }
 
-  public func selectNow(selection: Selection) -> Selection?
-  {
-    return wrapped.selectPutNow(selection)
-  }
-
   public func selectNotify(select: ChannelSemaphore, selection: Selection)
   {
     wrapped.selectPut(select, selection: selection)

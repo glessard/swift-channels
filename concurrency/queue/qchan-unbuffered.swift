@@ -286,39 +286,6 @@ final class QUnbufferedChan<T>: Chan<T>
 
   // MARK: SelectableChannelType methods
 
-  override func selectPutNow(selection: Selection) -> Selection?
-  {
-    OSSpinLockLock(&lock)
-    while let reader = readerQueue.dequeue()
-    {
-      switch reader.sem.state
-      {
-      case .Pointer:
-        OSSpinLockUnlock(&lock)
-        return selection.withSemaphore(reader.sem)
-
-      case .WaitSelect:
-        if reader.sem.setState(.DoubleSelect)
-        {
-          OSSpinLockUnlock(&lock)
-          reader.sem.selection = reader.sel.withSemaphore(reader.sem)
-          reader.sem.setPointer(UnsafeMutablePointer<T>.alloc(1))
-
-          return selection.withSemaphore(reader.sem)
-        }
-        // try the next enqueued reader instead
-
-      case .Select, .DoubleSelect, .Invalidated, .Done:
-        continue
-
-      default:
-        preconditionFailure("Unexpected state (\(reader.sem.state)) after wait in \(__FUNCTION__)")
-      }
-    }
-    OSSpinLockUnlock(&lock)
-    return nil
-  }
-
   override func insert(selection: Selection, newElement: T) -> Bool
   {
     if let rs = selection.semaphore
@@ -406,36 +373,6 @@ final class QUnbufferedChan<T>: Chan<T>
     // enqueue the SemaphoreChan and hope for the best.
     writerQueue.enqueue(QueuedSemaphore(select, selection))
     OSSpinLockUnlock(&lock)
-  }
-
-  override func selectGetNow(selection: Selection) -> Selection?
-  {
-    OSSpinLockLock(&lock)
-    while let writer = writerQueue.dequeue()
-    {
-      switch writer.sem.state
-      {
-      case .Pointer:
-        OSSpinLockUnlock(&lock)
-        return selection.withSemaphore(writer.sem)
-
-      case .WaitSelect:
-        // the "get" side of a double select *cannot* complete in a reasonable time,
-        // therefore defer until the asynchronous phase of select.
-        // the insert side might win the race?
-        writerQueue.undequeue(writer)
-        OSSpinLockUnlock(&lock)
-        return nil
-
-      case .Select, .DoubleSelect, .Invalidated, .Done:
-        continue
-
-      default:
-        preconditionFailure("Unexpected state (\(writer.sem.state)) after wait in \(__FUNCTION__)")
-      }
-    }
-    OSSpinLockUnlock(&lock)
-    return nil
   }
 
   override func extract(selection: Selection) -> T?
