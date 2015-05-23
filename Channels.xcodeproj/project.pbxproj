@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		031DEDB31B1092CB00F4B44B /* fast2lockqueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 031DEDB21B1092CB00F4B44B /* fast2lockqueue.swift */; };
 		0335FBE11A8B277500F4B44B /* pchan-bufferedN-array.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B24C0B1A8AC01F00F4B44B /* pchan-bufferedN-array.swift */; };
 		0335FBE21A8B277600F4B44B /* pchan-bufferedN-array.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B24C0B1A8AC01F00F4B44B /* pchan-bufferedN-array.swift */; };
 		0336B9B51ABB1BF700F4B44B /* async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0336B9B41ABB1BF700F4B44B /* async.swift */; };
@@ -131,6 +132,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		031DEDB21B1092CB00F4B44B /* fast2lockqueue.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = fast2lockqueue.swift; sourceTree = "<group>"; };
 		032CCD3E1A79BE9400F4B44B /* merge-select.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "merge-select.swift"; path = "select/merge-select.swift"; sourceTree = "<group>"; };
 		0336B9B41ABB1BF700F4B44B /* async.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = async.swift; path = utilities/async.swift; sourceTree = "<group>"; };
 		033912021ABD3DC000F4B44B /* ChannelsExamples.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChannelsExamples.swift; sourceTree = "<group>"; };
@@ -364,6 +366,7 @@
 				03AD473E1A67441A00F4B44B /* queuetype.swift */,
 				03AD473A1A67441A00F4B44B /* atomicqueue.swift */,
 				03AD473C1A67441A00F4B44B /* fastqueue.swift */,
+				031DEDB21B1092CB00F4B44B /* fast2lockqueue.swift */,
 			);
 			name = queues;
 			path = ../utilities/queues;
@@ -560,6 +563,7 @@
 				03AD47331A6743E500F4B44B /* qchan.swift in Sources */,
 				034392C21A7A065200F4B44B /* select.swift in Sources */,
 				03AD47AF1A688BE900F4B44B /* shuffle.swift in Sources */,
+				031DEDB31B1092CB00F4B44B /* fast2lockqueue.swift in Sources */,
 				0370A7171A7C44BC00F4B44B /* merge-select.swift in Sources */,
 				034CABE31AC210BC00F4B44B /* schan-singleton.swift in Sources */,
 				03AD471F1A6743E500F4B44B /* chan-operators.swift in Sources */,
