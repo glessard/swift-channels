@@ -233,9 +233,7 @@ final public class ChannelSemaphore
       OSMemoryBarrier()
     }
 
-    let kr = semaphore_signal(semp)
-    assert(kr == KERN_SUCCESS, __FUNCTION__)
-    return kr == KERN_SUCCESS
+    return (semaphore_signal(semp) == KERN_SUCCESS)
   }
 
   func wait() -> Bool
@@ -247,13 +245,14 @@ final public class ChannelSemaphore
 
     if semp == 0 { initSemaphorePort() }
 
-    var kr = KERN_ABORTED
-    while kr == KERN_ABORTED
+    while true
     {
-      kr = semaphore_wait(semp)
+      switch semaphore_wait(semp)
+      {
+      case KERN_ABORTED: continue
+      case KERN_SUCCESS: return true
+      default: preconditionFailure("Bad reply from semaphore_wait() in \(__FUNCTION__)")
+      }
     }
-    assert(kr == KERN_SUCCESS, __FUNCTION__)
-
-    return kr == KERN_SUCCESS
   }
 }
