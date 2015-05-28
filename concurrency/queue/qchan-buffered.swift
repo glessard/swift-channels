@@ -418,7 +418,7 @@ final class QBufferedChan<T>: Chan<T>
   override func selectPutNow(selection: Selection) -> Selection?
   {
     OSSpinLockLock(&lock)
-    if !closed && (nextput &- head) >= capacity
+    if !closed && (nextput &- head) < capacity // not full
     {
       nextput = nextput &+ 1
       OSSpinLockUnlock(&lock)
@@ -431,10 +431,10 @@ final class QBufferedChan<T>: Chan<T>
   override func insert(selection: Selection, newElement: T) -> Bool
   {
     OSSpinLockLock(&lock)
-    if !closed && (nextput &- head) >= capacity
+    if !closed && (tail &- head) < capacity // not full
     {
       buffer.advancedBy(tail&mask).initialize(newElement)
-      tail += 1
+      tail = tail &+ 1
 
       while let reader = readerQueue.dequeue()
       {
