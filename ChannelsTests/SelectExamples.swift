@@ -104,7 +104,8 @@ class SelectExamples: XCTestCase
 
   func testSendsAndReceives()
   {
-    let c: (tx: Sender<Int>, rx: Receiver<Int>) = Channel<Int>.Make(5)
+    let capacity = 5
+    let c: (tx: Sender<Int>, rx: Receiver<Int>) = Channel<Int>.Make(capacity)
 
     var cap = 0
     var count = 0
@@ -119,17 +120,25 @@ class SelectExamples: XCTestCase
           print(++cap)
           if ++count > 30 { c.tx.close() }
         }
-        else { print("F") }
+        else
+        {
+          XCTFail("Attempted to insert into a full channel (probably)")
+        }
 
       case let s where s === c.rx:
         if let v = c.rx.extract(selection)
         {
           print(--cap)
         }
-        else { print("E") }
+        else
+        {
+          XCTFail("Attempted to extract from an empty channel (probably)")
+        }
 
       default: continue
       }
+
+      XCTAssert(cap >= 0 && cap <= capacity)
     }
     println()
   }
