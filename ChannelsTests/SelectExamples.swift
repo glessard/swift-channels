@@ -73,8 +73,7 @@ class SelectExamples: XCTestCase
     let c0: (tx: Sender<Bool>, rx: Receiver<Bool>) = Channel<Bool>.Make(8)
     let c1: (tx: Sender<Bool>, rx: Receiver<Bool>) = Channel<Bool>.Make(8)
 
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 12345),
-                   dispatch_get_global_queue(qos_class_self(), 0)) {
+    dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
       for _ in 0..<8
       {
         if let selection = select(c0.tx, c1.tx)
@@ -87,7 +86,7 @@ class SelectExamples: XCTestCase
           case let s where s === c1.tx:
             c1.tx.insert(selection, newElement: true)
 
-          default: break
+          default: continue
           }
         }
       }
@@ -107,21 +106,27 @@ class SelectExamples: XCTestCase
   {
     let c: (tx: Sender<Int>, rx: Receiver<Int>) = Channel<Int>.Make(5)
 
-    var i = 0
+    var cap = 0
+    var count = 0
+
     while let selection = select(c.tx, c.rx)
     {
       switch selection.id
       {
       case let s where s === c.tx:
-        c.tx.insert(selection, newElement: i++)
-        print("s")
-        if i > 30 { c.tx.close() }
+        if c.tx.insert(selection, newElement: count)
+        {
+          print(++cap)
+          if ++count > 30 { c.tx.close() }
+        }
+        else { print("F") }
 
       case let s where s === c.rx:
         if let v = c.rx.extract(selection)
         {
-          print("r")
+          print(--cap)
         }
+        else { print("E") }
 
       default: continue
       }
