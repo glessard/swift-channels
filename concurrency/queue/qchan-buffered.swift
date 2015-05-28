@@ -63,7 +63,7 @@ final class QBufferedChan<T>: Chan<T>
 
   deinit
   {
-    while tail &- head > 0
+    while (tail &- head) > 0
     {
       buffer.advancedBy(head&mask).destroy()
       head = head &+ 1
@@ -361,7 +361,7 @@ final class QBufferedChan<T>: Chan<T>
     }
     else
     {
-      assert(closed, __FUNCTION__)
+      precondition(closed, __FUNCTION__)
       while let writer = writerQueue.dequeue()
       {
         switch writer.sem.state
@@ -418,10 +418,10 @@ final class QBufferedChan<T>: Chan<T>
   override func insert(selection: Selection, newElement: T) -> Bool
   {
     OSSpinLockLock(&lock)
-    if !closed && (nextput &- head) >= capacity
+    if !closed && (tail &- head) < capacity // not full
     {
       buffer.advancedBy(tail&mask).initialize(newElement)
-      tail += 1
+      tail = tail &+ 1
 
       while let reader = readerQueue.dequeue()
       {
@@ -616,7 +616,7 @@ final class QBufferedChan<T>: Chan<T>
     }
     else
     {
-      assert(closed, __FUNCTION__)
+      precondition(closed, __FUNCTION__)
       OSSpinLockUnlock(&lock)
       return nil
     }
