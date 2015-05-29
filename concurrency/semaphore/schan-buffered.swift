@@ -199,16 +199,19 @@ final class SBufferedChan<T>: Chan<T>
   override func selectPut(select: ChannelSemaphore, selection: Selection)
   {
     empty.notify {
-//      [unowned self] in
+      [weak self] in
 
-      if select.setState(.Select)
+      if let this = self
       {
-        select.selection = selection
-        select.signal()
-      }
-      else
-      { // let another writer through
-        self.empty.signal()
+        if select.setState(.Select)
+        {
+          select.selection = selection
+          select.signal()
+        }
+        else
+        { // let another writer through
+          this.empty.signal()
+        }
       }
     }
   }
@@ -236,16 +239,19 @@ final class SBufferedChan<T>: Chan<T>
   override func selectGet(select: ChannelSemaphore, selection: Selection)
   {
     filled.notify {
-//      [unowned self] in
+      [weak self] in
 
-      if select.setState(.Select)
+      if let this = self
       {
-        select.selection = selection
-        select.signal()
-      }
-      else
-      { // let another reader through
-        self.filled.signal()
+        if select.setState(.Select)
+        {
+          select.selection = selection
+          select.signal()
+        }
+        else
+        { // let another reader through
+          this.filled.signal()
+        }
       }
     }
   }
