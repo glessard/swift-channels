@@ -19,8 +19,7 @@ struct SChanSemaphore
   var svalue: Int32
   private var semp = semaphore_t()
 
-  private var lock = OS_SPINLOCK_INIT
-  private let waiters = FastQueue<WaitType>()
+  private let waiters = Fast2LockQueue<WaitType>()
 
   init(value: Int)
   {
@@ -65,11 +64,9 @@ struct SChanSemaphore
 
   mutating func signal() -> Bool
   {
-    OSSpinLockLock(&lock)
     switch OSAtomicIncrement32Barrier(&svalue)
     {
     case let v where v > 0:
-      OSSpinLockUnlock(&lock)
       return false
 
     case Int32.min:
@@ -78,44 +75,38 @@ struct SChanSemaphore
     default: break
     }
 
-    if let waiter = waiters.dequeue()
+    while true
     {
-      OSSpinLockUnlock(&lock)
-      switch waiter
+      if let waiter = waiters.dequeue()
       {
-      case .Wait:
-        while semp == 0
-        { // if svalue was previously less than zero, there must be a wait() call
-          // currently in the process of initializing semp.
-          usleep(1)
-          OSMemoryBarrier()
-        }
-        return semaphore_signal(semp) == KERN_SUCCESS
+        switch waiter
+        {
+        case .Wait:
+          while semp == 0
+          { // if svalue was previously less than zero, there must be a wait() call
+            // currently in the process of initializing semp.
+            usleep(1)
+            OSMemoryBarrier()
+          }
+          return semaphore_signal(semp) == KERN_SUCCESS
 
-      case .Notify(let block):
-        dispatch_async(dispatch_get_global_queue(qos_class_self(), 0), block)
-        return true
+        case .Notify(let block):
+          dispatch_async(dispatch_get_global_queue(qos_class_self(), 0), block)
+          return true
+        }
       }
-    }
-    else
-    {
-      OSSpinLockUnlock(&lock)
-      assertionFailure("Missing waiter in \(__FUNCTION__)")
-      return false
+      OSMemoryBarrier()
     }
   }
 
   mutating func wait() -> Bool
   {
-    OSSpinLockLock(&lock)
     if OSAtomicDecrement32Barrier(&svalue) >= 0
     {
-      OSSpinLockUnlock(&lock)
       return true
     }
 
     waiters.enqueue(.Wait)
-    OSSpinLockUnlock(&lock)
 
     if semp == 0 { initSemaphorePort() }
 
@@ -132,16 +123,13 @@ struct SChanSemaphore
 
   mutating func notify(block: () -> ())
   {
-    OSSpinLockLock(&lock)
     if OSAtomicDecrement32Barrier(&svalue) >= 0
     {
-      OSSpinLockUnlock(&lock)
       block()
     }
     else
     {
       waiters.enqueue(.Notify(block))
-      OSSpinLockUnlock(&lock)
     }
   }
 }
