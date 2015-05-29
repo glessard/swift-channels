@@ -242,6 +242,16 @@ class SelectSChanBufferedTests: SelectUnbufferedTests
     return (0..<selectableCount).map { _ in SChan<Int>.Make(1) }
   }
 
+  override func testPerformanceSelectReceiver()
+  {
+    XCTFail("Runs out of threads")
+  }
+
+  override func testPerformanceDoubleSelect()
+  {
+    XCTFail("Runs out of threads")
+  }
+
   override func testSelectReceiverWithSleep()
   {
     sleepCase = true
