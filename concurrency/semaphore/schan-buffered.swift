@@ -29,9 +29,6 @@ final class SBufferedChan<T>: Chan<T>
   private var filled: SChanSemaphore
   private var empty:  SChanSemaphore
 
-  private var wlock = OS_SPINLOCK_INIT
-  private var rlock = OS_SPINLOCK_INIT
-
   private var closed = 0
 
   // Used to elucidate/troubleshoot message arrival order
@@ -68,8 +65,8 @@ final class SBufferedChan<T>: Chan<T>
   {
     while (tail &- head) > 0
     {
+      OSAtomicIncrementLongBarrier(&head)
       buffer.advancedBy(head&mask).destroy()
-      head = head &+ 1
       empty.signal()
     }
     buffer.dealloc(mask+1)
@@ -130,20 +127,17 @@ final class SBufferedChan<T>: Chan<T>
     if closed != 0 { return false }
 
     empty.wait()
-    OSSpinLockLock(&wlock)
 
     if closed == 0
     {
-      buffer.advancedBy(tail&mask).initialize(newElement)
-      tail = tail &+ 1
+      let newtail = OSAtomicIncrementLongBarrier(&tail)
+      buffer.advancedBy(newtail&mask).initialize(newElement)
 
-      OSSpinLockUnlock(&wlock)
       filled.signal()
       return true
     }
     else
     {
-      OSSpinLockUnlock(&wlock)
       empty.signal()
       return false
     }
@@ -163,21 +157,19 @@ final class SBufferedChan<T>: Chan<T>
     if closed != 0 && (tail &- head) <= 0 { return nil }
 
     filled.wait()
-    OSSpinLockLock(&rlock)
 
-    if (tail &- head) > 0
+    let newhead = OSAtomicIncrementLongBarrier(&head)
+    if (tail &- newhead) >= 0
     {
-      let element = buffer.advancedBy(head&mask).move()
-      head = head &+ 1
+      let element = buffer.advancedBy(newhead&mask).move()
 
-      OSSpinLockUnlock(&rlock)
       empty.signal()
       return element
     }
     else
     {
       precondition(closed != 0, __FUNCTION__)
-      OSSpinLockUnlock(&rlock)
+      OSAtomicDecrementLongBarrier(&head)
       filled.signal()
       return nil
     }
@@ -188,19 +180,17 @@ final class SBufferedChan<T>: Chan<T>
   override func insert(selection: Selection, newElement: T) -> Bool
   {
     // the `empty` semaphore has already been decremented for this operation.
-    OSSpinLockLock(&wlock)
-    if closed == 0 && (tail &- head) < capacity
+    let newtail = OSAtomicIncrementLongBarrier(&tail)
+    if closed == 0 && newtail &- head <= capacity
     {
-      buffer.advancedBy(tail&mask).initialize(newElement)
-      tail = tail &+ 1
+      buffer.advancedBy(newtail&mask).initialize(newElement)
 
-      OSSpinLockUnlock(&wlock)
       filled.signal()
       return true
     }
     else
     {
-      OSSpinLockUnlock(&wlock)
+      OSAtomicDecrementLongBarrier(&tail)
       empty.signal()
       return false
     }
@@ -226,20 +216,18 @@ final class SBufferedChan<T>: Chan<T>
   override func extract(selection: Selection) -> T?
   {
     // the `filled` semaphore has already been decremented for this operation.
-    OSSpinLockLock(&rlock)
-    if (tail &- head) > 0
+    let newhead = OSAtomicIncrementLongBarrier(&head)
+    if (tail &- newhead) >= 0
     {
-      let element = buffer.advancedBy(head&mask).move()
-      head = head &+ 1
+      let element = buffer.advancedBy(newhead&mask).move()
 
-      OSSpinLockUnlock(&rlock)
       empty.signal()
       return element
     }
     else
     {
       precondition(closed != 0, __FUNCTION__)
-      OSSpinLockUnlock(&rlock)
+      OSAtomicDecrementLongBarrier(&head)
       filled.signal()
       return nil
     }
@@ -261,4 +249,22 @@ final class SBufferedChan<T>: Chan<T>
       }
     }
   }
+}
+
+@inline(__always) private func OSAtomicIncrementLongBarrier(pointer: UnsafeMutablePointer<Int>) -> Int
+{
+  #if arch(x86_64) || arch(arm64) // 64-bit architecture
+    return Int(OSAtomicIncrement64Barrier(UnsafeMutablePointer<Int64>(pointer)))
+  #else // 32-bit architecture
+    return Int(OSAtomicIncrement32Barrier(UnsafeMutablePointer<Int32>(pointer)))
+  #endif
+}
+
+@inline(__always) private func OSAtomicDecrementLongBarrier(pointer: UnsafeMutablePointer<Int>) -> Int
+{
+  #if arch(x86_64) || arch(arm64) // 64-bit architecture
+    return Int(OSAtomicDecrement64Barrier(UnsafeMutablePointer<Int64>(pointer)))
+  #else // 32-bit architecture
+    return Int(OSAtomicDecrement32Barrier(UnsafeMutablePointer<Int32>(pointer)))
+  #endif
 }
