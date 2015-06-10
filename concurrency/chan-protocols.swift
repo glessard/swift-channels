@@ -34,10 +34,13 @@ public protocol ReceiverType: BasicChannelType, GeneratorType, SequenceType
   */
 
   func receive() -> ReceivedElement?
+}
 
+public extension ReceiverType
+{
   /**
     Return the next element from the channel.
-    This should be an alias for ReceivingChannel.receive() and will fulfill the GeneratorType protocol.
+    This is an alias for ReceivingChannel.receive() and will fulfill the GeneratorType protocol.
 
     If the channel is empty, this call will block.
     If the channel is empty and closed, this will return nil.
@@ -45,7 +48,10 @@ public protocol ReceiverType: BasicChannelType, GeneratorType, SequenceType
     - returns: the oldest element from the channel.
   */
 
-  func next() -> ReceivedElement?
+  public func next() -> ReceivedElement?
+  {
+    return receive()
+  }
 
   /**
     Return self as a GeneratorType.
@@ -54,7 +60,21 @@ public protocol ReceiverType: BasicChannelType, GeneratorType, SequenceType
     - returns: an implementor of GeneratorType to iterate along the channel's elements.
   */
 
-  func generate() -> Self
+  public func generate() -> Self
+  {
+    return self
+  }
+
+  /**
+    Return a value less than or equal to the number of elements in self, nondestructively.
+    In other words: return 0 if channel is empty, 1 otherwise.
+    Complexity: 0(1)
+  */
+
+  public func underestimateCount() -> Int
+  {
+    return isEmpty ? 0 : 1
+  }
 }
 
 /**
@@ -90,6 +110,8 @@ public protocol SenderType: BasicChannelType
 /**
   Interface that any channel needs. Not useful by itself.
 */
+
+// MARK: BasicChannelType
 
 public protocol BasicChannelType
 {

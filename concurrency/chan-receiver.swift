@@ -10,7 +10,7 @@
   Receiver<T> is the receiving endpoint for a ChannelType.
 */
 
-public struct Receiver<T>: ReceiverType, GeneratorType, SequenceType
+public struct Receiver<T>: ReceiverType
 {
   private let wrapped: Chan<T>
 
@@ -33,26 +33,6 @@ public struct Receiver<T>: ReceiverType, GeneratorType, SequenceType
   public func receive() -> T?
   {
     return wrapped.get()
-  }
-
-  // MARK: GeneratorType implementation
-
-  /**
-    If all elements are exhausted, return `nil`.  Otherwise, advance
-    to the next element and return it.
-    This is a synonym for receive()
-  */
-
-  public func next() -> T?
-  {
-    return wrapped.get()
-  }
-
-  // MARK: SequenceType implementation
-
-  public func generate() -> Receiver
-  {
-    return self
   }
 }
 
