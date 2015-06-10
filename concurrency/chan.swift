@@ -55,9 +55,10 @@ public class Chan<T>: ChannelType
     Put a new element in the channel
   
     If the channel is full, this call will block.
-    If the channel has been closed, no action will be taken.
+    If the channel has been closed, no action will be taken (apart from returning false).
 
     - parameter element: the new element to be added to the channel.
+    - returns: whether or not the operation was successful.
   */
 
   public func put(newElement: T) -> Bool
@@ -71,7 +72,7 @@ public class Chan<T>: ChannelType
     If the channel is empty and closed, this will return nil.
     If the channel is empty (but not closed), this call will block.
 
-    :return: the oldest element from the channel.
+    - returns: the oldest element from the channel.
   */
 
   public func get() -> T?
@@ -88,7 +89,7 @@ public class Chan<T>: ChannelType
 
     - parameter capacity: the buffer capacity of the channel.
 
-    :return: a newly-created, empty Chan<T>
+    - returns: a newly-created, empty Chan<T>
   */
 
   public class func Make(capacity: Int) -> Chan<T>
@@ -106,7 +107,7 @@ public class Chan<T>: ChannelType
   /**
     Factory function to obtain a new, unbuffered Chan<T> object (channel capacity = 0).
 
-    :return: a newly-created, empty Chan<T>
+    - returns: a newly-created, empty Chan<T>
   */
 
   public class func Make() -> Chan<T>
@@ -120,7 +121,7 @@ public class Chan<T>: ChannelType
     - parameter type: a sample object whose type will be used for the channel's element type. The object is not retained.
     - parameter capacity: the buffer capacity of the channel. Default is 0, meaning an unbuffered channel.
 
-    :return: a newly-created, empty Chan<T>
+    - returns: a newly-created, empty Chan<T>
   */
 
   public class func Make(typeOf typeOf: T, _ capacity: Int = 0) -> Chan<T>

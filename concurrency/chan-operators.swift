@@ -53,9 +53,9 @@ prefix operator <- {}
   
   If ReceiverType 'r' were passed as inout, this would be slightly faster (~15ns)
 
-  - parameter  r: a ReceiverType
+  - parameter r: a ReceiverType
 
-  :return: the oldest element from the channel
+  - returns: the oldest element from the channel
 */
 
 public prefix func <-<C: ReceiverType>(r: C) -> C.ReceivedElement?

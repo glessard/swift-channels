@@ -17,7 +17,7 @@ import Dispatch
 
   - parameter channels: an array of Receivers to merge.
 
-  :return: a single Receiver provide access to get every message received by the input Receivers.
+  - returns: a single Receiver provide access to get every message received by the input Receivers.
 */
 
 public func merge<R: ReceiverType>(channels: [R]) -> Receiver<R.ReceivedElement>
@@ -56,7 +56,7 @@ public func merge<R: ReceiverType>(channels: R...) -> Receiver<R.ReceivedElement
 
   - parameter channels: an array of Receivers to merge.
 
-  :return: a single Receiver provide access to get every message received by the input Receivers.
+  - returns: a single Receiver provide access to get every message received by the input Receivers.
 */
 
 public func mergeGroup<R: ReceiverType>(channels: [R]) -> Receiver<R.ReceivedElement>
@@ -97,7 +97,7 @@ public func mergeGroup<R: ReceiverType>(channels: R...) -> Receiver<R.ReceivedEl
 
   - parameter channels: an array of Receivers to merge.
 
-  :return: a single Receiver provide access to get every message received by the input Receivers.
+  - returns: a single Receiver provide access to get every message received by the input Receivers.
 */
 
 public func mergeRR<R: ReceiverType>(channels: [R]) -> Receiver<R.ReceivedElement>

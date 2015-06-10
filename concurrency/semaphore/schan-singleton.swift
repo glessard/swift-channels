@@ -106,7 +106,7 @@ final class SingletonChan<T>: Chan<T>
     If the channel is empty, this call will block.
     If the channel is empty and closed, this will return nil.
 
-    :return: the element transmitted through the channel.
+    - returns: the element transmitted through the channel.
   */
 
   override func get() -> T?

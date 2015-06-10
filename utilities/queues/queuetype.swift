@@ -45,7 +45,7 @@ protocol QueueType
   /**
     Return the oldest element from the queue, or nil if the queue is empty.
 
-    :return: an element, or nil
+    - returns: an element, or nil
   */
 
   func dequeue() -> Element?

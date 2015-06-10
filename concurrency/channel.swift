@@ -16,7 +16,7 @@ public class Channel<T>
     Factory function to obtain a new, unbuffered Chan<T> object (channel capacity = 0),
     wrapped by a Sender<T>/Receiver<T> pair.
 
-    :return: a newly-created, empty Sender<T>/Receiver<T> pair.
+    - returns: a newly-created, empty Sender<T>/Receiver<T> pair.
   */
 
   public class func Make() -> (tx: Sender<T>, rx: Receiver<T>)
@@ -29,7 +29,7 @@ public class Channel<T>
 
     - parameter capacity: the buffer capacity of the channel. If capacity is 0, an unbuffered channel will be created.
   
-    :return: a newly-created, empty Sender<T>/Receiver<T> pair.
+    - returns: a newly-created, empty Sender<T>/Receiver<T> pair.
   */
 
   public class func Make(capacity: Int) -> (tx: Sender<T>, rx: Receiver<T>)
@@ -45,7 +45,7 @@ public class Channel<T>
   /**
     Factory function to obtain a single-message channel, wrapped by a Sender<T>/Receiver<T> pair.
 
-    :return: a newly-created, empty Sender<T>/Receiver<T> pair.
+    - returns: a newly-created, empty Sender<T>/Receiver<T> pair.
   */
 
   public class func MakeSingleton() -> (tx: Sender<T>, rx: Receiver<T>)
@@ -61,9 +61,9 @@ public class Channel<T>
   /**
     Factory function to obtain a single-message channel, wrapped by a Sender<T>/Receiver<T> pair.
 
-    - parameter  element: the element to be used as the channel's one and only message.
+    - parameter element: the element to be used as the channel's one and only message.
 
-    :return: a newly-created, empty Sender<T>/Receiver<T> pair.
+    - returns: a newly-created, empty Sender<T>/Receiver<T> pair.
   */
 
   public class func MakeSingleton(element: T) -> (tx: Sender<T>, rx: Receiver<T>)
@@ -74,9 +74,9 @@ public class Channel<T>
   /**
     Wrap a Chan<T> in a Sender<T>/Receiver<T> pair.
 
-    - parameter  c: the Chan<T>
+    - parameter c: the Chan<T>
 
-    :return: a new Sender<T>/Receiver<T> pair.
+    - returns: a new Sender<T>/Receiver<T> pair.
   */
 
   public class func Wrap(c: Chan<T>) -> (tx: Sender<T>, rx: Receiver<T>)
@@ -87,9 +87,9 @@ public class Channel<T>
   /**
     Wrap a ChannelType in a Sender/Receiver pair.
 
-    - parameter  c: the ChannelType object
+    - parameter c: the ChannelType object
 
-    :return: a new Sender/Receiver pair.
+    - returns: a new Sender/Receiver pair.
   */
 
   class func Wrap<C: ChannelType where C.Element == T>(c: C) -> (tx: Sender<T>, rx: Receiver<T>)

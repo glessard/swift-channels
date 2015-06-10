@@ -19,7 +19,7 @@ public class SChan<T>
 
     - parameter capacity:   the buffer capacity of the channel.
 
-    :return: a newly-created, empty Chan<T>
+    - returns: a newly-created, empty Chan<T>
   */
 
   public class func Make(capacity: Int) -> Chan<T>
@@ -31,7 +31,7 @@ public class SChan<T>
   /**
     Factory method to obtain a (buffered) single-message channel.
 
-    :return: a newly-created, empty Chan<T>
+    - returns: a newly-created, empty Chan<T>
   */
 
   public class func MakeSingleton() -> Chan<T>

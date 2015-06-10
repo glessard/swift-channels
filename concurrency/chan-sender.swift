@@ -62,7 +62,7 @@ extension Sender
     Return a new Sender<T> to act as the sending endpoint for a Chan<T>.
 
     - parameter c: A Chan<T> object
-    :return:  A Sender<T> object that will send elements to the Chan<T>
+    - returns:  A Sender<T> object that will send elements to the Chan<T>
   */
 
   public static func Wrap(c: Chan<T>) -> Sender<T>
@@ -74,7 +74,7 @@ extension Sender
     Return a new Sender<T> to act as the sending enpoint for a ChannelType
 
     - parameter c: An object that implements ChannelType
-    :return:  A Sender<T> object that will send elements to c
+    - returns:  A Sender<T> object that will send elements to c
   */
 
   static func Wrap<C: ChannelType where C.Element == T>(c: C) -> Sender<T>
@@ -94,7 +94,7 @@ extension Sender
     If c is any other kind of SenderType, it will be wrapped in a type-hidden way.
 
     - parameter c: A SenderType implementor to be wrapped by a Sender object.
-    :return:  A Sender object that will pass along the elements to c.
+    - returns:  A Sender object that will pass along the elements to c.
   */
 
   public static func Wrap<C: SenderType where C.SentElement == T>(c: C) -> Sender<T>

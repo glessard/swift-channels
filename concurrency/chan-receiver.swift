@@ -64,9 +64,9 @@ public struct Receiver<T>: ReceiverType, GeneratorType, SequenceType
 
   This is the equivalent of Receiver<T>.receive() -> T?
 
-  - parameter  r: a ReceiverType
+  - parameter r: a Receiver
 
-  :return: the oldest element from the channel
+  - returns: the oldest element from the channel, or nil
 */
 
 public prefix func <-<T>(r: Receiver<T>) -> T?
@@ -82,7 +82,7 @@ extension Receiver
     Return a new Receiver<T> to act as the receiving endpoint for a Chan<T>.
 
     - parameter c: A Chan<T> object
-    :return:  A Receiver<T> object that will receive elements from the Chan<T>
+    - returns:  A Receiver<T> object that will receive elements from the Chan<T>
   */
 
   public static func Wrap(c: Chan<T>) -> Receiver<T>
@@ -94,7 +94,7 @@ extension Receiver
     Return a new Receiver<T> to act as the receiving endpoint for a ChannelType.
 
     - parameter c: An object that implements ChannelType
-    :return:  A Receiver<T> object that will receive elements from the ChannelType
+    - returns:  A Receiver<T> object that will receive elements from the ChannelType
   */
 
   static func Wrap<C: ChannelType where C.Element == T>(c: C) -> Receiver<T>
@@ -116,7 +116,7 @@ extension Receiver
     wrapped in a new Receiver.
 
     - parameter c: An object that implements ReceiverType.
-    :return:  A Receiver object that will pass along the elements from c.
+    - returns:  A Receiver object that will pass along the elements from c.
   */
 
   public static func Wrap<C: ReceiverType where C.ReceivedElement == T>(c: C) -> Receiver<T>

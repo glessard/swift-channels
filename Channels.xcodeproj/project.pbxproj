@@ -15,8 +15,6 @@
 		033912031ABD3DC000F4B44B /* ChannelsExamples.swift in Sources */ = {isa = PBXBuildFile; fileRef = 033912021ABD3DC000F4B44B /* ChannelsExamples.swift */; };
 		035B606A1A67433800F4B44B /* Channels.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 035B605E1A67433800F4B44B /* Channels.framework */; };
 		035B60711A67433800F4B44B /* ChannelsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035B60701A67433800F4B44B /* ChannelsTests.swift */; };
-		035EAA581B280AAA00F4B44B /* PChanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47521A6744DA00F4B44B /* PChanTests.swift */; };
-		035EAA591B280AAA00F4B44B /* QChanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47531A6744DA00F4B44B /* QChanTests.swift */; };
 		035EAA5A1B280AB800F4B44B /* pchan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47131A6743E500F4B44B /* pchan.swift */; };
 		035EAA5B1B280AB800F4B44B /* pchan-buffered1.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47101A6743E500F4B44B /* pchan-buffered1.swift */; };
 		035EAA5C1B280AB800F4B44B /* pchan-bufferedN-buffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47121A6743E500F4B44B /* pchan-bufferedN-buffer.swift */; };
@@ -557,7 +555,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				035EAA581B280AAA00F4B44B /* PChanTests.swift in Sources */,
 				03AD474D1A67447B00F4B44B /* BufferedChannelTests.swift in Sources */,
 				03AD47C01A689E0900F4B44B /* MergeTest.swift in Sources */,
 				03AD47511A67448400F4B44B /* UnbufferedChannelTests.swift in Sources */,
@@ -566,7 +563,6 @@
 				033912031ABD3DC000F4B44B /* ChannelsExamples.swift in Sources */,
 				035B60711A67433800F4B44B /* ChannelsTests.swift in Sources */,
 				0336B9B51ABB1BF700F4B44B /* async.swift in Sources */,
-				035EAA591B280AAA00F4B44B /* QChanTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

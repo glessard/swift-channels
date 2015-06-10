@@ -24,7 +24,7 @@ public class PChan<T>
     :param: capacity   the buffer capacity of the channel.
     :param: bufferType which kind of backing store should the channel use.
 
-    :return: a newly-created, empty Chan<T>
+    - returns: a newly-created, empty Chan<T>
   */
 
   public class func Make(capacity: Int, bufferType: PChanBufferType = .Buffer) -> Chan<T>

@@ -150,7 +150,7 @@ final class QUnbufferedChan<T>: Chan<T>
     If the channel is empty, this call will block.
     If the channel is empty and closed, this will return nil.
 
-    :return: the oldest element from the channel.
+    - returns: the oldest element from the channel.
   */
 
   override func get() -> T?
