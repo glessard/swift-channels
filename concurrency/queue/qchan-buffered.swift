@@ -123,8 +123,8 @@ final class QBufferedChan<T>: Chan<T>
     The new semaphore is enqueued to readerQueue or writerQueue, and
     will be used as a signal to resume the thread at a later time.
 
-    :param: lock a semaphore that is currently held by the calling thread.
-    :param: queue the queue to which the signal should be appended
+    - parameter lock: a semaphore that is currently held by the calling thread.
+    - parameter queue: the queue to which the signal should be appended
   */
 
   private func wait(queue: FastQueue<ChannelSemaphore>)
@@ -145,7 +145,7 @@ final class QBufferedChan<T>: Chan<T>
     If no reader is waiting, this call will block.
     If the channel has been closed, no action will be taken.
 
-    :param: element the new element to be added to the channel.
+    - parameter element: the new element to be added to the channel.
   */
 
   override func put(newElement: T) -> Bool

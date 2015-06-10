@@ -12,7 +12,7 @@ public class QChan<T>
     Factory method to obtain queue-based channels of the desired channel capacity.
     If capacity is 0, then an unbuffered channel will be created.
 
-    :param: capacity   the buffer capacity of the channel.
+    - parameter capacity:   the buffer capacity of the channel.
 
     :return: a newly-created, empty Chan<T>
   */

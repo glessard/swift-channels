@@ -10,7 +10,7 @@ import Darwin
 import Foundation
 import XCTest
 
-import Channels
+@testable import Channels
 
 class MergeTests: XCTestCase
 {
@@ -21,9 +21,9 @@ class MergeTests: XCTestCase
   {
     self.measureBlock() {
       var chans = [Receiver<Int>]()
-      for i in 0..<self.outerloopcount
+      for _ in 0..<self.outerloopcount
       {
-        var (tx, rx) = Channel<Int>.Make(self.innerloopcount)
+        let (tx, rx) = Channel<Int>.Make(self.innerloopcount)
         async {
           for j in 1...self.innerloopcount { tx <- j }
           tx.close()
@@ -47,9 +47,9 @@ class MergeTests: XCTestCase
   {
     self.measureBlock() {
       var chans = [Receiver<Int>]()
-      for i in 0..<self.outerloopcount
+      for _ in 0..<self.outerloopcount
       {
-        var (tx, rx) = Channel<Int>.Make(self.innerloopcount)
+        let (tx, rx) = Channel<Int>.Make(self.innerloopcount)
         async {
           for j in 1...self.innerloopcount { tx <- j }
           tx.close()
@@ -73,9 +73,9 @@ class MergeTests: XCTestCase
   {
     self.measureBlock() {
       var chans = [Receiver<Int>]()
-      for i in 0..<self.outerloopcount
+      for _ in 0..<self.outerloopcount
       {
-        var (tx, rx) = Channel<Int>.Make(self.innerloopcount)
+        let (tx, rx) = Channel<Int>.Make(self.innerloopcount)
         async {
           for j in 1...self.innerloopcount { tx <- j }
           tx.close()
@@ -99,9 +99,9 @@ class MergeTests: XCTestCase
   {
     self.measureBlock() {
       var chans = [Receiver<Int>]()
-      for i in 0..<self.outerloopcount
+      for _ in 0..<self.outerloopcount
       {
-        var (tx, rx) = Channel<Int>.Make(0)
+        let (tx, rx) = Channel<Int>.Make(0)
         async {
           for j in 1...self.innerloopcount { tx <- j }
           tx.close()
@@ -125,9 +125,9 @@ class MergeTests: XCTestCase
   {
     self.measureBlock() {
       var chans = [Receiver<Int>]()
-      for i in 0..<self.outerloopcount
+      for _ in 0..<self.outerloopcount
       {
-        var (tx, rx) = Channel<Int>.Make(0)
+        let (tx, rx) = Channel<Int>.Make(0)
         async {
           for j in 1...self.innerloopcount { tx <- j }
           tx.close()
@@ -151,9 +151,9 @@ class MergeTests: XCTestCase
   {
     self.measureBlock() {
       var chans = [Receiver<Int>]()
-      for i in 0..<self.outerloopcount
+      for _ in 0..<self.outerloopcount
       {
-        var (tx, rx) = Channel<Int>.Make(0)
+        let (tx, rx) = Channel<Int>.Make(0)
         async {
           for j in 1...self.innerloopcount { tx <- j }
           tx.close()

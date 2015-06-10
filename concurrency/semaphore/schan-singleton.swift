@@ -39,21 +39,15 @@ final class SingletonChan<T>: Chan<T>
   convenience init(_ element: T)
   {
     self.init()
-    self.element = element
-    close()
+    self.put(element)
+    self.close()
   }
 
   // MARK: Property accessors
 
-  final override var isEmpty: Bool
-  {
-    return element == nil
-  }
+  final override var isEmpty: Bool { return element == nil }
 
-  final override var isFull: Bool
-  {
-    return element != nil
-  }
+  final override var isFull: Bool { return element != nil }
 
   /**
     Determine whether the channel has been closed
@@ -90,7 +84,7 @@ final class SingletonChan<T>: Chan<T>
     The first successful send will close the channel; further
     send operations will have no effect.
 
-    :param: element the new element to be added to the channel.
+    - parameter element: the new element to be added to the channel.
   */
 
   override func put(newElement: T) -> Bool
@@ -98,7 +92,7 @@ final class SingletonChan<T>: Chan<T>
     if writerCount == 0 && closedState == 0 && OSAtomicCompareAndSwap32Barrier(0, 1, &writerCount)
     { // Only one thread can get here
       element = newElement
-      close() // also increments the 'barrier' semaphore
+      self.close() // also increments the 'barrier' semaphore
       return true
     }
 

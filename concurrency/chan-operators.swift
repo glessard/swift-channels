@@ -27,8 +27,8 @@ infix operator <- { associativity left precedence 90}
 
   The SenderType 's' were passed as inout, this would be slgihtly faster (~15ns)
 
-  :param: s a SenderType
-  :param: element the new element to be added to the channel.
+  - parameter s: a SenderType
+  - parameter element: the new element to be added to the channel.
 */
 
 public func <-<C: SenderType>(s: C, element: C.SentElement)
@@ -53,7 +53,7 @@ prefix operator <- {}
   
   If ReceiverType 'r' were passed as inout, this would be slightly faster (~15ns)
 
-  :param:  r a ReceiverType
+  - parameter  r: a ReceiverType
 
   :return: the oldest element from the channel
 */

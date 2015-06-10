@@ -15,7 +15,7 @@ import Dispatch
   This function uses a multithreaded approach to merging channels.
   The system could run out of threads if the length of the input array is too large.
 
-  :param: channels an array of Receivers to merge.
+  - parameter channels: an array of Receivers to merge.
 
   :return: a single Receiver provide access to get every message received by the input Receivers.
 */
@@ -54,7 +54,7 @@ public func merge<R: ReceiverType>(channels: R...) -> Receiver<R.ReceivedElement
   mergeGroup() works the same way as merge(), but is implemented slightly differently.
   It uses one fewer simultaneous thread, but is otherwise slightly slower.
 
-  :param: channels an array of Receivers to merge.
+  - parameter channels: an array of Receivers to merge.
 
   :return: a single Receiver provide access to get every message received by the input Receivers.
 */
@@ -95,7 +95,7 @@ public func mergeGroup<R: ReceiverType>(channels: R...) -> Receiver<R.ReceivedEl
   This being said, the number of threads used is small. If the incoming data is a flood
   through unbuffered channels, this is probably the better bet. Otherwise use merge()
 
-  :param: channels an array of Receivers to merge.
+  - parameter channels: an array of Receivers to merge.
 
   :return: a single Receiver provide access to get every message received by the input Receivers.
 */

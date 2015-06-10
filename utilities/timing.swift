@@ -13,7 +13,7 @@ import AppKit.AppKitDefines
   A struct whose purpose is to pretty-print short durations of time.
 */
 
-public struct Interval: Printable
+public struct Interval: CustomStringConvertible
 {
   var ns: Int64
 
@@ -74,7 +74,7 @@ func / (dt: Interval, n: Int) -> Interval
   Timing-related utility based on mach_absolute_time().
 */
 
-public struct Time: Printable
+public struct Time: CustomStringConvertible
 {
   private let t: Int64
 
@@ -161,18 +161,17 @@ extension Time
     }
   }
 
-  public static func Wait(#ms: Int)
+  public static func Wait(ms: Int)
   {
     if ms >= 0
     {
-      var dt = timespec(tv_sec: Int(ms/1000), tv_nsec: Int(ms%1000)*1_000_000)
       Time.Wait(Double(ms)/1000)
     }
   }
 
-  public static func Wait(#ms: UInt32)
+  public static func Wait(ms: UInt32)
   {
-    Time.Wait(ms: Int(ms))
+    Time.Wait(Int(ms))
   }
 
   public static func Wait(seconds: CFTimeInterval)

@@ -9,7 +9,7 @@
 import Darwin
 import XCTest
 
-import Channels
+@testable import Channels
 
 class UnbufferedChannelTests: ChannelsTests
 {

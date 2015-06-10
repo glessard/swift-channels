@@ -11,7 +11,7 @@ import Dispatch
 import Foundation.NSThread
 import XCTest
 
-import Channels
+@testable import Channels
 
 class ChannelsExamples: XCTestCase
 {
@@ -32,7 +32,7 @@ class ChannelsExamples: XCTestCase
 
     while let m = <-receiver
     {
-      println(m)
+      print(m)
     }
   }
 
@@ -45,7 +45,7 @@ class ChannelsExamples: XCTestCase
       sender.close()
     }
 
-    while let m = <-receiver { println(m) }
+    while let m = <-receiver { print(m) }
   }
 
   func testExampleProcessingPipeline()
@@ -59,7 +59,7 @@ class ChannelsExamples: XCTestCase
           NSThread.sleepForTimeInterval(0.01)
           tx <- i
         }
-        println("Closing Int sender")
+        print("Closing Int sender")
         tx.close()
       }
       return rx
@@ -91,6 +91,6 @@ class ChannelsExamples: XCTestCase
       return rx
     }(doubleReceiver)
 
-    while let s = <-stringReceiver { println(s) }
+    while let s = <-stringReceiver { print(s) }
   }
 }

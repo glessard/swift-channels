@@ -120,7 +120,7 @@ final class SBufferedChan<T>: Chan<T>
     If no reader is waiting, this call will block.
     If the channel has been closed, no action will be taken.
 
-    :param: element the new element to be added to the channel.
+    - parameter element: the new element to be added to the channel.
   */
 
   final override func put(newElement: T) -> Bool

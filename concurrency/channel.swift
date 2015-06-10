@@ -27,7 +27,7 @@ public class Channel<T>
   /**
     Factory function to obtain a new Chan<T> object, wrapped by a Sender<T>/Receiver<T> pair.
 
-    :param: capacity the buffer capacity of the channel. If capacity is 0, an unbuffered channel will be created.
+    - parameter capacity: the buffer capacity of the channel. If capacity is 0, an unbuffered channel will be created.
   
     :return: a newly-created, empty Sender<T>/Receiver<T> pair.
   */
@@ -61,7 +61,7 @@ public class Channel<T>
   /**
     Factory function to obtain a single-message channel, wrapped by a Sender<T>/Receiver<T> pair.
 
-    :param:  element the element to be used as the channel's one and only message.
+    - parameter  element: the element to be used as the channel's one and only message.
 
     :return: a newly-created, empty Sender<T>/Receiver<T> pair.
   */
@@ -74,7 +74,7 @@ public class Channel<T>
   /**
     Wrap a Chan<T> in a Sender<T>/Receiver<T> pair.
 
-    :param:  c the Chan<T>
+    - parameter  c: the Chan<T>
 
     :return: a new Sender<T>/Receiver<T> pair.
   */
@@ -87,7 +87,7 @@ public class Channel<T>
   /**
     Wrap a ChannelType in a Sender/Receiver pair.
 
-    :param:  c the ChannelType object
+    - parameter  c: the ChannelType object
 
     :return: a new Sender/Receiver pair.
   */

@@ -21,7 +21,7 @@ protocol QueueType
   /**
     Initialize a queue with an initial element
   
-    :param: newElement the initial element of the new queue
+    - parameter newElement: the initial element of the new queue
   */
 
   init(_ newElement: Element)
@@ -37,7 +37,7 @@ protocol QueueType
   /**
     Add a new element to the queue.
   
-    :param: newElement a new element
+    - parameter newElement: a new element
   */
 
   func enqueue(newElement: Element)

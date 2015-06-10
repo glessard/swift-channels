@@ -14,7 +14,7 @@ import Darwin
 
 func shuffle<C: CollectionType>(c: C) -> PermutationGenerator<C, IndexShuffler<C.Index>>
 {
-  return PermutationGenerator(elements: c, indices: IndexShuffler(indices(c)))
+  return PermutationGenerator(elements: c, indices: IndexShuffler(c.indices))
 }
 
 /**
@@ -41,7 +41,7 @@ struct IndexShuffler<I: ForwardIndexType>: SequenceType, GeneratorType
   init(_ input: Array<I>)
   {
     i = input
-    count = Swift.count(input) as Int
+    count = input.count
   }
 
   mutating func next() -> I?

@@ -64,7 +64,7 @@ public struct Receiver<T>: ReceiverType, GeneratorType, SequenceType
 
   This is the equivalent of Receiver<T>.receive() -> T?
 
-  :param:  r a ReceiverType
+  - parameter  r: a ReceiverType
 
   :return: the oldest element from the channel
 */
@@ -81,7 +81,7 @@ extension Receiver
   /**
     Return a new Receiver<T> to act as the receiving endpoint for a Chan<T>.
 
-    :param: c A Chan<T> object
+    - parameter c: A Chan<T> object
     :return:  A Receiver<T> object that will receive elements from the Chan<T>
   */
 
@@ -93,7 +93,7 @@ extension Receiver
   /**
     Return a new Receiver<T> to act as the receiving endpoint for a ChannelType.
 
-    :param: c An object that implements ChannelType
+    - parameter c: An object that implements ChannelType
     :return:  A Receiver<T> object that will receive elements from the ChannelType
   */
 
@@ -115,7 +115,7 @@ extension Receiver
     If c is any other kind of ReceiverType, c will be type-obscured and
     wrapped in a new Receiver.
 
-    :param: c An object that implements ReceiverType.
+    - parameter c: An object that implements ReceiverType.
     :return:  A Receiver object that will pass along the elements from c.
   */
 

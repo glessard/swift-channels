@@ -80,7 +80,7 @@ public protocol SenderType: BasicChannelType
     If the channel is full, this call will block.
     If the channel has been closed, no action will be taken.
 
-    :param: element the new element to be sent to the channel.
+    - parameter element: the new element to be sent to the channel.
 
     :return: whether newElement was succesfully sent to the channel.
   */
@@ -141,7 +141,7 @@ protocol ChannelType: class, BasicChannelType
     If the channel is full, this call will block.
     If the channel has been closed, no action will be taken.
 
-    :param: element the new element to be added to the channel.
+    - parameter element: the new element to be added to the channel.
 
     :return: whether newElement was succesfully inserted in the channel
   */
