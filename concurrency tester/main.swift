@@ -19,7 +19,7 @@
 import Darwin
 //import Channels
 
-func worker(inputChannel: Receiver<Int>, outputChannel: Sender<(Int,Int,Int)>)
+func worker(inputChannel: Receiver<Int>, _ outputChannel: Sender<(Int,Int,Int)>)
 {
   var messageCount = 0
 
@@ -27,9 +27,9 @@ func worker(inputChannel: Receiver<Int>, outputChannel: Sender<(Int,Int,Int)>)
   while let v = <-inputChannel
   {
     messageCount += 1
-    Time.Wait(ms: 10) //+arc4random_uniform(25))
+    Time.Wait(10) //+arc4random_uniform(25))
     // a "complex" calculation
-    let s = reduce(0...v, 0, +)
+    let s = (0...v).reduce(0, combine: +)
     outputChannel <- (messageCount, v, s)
   }
 
@@ -45,7 +45,7 @@ let workerTimeInterval = 10
 for w in 1...workers
 {
   async {
-    Time.Wait(ms: w*workerTimeInterval)
+    Time.Wait(w*workerTimeInterval)
     worker(workChan.rx, outChan.tx)
   }
 }
@@ -55,7 +55,7 @@ let workElementTimeInterval = 10
 for a in 0..<workElements
 {
   async {
-    Time.Wait(ms: workElementTimeInterval*(a+1))
+    Time.Wait(workElementTimeInterval*(a+1))
     workChan.tx <- a
   }
 }
@@ -65,7 +65,7 @@ for a in 0..<workElements
 var outputArray = [Int?](count: workElements, repeatedValue: nil)
 
 // receive data from channel until it is closed
-for (i,(c,v,s)) in enumerate(outChan.rx)
+for (i,(c,v,s)) in outChan.rx.enumerate()
 {
   outputArray[v] = s
   syncprint(String(format: "%02d: (%02d) %02d %ld", i, c, v, s))
@@ -75,6 +75,6 @@ for (i,(c,v,s)) in enumerate(outChan.rx)
 
 let errors = outputArray.filter { $0 == nil }
 
-Time.Wait(ms: 100)
+Time.Wait(100)
 syncprint("Dropped \(errors.count) elements")
 syncprintwait()

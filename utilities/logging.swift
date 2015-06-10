@@ -36,7 +36,7 @@ public func syncprint<T>(object: T)
     // There is no particularly straightforward way to ensure an atomic read
     if OSAtomicAdd32(0, &silenceOutput) == 0
     {
-      print(object, &message); println(message)
+      print(object, &message, appendNewline: false); print(message)
     }
   }
 }
@@ -53,7 +53,7 @@ public func syncprintwait()
   {
     OSAtomicIncrement32Barrier(&silenceOutput)
     dispatch_group_notify(PrintGroup, PrintQueue) {
-      println("Skipped output")
+      print("Skipped output")
       OSAtomicDecrement32Barrier(&silenceOutput)
     }
   }

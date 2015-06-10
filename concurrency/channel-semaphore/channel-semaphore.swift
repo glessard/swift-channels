@@ -96,7 +96,7 @@ case Done
   Also: http://preshing.com/20120226/roll-your-own-lightweight-mutex/
 
   Much like dispatch_semaphore_t, with native Swift typing. (And state information.)
-  An older version of libdispatch is at: http://libdispatch.macosforge.org/
+  Versions of libdispatch are at: http://www.opensource.apple.com/source/libdispatch/
 */
 
 final public class ChannelSemaphore
@@ -163,6 +163,7 @@ final public class ChannelSemaphore
 
     case .Done:
       // Ideally it would be: __sync_swap(&currentState, ChannelSemaphoreState.Done.rawValue)
+      // Or maybe: __c11_atomic_exchange(&currentState, ChannelSemaphoreState.Done.rawValue, __ATOMIC_SEQ_CST)
       while OSAtomicCompareAndSwap32Barrier(currentState, ChannelSemaphoreState.Done.rawValue, &currentState) == false {}
       return true
 
@@ -251,7 +252,7 @@ final public class ChannelSemaphore
       {
       case KERN_ABORTED: continue
       case KERN_SUCCESS: return true
-      default: preconditionFailure("Bad reply from semaphore_wait() in \(__FUNCTION__)")
+      case let kr: preconditionFailure("Bad response (\(kr)) from semaphore_wait() in \(__FUNCTION__)")
       }
     }
   }

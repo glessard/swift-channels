@@ -26,7 +26,7 @@ class SelectUnbufferedTests: XCTestCase
     return sleepInterval < 0 ? 10_000 : 100
   }
 
-  func SelectReceiverTest(sleepInterval: NSTimeInterval = -1)
+  func SelectReceiverTest(sleepInterval sleepInterval: NSTimeInterval = -1)
   {
     let iterations = getIterations(sleepInterval)
 
@@ -67,7 +67,7 @@ class SelectUnbufferedTests: XCTestCase
     {
       if let receiver = selection.id as? Receiver<Int>
       {
-         if let message = receiver.extract(selection) { i++ }
+         if let _ = receiver.extract(selection) { i++ }
       }
     }
 
@@ -87,7 +87,7 @@ class SelectUnbufferedTests: XCTestCase
   }
 
 
-  func SelectSenderTest(sleepInterval: NSTimeInterval = -1)
+  func SelectSenderTest(sleepInterval sleepInterval: NSTimeInterval = -1)
   {
     let iterations = getIterations(sleepInterval)
 
@@ -114,7 +114,7 @@ class SelectUnbufferedTests: XCTestCase
     {
       let receiver = merge(receivers)
 
-      while let element = <-receiver
+      while let _ = <-receiver
       {
         m++
         NSThread.sleepForTimeInterval(sleepInterval)
@@ -130,7 +130,7 @@ class SelectUnbufferedTests: XCTestCase
         let receiver = receivers[i]
         dispatch_group_async(g, dispatch_get_global_queue(qos_class_self(), 0)) {
           var i = 0
-          while let element = <-receiver { i++ }
+          while let _ = <-receiver { i++ }
           result.tx <- i
         }
       }
@@ -156,7 +156,7 @@ class SelectUnbufferedTests: XCTestCase
 
   private enum Sleeper { case Receiver; case Sender; case None }
 
-  private func DoubleSelectTest(#sleeper: Sleeper)
+  private func DoubleSelectTest(sleeper sleeper: Sleeper)
   {
     let sleepInterval = (sleeper == .None) ? -1.0 : 0.01
     let iterations = getIterations(sleepInterval)
@@ -191,7 +191,7 @@ class SelectUnbufferedTests: XCTestCase
     {
       if let receiver = selection.id as? Receiver<Int>
       {
-        if let message = receiver.extract(selection)
+        if let _ = receiver.extract(selection)
         {
           i++
           if sleeper == .Receiver { NSThread.sleepForTimeInterval(sleepInterval) }

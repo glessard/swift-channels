@@ -50,13 +50,12 @@ class SelectSingletonTests: XCTestCase
       {
         if let message = receiver.extract(selection)
         {
-          print(message)
+          print(message, appendNewline: false)
           i++
         }
       }
     }
-    println()
-
+    print("")
     XCTAssert(i == selectableCount, "Received \(i) messages; expected \(selectableCount)")
   }
 
@@ -67,7 +66,7 @@ class SelectSingletonTests: XCTestCase
     let receivers = channels.map { $0.rx }
 
     async {
-      for (i,sender) in enumerate(senders) { sender <- i }
+      for (i,sender) in senders.enumerate() { sender <- i }
       for sender in senders { XCTAssert(sender.isClosed, __FUNCTION__) }
     }
 
@@ -80,12 +79,12 @@ class SelectSingletonTests: XCTestCase
       {
         if let message = receiver.extract(selection)
         {
-          print(message)
+          print(message, appendNewline: false)
           i++
         }
       }
     }
-    println()
+    print("")
 
     XCTAssert(i == selectableCount, "Received \(i) messages; expected \(selectableCount)")
   }
@@ -115,10 +114,10 @@ class SelectSingletonTests: XCTestCase
     var i=0
     while let element = <-receiver
     {
-      print(element)
+      print(element, appendNewline: false)
       i++
     }
-    println()
+    print("")
 
     XCTAssert(i == selectableCount, "Received \(i) messages; expected \(selectableCount)")
   }

@@ -8,7 +8,7 @@
 
 import Darwin
 
-final class FastQueue<T>: QueueType, SequenceType, GeneratorType
+final class FastQueue<T>: QueueType
 {
   private var head: UnsafeMutablePointer<Node<T>> = nil
   private var tail: UnsafeMutablePointer<Node<T>> = nil
@@ -123,20 +123,6 @@ final class FastQueue<T>: QueueType, SequenceType, GeneratorType
       return element
     }
     return nil
-  }
-
-  // MARK: GeneratorType implementation
-
-  func next() -> T?
-  {
-    return dequeue()
-  }
-
-  // MARK: SequenceType implementation
-
-  func generate() -> Self
-  {
-    return self
   }
 }
 

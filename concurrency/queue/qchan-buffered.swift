@@ -148,7 +148,7 @@ final class QBufferedChan<T>: Chan<T>
     If no reader is waiting, this call will block.
     If the channel has been closed, no action will be taken.
 
-    :param: element the new element to be added to the channel.
+    - parameter element: the new element to be added to the channel.
   */
 
   override func put(newElement: T) -> Bool
@@ -160,7 +160,7 @@ final class QBufferedChan<T>: Chan<T>
     if !closed && (nextput &- head) >= capacity
     {
       let threadLock = SemaphorePool.Obtain()
-      do {
+      repeat {
         writerQueue.enqueue(QueuedSemaphore(threadLock))
         OSSpinLockUnlock(&lock)
         threadLock.wait()
@@ -283,7 +283,7 @@ final class QBufferedChan<T>: Chan<T>
     If the channel is empty, this call will block.
     If the channel is empty and closed, this will return nil.
 
-    :return: the oldest element from the channel.
+    - returns: the oldest element from the channel.
   */
 
   override func get() -> T?
@@ -295,7 +295,7 @@ final class QBufferedChan<T>: Chan<T>
     if !closed && (tail &- nextget) <= 0
     {
       let threadLock = SemaphorePool.Obtain()
-      do {
+      repeat {
         readerQueue.enqueue(QueuedSemaphore(threadLock))
         OSSpinLockUnlock(&lock)
         threadLock.wait()

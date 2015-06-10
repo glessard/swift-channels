@@ -68,8 +68,8 @@ extension Sender: SelectableSenderType
 
   Using this operator is equivalent to '_ = Sender<T>.send(T)'
 
-  :param: s a Sender<T>
-  :param: element the new T to be added to the channel.
+  - parameter s: a Sender<T>
+  - parameter element: the new T to be added to the channel.
 */
 
 public func <-<T>(s: Sender<T>, element: T)
@@ -84,8 +84,8 @@ extension Sender
   /**
     Return a new Sender<T> to act as the sending endpoint for a Chan<T>.
 
-    :param: c A Chan<T> object
-    :return:  A Sender<T> object that will send elements to the Chan<T>
+    - parameter c: A Chan<T> object
+    - returns:  A Sender<T> object that will send elements to the Chan<T>
   */
 
   public static func Wrap(c: Chan<T>) -> Sender<T>
@@ -96,8 +96,8 @@ extension Sender
   /**
     Return a new Sender<T> to act as the sending enpoint for a ChannelType
 
-    :param: c An object that implements ChannelType
-    :return:  A Sender<T> object that will send elements to c
+    - parameter c: An object that implements ChannelType
+    - returns:  A Sender<T> object that will send elements to c
   */
 
   static func Wrap<C: ChannelType where C.Element == T>(c: C) -> Sender<T>
@@ -116,8 +116,8 @@ extension Sender
     If c is a Sender, c will be returned directly.
     If c is any other kind of SenderType, it will be wrapped in a type-hidden way.
 
-    :param: c A SenderType implementor to be wrapped by a Sender object.
-    :return:  A Sender object that will pass along the elements to c.
+    - parameter c: A SenderType implementor to be wrapped by a Sender object.
+    - returns:  A Sender object that will pass along the elements to c.
   */
 
   public static func Wrap<C: SenderType where C.SentElement == T>(c: C) -> Sender<T>

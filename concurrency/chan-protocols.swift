@@ -30,31 +30,51 @@ public protocol ReceiverType: BasicChannelType, GeneratorType, SequenceType
     If the channel is empty, this call will block.
     If the channel is empty and closed, this will return nil.
 
-    :return: the oldest element from the channel.
+    - returns: the oldest element from the channel.
   */
 
   func receive() -> ReceivedElement?
+}
 
+public extension ReceiverType
+{
   /**
     Return the next element from the channel.
-    This should be an alias for ReceivingChannel.receive() and will fulfill the GeneratorType protocol.
+    This is an alias for ReceivingChannel.receive() and will fulfill the GeneratorType protocol.
 
     If the channel is empty, this call will block.
     If the channel is empty and closed, this will return nil.
 
-    :return: the oldest element from the channel.
+    - returns: the oldest element from the channel.
   */
 
-  func next() -> ReceivedElement?
+  public func next() -> ReceivedElement?
+  {
+    return receive()
+  }
 
   /**
     Return self as a GeneratorType.
     This fulfills the SequenceType protocol.
 
-    :return: an implementor of GeneratorType to iterate along the channel's elements.
+    - returns: an implementor of GeneratorType to iterate along the channel's elements.
   */
 
-  func generate() -> Self
+  public func generate() -> Self
+  {
+    return self
+  }
+
+  /**
+    Return a value less than or equal to the number of elements in self, nondestructively.
+    In other words: return 0 if channel is empty, 1 otherwise.
+    Complexity: 0(1)
+  */
+
+  public func underestimateCount() -> Int
+  {
+    return isEmpty ? 0 : 1
+  }
 }
 
 /**
@@ -80,9 +100,8 @@ public protocol SenderType: BasicChannelType
     If the channel is full, this call will block.
     If the channel has been closed, no action will be taken.
 
-    :param: element the new element to be sent to the channel.
-
-    :return: whether newElement was succesfully sent to the channel.
+    - parameter element: the new element to be sent to the channel.
+    - returns: whether newElement was succesfully sent to the channel.
   */
 
   func send(newElement: SentElement) -> Bool
@@ -91,6 +110,8 @@ public protocol SenderType: BasicChannelType
 /**
   Interface that any channel needs. Not useful by itself.
 */
+
+// MARK: BasicChannelType
 
 public protocol BasicChannelType
 {
@@ -141,9 +162,8 @@ protocol ChannelType: class, BasicChannelType
     If the channel is full, this call will block.
     If the channel has been closed, no action will be taken.
 
-    :param: element the new element to be added to the channel.
-
-    :return: whether newElement was succesfully inserted in the channel
+    - parameter element: the new element to be added to the channel.
+    - returns: whether newElement was succesfully inserted in the channel
   */
 
   func put(newElement: Element) -> Bool
@@ -154,7 +174,7 @@ protocol ChannelType: class, BasicChannelType
     If the channel is empty, this call will block.
     If the channel is empty and closed, this will return nil.
 
-    :return: the oldest element from the channel.
+    - returns: the oldest element from the channel.
   */
 
   func get() -> Element?
