@@ -13,7 +13,7 @@ import Foundation.NSThread
 private let PrintQueue = dispatch_queue_create("com.tffenterprises.syncprint", DISPATCH_QUEUE_SERIAL)
 private let PrintGroup = dispatch_group_create()
 
-private var silenceOutput = 0
+private var silenceOutput: Int32 = 0
 
 /**
   A wrapper for println that runs all requests on a serial queue
@@ -33,7 +33,11 @@ public func syncprint<T>(object: T)
   var message = NSThread.currentThread().isMainThread ? "[main] " : "[back] "
 
   dispatch_group_async(PrintGroup, PrintQueue) {
-    if silenceOutput == 0 { print(object, &message); println(message) }
+    // There is no particularly straightforward way to ensure an atomic read
+    if OSAtomicAdd32(0, &silenceOutput) == 0
+    {
+      print(object, &message, appendNewline: false); print(message)
+    }
   }
 }
 
@@ -47,10 +51,10 @@ public func syncprintwait()
   let res = dispatch_group_wait(PrintGroup, dispatch_time(DISPATCH_TIME_NOW, 200_000_000))
   if res != 0
   {
-    silenceOutput = 1
+    OSAtomicIncrement32Barrier(&silenceOutput)
     dispatch_group_notify(PrintGroup, PrintQueue) {
-      println("Skipped output")
-      silenceOutput = 0
+      print("Skipped output")
+      OSAtomicDecrement32Barrier(&silenceOutput)
     }
   }
 }

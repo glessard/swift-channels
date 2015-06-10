@@ -26,8 +26,8 @@ class SelectExamples: XCTestCase
 
     let iterations = 10_000
     async {
-      let senders = map(channels) { $0.tx }
-      for i in 0..<iterations
+      let senders = channels.map { $0.tx }
+      for _ in 0..<iterations
       {
         let index = Int(arc4random_uniform(UInt32(senders.count)))
         senders[index] <- index
@@ -36,7 +36,7 @@ class SelectExamples: XCTestCase
     }
 
     var messages = Array(count: channels.count, repeatedValue: 0)
-    let selectables = map(channels) { $0.rx as Selectable }
+    let selectables = channels.map { $0.rx as Selectable }
     while let selection = select(selectables)
     {
       switch selection.id
@@ -61,7 +61,7 @@ class SelectExamples: XCTestCase
       }
     }
 
-    let i = reduce(messages,0,+)
+    let i = messages.reduce(0, combine: +)
     syncprint("\(messages), \(i) total messages.")
     syncprintwait()
     
@@ -99,7 +99,7 @@ class SelectExamples: XCTestCase
     {
       print("\(b ? 0:1)")
     }
-    println()
+    print("")
   }
 
   func testSendsAndReceives()
@@ -117,7 +117,7 @@ class SelectExamples: XCTestCase
       case let s where s === c.tx:
         if c.tx.insert(selection, newElement: count)
         {
-          print(++cap)
+          print(++cap, appendNewline: false)
           if ++count > 30 { c.tx.close() }
         }
         else
@@ -126,9 +126,9 @@ class SelectExamples: XCTestCase
         }
 
       case let s where s === c.rx:
-        if let v = c.rx.extract(selection)
+        if let _ = c.rx.extract(selection)
         {
-          print(--cap)
+          print(--cap, appendNewline: false)
         }
         else
         {
@@ -140,6 +140,6 @@ class SelectExamples: XCTestCase
 
       XCTAssert(cap >= 0 && cap <= capacity)
     }
-    println()
+    print("")
   }
 }

@@ -10,7 +10,7 @@ import Darwin
 import Foundation
 import XCTest
 
-import Channels
+@testable import Channels
 
 class ChannelsTests: XCTestCase
 {
@@ -31,7 +31,7 @@ class ChannelsTests: XCTestCase
 
   func ChannelTestSendReceive()
   {
-    var (tx, rx) = InstantiateTestChannel(UInt32)
+    let (tx, rx) = InstantiateTestChannel(UInt32)
 
     let value = arc4random()
     tx <- value
@@ -47,19 +47,16 @@ class ChannelsTests: XCTestCase
   func ChannelTestSendReceiveN()
   {
     var values = Array<UInt32>()
-    for i in 0..<buflen
+    for _ in 0..<buflen
     {
       values.append(arc4random_uniform(UInt32.max/2))
     }
 
-    var (tx, rx) = InstantiateTestChannel(UInt32)
+    let (tx, rx) = InstantiateTestChannel(UInt32)
     for v in values
     {
       tx <- v
     }
-
-    let selectedValue = Int(arc4random_uniform(UInt32(buflen)))
-    var testedValue: UInt32 = UInt32.max
 
     for i in 0..<buflen
     {
@@ -77,8 +74,8 @@ class ChannelsTests: XCTestCase
 
   func ChannelTestReceiveFirst()
   {
-    var (tx, rx) = InstantiateTestChannel(XCTestExpectation)
-    let expectation = expectationWithDescription(id + " Receive then Send")!
+    let (tx, rx) = InstantiateTestChannel(XCTestExpectation)
+    let expectation = expectationWithDescription(id + " Receive then Send")
 
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
       if let x = <-rx
@@ -106,7 +103,7 @@ class ChannelsTests: XCTestCase
 
   func ChannelTestBlockedReceive()
   {
-    var (tx, rx) = InstantiateTestChannel(UInt32)
+    let (tx, rx) = InstantiateTestChannel(UInt32)
     let expectations = 3
 
     var valrecd = arc4random()
@@ -143,8 +140,8 @@ class ChannelsTests: XCTestCase
 
   func ChannelTestSendFirst()
   {
-    var (tx, rx) = InstantiateTestChannel(XCTestExpectation)
-    let expectation = expectationWithDescription(id + " Send then Receive")!
+    let (tx, rx) = InstantiateTestChannel(XCTestExpectation)
+    let expectation = expectationWithDescription(id + " Send then Receive")
 
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
       tx <- expectation
@@ -171,7 +168,7 @@ class ChannelsTests: XCTestCase
 
   func ChannelTestBlockedSend()
   {
-    var (tx, rx) = InstantiateTestChannel(Int)
+    let (tx, rx) = InstantiateTestChannel(Int)
     let expectation = expectationWithDescription(id + " blocked Send, verified reception")
 
     var valsent = Int(arc4random())
@@ -189,7 +186,7 @@ class ChannelsTests: XCTestCase
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
       XCTAssert(tx.isClosed == false, self.id + " should not be closed")
 
-      for (i,v) in enumerate(rx)
+      for (_,v) in rx.enumerate()
       {
         valrecd = v
       }
@@ -206,11 +203,11 @@ class ChannelsTests: XCTestCase
 
   func ChannelTestNoSender()
   {
-    var (_, rx) = InstantiateTestChannel(Int)
+    let (_, rx) = InstantiateTestChannel(Int)
     let expectation = expectationWithDescription(id + " Receive, no Sender")
 
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-      while let v = <-rx
+      while let _ = <-rx
       {
         XCTFail(self.id + " should not receive anything")
       }
@@ -231,11 +228,11 @@ class ChannelsTests: XCTestCase
 
   func ChannelTestNoReceiver()
   {
-    var (tx, _) = InstantiateTestChannel(Void)
+    let (tx, _) = InstantiateTestChannel(Void)
     let expectation = expectationWithDescription(id + " Send, no Receiver")
 
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-      for i in 0...self.buflen
+      for _ in 0...self.buflen
       {
         tx <- ()
       }
@@ -257,12 +254,12 @@ class ChannelsTests: XCTestCase
   func ChannelPerformanceNoContention()
   {
     self.measureBlock() {
-      var (tx, rx) = self.InstantiateTestChannel(Int)
+      let (tx, rx) = self.InstantiateTestChannel(Int)
 
       for i in 0..<self.performanceTestIterations
       {
         tx <- i
-        let r = <-rx
+        _ = <-rx
         // XCTAssert(i == r, "bad transmission in " + self.id)
       }
       tx.close()
@@ -276,12 +273,12 @@ class ChannelsTests: XCTestCase
   func ChannelPerformanceLoopNoContention()
   {
     self.measureBlock() {
-      var (tx, rx) = self.InstantiateTestChannel(Int)
+      let (tx, rx) = self.InstantiateTestChannel(Int)
 
-      for j in 0..<(self.performanceTestIterations/self.buflen)
+      for _ in 0..<(self.performanceTestIterations/self.buflen)
       {
         for i in 0..<self.buflen { tx <- i }
-        for i in 0..<self.buflen { _ = <-rx }
+        for _ in 0..<self.buflen { _ = <-rx }
       }
       tx.close()
     }
@@ -297,7 +294,7 @@ class ChannelsTests: XCTestCase
   func ChannelPerformanceWithContention()
   {
     self.measureBlock() {
-      var (tx, rx) = self.InstantiateTestChannel(Int)
+      let (tx, rx) = self.InstantiateTestChannel(Int)
       
       async {
         for i in 0..<self.performanceTestIterations
@@ -308,7 +305,7 @@ class ChannelsTests: XCTestCase
       }
       
       var i = 0
-      for m in rx {
+      for _ in rx {
         i++
       }
       XCTAssert(i == self.performanceTestIterations, "Too few (\(i)) iterations completed by " + self.id)

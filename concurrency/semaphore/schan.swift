@@ -17,9 +17,9 @@ public class SChan<T>
     Oracle Multithreaded Programming Guide, Chapter 4, section 5: "Semaphores"
     http://docs.oracle.com/cd/E19455-01/806-5257/6je9h032s/index.html
 
-    :param: capacity   the buffer capacity of the channel.
+    - parameter capacity:   the buffer capacity of the channel.
 
-    :return: a newly-created, empty Chan<T>
+    - returns: a newly-created, empty Chan<T>
   */
 
   public class func Make(capacity: Int) -> Chan<T>
@@ -31,7 +31,7 @@ public class SChan<T>
   /**
     Factory method to obtain a (buffered) single-message channel.
 
-    :return: a newly-created, empty Chan<T>
+    - returns: a newly-created, empty Chan<T>
   */
 
   public class func MakeSingleton() -> Chan<T>

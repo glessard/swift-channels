@@ -110,7 +110,7 @@ final class QUnbufferedChan<T>: Chan<T>
     If no reader is waiting, this call will block.
     If the channel has been closed, no action will be taken.
 
-    :param: element the new element to be added to the channel.
+    - parameter element: the new element to be added to the channel.
   */
 
   override func put(var newElement: T) -> Bool
@@ -196,7 +196,7 @@ final class QUnbufferedChan<T>: Chan<T>
     If the channel is empty, this call will block.
     If the channel is empty and closed, this will return nil.
 
-    :return: the oldest element from the channel.
+    - returns: the oldest element from the channel.
   */
 
   override func get() -> T?

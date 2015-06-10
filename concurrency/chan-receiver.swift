@@ -10,7 +10,7 @@
   Receiver<T> is the receiving endpoint for a ChannelType.
 */
 
-public final class Receiver<T>: ReceiverType, GeneratorType, SequenceType
+public final class Receiver<T>: ReceiverType
 {
   private let wrapped: Chan<T>
 
@@ -33,26 +33,6 @@ public final class Receiver<T>: ReceiverType, GeneratorType, SequenceType
   public func receive() -> T?
   {
     return wrapped.get()
-  }
-
-  // MARK: GeneratorType implementation
-
-  /**
-    If all elements are exhausted, return `nil`.  Otherwise, advance
-    to the next element and return it.
-    This is a synonym for receive()
-  */
-
-  public func next() -> T?
-  {
-    return wrapped.get()
-  }
-
-  // MARK: SequenceType implementation
-
-  public func generate() -> Self
-  {
-    return self
   }
 }
 
@@ -95,9 +75,9 @@ extension Receiver: SelectableReceiverType
 
   This is the equivalent of Receiver<T>.receive() -> T?
 
-  :param:  r a ReceiverType
+  - parameter r: a Receiver
 
-  :return: the oldest element from the channel
+  - returns: the oldest element from the channel, or nil
 */
 
 public prefix func <-<T>(r: Receiver<T>) -> T?
@@ -112,8 +92,8 @@ extension Receiver
   /**
     Return a new Receiver<T> to act as the receiving endpoint for a Chan<T>.
 
-    :param: c A Chan<T> object
-    :return:  A Receiver<T> object that will receive elements from the Chan<T>
+    - parameter c: A Chan<T> object
+    - returns:  A Receiver<T> object that will receive elements from the Chan<T>
   */
 
   public static func Wrap(c: Chan<T>) -> Receiver<T>
@@ -124,8 +104,8 @@ extension Receiver
   /**
     Return a new Receiver<T> to act as the receiving endpoint for a ChannelType.
 
-    :param: c An object that implements ChannelType
-    :return:  A Receiver<T> object that will receive elements from the ChannelType
+    - parameter c: An object that implements ChannelType
+    - returns:  A Receiver<T> object that will receive elements from the ChannelType
   */
 
   static func Wrap<C: ChannelType where C.Element == T>(c: C) -> Receiver<T>
@@ -146,8 +126,8 @@ extension Receiver
     If c is any other kind of ReceiverType, c will be type-obscured and
     wrapped in a new Receiver.
 
-    :param: c An object that implements ReceiverType.
-    :return:  A Receiver object that will pass along the elements from c.
+    - parameter c: An object that implements ReceiverType.
+    - returns:  A Receiver object that will pass along the elements from c.
   */
 
   public static func Wrap<C: ReceiverType where C.ReceivedElement == T>(c: C) -> Receiver<T>

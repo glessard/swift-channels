@@ -96,7 +96,7 @@ case Done
   Also: http://preshing.com/20120226/roll-your-own-lightweight-mutex/
 
   Much like dispatch_semaphore_t, with native Swift typing. (And state information.)
-  An older version of libdispatch is at: http://libdispatch.macosforge.org/
+  Versions of libdispatch are at: http://www.opensource.apple.com/source/libdispatch/
 */
 
 final public class ChannelSemaphore
@@ -163,6 +163,7 @@ final public class ChannelSemaphore
 
     case .Done:
       // Ideally it would be: __sync_swap(&currentState, ChannelSemaphoreState.Done.rawValue)
+      // Or maybe: __c11_atomic_exchange(&currentState, ChannelSemaphoreState.Done.rawValue, __ATOMIC_SEQ_CST)
       while OSAtomicCompareAndSwap32Barrier(currentState, ChannelSemaphoreState.Done.rawValue, &currentState) == false {}
       return true
 
@@ -233,9 +234,7 @@ final public class ChannelSemaphore
       OSMemoryBarrier()
     }
 
-    let kr = semaphore_signal(semp)
-    assert(kr == KERN_SUCCESS, __FUNCTION__)
-    return kr == KERN_SUCCESS
+    return (semaphore_signal(semp) == KERN_SUCCESS)
   }
 
   func wait() -> Bool
@@ -247,13 +246,14 @@ final public class ChannelSemaphore
 
     if semp == 0 { initSemaphorePort() }
 
-    var kr = KERN_ABORTED
-    while kr == KERN_ABORTED
+    while true
     {
-      kr = semaphore_wait(semp)
+      switch semaphore_wait(semp)
+      {
+      case KERN_ABORTED: continue
+      case KERN_SUCCESS: return true
+      case let kr: preconditionFailure("Bad response (\(kr)) from semaphore_wait() in \(__FUNCTION__)")
+      }
     }
-    assert(kr == KERN_SUCCESS, __FUNCTION__)
-
-    return kr == KERN_SUCCESS
   }
 }

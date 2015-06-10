@@ -9,7 +9,7 @@
 import Darwin
 import XCTest
 
-import Channels
+@testable import Channels
 
 class SingletonChannelTests: ChannelsTests
 {
@@ -36,7 +36,7 @@ class SingletonChannelTests: ChannelsTests
 
   func testSendReceiveTwice()
   {
-    var (tx,rx) = InstantiateTestChannel(UInt32)
+    let (tx,rx) = InstantiateTestChannel(UInt32)
 
     let value =  arc4random()
     tx <- value
@@ -54,7 +54,7 @@ class SingletonChannelTests: ChannelsTests
 
   func testMultipleSend()
   {
-    var (tx,rx) = InstantiateTestChannel(Int)
+    let (tx, rx) = InstantiateTestChannel(Int)
 
     let delay = dispatch_time(DISPATCH_TIME_NOW, 1_000_000)
     for i in 1...10
@@ -63,7 +63,7 @@ class SingletonChannelTests: ChannelsTests
     }
 
     var last = 0
-    while let r = <-rx
+    while let _ = <-rx
     {
       last += 1
     }
@@ -106,7 +106,7 @@ class SingletonChannelTests: ChannelsTests
   func testNoReceiver()
   {
     let expectation = expectationWithDescription(id + " Channel Send, no Receiver")
-    var (tx, _) = InstantiateTestChannel(Void)
+    let (tx, _) = InstantiateTestChannel(Void)
 
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
       XCTAssert(tx.isClosed == false, self.id + " channel should be open")

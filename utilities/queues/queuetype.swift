@@ -21,30 +21,23 @@ protocol QueueType
   /**
     Initialize a queue with an initial element
   
-    :param: newElement the initial element of the new queue
+    - parameter newElement: the initial element of the new queue
   */
 
   init(_ newElement: Element)
 
   /**
     Return whether the queue is empty
+    For some implementations, it might be faster to check for queue emptiness
+    rather than attempting a dequeue on an empty queue.
   */
 
   var isEmpty: Bool { get }
 
   /**
-    Return the number of elements currently in the queue.
-    For some implementations, it might be faster to check for queue length
-    rather than attempting a dequeue on an empty queue. For those cases,
-    this would be the fast check.
-  */
-
-  var count: Int { get }
-
-  /**
     Add a new element to the queue.
   
-    :param: newElement a new element
+    - parameter newElement: a new element
   */
 
   func enqueue(newElement: Element)
@@ -52,15 +45,8 @@ protocol QueueType
   /**
     Return the oldest element from the queue, or nil if the queue is empty.
 
-    :return: an element, or nil
+    - returns: an element, or nil
   */
 
   func dequeue() -> Element?
-
-
-  /**
-    For testing, mostly. Walk the linked list while counting the nodes.
-  */
-
-  func countElements() -> Int
 }

@@ -14,9 +14,16 @@
 		0336B9B71ABB1BF700F4B44B /* async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0336B9B41ABB1BF700F4B44B /* async.swift */; };
 		033912031ABD3DC000F4B44B /* ChannelsExamples.swift in Sources */ = {isa = PBXBuildFile; fileRef = 033912021ABD3DC000F4B44B /* ChannelsExamples.swift */; };
 		034392C21A7A065200F4B44B /* select.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03F3FD6F1A6AF95400F4B44B /* select.swift */; };
-		034CABE31AC210BC00F4B44B /* schan-singleton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 034CABE21AC210BC00F4B44B /* schan-singleton.swift */; };
 		035B606A1A67433800F4B44B /* Channels.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 035B605E1A67433800F4B44B /* Channels.framework */; };
 		035B60711A67433800F4B44B /* ChannelsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035B60701A67433800F4B44B /* ChannelsTests.swift */; };
+		035EAA5A1B280AB800F4B44B /* pchan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47131A6743E500F4B44B /* pchan.swift */; };
+		035EAA5B1B280AB800F4B44B /* pchan-buffered1.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47101A6743E500F4B44B /* pchan-buffered1.swift */; };
+		035EAA5C1B280AB800F4B44B /* pchan-bufferedN-buffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47121A6743E500F4B44B /* pchan-bufferedN-buffer.swift */; };
+		035EAA5D1B280AB800F4B44B /* pchan-bufferedN-queue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47111A6743E500F4B44B /* pchan-bufferedN-queue.swift */; };
+		035EAA5E1B280AB800F4B44B /* pchan-bufferedN-array.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B24C0B1A8AC01F00F4B44B /* pchan-bufferedN-array.swift */; };
+		035EAA5F1B28C41700F4B44B /* schan-singleton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 034CABE21AC210BC00F4B44B /* schan-singleton.swift */; };
+		035EAA601B28C59800F4B44B /* schan-singleton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 034CABE21AC210BC00F4B44B /* schan-singleton.swift */; };
+		035EAA611B28C59900F4B44B /* schan-singleton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 034CABE21AC210BC00F4B44B /* schan-singleton.swift */; };
 		0370A7171A7C44BC00F4B44B /* merge-select.swift in Sources */ = {isa = PBXBuildFile; fileRef = 032CCD3E1A79BE9400F4B44B /* merge-select.swift */; };
 		03A21E3A1AB16E7900F4B44B /* SelectExamples.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03A21E391AB16E7900F4B44B /* SelectExamples.swift */; };
 		03AD471F1A6743E500F4B44B /* chan-operators.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47011A6743E500F4B44B /* chan-operators.swift */; };
@@ -34,7 +41,6 @@
 		03AD47451A67441A00F4B44B /* fastqueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD473C1A67441A00F4B44B /* fastqueue.swift */; };
 		03AD47471A67441A00F4B44B /* queuetype.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD473E1A67441A00F4B44B /* queuetype.swift */; };
 		03AD474D1A67447B00F4B44B /* BufferedChannelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD474C1A67447B00F4B44B /* BufferedChannelTests.swift */; };
-		03AD47501A67448400F4B44B /* SingletonChannelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD474E1A67448400F4B44B /* SingletonChannelTests.swift */; };
 		03AD47511A67448400F4B44B /* UnbufferedChannelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD474F1A67448400F4B44B /* UnbufferedChannelTests.swift */; };
 		03AD47571A6744DA00F4B44B /* SChanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47541A6744DA00F4B44B /* SChanTests.swift */; };
 		03AD475F1A68346300F4B44B /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD475E1A68346300F4B44B /* main.swift */; };
@@ -80,11 +86,9 @@
 		03AD47A31A6836B800F4B44B /* queuetype.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD473E1A67441A00F4B44B /* queuetype.swift */; };
 		03AD47A51A6836B800F4B44B /* atomicqueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD473A1A67441A00F4B44B /* atomicqueue.swift */; };
 		03AD47A61A6836B800F4B44B /* fastqueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD473C1A67441A00F4B44B /* fastqueue.swift */; };
-		03AD47AF1A688BE900F4B44B /* shuffle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47AD1A688BE900F4B44B /* shuffle.swift */; };
 		03AD47B21A6890B100F4B44B /* merge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47B11A6890B100F4B44B /* merge.swift */; };
 		03AD47C01A689E0900F4B44B /* MergeTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47BF1A689E0900F4B44B /* MergeTest.swift */; };
 		03E50F8F1AC2407600F4B44B /* logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD477A1A6834FE00F4B44B /* logging.swift */; };
-		03E50F901AC3E3DC00F4B44B /* schan-singleton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 034CABE21AC210BC00F4B44B /* schan-singleton.swift */; };
 		03E50F911AC3E3DC00F4B44B /* schan-singleton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 034CABE21AC210BC00F4B44B /* schan-singleton.swift */; };
 		03E60E611AAC08CE00F4B44B /* SelectSingletonTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E60E601AAC08CE00F4B44B /* SelectSingletonTests.swift */; };
 		03EDB5F11AD22B6F00F4B44B /* channel-semaphore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03EDB5F01AD22B6F00F4B44B /* channel-semaphore.swift */; };
@@ -94,6 +98,7 @@
 		03F3FD6A1A69D90400F4B44B /* select-types.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03F3FD691A69D90400F4B44B /* select-types.swift */; };
 		03F3FD6E1A6A4E7900F4B44B /* select-types.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03F3FD691A69D90400F4B44B /* select-types.swift */; };
 		03F3FD751A6D76B300F4B44B /* SelectTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03F3FD711A6B207E00F4B44B /* SelectTests.swift */; };
+		03F614C81B28FD6400F4B44B /* shuffle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03F614C71B28FD6400F4B44B /* shuffle.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -170,7 +175,6 @@
 		03AD477A1A6834FE00F4B44B /* logging.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = logging.swift; path = utilities/logging.swift; sourceTree = "<group>"; };
 		03AD47871A68366A00F4B44B /* concurrency tester */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "concurrency tester"; sourceTree = BUILT_PRODUCTS_DIR; };
 		03AD47891A68366A00F4B44B /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
-		03AD47AD1A688BE900F4B44B /* shuffle.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = shuffle.swift; path = ../utilities/shuffle.swift; sourceTree = "<group>"; };
 		03AD47B11A6890B100F4B44B /* merge.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = merge.swift; sourceTree = "<group>"; };
 		03AD47BF1A689E0900F4B44B /* MergeTest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MergeTest.swift; sourceTree = "<group>"; };
 		03B24C0B1A8AC01F00F4B44B /* pchan-bufferedN-array.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "pchan-bufferedN-array.swift"; sourceTree = "<group>"; };
@@ -179,6 +183,7 @@
 		03F3FD691A69D90400F4B44B /* select-types.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "select-types.swift"; path = "select/select-types.swift"; sourceTree = "<group>"; };
 		03F3FD6F1A6AF95400F4B44B /* select.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = select.swift; path = select/select.swift; sourceTree = "<group>"; };
 		03F3FD711A6B207E00F4B44B /* SelectTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SelectTests.swift; sourceTree = "<group>"; };
+		03F614C71B28FD6400F4B44B /* shuffle.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = shuffle.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -384,7 +389,7 @@
 		03AD47B01A688BFF00F4B44B /* utilities */ = {
 			isa = PBXGroup;
 			children = (
-				03AD47AD1A688BE900F4B44B /* shuffle.swift */,
+				03F614C71B28FD6400F4B44B /* shuffle.swift */,
 				03AD47391A67441A00F4B44B /* queues */,
 			);
 			name = utilities;
@@ -489,7 +494,8 @@
 		035B60551A67433800F4B44B /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0610;
+				LastSwiftUpdateCheck = 0700;
+				LastUpgradeCheck = 0700;
 				ORGANIZATIONNAME = "Guillaume Lessard";
 				TargetAttributes = {
 					035B605D1A67433800F4B44B = {
@@ -549,18 +555,23 @@
 			buildActionMask = 2147483647;
 			files = (
 				03AD47371A6743E500F4B44B /* schan.swift in Sources */,
+				035EAA5B1B280AB800F4B44B /* pchan-buffered1.swift in Sources */,
 				03AD47311A6743E500F4B44B /* qchan-buffered.swift in Sources */,
 				03AD47251A6743E500F4B44B /* channel.swift in Sources */,
+				035EAA5E1B280AB800F4B44B /* pchan-bufferedN-array.swift in Sources */,
 				03AD47471A67441A00F4B44B /* queuetype.swift in Sources */,
 				03AD47331A6743E500F4B44B /* qchan.swift in Sources */,
 				034392C21A7A065200F4B44B /* select.swift in Sources */,
-				03AD47AF1A688BE900F4B44B /* shuffle.swift in Sources */,
 				0370A7171A7C44BC00F4B44B /* merge-select.swift in Sources */,
-				034CABE31AC210BC00F4B44B /* schan-singleton.swift in Sources */,
+				035EAA5C1B280AB800F4B44B /* pchan-bufferedN-buffer.swift in Sources */,
+				035EAA5A1B280AB800F4B44B /* pchan.swift in Sources */,
+				035EAA611B28C59900F4B44B /* schan-singleton.swift in Sources */,
 				03AD471F1A6743E500F4B44B /* chan-operators.swift in Sources */,
 				03AD47321A6743E500F4B44B /* qchan-unbuffered.swift in Sources */,
 				03F3FD6A1A69D90400F4B44B /* select-types.swift in Sources */,
 				03AD47211A6743E500F4B44B /* chan-receiver.swift in Sources */,
+				035EAA5D1B280AB800F4B44B /* pchan-bufferedN-queue.swift in Sources */,
+				03F614C81B28FD6400F4B44B /* shuffle.swift in Sources */,
 				03AD47451A67441A00F4B44B /* fastqueue.swift in Sources */,
 				03AD47201A6743E500F4B44B /* chan-protocols.swift in Sources */,
 				03AD47241A6743E500F4B44B /* chan.swift in Sources */,
@@ -583,7 +594,6 @@
 				03AD47C01A689E0900F4B44B /* MergeTest.swift in Sources */,
 				03AD47511A67448400F4B44B /* UnbufferedChannelTests.swift in Sources */,
 				03AD47571A6744DA00F4B44B /* SChanTests.swift in Sources */,
-				03AD47501A67448400F4B44B /* SingletonChannelTests.swift in Sources */,
 				03E50F8F1AC2407600F4B44B /* logging.swift in Sources */,
 				033912031ABD3DC000F4B44B /* ChannelsExamples.swift in Sources */,
 				035B60711A67433800F4B44B /* ChannelsTests.swift in Sources */,
@@ -600,6 +610,7 @@
 				03AD47761A68348C00F4B44B /* schan.swift in Sources */,
 				03AD47731A68348C00F4B44B /* qchan-buffered.swift in Sources */,
 				03EDB5F21AD22BB000F4B44B /* channel-semaphore.swift in Sources */,
+				035EAA5F1B28C41700F4B44B /* schan-singleton.swift in Sources */,
 				03AD477F1A68354F00F4B44B /* fastqueue.swift in Sources */,
 				0335FBE11A8B277500F4B44B /* pchan-bufferedN-array.swift in Sources */,
 				0336B9B61ABB1BF700F4B44B /* async.swift in Sources */,
@@ -615,7 +626,6 @@
 				03AD475F1A68346300F4B44B /* main.swift in Sources */,
 				03AD476F1A68348C00F4B44B /* pchan-bufferedN-queue.swift in Sources */,
 				03AD476B1A68348C00F4B44B /* chan.swift in Sources */,
-				03E50F901AC3E3DC00F4B44B /* schan-singleton.swift in Sources */,
 				03AD47661A68348C00F4B44B /* chan-operators.swift in Sources */,
 				03AD47701A68348C00F4B44B /* pchan-bufferedN-buffer.swift in Sources */,
 				03AD47641A68347300F4B44B /* SimpleChannel.swift in Sources */,
@@ -636,6 +646,7 @@
 				03AD47A01A68369C00F4B44B /* schan-buffered.swift in Sources */,
 				0335FBE21A8B277600F4B44B /* pchan-bufferedN-array.swift in Sources */,
 				03AD47A51A6836B800F4B44B /* atomicqueue.swift in Sources */,
+				035EAA601B28C59800F4B44B /* schan-singleton.swift in Sources */,
 				03AD47921A68369C00F4B44B /* chan-sender.swift in Sources */,
 				03AD47A21A6836B300F4B44B /* timing.swift in Sources */,
 				03AD478F1A68369C00F4B44B /* chan-operators.swift in Sources */,
@@ -685,6 +696,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
@@ -697,6 +709,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
@@ -719,6 +732,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
@@ -745,6 +759,7 @@
 				INFOPLIST_FILE = Channels/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.tffenterprises.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 			};
@@ -762,6 +777,7 @@
 				INFOPLIST_FILE = Channels/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.tffenterprises.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 			};
@@ -777,6 +793,7 @@
 				);
 				INFOPLIST_FILE = ChannelsTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.tffenterprises.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -791,6 +808,7 @@
 				);
 				INFOPLIST_FILE = ChannelsTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.tffenterprises.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
