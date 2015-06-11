@@ -50,13 +50,7 @@ final class FastQueue<T>: QueueType
   var isEmpty: Bool { return head == nil }
 
   var count: Int {
-    return (head == nil) ? 0 : countElements()
-  }
-
-  func countElements() -> Int
-  {
     // Not thread safe.
-
     var i = 0
     var node = head
     while node != nil
