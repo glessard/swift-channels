@@ -95,7 +95,6 @@ struct SChanSemaphore
           return true
         }
       }
-      OSMemoryBarrier()
     }
   }
 
@@ -121,15 +120,15 @@ struct SChanSemaphore
     }
   }
 
-  mutating func notify(block: () -> ())
+  mutating func notify(block: () -> ()) -> Bool
   {
     if OSAtomicDecrement32Barrier(&svalue) >= 0
     {
       block()
+      return true
     }
-    else
-    {
-      waiters.enqueue(.Notify(block))
-    }
+
+    waiters.enqueue(.Notify(block))
+    return false
   }
 }
