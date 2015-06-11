@@ -110,7 +110,7 @@ private struct Node<T>
   }
 
   var next: UnsafeMutablePointer<Node<T>> {
-    get { return UnsafeMutablePointer<Node<T>>(nptr) }
-    set { nptr = UnsafeMutablePointer<Void>(newValue) }
+    get { return UnsafeMutablePointer(nptr) }
+    set { nptr = UnsafeMutablePointer(newValue) }
   }
 }
