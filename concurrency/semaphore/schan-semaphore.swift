@@ -19,7 +19,7 @@ struct SChanSemaphore
   var svalue: Int32
   private var semp = semaphore_t()
 
-  private let waiters = Fast2LockQueue<WaitType>()
+  private let waiters = Fast2LockQueue()
 
   init(value: Int)
   {

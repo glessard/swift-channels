@@ -12,10 +12,10 @@ import Darwin.libkern.OSAtomic
   See also: http://www.cs.rochester.edu/research/synchronization/pseudocode/queues.html
 */
 
-final public class Fast2LockQueue<T>: QueueType
+final class Fast2LockQueue: QueueType
 {
-  private var head: UnsafeMutablePointer<Node<T>> = nil
-  private var tail: UnsafeMutablePointer<Node<T>> = nil
+  private var head: UnsafeMutablePointer<Node> = nil
+  private var tail: UnsafeMutablePointer<Node> = nil
 
   private var hlock = OS_SPINLOCK_INIT
   private var tlock = OS_SPINLOCK_INIT
@@ -24,14 +24,14 @@ final public class Fast2LockQueue<T>: QueueType
 
   // MARK: init/deinit
 
-  public init()
+  init()
   {
-    head = UnsafeMutablePointer<Node<T>>.alloc(1)
-    head.memory = Node(UnsafeMutablePointer<T>.alloc(1))
+    head = UnsafeMutablePointer<Node>.alloc(1)
+    head.initialize(Node(.Wait))
     tail = head
   }
 
-  public convenience init(_ newElement: T)
+  convenience init(_ newElement: WaitType)
   {
     self.init()
     enqueue(newElement)
@@ -39,38 +39,31 @@ final public class Fast2LockQueue<T>: QueueType
 
   deinit
   {
-    // empty the queue
-    let emptyhead = head
-    head = head.memory.next
-    emptyhead.memory.elem.dealloc(1)
-    emptyhead.dealloc(1)
-
     while head != nil
     {
       let node = head
       head = node.memory.next
-      node.memory.elem.destroy()
-      node.memory.elem.dealloc(1)
+      switch node.memory.elem
+      {
+      case .Wait: break
+      case .Notify(let block): block()
+      }
+      node.destroy()
       node.dealloc(1)
     }
 
     // drain the pool
     while UnsafePointer<COpaquePointer>(pool).memory != nil
     {
-      let node = UnsafeMutablePointer<Node<T>>(OSAtomicDequeue(pool, 0))
-      node.memory.elem.dealloc(1)
+      let node = UnsafeMutablePointer<Node>(OSAtomicDequeue(pool, 0))
+      node.destroy()
       node.dealloc(1)
     }
     // release the pool stack structure
     AtomicStackRelease(pool)
   }
 
-  public var count: Int {
-    return (head == tail) ? 0 : countElements()
-  }
-
-  public func countElements() -> Int
-  {
+  var count: Int {
     var i = 0
     var node = head.memory.next
     while node != nil
@@ -83,18 +76,16 @@ final public class Fast2LockQueue<T>: QueueType
 
   // MARK: QueueType interface
 
-  public var isEmpty: Bool { return head == tail }
+  var isEmpty: Bool { return head == tail }
 
-  public func enqueue(newElement: T)
+  func enqueue(newElement: WaitType)
   {
-    var node = UnsafeMutablePointer<Node<T>>(OSAtomicDequeue(pool, 0))
+    var node = UnsafeMutablePointer<Node>(OSAtomicDequeue(pool, 0))
     if node == nil
     {
-      node = UnsafeMutablePointer<Node<T>>.alloc(1)
-      node.memory = Node(UnsafeMutablePointer<T>.alloc(1))
+      node = UnsafeMutablePointer<Node>.alloc(1)
     }
-    node.memory.next = nil
-    node.memory.elem.initialize(newElement)
+    node.initialize(Node(newElement))
 
     OSSpinLockLock(&tlock)
     // hopefully tail.memory.next is stored atomically
@@ -104,7 +95,7 @@ final public class Fast2LockQueue<T>: QueueType
     OSSpinLockUnlock(&tlock)
   }
 
-  public func dequeue() -> T?
+  func dequeue() -> WaitType?
   {
     OSSpinLockLock(&hlock)
     // hopefully head.memory.next is read atomically.
@@ -114,7 +105,8 @@ final public class Fast2LockQueue<T>: QueueType
     {
       let oldhead = head
       head = next
-      let element = next.memory.elem.move()
+      let element = next.memory.elem
+      next.memory.elem = .Wait
       OSSpinLockUnlock(&hlock)
 
       OSAtomicEnqueue(pool, oldhead, 0)
@@ -125,18 +117,13 @@ final public class Fast2LockQueue<T>: QueueType
   }
 }
 
-private struct Node<T>
+private struct Node
 {
-  var nptr: UnsafeMutablePointer<Void> = nil
-  let elem: UnsafeMutablePointer<T>
+  var next: UnsafeMutablePointer<Node> = nil
+  var elem: WaitType
 
-  init(_ p: UnsafeMutablePointer<T>)
+  init(_ w: WaitType)
   {
-    elem = p
-  }
-
-  var next: UnsafeMutablePointer<Node<T>> {
-    get { return UnsafeMutablePointer(nptr) }
-    set { nptr = UnsafeMutablePointer(newValue) }
+    elem = w
   }
 }
