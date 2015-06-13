@@ -9,101 +9,97 @@
 import Darwin
 
 let iterations = 120_000
-let buflen = iterations/1000
 
 var dt: Interval
 var tic: Time
+var chan: (tx: Sender<Int>, rx: Receiver<Int>)
 
 
-var buffered = Channel<Int>.Make(1)
+chan = Channel<Int>.Make(1)
 
 tic = Time()
 
 for i in 0..<iterations
 {
-  buffered.tx <- i
-  if let r = <-buffered.rx
+  chan.tx <- i
+  if let r = <-chan.rx
   {
     _ = r
   }
 }
-buffered.tx.close()
+chan.tx.close()
 
 dt = tic.toc
 syncprint("\(dt)\t\t(\(dt/iterations) per message)")
 
 
-buffered = Channel<Int>.Make(1)
+chan = Channel.Wrap(SChan<Int>.Make(1))
 
 tic = Time()
 
-async {
-  for i in 0..<iterations
-  {
-    buffered.tx <- i
-  }
-  buffered.tx.close()
-}
-
-while let a = <-buffered.rx { _ = a }
-
-dt = tic.toc
-syncprint("\(dt)\t\t(\(dt/iterations) per message)")
-
-
-var unbuffered = Channel<Int>.Make(0)
-
-tic = Time()
-
-async {
-  for i in 0..<iterations
-  {
-    unbuffered.tx <- i
-  }
-  unbuffered.tx.close()
-}
-
-while let a = <-unbuffered.rx { _ = a }
-
-dt = tic.toc
-syncprint("\(dt)\t\t(\(dt/iterations) per message)")
-
-
-var bufferedN = Channel<Int>.Make(buflen)
-
-tic = Time()
-
-for j in 0..<(iterations/buflen)
+for i in 0..<iterations
 {
-  for i in 0..<buflen
+  chan.tx <- i
+  if let r = <-chan.rx
   {
-    bufferedN.tx <- i
-  }
-
-  for i in 0..<buflen
-  {
-    _ = <-bufferedN.rx
+    _ = r
   }
 }
-bufferedN.tx.close()
+chan.tx.close()
 
 dt = tic.toc
 syncprint("\(dt)\t\t(\(dt/iterations) per message)")
 
 
-bufferedN = Channel<Int>.Make(buflen)
+chan = Channel<Int>.Make(1)
 
 tic = Time()
 
 async {
   for i in 0..<iterations
   {
-    bufferedN.tx <- i
+    chan.tx <- i
   }
-  bufferedN.tx.close()
+  chan.tx.close()
 }
 
-while let a = <-bufferedN.rx { _ = a }
+while let a = <-chan.rx { _ = a }
+
+dt = tic.toc
+syncprint("\(dt)\t\t(\(dt/iterations) per message)")
+
+
+chan = Channel.Wrap(SChan<Int>.Make(1))
+
+tic = Time()
+
+async {
+  for i in 0..<iterations
+  {
+    chan.tx <- i
+  }
+  chan.tx.close()
+}
+
+while let a = <-chan.rx { _ = a }
+
+dt = tic.toc
+syncprint("\(dt)\t\t(\(dt/iterations) per message)")
+
+
+chan = Channel<Int>.Make(0)
+
+tic = Time()
+
+async {
+  for i in 0..<iterations
+  {
+    chan.tx <- i
+  }
+  chan.tx.close()
+}
+
+while let a = <-chan.rx { _ = a }
 
 dt = tic.toc
 syncprint("\(dt)\t\t(\(dt/iterations) per message)")

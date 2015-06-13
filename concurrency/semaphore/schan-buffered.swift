@@ -29,9 +29,6 @@ final class SBufferedChan<T>: Chan<T>
   private let filled: dispatch_semaphore_t
   private let empty:  dispatch_semaphore_t
 
-  private var wlock = OS_SPINLOCK_INIT
-  private var rlock = OS_SPINLOCK_INIT
-
   private var closed = 0
 
   // Used to elucidate/troubleshoot message arrival order
@@ -68,8 +65,8 @@ final class SBufferedChan<T>: Chan<T>
   {
     while (tail &- head) > 0
     {
+      head += 1
       buffer.advancedBy(head&mask).destroy()
-      head = head &+ 1
       dispatch_semaphore_signal(empty)
     }
     buffer.dealloc(mask+1)
@@ -77,15 +74,9 @@ final class SBufferedChan<T>: Chan<T>
 
   // MARK: ChannelType properties
 
-  final override var isEmpty: Bool
-  {
-    return (tail &- head) <= 0
-  }
+  final override var isEmpty: Bool { return (tail &- head) <= 0 }
 
-  final override var isFull: Bool
-  {
-    return (tail &- head) >= capacity
-  }
+  final override var isFull: Bool  { return (tail &- head) >= capacity }
 
   /**
     Determine whether the channel has been closed
@@ -128,20 +119,17 @@ final class SBufferedChan<T>: Chan<T>
     if closed != 0 { return false }
 
     dispatch_semaphore_wait(empty, DISPATCH_TIME_FOREVER)
-    OSSpinLockLock(&wlock)
 
     if closed == 0
     {
-      buffer.advancedBy(tail&mask).initialize(newElement)
-      tail = tail &+ 1
+      let newtail = OSAtomicIncrementLongBarrier(&tail)
+      buffer.advancedBy(newtail&mask).initialize(newElement)
 
-      OSSpinLockUnlock(&wlock)
       dispatch_semaphore_signal(filled)
       return true
     }
     else
     {
-      OSSpinLockUnlock(&wlock)
       dispatch_semaphore_signal(empty)
       return false
     }
@@ -161,21 +149,19 @@ final class SBufferedChan<T>: Chan<T>
     if closed != 0 && (tail &- head) <= 0 { return nil }
 
     dispatch_semaphore_wait(filled, DISPATCH_TIME_FOREVER)
-    OSSpinLockLock(&rlock)
 
-    if (tail &- head) > 0
+    let newhead = OSAtomicIncrementLongBarrier(&head)
+    if (tail &- newhead) >= 0
     {
-      let element = buffer.advancedBy(head&mask).move()
-      head = head &+ 1
+      let element = buffer.advancedBy(newhead&mask).move()
 
-      OSSpinLockUnlock(&rlock)
       dispatch_semaphore_signal(empty)
       return element
     }
     else
     {
       precondition(closed != 0, __FUNCTION__)
-      OSSpinLockUnlock(&rlock)
+      OSAtomicDecrementLongBarrier(&head)
       dispatch_semaphore_signal(filled)
       return nil
     }
@@ -198,19 +184,17 @@ final class SBufferedChan<T>: Chan<T>
   override func insert(selection: Selection, newElement: T) -> Bool
   {
     // the `empty` semaphore has already been decremented for this operation.
-    OSSpinLockLock(&wlock)
-    if closed == 0 && (tail &- head) < capacity
+    let newtail = OSAtomicIncrementLongBarrier(&tail)
+    if closed == 0 && (newtail &- head) <= capacity
     {
-      buffer.advancedBy(tail&mask).initialize(newElement)
-      tail = tail &+ 1
+      buffer.advancedBy(newtail&mask).initialize(newElement)
 
-      OSSpinLockUnlock(&wlock)
       dispatch_semaphore_signal(filled)
       return true
     }
     else
     {
-      OSSpinLockUnlock(&wlock)
+      OSAtomicDecrementLongBarrier(&tail)
       dispatch_semaphore_signal(empty)
       return false
     }
@@ -263,19 +247,18 @@ final class SBufferedChan<T>: Chan<T>
   override func extract(selection: Selection) -> T?
   {
     // the `filled` semaphore has already been decremented for this operation.
-    OSSpinLockLock(&rlock)
-    if (tail &- head) > 0
+    let newhead = OSAtomicIncrementLongBarrier(&head)
+    if (tail &- newhead) >= 0
     {
-      let element = buffer.advancedBy(head&mask).move()
-      head = head &+ 1
-      OSSpinLockUnlock(&rlock)
+      let element = buffer.advancedBy(newhead&mask).move()
+
       dispatch_semaphore_signal(empty)
       return element
     }
     else
     {
       precondition(closed != 0, __FUNCTION__)
-      OSSpinLockUnlock(&rlock)
+      OSAtomicDecrementLongBarrier(&head)
       dispatch_semaphore_signal(filled)
       return nil
     }
@@ -312,4 +295,23 @@ final class SBufferedChan<T>: Chan<T>
       }
     }
   }
+}
+
+
+@inline(__always) private func OSAtomicIncrementLongBarrier(pointer: UnsafeMutablePointer<Int>) -> Int
+{
+  #if arch(x86_64) || arch(arm64) // 64-bit architecture
+    return Int(OSAtomicIncrement64Barrier(UnsafeMutablePointer<Int64>(pointer)))
+    #else // 32-bit architecture
+    return Int(OSAtomicIncrement32Barrier(UnsafeMutablePointer<Int32>(pointer)))
+  #endif
+}
+
+@inline(__always) private func OSAtomicDecrementLongBarrier(pointer: UnsafeMutablePointer<Int>) -> Int
+{
+  #if arch(x86_64) || arch(arm64) // 64-bit architecture
+    return Int(OSAtomicDecrement64Barrier(UnsafeMutablePointer<Int64>(pointer)))
+    #else // 32-bit architecture
+    return Int(OSAtomicDecrement32Barrier(UnsafeMutablePointer<Int32>(pointer)))
+  #endif
 }
