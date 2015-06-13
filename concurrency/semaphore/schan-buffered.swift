@@ -65,7 +65,7 @@ final class SBufferedChan<T>: Chan<T>
   {
     while (tail &- head) > 0
     {
-      OSAtomicIncrementLongBarrier(&head)
+      head += 1
       buffer.advancedBy(head&mask).destroy()
       empty.signal()
     }
@@ -76,15 +76,9 @@ final class SBufferedChan<T>: Chan<T>
 
   // MARK: ChannelType properties
 
-  final override var isEmpty: Bool
-  {
-    return (tail &- head) <= 0
-  }
+  final override var isEmpty: Bool { return (tail &- head) <= 0 }
 
-  final override var isFull: Bool
-  {
-    return (tail &- head) >= capacity
-  }
+  final override var isFull: Bool  { return (tail &- head) >= capacity }
 
   /**
     Determine whether the channel has been closed
