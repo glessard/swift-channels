@@ -87,6 +87,8 @@
 		03AD47AF1A688BE900F4B44B /* shuffle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47AD1A688BE900F4B44B /* shuffle.swift */; };
 		03AD47B21A6890B100F4B44B /* merge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47B11A6890B100F4B44B /* merge.swift */; };
 		03AD47C01A689E0900F4B44B /* MergeTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47BF1A689E0900F4B44B /* MergeTest.swift */; };
+		03CF82C91B2C6A2A00F4B44B /* chan-timer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03CF82C81B2C6A2A00F4B44B /* chan-timer.swift */; };
+		03CF82CC1B2C72FC00F4B44B /* TimerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03CF82CB1B2C72FC00F4B44B /* TimerTests.swift */; };
 		03EDB5F11AD22B6F00F4B44B /* channel-semaphore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03EDB5F01AD22B6F00F4B44B /* channel-semaphore.swift */; };
 		03EDB5F21AD22BB000F4B44B /* channel-semaphore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03EDB5F01AD22B6F00F4B44B /* channel-semaphore.swift */; };
 		03EDB5F31AD22BB100F4B44B /* channel-semaphore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03EDB5F01AD22B6F00F4B44B /* channel-semaphore.swift */; };
@@ -168,6 +170,8 @@
 		03AD47B11A6890B100F4B44B /* merge.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = merge.swift; sourceTree = "<group>"; };
 		03AD47BF1A689E0900F4B44B /* MergeTest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MergeTest.swift; sourceTree = "<group>"; };
 		03B24C0B1A8AC01F00F4B44B /* pchan-bufferedN-array.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "pchan-bufferedN-array.swift"; sourceTree = "<group>"; };
+		03CF82C81B2C6A2A00F4B44B /* chan-timer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "chan-timer.swift"; sourceTree = "<group>"; };
+		03CF82CB1B2C72FC00F4B44B /* TimerTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TimerTests.swift; sourceTree = "<group>"; };
 		03EDB5F01AD22B6F00F4B44B /* channel-semaphore.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "channel-semaphore.swift"; path = "channel-semaphore/channel-semaphore.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -264,6 +268,7 @@
 				03AD47521A6744DA00F4B44B /* PChanTests.swift */,
 				03AD47531A6744DA00F4B44B /* QChanTests.swift */,
 				03AD47541A6744DA00F4B44B /* SChanTests.swift */,
+				03CF82CB1B2C72FC00F4B44B /* TimerTests.swift */,
 				03AD47BF1A689E0900F4B44B /* MergeTest.swift */,
 				035B606E1A67433800F4B44B /* Supporting Files */,
 			);
@@ -287,6 +292,7 @@
 				03AD47021A6743E500F4B44B /* chan-protocols.swift */,
 				03AD47031A6743E500F4B44B /* chan-receiver.swift */,
 				03AD47041A6743E500F4B44B /* chan-sender.swift */,
+				03CF82C81B2C6A2A00F4B44B /* chan-timer.swift */,
 				03AD470F1A6743E500F4B44B /* pthread-mutex */,
 				03AD47151A6743E500F4B44B /* queue */,
 				03019F3F1AD080B800F4B44B /* channel-semaphore */,
@@ -528,6 +534,7 @@
 				03AD47371A6743E500F4B44B /* schan.swift in Sources */,
 				035EAA5B1B280AB800F4B44B /* pchan-buffered1.swift in Sources */,
 				03AD47311A6743E500F4B44B /* qchan-buffered.swift in Sources */,
+				03CF82C91B2C6A2A00F4B44B /* chan-timer.swift in Sources */,
 				03AD47251A6743E500F4B44B /* channel.swift in Sources */,
 				035EAA5E1B280AB800F4B44B /* pchan-bufferedN-array.swift in Sources */,
 				03AD47471A67441A00F4B44B /* queuetype.swift in Sources */,
@@ -563,6 +570,7 @@
 				033912031ABD3DC000F4B44B /* ChannelsExamples.swift in Sources */,
 				035B60711A67433800F4B44B /* ChannelsTests.swift in Sources */,
 				0336B9B51ABB1BF700F4B44B /* async.swift in Sources */,
+				03CF82CC1B2C72FC00F4B44B /* TimerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
