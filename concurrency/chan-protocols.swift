@@ -67,13 +67,15 @@ public extension ReceiverType
 
   /**
     Return a value less than or equal to the number of elements in self, nondestructively.
-    In other words: return 0 if channel is empty, 1 otherwise.
-    Complexity: 0(1)
+    In other words: always return 0.
+    - Complexity: 0(1)
+    - Note: Implements a `SequenceType` requirement.
+    - Returns: 0
   */
 
   public func underestimateCount() -> Int
   {
-    return isEmpty ? 0 : 1
+    return 0
   }
 }
 
