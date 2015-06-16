@@ -27,7 +27,7 @@ public func select(options: [Selectable], withDefault: Selectable? = nil) -> Sel
   let semaphore = SemaphorePool.Obtain()
   semaphore.setState(.WaitSelect)
 
-  for option in shuffle(selectables)
+  for option in selectables.shuffle()
   {
     option.selectNotify(semaphore, selection: Selection(id: option))
     if semaphore.state != .WaitSelect { break }
