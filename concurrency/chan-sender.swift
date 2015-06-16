@@ -27,7 +27,6 @@ public final class Sender<T>: SenderType
   // MARK: SenderType implementation
 
   public var isClosed: Bool { return wrapped.isClosed }
-  public var isFull:   Bool { return wrapped.isFull }
   public func close()  { wrapped.close() }
 
   public func send(newElement: T) -> Bool { return wrapped.put(newElement) }
@@ -145,7 +144,6 @@ private class ChannelTypeAsChan<T, C: ChannelType where C.Element == T>: Chan<T>
   }
 
   override var isClosed: Bool { return wrapped.isClosed }
-  override var isFull:   Bool { return wrapped.isFull }
   override func close()  { wrapped.close() }
 
   override func put(newElement: T) -> Bool { return wrapped.put(newElement) }
@@ -165,7 +163,6 @@ private class SenderTypeAsChan<T, C: SenderType where C.SentElement == T>: Chan<
   }
 
   override var isClosed: Bool { return wrapped.isClosed }
-  override var isFull:   Bool { return wrapped.isFull }
   override func close()  { wrapped.close() }
 
   override func put(newElement: T) -> Bool { return wrapped.send(newElement) }
