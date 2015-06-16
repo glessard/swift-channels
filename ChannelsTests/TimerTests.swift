@@ -19,11 +19,8 @@ class TimerTests: XCTestCase
 
     let rx1 = Timer(dispatch_time(DISPATCH_TIME_NOW, 10_000_000))
     XCTAssert(rx1.isClosed == false)
-    XCTAssert(rx1.isEmpty)
     <-rx1
-    XCTAssert(rx1.isEmpty)
     XCTAssert(rx1.isClosed)
-    XCTAssert(rx1.isEmpty)
 
     let rx2 = Timer(delay: 10_000_000)
     XCTAssert(rx2.isClosed == false)
@@ -33,7 +30,10 @@ class TimerTests: XCTestCase
     let rx3 = Receiver.Wrap(Timer())
     XCTAssert(rx3.isClosed == false)
     <-rx3
+    rx3.close()
     XCTAssert(rx3.isClosed)
+
+    let _ = Timer()
 
     let dt = mach_absolute_time() - start
     XCTAssert(dt > 20_000_000)

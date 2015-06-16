@@ -15,31 +15,36 @@ import Dispatch
   In the meantime, the channel has no capacity, therefore any attempt receive from it will block.
 */
 
-class Timer: ReceiverType
+public class Timer: ReceiverType
 {
   private var closedState: Int32 = 0
   private let closingTime: dispatch_time_t
 
   private let barrier = dispatch_group_create()!
 
-  init(_ time: dispatch_time_t)
+  public init(_ time: dispatch_time_t)
   {
     closingTime = time
-
     dispatch_group_enter(barrier)
   }
 
-  convenience init(delay timeOffset: Int64 = 0)
+  public convenience init(delay timeOffset: Int64 = 0)
   {
     let offset = timeOffset > 0 ? timeOffset : 0
     self.init(dispatch_time(DISPATCH_TIME_NOW, offset))
   }
 
-  var isEmpty: Bool  { return true }
+  deinit
+  {
+    if closedState == 0
+    {
+      dispatch_group_leave(barrier)
+    }
+  }
 
-  var isClosed: Bool { return closedState != 0 }
+  public var isClosed: Bool { return closedState != 0 }
 
-  func close()
+  public func close()
   {
     if closedState == 0 && OSAtomicCompareAndSwap32Barrier(0, 1, &closedState)
     { // Only one thread can get here
@@ -47,11 +52,15 @@ class Timer: ReceiverType
     }
   }
 
-  func receive() -> Void?
+  public func receive() -> Void?
   {
     if closedState == 0
-    {
-      dispatch_group_wait(barrier, closingTime)
+    { // given our usage, dispatch_group_wait will allocate a semaphore port regardless of the timeout value.
+      // in order to occasionally save some microseconds, compare with the current time first.
+      if closingTime > dispatch_time(DISPATCH_TIME_NOW, 0)
+      {
+        dispatch_group_wait(barrier, closingTime)
+      }
       close()
     }
     return nil
