@@ -33,7 +33,10 @@ class TimerTests: XCTestCase
     let rx3 = Receiver.Wrap(Timer())
     XCTAssert(rx3.isClosed == false)
     <-rx3
+    rx3.close()
     XCTAssert(rx3.isClosed)
+
+    let _ = Timer()
 
     let dt = mach_absolute_time() - start
     XCTAssert(dt > 1_000_000 && dt < 2_000_000)
