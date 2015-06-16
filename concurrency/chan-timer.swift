@@ -67,7 +67,7 @@ public class Timer: ReceiverType, SelectableReceiverType
   }
 
 
-  public var selectable: Bool { return closedState == 0 || closingTime < dispatch_time(DISPATCH_TIME_NOW, 0) }
+  public var selectable: Bool { return closedState == 0 }
 
   public func selectNow(selection: Selection) -> Selection?
   {
