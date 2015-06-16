@@ -15,7 +15,7 @@ import Dispatch
   In the meantime, the channel has no capacity, therefore any attempt receive from it will block.
 */
 
-class Timer: ReceiverType
+class Timer: ReceiverType, SelectableReceiverType
 {
   private var closedState: Int32 = 0
   private let closingTime: dispatch_time_t
@@ -29,13 +29,11 @@ class Timer: ReceiverType
     dispatch_group_enter(barrier)
   }
 
-  convenience init(delay timeOffset: Int64 = 0)
+  convenience init(delay: Int64 = 0)
   {
-    let offset = timeOffset > 0 ? timeOffset : 0
+    let offset = delay > 0 ? delay : 0
     self.init(dispatch_time(DISPATCH_TIME_NOW, offset))
   }
-
-  var isEmpty: Bool  { return true }
 
   var isClosed: Bool { return closedState != 0 }
 
@@ -55,5 +53,34 @@ class Timer: ReceiverType
       close()
     }
     return nil
+  }
+
+
+  var selectable: Bool { return closedState == 0 || closingTime < dispatch_time(DISPATCH_TIME_NOW, 0) }
+
+  func selectNow(selection: Selection) -> Selection?
+  {
+    if closingTime < dispatch_time(DISPATCH_TIME_NOW, 0)
+    {
+      close()
+      return selection
+    }
+    return nil
+  }
+
+  func selectNotify(select: ChannelSemaphore, selection: Selection)
+  {
+    dispatch_after(closingTime, dispatch_get_global_queue(qos_class_self(), 0)) {
+      if select.setState(.Select)
+      {
+        select.selection = selection
+        select.signal()
+      }
+    }
+  }
+
+  func extract(selection: Selection) -> Void?
+  {
+    return self.receive()
   }
 }
