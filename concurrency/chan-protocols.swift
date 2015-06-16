@@ -8,6 +8,9 @@
 
 /**
   The interface required for the receiving end of a channel.
+
+  `ReceiverType` includes default implementations for `SequenceType` and `GeneratorType`.
+  Note that iterating over a `ReceiverType` uses the `ReceiverType.receive()` method, which is a destructive operation.
 */
 
 // MARK: ReceiverType
@@ -17,20 +20,15 @@ public protocol ReceiverType: BasicChannelType, GeneratorType, SequenceType
   typealias ReceivedElement
 
   /**
-    Report whether the channel is empty (and therefore isn't ready to be received from)
-  */
-
-  var isEmpty: Bool { get }
-
-  /**
     Receive the oldest element from the channel.
-    The channel will no longer hold a copy of (or reference to) the item.
-    Used internally by the <- receive operator.
+    Used internally by the `<-` receive operator.
 
-    If the channel is empty, this call will block.
-    If the channel is empty and closed, this will return nil.
+    If the underlying channel is open and empty, this call will block.
+    If the underlying channel is closed and empty, this will return `nil`.
 
-    - returns: the oldest element from the channel.
+    - Note:    The channel will no longer hold a copy of (or reference to) the item.
+
+    - Returns: the oldest element from the channel, or `nil` if the channel is closed and empty.
   */
 
   func receive() -> ReceivedElement?
@@ -40,12 +38,14 @@ public extension ReceiverType
 {
   /**
     Return the next element from the channel.
-    This is an alias for ReceivingChannel.receive() and will fulfill the GeneratorType protocol.
+    This is an alias for `ReceiverType.receive()` and will fulfill the `GeneratorType` protocol.
 
-    If the channel is empty, this call will block.
-    If the channel is empty and closed, this will return nil.
+    If the underlying channel is open and empty, this call will block.
+    If the underlying channel is closed and empty, this will return `nil`.
 
-    - returns: the oldest element from the channel.
+    - Note:    The channel will no longer hold a copy of (or reference to) the item.
+
+    - Returns: the oldest element from the channel, or `nil` if the channel is closed and empty.
   */
 
   public func next() -> ReceivedElement?
@@ -54,10 +54,13 @@ public extension ReceiverType
   }
 
   /**
-    Return self as a GeneratorType.
-    This fulfills the SequenceType protocol.
+    Return self as a `GeneratorType`.
+    This fulfills the `SequenceType` protocol.
+    
+    - Note: Iterating over a `ReceiverType` is destructive, in that it deletes element from the channel.
+    - Complexity: 0(1)
 
-    - returns: an implementor of GeneratorType to iterate along the channel's elements.
+    - Returns: an implementor of GeneratorType to iterate along the channel's elements.
   */
 
   public func generate() -> Self
@@ -90,14 +93,8 @@ public protocol SenderType: BasicChannelType
   typealias SentElement
 
   /**
-    Report whether the channel is full (and can't be sent to)
-  */
-
-  var isFull: Bool { get }
-
-  /**
     Send a new element to the channel. The caller should probably not retain a
-    reference to anything thus sent. Used internally by the <- send operator.
+    reference to anything thus sent. Used internally by the `<-` send operator.
 
     If the channel is full, this call will block.
     If the channel has been closed, no action will be taken.
@@ -119,6 +116,8 @@ public protocol BasicChannelType
 {
   /**
     Report whether the channel has been closed
+  
+    - Returns: whether the channel has been closed
   */
 
   var isClosed: Bool { get }
@@ -129,15 +128,15 @@ public protocol BasicChannelType
     Any items still in the channel remain and can be retrieved.
     New items cannot be added to a closed channel.
 
-    It could be considered an error to close a channel that has already been closed.
-    The actual reaction shall be implementation-dependent.
+    - Note: It could be considered an error to close a channel that has already been closed.
+            The current behaviour is to do nothing.
   */
 
   mutating func close()
 }
 
 /**
-  ChannelType is the connection between a SenderType and  ReceiverType.
+  `ChannelType` is the connection between a `SenderType` and  `ReceiverType`.
 */
 
 // MARK: ChannelType
@@ -148,12 +147,16 @@ protocol ChannelType: class, BasicChannelType
 
   /**
     Determine whether the channel is empty (and can't be received from at the moment)
+  
+    - Returns: `true` if the channel is empty.
   */
 
   var isEmpty: Bool { get }
 
   /**
     Determine whether the channel is full (and can't be written to at the moment)
+  
+    - Returns: `true` if the channel is full.
   */
 
   var isFull: Bool { get }
@@ -161,8 +164,9 @@ protocol ChannelType: class, BasicChannelType
   /**
     Put a new element in the channel
 
-    If the channel is full, this call will block.
-    If the channel has been closed, no action will be taken.
+    If the channel is full, this method will block.
+    If the operation succeeds, this method will return `true`
+    If the channel is closed, this method will return `false`.
 
     - parameter element: the new element to be added to the channel.
     - returns: whether newElement was succesfully inserted in the channel
@@ -173,10 +177,12 @@ protocol ChannelType: class, BasicChannelType
   /**
     Obtain the oldest element from the channel.
 
-    If the channel is empty, this call will block.
-    If the channel is empty and closed, this will return nil.
+    If the channel is open and empty, this call will block.
+    If the channel is closed and empty, this will return `nil`.
 
-    - returns: the oldest element from the channel.
+    - Note:    The channel will no longer hold a copy of (or reference to) the item.
+
+    - returns: the oldest element from the channel, or `nil`
   */
 
   func get() -> Element?
