@@ -27,7 +27,7 @@ public func select(options: [Selectable], withDefault: Selectable? = nil) -> Sel
   }
 
   // The synchronous path
-  for option in shuffle(selectables)
+  for option in selectables.shuffle()
   {
     if let selection = option.selectNow(Selection(id: option))
     {
@@ -44,7 +44,7 @@ public func select(options: [Selectable], withDefault: Selectable? = nil) -> Sel
   let semaphore = SemaphorePool.Obtain()
   semaphore.setState(.WaitSelect)
 
-  for option in shuffle(selectables)
+  for option in selectables.shuffle()
   {
     option.selectNotify(semaphore, selection: Selection(id: option))
     if semaphore.state != .WaitSelect { break }
