@@ -14,27 +14,27 @@ import XCTest
 
 class MergeTests: XCTestCase
 {
-  let outerloopcount = 60
-  let innerloopcount = 600
+  let outerloopcount = 10
+  let innerloopcount = 10_000
 
-  func testPerformanceGroupMerge()
+  func testPerformanceMerge()
   {
     self.measureBlock() {
       var chans = [Receiver<Int>]()
       for _ in 0..<self.outerloopcount
       {
-        let (tx, rx) = Channel<Int>.Make(self.innerloopcount)
+        let c = SChan<Int>.Make(self.innerloopcount)
         async {
-          for j in 1...self.innerloopcount { tx <- j }
-          tx.close()
+          for j in 1...self.innerloopcount { c.put(j) }
+          c.close()
         }
-        chans.append(rx)
+        chans.append(Receiver(c))
       }
 
-      let c = mergeGroup(chans)
+      let c = chans.merge()
 
       var total = 0
-      for _ in c
+      while let _ = c.receive()
       {
         total += 1
       }
@@ -42,25 +42,25 @@ class MergeTests: XCTestCase
       XCTAssert(total == self.outerloopcount*self.innerloopcount, "Incorrect merge in \(__FUNCTION__)")
     }
   }
-
-  func testPerformanceDispatchApplyMerge()
+  
+  func testPerformanceMergeUnbuffered()
   {
     self.measureBlock() {
       var chans = [Receiver<Int>]()
       for _ in 0..<self.outerloopcount
       {
-        let (tx, rx) = Channel<Int>.Make(self.innerloopcount)
+        let c = QChan<Int>.Make(0)
         async {
-          for j in 1...self.innerloopcount { tx <- j }
-          tx.close()
+          for j in 1...self.innerloopcount { c.put(j) }
+          c.close()
         }
-        chans.append(rx)
+        chans.append(Receiver(c))
       }
 
-      let c = merge(chans)
+      let c = chans.merge()
 
       var total = 0
-      for _ in c
+      while let _ = c.receive()
       {
         total += 1
       }
@@ -68,25 +68,25 @@ class MergeTests: XCTestCase
       XCTAssert(total == self.outerloopcount*self.innerloopcount, "Incorrect merge in \(__FUNCTION__)")
     }
   }
-
+  
   func testPerformanceRoundRobinMerge()
   {
     self.measureBlock() {
       var chans = [Receiver<Int>]()
       for _ in 0..<self.outerloopcount
       {
-        let (tx, rx) = Channel<Int>.Make(self.innerloopcount)
+        let c = SChan<Int>.Make(self.innerloopcount)
         async {
-          for j in 1...self.innerloopcount { tx <- j }
-          tx.close()
+          for j in 1...self.innerloopcount { c.put(j) }
+          c.close()
         }
-        chans.append(rx)
+        chans.append(Receiver(c))
       }
 
       let c = mergeRR(chans)
 
       var total = 0
-      for _ in c
+      while let _ = c.receive()
       {
         total += 1
       }
@@ -94,129 +94,25 @@ class MergeTests: XCTestCase
       XCTAssert(total == self.outerloopcount*self.innerloopcount, "Incorrect merge in \(__FUNCTION__)")
     }
   }
-
-  func testPerformanceMergeSelect()
-  {
-    self.measureBlock() {
-      var chans = [Receiver<Int>]()
-      for _ in 0..<self.outerloopcount
-      {
-        let (tx, rx) = Channel<Int>.Make(self.innerloopcount)
-        async {
-          for j in 1...self.innerloopcount { tx <- j }
-          tx.close()
-        }
-        chans.append(rx)
-      }
-
-      let c = mergeSelect(chans)
-
-      var total = 0
-      for _ in c
-      {
-        total += 1
-      }
-
-      XCTAssert(total == self.outerloopcount*self.innerloopcount, "Incorrect merge in \(__FUNCTION__)")
-    }
-  }
-
-  func testPerformanceGroupMergeUnbuffered()
-  {
-    self.measureBlock() {
-      var chans = [Receiver<Int>]()
-      for _ in 0..<self.outerloopcount
-      {
-        let (tx, rx) = Channel<Int>.Make(0)
-        async {
-          for j in 1...self.innerloopcount { tx <- j }
-          tx.close()
-        }
-        chans.append(rx)
-      }
-
-      let c = mergeGroup(chans)
-
-      var total = 0
-      for _ in c
-      {
-        total += 1
-      }
-
-      XCTAssert(total == self.outerloopcount*self.innerloopcount, "Incorrect merge in \(__FUNCTION__)")
-    }
-  }
-
-  func testPerformanceDispatchApplyMergeUnbuffered()
-  {
-    self.measureBlock() {
-      var chans = [Receiver<Int>]()
-      for _ in 0..<self.outerloopcount
-      {
-        let (tx, rx) = Channel<Int>.Make(0)
-        async {
-          for j in 1...self.innerloopcount { tx <- j }
-          tx.close()
-        }
-        chans.append(rx)
-      }
-
-      let c = merge(chans)
-
-      var total = 0
-      for _ in c
-      {
-        total += 1
-      }
-
-      XCTAssert(total == self.outerloopcount*self.innerloopcount, "Incorrect merge in \(__FUNCTION__)")
-    }
-  }
-
+  
   func testPerformanceRoundRobinMergeUnbuffered()
   {
     self.measureBlock() {
       var chans = [Receiver<Int>]()
       for _ in 0..<self.outerloopcount
       {
-        let (tx, rx) = Channel<Int>.Make(0)
+        let c = QChan<Int>.Make(0)
         async {
-          for j in 1...self.innerloopcount { tx <- j }
-          tx.close()
+          for j in 1...self.innerloopcount { c.put(j) }
+          c.close()
         }
-        chans.append(rx)
+        chans.append(Receiver(c))
       }
 
       let c = mergeRR(chans)
 
       var total = 0
-      for _ in c
-      {
-        total += 1
-      }
-
-      XCTAssert(total == self.outerloopcount*self.innerloopcount, "Incorrect merge in \(__FUNCTION__)")
-    }
-  }
-
-  func testPerformanceMergeSelectUnbuffered()
-  {
-    self.measureBlock() {
-      var chans = [Receiver<Int>]()
-      for _ in 0..<self.outerloopcount
-      {
-        let (tx, rx) = Channel<Int>.Make(0)
-        async {
-          for j in 1...self.innerloopcount { tx <- j }
-          tx.close()
-        }
-        chans.append(rx)
-      }
-
-      let c = mergeSelect(chans)
-
-      var total = 0
-      for _ in c
+      while let _ = c.receive()
       {
         total += 1
       }
