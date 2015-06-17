@@ -10,7 +10,7 @@ import Darwin
 import Foundation
 import XCTest
 
-import Channels
+@testable import Channels
 
 class SelectUnbufferedTests: XCTestCase
 {
@@ -18,7 +18,7 @@ class SelectUnbufferedTests: XCTestCase
 
   func MakeChannels() -> [Chan<Int>]
   {
-    return (0..<selectableCount).map { _ in Chan<Int>.Make() }
+    return (0..<selectableCount).map { _ in QUnbufferedChan<Int>() }
   }
 
   func getIterations(sleepInterval: NSTimeInterval) -> Int
@@ -225,11 +225,11 @@ class SelectUnbufferedTests: XCTestCase
   }
 }
 
-class SelectBufferedTests: SelectUnbufferedTests
+class SelectQChanBufferedTests: SelectUnbufferedTests
 {
   override func MakeChannels() -> [Chan<Int>]
   {
-    return (0..<selectableCount).map { _ in Chan<Int>.Make(1) }
+    return (0..<selectableCount).map { _ in QBufferedChan<Int>(1) }
   }
 }
 
@@ -237,6 +237,6 @@ class SelectSChanBufferedTests: SelectUnbufferedTests
 {
   override func MakeChannels() -> [Chan<Int>]
   {
-    return (0..<selectableCount).map { _ in SChan<Int>.Make(1) }
+    return (0..<selectableCount).map { _ in SBufferedChan<Int>(1) }
   }
 }

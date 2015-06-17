@@ -22,7 +22,7 @@ public extension CollectionType where Self.Generator.Element: ReceiverType, Self
 
   public func merge() -> Receiver<Generator.Element.ReceivedElement>
   {
-    let mergeChannel = SChan<Generator.Element.ReceivedElement>.Make(self.count*2)
+    let mergeChannel = SBufferedChan<Generator.Element.ReceivedElement>(self.count*2)
     let q = dispatch_get_global_queue(qos_class_self(), 0)
 
     dispatch_async(q) {
@@ -94,7 +94,7 @@ public extension CollectionType where Self.Generator.Element: ReceiverType, Self
       return Receiver()
     }
 
-    let mergeChannel = SChan<Generator.Element.ReceivedElement>.Make(self.count*2)
+    let mergeChannel = SBufferedChan<Generator.Element.ReceivedElement>.Make(self.count*2)
 
     dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
       // A non-clever, imperative-style round-robin merge.

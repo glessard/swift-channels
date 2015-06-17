@@ -19,7 +19,7 @@ class QUnbufferedChannelTests: UnbufferedChannelTests
 
   override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
   {
-    return Channel.Wrap(QChan.Make(buflen))
+    return Channel.Wrap(QUnbufferedChan())
   }
 }
 
@@ -29,6 +29,6 @@ class QBufferedNChannelTests: BufferedChannelTests
 
   override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
   {
-    return Channel.Wrap(QChan.Make(buflen))
+    return Channel.Wrap(QBufferedChan(buflen))
   }
 }

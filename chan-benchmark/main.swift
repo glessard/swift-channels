@@ -15,7 +15,7 @@ var tic: Time
 var chan: (tx: Sender<Int>, rx: Receiver<Int>)
 
 
-chan = Channel<Int>.Make(1)
+chan = Channel.Wrap(QBufferedChan<Int>(1))
 
 tic = Time()
 
@@ -33,7 +33,7 @@ dt = tic.toc
 syncprint("\(dt)\t\t(\(dt/iterations) per message)")
 
 
-chan = Channel.Wrap(SChan<Int>.Make(1))
+chan = Channel.Wrap(SBufferedChan<Int>(1))
 
 tic = Time()
 
@@ -51,7 +51,7 @@ dt = tic.toc
 syncprint("\(dt)\t\t(\(dt/iterations) per message)")
 
 
-chan = Channel<Int>.Make(1)
+chan = Channel.Wrap(QBufferedChan<Int>(1))
 
 tic = Time()
 
@@ -69,7 +69,7 @@ dt = tic.toc
 syncprint("\(dt)\t\t(\(dt/iterations) per message)")
 
 
-chan = Channel.Wrap(SChan<Int>.Make(1))
+chan = Channel.Wrap(SBufferedChan<Int>(1))
 
 tic = Time()
 

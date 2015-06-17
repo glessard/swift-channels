@@ -23,7 +23,7 @@ class MergeTests: XCTestCase
       var chans = [Receiver<Int>]()
       for _ in 0..<self.outerloopcount
       {
-        let c = SChan<Int>.Make(self.innerloopcount)
+        let c = SBufferedChan<Int>(self.innerloopcount)
         async {
           for j in 1...self.innerloopcount { c.put(j) }
           c.close()
@@ -49,7 +49,7 @@ class MergeTests: XCTestCase
       var chans = [Receiver<Int>]()
       for _ in 0..<self.outerloopcount
       {
-        let c = QChan<Int>.Make(0)
+        let c = QUnbufferedChan<Int>()
         async {
           for j in 1...self.innerloopcount { c.put(j) }
           c.close()
@@ -75,7 +75,7 @@ class MergeTests: XCTestCase
       var chans = [Receiver<Int>]()
       for _ in 0..<self.outerloopcount
       {
-        let c = SChan<Int>.Make(self.innerloopcount)
+        let c = SBufferedChan<Int>(self.innerloopcount)
         async {
           for j in 1...self.innerloopcount { c.put(j) }
           c.close()
@@ -101,7 +101,7 @@ class MergeTests: XCTestCase
       var chans = [Receiver<Int>]()
       for _ in 0..<self.outerloopcount
       {
-        let c = QChan<Int>.Make(0)
+        let c = QUnbufferedChan<Int>()
         async {
           for j in 1...self.innerloopcount { c.put(j) }
           c.close()

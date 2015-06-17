@@ -10,7 +10,7 @@ import Darwin
 import Foundation
 import XCTest
 
-import Channels
+@testable import Channels
 
 class SelectExamples: XCTestCase
 {
@@ -18,7 +18,7 @@ class SelectExamples: XCTestCase
   {
     let a: (tx: Sender<Int>, rx: Receiver<Int>) = Channel<Int>.Make(0)
     let b: (tx: Sender<Int>, rx: Receiver<Int>) = Channel<Int>.Make(1)
-    let c: (tx: Sender<Int>, rx: Receiver<Int>) = Channel.Wrap(SChan<Int>.Make(1))
+    let c: (tx: Sender<Int>, rx: Receiver<Int>) = Channel.Wrap(SBufferedChan<Int>.Make(1))
     let d: (tx: Sender<Int>, rx: Receiver<Int>) = Channel<Int>.Make(2)
     let e: (tx: Sender<Int>, rx: Receiver<Int>) = Channel<Int>.Make(5)
 
