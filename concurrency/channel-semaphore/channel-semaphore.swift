@@ -201,8 +201,14 @@ final public class ChannelSemaphore
     }
   }
 
-  var selection: Selection? {
-    get { return seln }
+  var selection: Selection! {
+    get {
+      if currentState == ChannelSemaphoreState.Select.rawValue ||
+         currentState == ChannelSemaphoreState.DoubleSelect.rawValue
+      { return seln }
+      else
+      { return nil }
+    }
     set {
       if currentState == ChannelSemaphoreState.Select.rawValue ||
          currentState == ChannelSemaphoreState.DoubleSelect.rawValue

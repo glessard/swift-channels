@@ -80,13 +80,13 @@ public func select(options: [Selectable], withDefault: Selectable? = nil) -> Sel
   switch semaphore.state
   {
   case .Select:
-    selection = semaphore.selection ?? Selection(id: voidReceiver)
+    selection = semaphore.selection
     semaphore.selection = nil
     semaphore.setState(.Done)
 
   case .DoubleSelect:
     // this is specific to the extract() side of a double select.
-    selection = semaphore.selection ?? Selection(id: voidReceiver)
+    selection = semaphore.selection
 
   case .Invalidated, .Done:
     selection = Selection(id: voidReceiver)
