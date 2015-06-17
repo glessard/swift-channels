@@ -64,7 +64,21 @@ This causes the while loop in the example to exit.
 
 #### Multiplexing
 
-It exists.
+Choosing from multiple channels can be done with the `select()` function:
+
+```
+let selection = select(receiver1, receiver2, sender)
+switch selection.id
+{
+case let s where s === receiver1: receiver1.extract(selection)
+case let s where s === receiver2: receiver2.extract(selection)
+case let s where s === sender:    sender.insert(selection, newElement)
+}
+```
+
+A timeout can be implemented with `select()` and the `Timer` class, which implements a timeout as a `Receiver`.
+`select()` also supports a default option; this will prevent `select()` from blocking.
+
 
 #### Performance
 
