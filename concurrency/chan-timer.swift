@@ -33,6 +33,8 @@ public class Timer: ReceiverType, SelectableReceiverType
     self.init(dispatch_time(DISPATCH_TIME_NOW, offset))
   }
 
+  public var isEmpty: Bool { return true }
+
   public var isClosed: Bool { return closedState != 0 || closingTime <= dispatch_time(DISPATCH_TIME_NOW, 0) }
 
   public func close()

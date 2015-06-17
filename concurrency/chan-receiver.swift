@@ -33,6 +33,7 @@ public final class Receiver<T>: ReceiverType
   // MARK: ReceiverType implementation
 
   public var isClosed: Bool { return wrapped.isClosed }
+  public var isEmpty:  Bool { return wrapped.isEmpty }
   public func close()  { wrapped.close() }
 
   public func receive() -> T?
@@ -160,6 +161,7 @@ private class ChannelTypeAsChan<T, C: ChannelType where C.Element == T>: Chan<T>
   }
 
   override var isClosed: Bool { return wrapped.isClosed }
+  override var isEmpty:  Bool { return wrapped.isEmpty }
   override func close()  { wrapped.close() }
 
   override func get() -> T? { return wrapped.get() }
@@ -180,6 +182,7 @@ private class ReceiverTypeAsChan<T, C: ReceiverType where C.ReceivedElement == T
   }
 
   override var isClosed: Bool { return wrapped.isClosed }
+  override var isEmpty:  Bool { return wrapped.isEmpty }
   override func close()  { wrapped.close() }
 
   override func get() -> T? { return wrapped.receive() }

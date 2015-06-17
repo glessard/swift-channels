@@ -20,6 +20,16 @@ public protocol ReceiverType: BasicChannelType, GeneratorType, SequenceType
   typealias ReceivedElement
 
   /**
+    Report whether the channel is empty (and therefore isn't ready to be received from)
+  
+    If only one thread can receive from the channel, this can be useful to avoid a blocking call.
+    That usage is not reliable if the channel can be received from in more than one thread,
+    as the empty state could go from false to true at any moment.
+  */
+
+  var isEmpty: Bool { get }
+
+  /**
     Receive the oldest element from the channel.
     Used internally by the `<-` receive operator.
 
@@ -102,6 +112,16 @@ public protocol SenderType: BasicChannelType
   typealias SentElement
 
   /**
+    Report whether the channel is full (and can't be sent to)
+
+    If only one thread can send to the channel, this can be useful to avoid a blocking call.
+    That usage is not reliable if the channel can be sent to by more than one thread,
+    as the full state could go from false to true at any moment.
+  */
+
+  var isFull: Bool { get }
+
+  /**
     Send a new element to the channel. The caller should probably not retain a
     reference to anything thus sent. Used internally by the `<-` send operator.
 
@@ -158,14 +178,22 @@ protocol ChannelType: class, BasicChannelType
   /**
     Determine whether the channel is empty (and can't be received from at the moment)
   
-    - Returns: `true` if the channel is empty.
+    If only one thread can receive from the channel, this can be useful to avoid a blocking call.
+    That usage is not reliable if the channel can be received from in more than one thread,
+    as the empty state could go from false to true at any moment.
+
+  - Returns: `true` if the channel is empty.
   */
 
   var isEmpty: Bool { get }
 
   /**
     Determine whether the channel is full (and can't be written to at the moment)
-  
+
+    If only one thread can send to the channel, this can be useful to avoid a blocking call.
+    That usage is not reliable if the channel can be sent to by more than one thread,
+    as the full state could go from false to true at any moment.
+
     - Returns: `true` if the channel is full.
   */
 

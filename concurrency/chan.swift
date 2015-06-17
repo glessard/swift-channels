@@ -27,12 +27,20 @@ public class Chan<T>: ChannelType, SelectableChannelType
 
   /**
     Determine whether the channel is empty (and can't be received from)
+
+    If only one thread can receive from the channel, this can be useful to avoid a blocking call.
+    That usage is not reliable if the channel can be received from in more than one thread,
+    as the empty state could go from false to true at any moment.
   */
 
   public var isEmpty: Bool { return true }
 
   /**
     Determine whether the channel is full (and can't be written to)
+
+    If only one thread can send to the channel, this can be useful to avoid a blocking call.
+    That usage is not reliable if the channel can be sent to by more than one thread,
+    as the full state could go from false to true at any moment.
   */
 
   public var isFull: Bool { return true }
