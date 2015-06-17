@@ -73,6 +73,7 @@ switch selection.id
 case let s where s === receiver1: receiver1.extract(selection)
 case let s where s === receiver2: receiver2.extract(selection)
 case let s where s === sender:    sender.insert(selection, newElement)
+default: break // necessary to satisfy `switch`
 }
 ```
 
