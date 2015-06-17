@@ -8,19 +8,18 @@
 
 import Dispatch
 
-/**
-  Merge an array of channel receivers into one Receiver.
-  Every item from the input channels will be able to be received via the returned channel.
-
-  This function uses a multithreaded approach to merging channels.
-  The system could run out of threads if the length of the input array is too large.
-
-  - parameter channels: an array of Receivers to merge.
-  - returns: a single Receiver provide access to get every message received by the input Receivers.
-*/
-
 public extension CollectionType where Self.Generator.Element: ReceiverType, Self.Index == Int
 {
+  /**
+    Merge an array of channel receivers into one Receiver.
+    Every item from the input channels will be able to be received via the returned channel.
+
+    This function uses a multithreaded approach to merging channels.
+    The system could run out of threads if the length of the input array is too large.
+
+    - returns: a single Receiver provide access to get every message received by the input Receivers.
+  */
+
   public func merge() -> Receiver<Generator.Element.ReceivedElement>
   {
     let mergeChannel = SChan<Generator.Element.ReceivedElement>.Make(self.count*2)
@@ -41,12 +40,18 @@ public extension CollectionType where Self.Generator.Element: ReceiverType, Self
   }
 }
 
-public func merge<R: ReceiverType>(channels: [R]) -> Receiver<R.ReceivedElement>
-{
-  return channels.merge()
-}
+/**
+  Merge an array of channel receivers into one Receiver.
+  Every item from the input channels will be able to be received via the returned channel.
 
-public func merge<R: ReceiverType>(channels: R...) -> Receiver<R.ReceivedElement>
+  This function uses a multithreaded approach to merging channels.
+  The system could run out of threads if the length of the input array is too large.
+
+  - parameter channels: an array of Receivers to merge.
+  - returns: a single Receiver provide access to get every message received by the input Receivers.
+*/
+
+public func merge<R: ReceiverType>(channels: [R]) -> Receiver<R.ReceivedElement>
 {
   return channels.merge()
 }
@@ -55,18 +60,33 @@ public func merge<R: ReceiverType>(channels: R...) -> Receiver<R.ReceivedElement
   Merge an array of channel receivers into one Receiver.
   Every item from the input channels will be able to be received via the returned channel.
 
-  This function uses a simple round-robin approach to merging channels; if any one
-  of the input channel blocks, the whole thing might block.
+  This function uses a multithreaded approach to merging channels.
+  The system could run out of threads if the length of the input array is too large.
 
-  This being said, the number of threads used is small. If the incoming data is a flood
-  through unbuffered channels, this is probably the better bet. Otherwise use merge()
-
-  - parameter channels: an array of Receivers to merge.
+  - parameter channels: a list of Receivers to merge.
   - returns: a single Receiver provide access to get every message received by the input Receivers.
 */
 
+public func merge<R: ReceiverType>(channels: R...) -> Receiver<R.ReceivedElement>
+{
+  return channels.merge()
+}
+
 public extension CollectionType where Self.Generator.Element: ReceiverType, Self.Index == Int
 {
+  /**
+    Merge an array of channel receivers into one Receiver.
+    Every item from the input channels will be able to be received via the returned channel.
+
+    This function uses a simple round-robin approach to merging channels; if any one
+    of the input channel blocks, the whole thing might block.
+
+    This being said, the number of threads used is small. If the incoming data is a flood
+    through unbuffered channels, this is probably the better bet. Otherwise use merge()
+
+    - returns: a single Receiver provide access to get every message received by the input Receivers.
+  */
+
   public func mergeRR() -> Receiver<Generator.Element.ReceivedElement>
   {
     if self.count == 0
@@ -101,10 +121,38 @@ public extension CollectionType where Self.Generator.Element: ReceiverType, Self
   }
 }
 
+/**
+  Merge an array of channel receivers into one Receiver.
+  Every item from the input channels will be able to be received via the returned channel.
+
+  This function uses a simple round-robin approach to merging channels; if any one
+  of the input channel blocks, the whole thing might block.
+
+  This being said, the number of threads used is small. If the incoming data is a flood
+  through unbuffered channels, this is probably the better bet. Otherwise use merge()
+
+  - parameter channels: an array of Receivers to merge.
+  - returns: a single Receiver provide access to get every message received by the input Receivers.
+*/
+
 public func mergeRR<R: ReceiverType>(channels: [R]) -> Receiver<R.ReceivedElement>
 {
   return channels.mergeRR()
 }
+
+/**
+  Merge an array of channel receivers into one Receiver.
+  Every item from the input channels will be able to be received via the returned channel.
+
+  This function uses a simple round-robin approach to merging channels; if any one
+  of the input channel blocks, the whole thing might block.
+
+  This being said, the number of threads used is small. If the incoming data is a flood
+  through unbuffered channels, this is probably the better bet. Otherwise use merge()
+
+  - parameter channels: a list of Receivers to merge.
+  - returns: a single Receiver provide access to get every message received by the input Receivers.
+*/
 
 public func mergeRR<R: ReceiverType>(channels: R...) -> Receiver<R.ReceivedElement>
 {
