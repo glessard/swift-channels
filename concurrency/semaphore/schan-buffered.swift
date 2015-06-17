@@ -40,7 +40,7 @@ final class SBufferedChan<T>: Chan<T>
   {
     self.capacity = (capacity < 1) ? 1 : min(capacity, 32768)
 
-    filled = SChanSemaphore(value: 0)
+    filled = SChanSemaphore()
     empty =  SChanSemaphore(value: self.capacity)
 
     // find the next power of 2 that is >= self.capacity
@@ -192,20 +192,17 @@ final class SBufferedChan<T>: Chan<T>
 
   override func selectPut(select: ChannelSemaphore, selection: Selection)
   {
-    empty.notify {
-      [weak self] in
+    empty.notify { [weak self] in
+      guard let this = self else { return }
 
-      if let this = self
+      if select.setState(.Select)
       {
-        if select.setState(.Select)
-        {
-          select.selection = selection
-          select.signal()
-        }
-        else
-        { // let another writer through
-          this.empty.signal()
-        }
+        select.selection = selection
+        select.signal()
+      }
+      else
+      { // let another writer through
+        this.empty.signal()
       }
     }
   }
@@ -232,20 +229,17 @@ final class SBufferedChan<T>: Chan<T>
 
   override func selectGet(select: ChannelSemaphore, selection: Selection)
   {
-    filled.notify {
-      [weak self] in
+    filled.notify { [weak self] in
+      guard let this = self else { return }
 
-      if let this = self
+      if select.setState(.Select)
       {
-        if select.setState(.Select)
-        {
-          select.selection = selection
-          select.signal()
-        }
-        else
-        { // let another reader through
-          this.filled.signal()
-        }
+        select.selection = selection
+        select.signal()
+      }
+      else
+      { // let another reader through
+        this.filled.signal()
       }
     }
   }
