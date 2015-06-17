@@ -60,6 +60,7 @@ public func select(options: [Selectable], withDefault: Selectable? = nil) -> Sel
   }
 
   let semaphore = SemaphorePool.Obtain()
+  defer { SemaphorePool.Return(semaphore) }
   semaphore.setState(.WaitSelect)
 
   for option in selectables.shuffle()
@@ -70,7 +71,6 @@ public func select(options: [Selectable], withDefault: Selectable? = nil) -> Sel
 
   if let def = withDefault where semaphore.setState(.Invalidated)
   {
-    SemaphorePool.Return(semaphore)
     return Selection(id: def)
   }
 
@@ -80,25 +80,21 @@ public func select(options: [Selectable], withDefault: Selectable? = nil) -> Sel
   switch semaphore.state
   {
   case .Select:
-    selection = semaphore.selection ?? voidSelection
+    selection = semaphore.selection ?? Selection(id: voidReceiver)
     semaphore.selection = nil
     semaphore.setState(.Done)
 
   case .DoubleSelect:
     // this is specific to the extract() side of a double select.
-    selection = semaphore.selection ?? voidSelection
+    selection = semaphore.selection ?? Selection(id: voidReceiver)
 
   case .Invalidated, .Done:
-    selection = voidSelection
+    selection = Selection(id: voidReceiver)
 
   case let status: // default
     preconditionFailure("Unexpected ChannelSemaphore state (\(status)) in __FUNCTION__")
   }
-
-  SemaphorePool.Return(semaphore)
-
   return selection
 }
 
 private let voidReceiver = Receiver<()>()
-private let voidSelection = Selection(id: voidReceiver)
