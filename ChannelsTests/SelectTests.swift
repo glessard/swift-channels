@@ -48,15 +48,19 @@ class SelectUnbufferedTests: XCTestCase
       }
       else
       {
-        dispatch_apply(senders.count, dispatch_get_global_queue(qos_class_self(), 0)) {
-          i in
+        for i in 0..<senders.count
+        {
+          let sender = senders[i]
           let messages = iterations/senders.count + ((i < iterations%senders.count) ? 1:0)
-          for m in 0..<messages
-          {
-            senders[i] <- m
+
+          dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
+            for m in 0..<messages
+            {
+              sender.send(m)
+            }
+            sender.close()
           }
         }
-        for sender in senders { sender.close() }
       }
     }
 
@@ -114,7 +118,7 @@ class SelectUnbufferedTests: XCTestCase
     {
       let receiver = merge(receivers)
 
-      while let _ = <-receiver
+      while let _ = receiver.receive()
       {
         m++
         NSThread.sleepForTimeInterval(sleepInterval)
@@ -125,16 +129,17 @@ class SelectUnbufferedTests: XCTestCase
       let result = Channel<Int>.Make(channels.count)
 
       let g = dispatch_group_create()!
+      let q = dispatch_get_global_queue(qos_class_self(), 0)
       for i in 0..<channels.count
       {
         let receiver = receivers[i]
-        dispatch_group_async(g, dispatch_get_global_queue(qos_class_self(), 0)) {
+        dispatch_group_async(g, q) {
           var i = 0
-          while let _ = <-receiver { i++ }
+          while let _ = receiver.receive() { i++ }
           result.tx <- i
         }
       }
-      dispatch_group_notify(g, dispatch_get_global_queue(qos_class_self(), 0)) { result.tx.close() }
+      dispatch_group_notify(g, q) { result.tx.close() }
 
       while let count = <-result.rx { m += count }
     }
