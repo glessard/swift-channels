@@ -21,18 +21,16 @@ Sender or the Receiver, though closing via the Sender should be more
 useful. Receive operations on a closed channel continue normally until
 the channel is drained. Receiving from a closed, empty channel returns nil.
 
-Channels can be used in buffered and unbuffered form. In an unbuffered
-channel a receive operation will block until a sender is ready (and
-vice-versa). A buffered channel can store a certain number of
-elements, after which the next send operation will block.
+Channels can be used in buffered and unbuffered form. Sending and receiving
+on an unbuffered channel are synchronous operations: the operation will
+block until the message can be sent or received. A buffered channel can
+store a certain number of elements, after which the next send operation will block.
+Note that in steady-state, a buffered channel can be expected to be either
+always empty or always full, therefore unbuffered channels should be preferred.
 
 Thread synchronization and blocking is implemented with a lightweight wrapper
 around mach semaphores. The implementation is similar to
 `dispatch_semaphore_t`, but allows better type safety with equal speed.
-
-Missing from this is a powerful construct such as the Select keyword
-from Go, which would be quite useful when dealing with multiple
-channels at once. See the `select` branch for details.
 
 #### Example:
 ```
@@ -64,16 +62,18 @@ closed by `sender.close()`. Attempting to receive from a channel that
 is both empty and closed returns nil.
 This causes the while loop in the example to exit.
 
+#### Multiplexing
+
+It exists.
+
 #### Performance
 
-On OS X, with Swift 1.2 and whole-module optimization,
-message transmission with no thread contention is slightly faster as
-it would be in Go 1.4, e.g. 140 vs. 160 nanoseconds on a 2008 Mac Pro
-(2.8 GHz Xeon "Harpertown" (E5462)).
-With thread contention, Go channels are *much* faster (about 10x),
+On OS X, with Swift 2.0b1 and whole-module optimization,
+message transmission with no thread contention about as fast as
+in Go 1.4. With thread contention, Go channels are *much* faster (about 10x),
 due to the context switching time involving threads. Go has a
-very lightweight concurrency system, while this library pauses and
-resumes system threads.
+very lightweight concurrency system, while this library must pause and
+resume system threads.
 
 When under contention, message transmission through an unbuffered channel
 takes about the same time as two context switches, and that
