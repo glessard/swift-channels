@@ -255,6 +255,7 @@ final class QUnbufferedChan<T>: Chan<T>
     // wait for data from a writer
     let threadLock = SemaphorePool.Obtain()
     let buffer = UnsafeMutablePointer<T>.alloc(1)
+    defer { buffer.dealloc(1) }
     threadLock.setState(.Pointer)
     threadLock.setPointer(buffer)
     readerQueue.enqueue(QueuedSemaphore(threadLock))
@@ -271,13 +272,10 @@ final class QUnbufferedChan<T>: Chan<T>
     {
     case .Done:
       // thread was awoken by close(): no more data on the channel.
-      buffer.dealloc(1)
       return nil
 
     case .Pointer where match:
-      let element = buffer.move()
-      buffer.dealloc(1)
-      return element
+      return buffer.move()
 
     default:
       preconditionFailure("Unknown state (\(state)) after wait in \(__FUNCTION__)")
