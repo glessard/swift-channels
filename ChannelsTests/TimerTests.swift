@@ -17,7 +17,9 @@ class TimerTests: XCTestCase
   {
     let start = mach_absolute_time()
 
-    let time1 = dispatch_time(DISPATCH_TIME_NOW, 500_000)
+    let delay: Int64 = 5_000_000
+
+    let time1 = dispatch_time(DISPATCH_TIME_NOW, delay)
     let rx1 = Timer(time1)
     XCTAssert(rx1.isClosed == false)
     <-rx1
@@ -25,7 +27,7 @@ class TimerTests: XCTestCase
     XCTAssert(rx1.isClosed)
     XCTAssert(time1 <= time2)
 
-    let rx2 = Timer(delay: 500_000)
+    let rx2 = Timer(delay: delay)
     XCTAssert(rx2.isClosed == false)
     _ = rx2.receive()
     XCTAssert(rx2.isClosed)
@@ -38,7 +40,7 @@ class TimerTests: XCTestCase
     let _ = Timer()
 
     let dt = mach_absolute_time() - start
-    XCTAssert(dt > 1_000_000 && dt < 2_000_000)
+    XCTAssert(dt > numericCast(2*delay))
   }
 
   func testSelectTimer()

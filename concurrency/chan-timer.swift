@@ -9,23 +9,22 @@
 import Dispatch
 
 /**
-  A timer class implemented as a channel.
+  A timer class implemented as a `ReceiverType`.
 
-  The timer takes either a dispatch_time_t or a positive time offset in nanoseconds, and the channel will close after that amount of time has passed.
-  In the meantime, the channel has no capacity, therefore any attempt receive from it will block.
+  The timer takes either a dispatch_time_t or a positive time offset in nanoseconds.
+  The `ReceiverType` will close after that amount of time has passed.
+  In the meantime, the channel has no capacity, therefore any attempt to receive from it will block.
+  However, as soon as the channel closes receiving operations will unblock and return `nil`.
 */
 
 public class Timer: ReceiverType, SelectableReceiverType
 {
-  private var closedState: Int32 = 0
+  private var closedState = 0
   private let closingTime: dispatch_time_t
-
-  private let barrier = dispatch_group_create()!
 
   public init(_ time: dispatch_time_t)
   {
     closingTime = time
-    dispatch_group_enter(barrier)
   }
 
   public convenience init(delay: Int64 = 0)
@@ -34,32 +33,23 @@ public class Timer: ReceiverType, SelectableReceiverType
     self.init(dispatch_time(DISPATCH_TIME_NOW, offset))
   }
 
-  deinit
-  {
-    if closedState == 0
-    {
-      dispatch_group_leave(barrier)
-    }
-  }
-
-  public var isClosed: Bool { return closedState != 0 }
+  public var isClosed: Bool { return closedState != 0 || closingTime <= dispatch_time(DISPATCH_TIME_NOW, 0) }
 
   public func close()
   {
-    if closedState == 0 && OSAtomicCompareAndSwap32Barrier(0, 1, &closedState)
-    { // Only one thread can get here
-      dispatch_group_leave(barrier)
-    }
+    closedState = 1
   }
 
   public func receive() -> Void?
   {
     if closedState == 0
-    { // given our usage, dispatch_group_wait will allocate a semaphore port regardless of the timeout value.
-      // in order to occasionally save some microseconds, compare with the current time first.
-      if closingTime > dispatch_time(DISPATCH_TIME_NOW, 0)
+    {
+      let now = dispatch_time(DISPATCH_TIME_NOW, 0)
+      if closingTime > now
       {
-        dispatch_group_wait(barrier, closingTime)
+        let delay = (closingTime - now)
+        var timeRequested = timespec(tv_sec: Int(delay/NSEC_PER_SEC), tv_nsec: Int(delay%NSEC_PER_SEC))
+        while nanosleep(&timeRequested, &timeRequested) == -1 {}
       }
       close()
     }
@@ -67,7 +57,7 @@ public class Timer: ReceiverType, SelectableReceiverType
   }
 
 
-  public var selectable: Bool { return closedState == 0 }
+  public var selectable: Bool { return closedState == 0 && closingTime > dispatch_time(DISPATCH_TIME_NOW, 0) }
 
   public func selectNotify(select: ChannelSemaphore, selection: Selection)
   {
