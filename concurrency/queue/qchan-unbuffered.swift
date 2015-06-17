@@ -228,8 +228,8 @@ final class QUnbufferedChan<T>: Chan<T>
           threadLock.wait()
 
           // got awoken by insert()
-          precondition(threadLock.state == .Pointer && threadLock.getPointer() == buffer,
-                       "Unexpected Semaphore state \(threadLock.state) in \(__FUNCTION__)")
+          assert(threadLock.state == .Pointer && threadLock.getPointer() == buffer,
+                 "Unexpected Semaphore state \(threadLock.state) in \(__FUNCTION__)")
           threadLock.setState(.Done)
           SemaphorePool.Return(threadLock)
 
