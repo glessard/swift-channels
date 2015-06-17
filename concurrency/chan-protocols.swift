@@ -25,6 +25,7 @@ public protocol ReceiverType: BasicChannelType, GeneratorType, SequenceType
 
     If the underlying channel is open and empty, this call will block.
     If the underlying channel is closed and empty, this will return `nil`.
+    If the underlying channel is not empty, this call will return a `ReceivedElement` item.
 
     - Note:    The channel will no longer hold a copy of (or reference to) the item.
 
@@ -34,6 +35,8 @@ public protocol ReceiverType: BasicChannelType, GeneratorType, SequenceType
   func receive() -> ReceivedElement?
 }
 
+// MARK: GeneratorType and SequenceType default implementations
+
 public extension ReceiverType
 {
   /**
@@ -42,6 +45,7 @@ public extension ReceiverType
 
     If the underlying channel is open and empty, this call will block.
     If the underlying channel is closed and empty, this will return `nil`.
+    If the underlying channel is not empty, this call will return a `ReceivedElement` item.
 
     - Note:    The channel will no longer hold a copy of (or reference to) the item.
 
@@ -70,10 +74,15 @@ public extension ReceiverType
 
   /**
     Return a value less than or equal to the number of elements in self, nondestructively.
-    In other words: always return 0.
-    - Complexity: 0(1)
+    In other words: always return zero.
+  
+    Returning zero is the sensible thing here, because one cannot know whether another thread
+    is accessing the channel. If that were the case, returning anything other than zero could
+    be a lie.
+
     - Note: Implements a `SequenceType` requirement.
-    - Returns: 0
+    - Complexity: 0(1)
+    - Returns: zero
   */
 
   public func underestimateCount() -> Int
@@ -96,8 +105,9 @@ public protocol SenderType: BasicChannelType
     Send a new element to the channel. The caller should probably not retain a
     reference to anything thus sent. Used internally by the `<-` send operator.
 
-    If the channel is full, this call will block.
-    If the channel has been closed, no action will be taken.
+    If the channel is full, this method will block.
+    If the operation succeeds, this method will return `true`
+    If the channel is closed, this method will return `false`.
 
     - parameter element: the new element to be sent to the channel.
     - returns: whether newElement was succesfully sent to the channel.
@@ -179,6 +189,7 @@ protocol ChannelType: class, BasicChannelType
 
     If the channel is open and empty, this call will block.
     If the channel is closed and empty, this will return `nil`.
+    If the underlying channel is not empty, this call will return a `Element` item.
 
     - Note:    The channel will no longer hold a copy of (or reference to) the item.
 

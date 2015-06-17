@@ -7,12 +7,18 @@
 //
 
 /**
-  Sender<T> is the sending endpoint for a Channel, Chan<T>.
+  Sender<T> is a sending endpoint for a `ChannelType`
 */
 
 public final class Sender<T>: SenderType
 {
   private let wrapped: Chan<T>
+
+  /**
+    Initialize new `Sender<T>` to act as the sending endpoint for a `Chan<T>`.
+
+    - parameter c: A `Chan<T>` object
+  */
 
   public init(_ c: Chan<T>)
   {
@@ -35,7 +41,13 @@ public final class Sender<T>: SenderType
 extension Sender: Selectable
 {
   // MARK: Selectable implementation
-  
+
+  /**
+    A `SenderType` is selectable as long as the channel is open.
+
+    - returns: `true` if the channel is open.
+  */
+
   public var selectable: Bool { return !wrapped.isClosed }
 
   public func selectNotify(select: ChannelSemaphore, selection: Selection)
@@ -61,11 +73,7 @@ extension Sender: SelectableSenderType
   If the channel is full, this call will block.
   If the channel has been closed, sending will fail silently.
 
-  The ideal situation when the channel has been closed
-  would involve some error-handling, such as a panic() call.
-  Unfortunately there is no such thing in Swift, so a silent failure it is.
-
-  Using this operator is equivalent to '_ = Sender<T>.send(T)'
+  Using this operator is equivalent to '_ = Sender<T>.send(t: T)'
 
   - parameter s: a Sender<T>
   - parameter element: the new T to be added to the channel.
@@ -81,10 +89,10 @@ public func <-<T>(s: Sender<T>, element: T)
 extension Sender
 {
   /**
-    Return a new Sender<T> to act as the sending endpoint for a Chan<T>.
+    Return a new `Sender<T>` to act as the sending endpoint for a `Chan<T>` object.
 
-    - parameter c: A Chan<T> object
-    - returns:  A Sender<T> object that will send elements to the Chan<T>
+    - parameter c: A `Chan<T>` object
+    - returns:  A `Sender<T>` object that will send elements to `c`
   */
 
   public static func Wrap(c: Chan<T>) -> Sender<T>
@@ -93,10 +101,10 @@ extension Sender
   }
 
   /**
-    Return a new Sender<T> to act as the sending enpoint for a ChannelType
+    Return a new `Sender` to act as the sending enpoint for a `ChannelType`
 
-    - parameter c: An object that implements ChannelType
-    - returns:  A Sender<T> object that will send elements to c
+    - parameter c: An object that implements `ChannelType`
+    - returns:  A `Sender` object that will send elements to `c`
   */
 
   static func Wrap<C: ChannelType where C.Element == T>(c: C) -> Sender<T>
@@ -110,23 +118,23 @@ extension Sender
   }
 
   /**
-    Return a new Sender<T> to stand in for SenderType c.
+    Return a new `Sender` to stand in for another `SenderType`.
 
-    If c is a Sender, c will be returned directly.
-    If c is any other kind of SenderType, it will be wrapped in a type-hidden way.
+    If `s` is a Sender, it will be returned directly.
+    If `s` is any other kind of `SenderType`, it will be wrapped in a new `Sender`.
 
-    - parameter c: A SenderType implementor to be wrapped by a Sender object.
-    - returns:  A Sender object that will pass along the elements to c.
+    - parameter `s`: An object that implements `SenderType`.
+    - returns:  A Sender object that will pass along elements to `c`.
   */
 
-  public static func Wrap<C: SenderType where C.SentElement == T>(c: C) -> Sender<T>
+  public static func Wrap<S: SenderType where S.SentElement == T>(s: S) -> Sender<T>
   {
-    if let s = c as? Sender<T>
+    if let s = s as? Sender<T>
     {
       return s
     }
 
-    return Sender(SenderTypeAsChan(c))
+    return Sender(SenderTypeAsChan(s))
   }
 }
 

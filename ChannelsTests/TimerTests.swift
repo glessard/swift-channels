@@ -62,7 +62,7 @@ class TimerTests: XCTestCase
         {
           if let _ = timer.extract(selection)
           {
-            XCTFail("Timers can't return .Some from extract()")
+            XCTFail("Timers must return nil from extract()")
           }
           i++
         }

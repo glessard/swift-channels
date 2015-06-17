@@ -10,7 +10,7 @@ import Darwin
 import Foundation
 import XCTest
 
-import Channels
+@testable import Channels
 
 class SelectSingletonTests: XCTestCase
 {
@@ -18,7 +18,7 @@ class SelectSingletonTests: XCTestCase
 
   func MakeChannels() -> [(tx: Sender<Int>, rx: Receiver<Int>)]
   {
-    return (0..<selectableCount).map { _ in Channel<Int>.MakeSingleton() }
+    return (0..<selectableCount).map { _ in Channel.Wrap(SingletonChan<Int>()) }
   }
   
   func testDoubleSelect()

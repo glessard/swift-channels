@@ -7,12 +7,18 @@
 //
 
 /**
-  Receiver<T> is the receiving endpoint for a ChannelType.
+  Receiver<T> is a receiving endpoint for a `ChannelType`.
 */
 
 public final class Receiver<T>: ReceiverType
 {
   private let wrapped: Chan<T>
+
+  /**
+    Initialize a new `Receiver<T>` to act as the receiving endpoint for a `Chan<T>`.
+
+    - parameter c: A `Chan<T>` object
+  */
 
   public init(_ c: Chan<T>)
   {
@@ -44,6 +50,12 @@ extension Receiver: Selectable
     wrapped.selectGet(select, selection: selection)
   }
 
+  /**
+    A `ReceiverType` is selectable as long as the channel still contains elements.
+  
+    - returns: `true` if the channel still contains elements.
+  */
+
   public var selectable: Bool
   {
     return !(wrapped.isClosed && wrapped.isEmpty)
@@ -65,13 +77,13 @@ extension Receiver: SelectableReceiverType
   Channel receive operator: receive the oldest element from the channel.
 
   If the channel is empty, this call will block.
-  If the channel is empty and closed, this will return nil.
+  If the channel is empty and closed, this will return `nil`.
 
-  This is the equivalent of Receiver<T>.receive() -> T?
+  This is the equivalent of `Receiver<T>.receive()`
 
-  - parameter r: a Receiver
+  - parameter r: a `Receiver`
 
-  - returns: the oldest element from the channel, or nil
+  - returns: the oldest element from the channel, or `nil`
 */
 
 public prefix func <-<T>(r: Receiver<T>) -> T?
@@ -84,10 +96,10 @@ public prefix func <-<T>(r: Receiver<T>) -> T?
 extension Receiver
 {
   /**
-    Return a new Receiver<T> to act as the receiving endpoint for a Chan<T>.
+    Return a new `Receiver<T>` to act as the receiving endpoint for a `Chan<T>`.
 
-    - parameter c: A Chan<T> object
-    - returns:  A Receiver<T> object that will receive elements from the Chan<T>
+    - parameter c: A `Chan<T>` object
+    - returns:  A `Receiver<T>` that will receive elements from `c`
   */
 
   public static func Wrap(c: Chan<T>) -> Receiver<T>
@@ -96,10 +108,10 @@ extension Receiver
   }
 
   /**
-    Return a new Receiver<T> to act as the receiving endpoint for a ChannelType.
+    Return a new `Receiver` to act as the receiving endpoint for a `ChannelType`.
 
-    - parameter c: An object that implements ChannelType
-    - returns:  A Receiver<T> object that will receive elements from the ChannelType
+    - parameter c: An object that implements `ChannelType`
+    - returns:  A `Receiver` object that will receive elements from `c`
   */
 
   static func Wrap<C: ChannelType where C.Element == T>(c: C) -> Receiver<T>
@@ -113,25 +125,23 @@ extension Receiver
   }
 
   /**
-    Return a new Receiver<T> to stand in for ReceiverType c.
+    Return a new `Receiver` to stand in for another `ReceiverType`.
 
-    If c is a Receiver, c will be returned directly.
+    If `r` is a `Receiver`, it will be returned directly.
+    If `r` is any other kind of `ReceiverType`, it will be wrapped in a new `Receiver`.
 
-    If c is any other kind of ReceiverType, c will be type-obscured and
-    wrapped in a new Receiver.
-
-    - parameter c: An object that implements ReceiverType.
-    - returns:  A Receiver object that will pass along the elements from c.
+    - parameter r: An object that implements `ReceiverType`.
+    - returns:  A `Receiver` object that will pass along the elements from `r`.
   */
 
-  public static func Wrap<C: ReceiverType where C.ReceivedElement == T>(c: C) -> Receiver<T>
+  public static func Wrap<R: ReceiverType where R.ReceivedElement == T>(r: R) -> Receiver<T>
   {
-    if let r = c as? Receiver<T>
+    if let r = r as? Receiver<T>
     {
       return r
     }
 
-    return Receiver(ReceiverTypeAsChan(c))
+    return Receiver(ReceiverTypeAsChan(r))
   }
 }
 

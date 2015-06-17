@@ -156,8 +156,8 @@ extension Time
   {
     if interval.ns >= 0
     {
-      var dt = timespec(tv_sec: Int(interval.ns/1_000_000_000), tv_nsec: Int(interval.ns%1_000_000_000))
-      nanosleep(&dt, nil)
+      var timeRequested = timespec(tv_sec: Int(interval.ns/1_000_000_000), tv_nsec: Int(interval.ns%1_000_000_000))
+      while nanosleep(&timeRequested, &timeRequested) == -1 {}
     }
   }
 
@@ -179,8 +179,8 @@ extension Time
     if seconds > 0
     {
       let wholeseconds = floor(seconds)
-      var dt = timespec(tv_sec: Int(wholeseconds), tv_nsec: Int((seconds-wholeseconds)*1_000_000_000))
-      nanosleep(&dt, nil)
+      var timeRequested = timespec(tv_sec: Int(wholeseconds), tv_nsec: Int((seconds-wholeseconds)*1_000_000_000))
+      while nanosleep(&timeRequested, &timeRequested) == -1 {}
     }
   }
 }

@@ -17,33 +17,38 @@ import Dispatch
 public protocol Selectable: class
 {
   /**
-    Select registers its notification semaphore by calling an implementation's selectNotify() method.
+    `select()` registers its notification semaphore by calling an implementation's selectNotify() method.
 
-    Associated data can be sent back along with the semaphore by copying an 'Unmanaged' reference to
-    a Selection via the semaphore's Context property (dispatch_set_context()).
-
-    ***
-    let selection = Selection(selectionID: selectionID)
-    let context = UnsafeMutablePointer<Void>(Unmanaged.passRetained(selection).toOpaque())
-    dispatch_set_context(s, context)
-    dispatch_semaphore_signal(s)
-    ***
-
-    Only one attempty to obtain the semaphore can succeed, since it is obtained from a buffered channel
-    that contains a single element and is closed. Therefore one and only one Selectable can
-    return data for each given invocation of Select().
-
-    :param: channel a channel from which to obtain a semaphore to use for a return notification.
-    :param: message an identifier to be used to identify the return notification.
+    A `Selectable` can attempt to send data back to select() by first changing the `ChannelSemaphore`'s
+    state via its `setState()` method. If that succeeds (by returning `true`) the `ChannelSemaphore`'s
+    `selection` property can be set to the `Selection` received as a parameter, which identifies
+    the current object to the `select()` function. After setting the `selection`, the `Selectable` should
+    `ChannelSemaphore.signal()` method and return.
   
-    :return: a closure to be run once, which can unblock a stopped thread if needed.
+    Failure to change the state should be followed by an immediate return, since `select()` needs to take
+    action -- and it is running in the same thread as this call. Note that if `setState()` returns `false`,
+    it is a clear sign that another thread is likely to change the state of `select`. `select` can only
+    be safely changed between a successful call to `setState()` and a subsequent `signal()`.
+
+    ```
+      // there is data to transmit back to select()...
+      if select.setState(.Select)
+      {
+        select.selection = selection
+        select.signal()
+      }
+      return
+    ```
+
+    - parameter `select`: a `ChannelSemaphore` to signal the `select()` function.
+    - parameter `selection`: a `Selection` instance that identifies this object to the `select()` function.
   */
 
   func selectNotify(select: ChannelSemaphore, selection: Selection)
 
   /**
-    If it makes no sense to invoke the selectNotify() method at this time, return false.
-    If every Selectable in the list returns false, Select will stop by returning nil.
+    If it makes no sense to invoke the `selectNotify()` method at this time, return `false`.
+    If every Selectable in the list returns `false`, `select()` will return `nil`.
   */
 
   var selectable: Bool { get }

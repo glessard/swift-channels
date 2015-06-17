@@ -9,15 +9,16 @@
 import Dispatch
 
 /**
-  Merge an array of Receivers into one Receiver.
+  Merge an array of Receivers into one `Receiver`.
   Every item from the input channels will be able to be received via the returned channel.
 
-  This function uses the select() function to merge channels; it will only block
-  if all channels block. The output channel will close when all inputs are closed.
+  This function uses the `select()` function to merge channels; it will only block
+  if all channels block. While this sounds good, it is much slower than the other merge functions.
+  
+  The output channel will close when all inputs are closed.
 
-  :param: channels an array of Receivers to merge.
-
-  :return: a single Receiver provide access to get every message received by the input Receivers.
+  - parameter `channels`: an array of `Receiver` to merge.
+  - returns: a single `Receiver` provide access to get every message received .
 */
 
 public func mergeSelect<R: ReceiverType where R: SelectableReceiverType>(channels: [R]) -> Receiver<R.ReceivedElement>

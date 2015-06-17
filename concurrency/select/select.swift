@@ -7,13 +7,28 @@
 //
 
 /**
-  Select gets notified of events by the first of a list of Selectable items.
+  `select()` gets notified of events by the first of a list of Selectable items.
+  If no event is immediately available, `select()` will block until it gets notified.
+
+  - parameter `options`: a list of `Selectable` instances
+  - returns: a `Selection` that contains a `Selectable` along with possible parameters.
 */
 
 public func select(options: Selectable...) -> Selection?
 {
   return select(options)
 }
+
+/**
+  `select()` gets notified of events by the first of a list of Selectable items.
+  If no event is immediately available, `select()` will block until it gets notified.
+  If a default `Selectable` is set (the default is `nil`), `select()` will not block.
+
+  - parameter `options`: a list of `Selectable` instances
+  - parameter `withDefault`: a `Selectable` to return instead of waiting
+
+  - returns: a `Selection` that contains a `Selectable` along with possible parameters.
+*/
 
 public func select(options: [Selectable], withDefault: Selectable? = nil) -> Selection?
 {

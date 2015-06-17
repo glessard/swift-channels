@@ -14,21 +14,15 @@
 infix operator <- { associativity left precedence 90}
 
 /**
-  Channel send operator: send a new element to the channel
+  Channel send operator: send a new element to a channel
 
-  If the channel is full, this call will block.
+  If the channel is full, sending will block.
   If the channel has been closed, sending will fail silently.
 
-  The ideal situation when the channel has been closed
-  would involve some error-handling, such as a panic() call.
-  Unfortunately there is no such thing in Swift, so a silent failure it is.
-
-  Using this operator is equivalent to '_ = Sender<T>.send(T)'
-
-  The SenderType 's' were passed as inout, this would be slgihtly faster (~15ns)
+  Using this operator is equivalent to `_ = Sender<T>.send(t: T)`
 
   - parameter s: a SenderType
-  - parameter element: the new element to be added to the channel.
+  - parameter element: the new element to be added to the underlying channel.
 */
 
 public func <-<C: SenderType>(s: C, element: C.SentElement)
@@ -44,18 +38,16 @@ public func <-<C: SenderType>(s: C, element: C.SentElement)
 prefix operator <- {}
 
 /**
-  Channel receive operator: receive the oldest element from the channel.
+  Channel receive operator: receive the oldest element from a channel.
 
-  If the channel is empty, this call will block.
-  If the channel is empty and closed, this will return nil.
+  If the channel is empty, receiving will block.
+  If the channel is empty and closed, receiving will return nil.
 
-  This is the equivalent of Receiver<T>.receive() -> T?
-  
-  If ReceiverType 'r' were passed as inout, this would be slightly faster (~15ns)
+  This is the equivalent of `Receiver<T>.receive()`
 
-  - parameter r: a ReceiverType
+  - parameter r: a `ReceiverType`
 
-  - returns: the oldest element from the channel
+  - returns: the oldest element from the underlying channel
 */
 
 public prefix func <-<C: ReceiverType>(r: C) -> C.ReceivedElement?

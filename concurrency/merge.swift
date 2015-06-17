@@ -16,7 +16,6 @@ import Dispatch
   The system could run out of threads if the length of the input array is too large.
 
   - parameter channels: an array of Receivers to merge.
-
   - returns: a single Receiver provide access to get every message received by the input Receivers.
 */
 
@@ -63,7 +62,6 @@ public func merge<R: ReceiverType>(channels: R...) -> Receiver<R.ReceivedElement
   through unbuffered channels, this is probably the better bet. Otherwise use merge()
 
   - parameter channels: an array of Receivers to merge.
-
   - returns: a single Receiver provide access to get every message received by the input Receivers.
 */
 

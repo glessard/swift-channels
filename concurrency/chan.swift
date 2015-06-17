@@ -17,12 +17,16 @@
 
 public class Chan<T>: ChannelType, SelectableChannelType
 {
+  /**
+    Initialize a Chan<T>. Explicitly internal, not public.
+  */
+
   init() {}
 
   // MARK: ChannelType interface
 
   /**
-    Determine whether the channel is empty (and therefore can't be received from)
+    Determine whether the channel is empty (and can't be received from)
   */
 
   public var isEmpty: Bool { return true }
@@ -99,15 +103,14 @@ public class Chan<T>: ChannelType, SelectableChannelType
   // MARK: Chan Factory Functions
 
   /**
-    Factory function to obtain a new Chan<T> of the desired channel capacity.
+    Factory function to obtain a new `Chan<T>` of the desired channel capacity.
     If capacity is 0, then an unbuffered channel will be created.
 
     - parameter capacity: the buffer capacity of the channel.
-
-    - returns: a newly-created, empty Chan<T>
+    - returns: a newly-created, empty `Chan<T>`
   */
 
-  public class func Make(capacity: Int) -> Chan<T>
+  public static func Make(capacity: Int) -> Chan<T>
   {
     switch capacity < 1
     {
@@ -115,37 +118,44 @@ public class Chan<T>: ChannelType, SelectableChannelType
       return QUnbufferedChan<T>()
 
     default:
-      return QBufferedChan<T>(capacity)
+      return SBufferedChan<T>(capacity)
     }
   }
 
   /**
-    Factory function to obtain a new, unbuffered Chan<T> object (channel capacity = 0).
+    Factory function to obtain a new, unbuffered `Chan<T>` object (channel capacity = 0).
 
-    - returns: a newly-created, empty Chan<T>
+    - returns: a newly-created, empty `Chan<T>`
   */
 
-  public class func Make() -> Chan<T>
+  public static func Make() -> Chan<T>
   {
     return Make(0)
   }
 
   /**
-    Factory function to obtain a new Chan<T> object, using a sample element to determine the type.
+    Factory function to obtain a new `Chan<T>` object, using a type object to determine the type.
 
-    - parameter type: a sample object whose type will be used for the channel's element type. The object is not retained.
+    - parameter type: a type object to determine the channel's element type. The object is discarded.
     - parameter capacity: the buffer capacity of the channel. Default is 0, meaning an unbuffered channel.
 
-    - returns: a newly-created, empty Chan<T>
+    - returns: a newly-created, empty `Chan<T>`
   */
 
-  public class func Make(typeOf typeOf: T, _ capacity: Int = 0) -> Chan<T>
+  public static func Make(_: T.Type, _ capacity: Int = 0) -> Chan<T>
   {
     return Make(capacity)
   }
 
-  public class func Make(_: T.Type, _ capacity: Int = 0) -> Chan<T>
+  /**
+    Factory function to obtain a new single-message `Chan<T>` object. The returned channel will
+    transmit at most one message during its lifetime, and will become closed in the process.
+    
+    - returns: a new single-message `Chan<T>`
+  */
+
+  public static func MakeSingleton() -> Chan<T>
   {
-    return Make(capacity)
+    return SingletonChan()
   }
 }
