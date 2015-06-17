@@ -30,12 +30,12 @@ final class QUnbufferedChan<T>: Chan<T>
 
   final override var isEmpty: Bool
   {
-    return true
+    return writerQueue.isEmpty
   }
 
   final override var isFull: Bool
   {
-    return true
+    return readerQueue.isEmpty
   }
 
   /**
