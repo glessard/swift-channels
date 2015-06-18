@@ -13,11 +13,11 @@ import XCTest
 
 class TimerTests: XCTestCase
 {
+  let delay: Int64 = 50_000
+
   func testTimer()
   {
     let start = mach_absolute_time()
-
-    let delay: Int64 = 5_000_000
 
     let time1 = dispatch_time(DISPATCH_TIME_NOW, delay)
     let rx1 = Timer(time1)
@@ -26,6 +26,8 @@ class TimerTests: XCTestCase
     let time2 = dispatch_time(DISPATCH_TIME_NOW, 0)
     XCTAssert(rx1.isClosed)
     XCTAssert(time1 <= time2)
+
+    XCTAssert(rx1.isEmpty)
 
     let rx2 = Timer(delay: delay)
     XCTAssert(rx2.isClosed == false)
@@ -36,8 +38,6 @@ class TimerTests: XCTestCase
     <-rx3
     rx3.close()
     XCTAssert(rx3.isClosed)
-
-    let _ = Timer()
 
     let dt = mach_absolute_time() - start
     XCTAssert(dt > numericCast(2*delay))
@@ -54,22 +54,16 @@ class TimerTests: XCTestCase
 
     for var i = 0, j = 0; i < 10; j++
     {
-      let timer = Timer(delay: 50_000)
+      let timer = Timer(delay: delay)
       if let selection = select(selectables + [timer])
       {
         XCTAssert(j == i)
-        if selection.id === timer
+        switch selection.id
         {
-          if let _ = timer.extract(selection)
-          {
-            XCTFail("Timers must return nil from extract()")
-          }
-          i++
-        }
-        else
-        {
-          XCTFail("Incorrect selection")
-          break
+        case let s where s === timer: XCTFail("Timer never sets the selection")
+        case _ as Sender<Int>:        XCTFail("Incorrect selection")
+        case _ as Receiver<Int>:      XCTFail("Incorrect selection")
+        default: i++
         }
       }
     }
