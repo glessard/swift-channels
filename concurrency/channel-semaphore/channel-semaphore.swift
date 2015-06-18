@@ -45,7 +45,7 @@ struct SemaphorePool
         OSSpinLockUnlock(&lock)
         s.svalue = 0
         s.iptr = nil
-        s.currentState = ChannelSemaphoreState.Ready.rawValue
+        s.currentState = ChannelSemaphore.State.Ready.rawValue
         return s
       }
 
@@ -59,7 +59,7 @@ struct SemaphorePool
           OSSpinLockUnlock(&lock)
           s.svalue = 0
           s.iptr = nil
-          s.currentState = ChannelSemaphoreState.Ready.rawValue
+          s.currentState = ChannelSemaphore.State.Ready.rawValue
           return s
         }
       }
@@ -70,44 +70,16 @@ struct SemaphorePool
   }
 }
 
-// MARK: ChannelSemaphoreState
-
-enum ChannelSemaphoreState: Int32
-{
-case Ready
-
-// Unbuffered channel data
-case Pointer
-
-// Select() case
-case WaitSelect
-case Select
-case DoubleSelect
-case Invalidated
-
-// End state
-case Done
-}
-
-// MARK: ChannelSemaphore
-
 /**
-  A benaphore: http://www.haiku-os.org/legacy-docs/benewsletter/Issue1-26.html
-  Also: http://preshing.com/20120226/roll-your-own-lightweight-mutex/
+  A [benaphore](http://www.haiku-os.org/legacy-docs/benewsletter/Issue1-26.html)
+  (see also [this](http://preshing.com/20120226/roll-your-own-lightweight-mutex/)).
 
-  Much like dispatch_semaphore_t, with native Swift typing. (And state information.)
-  Versions of libdispatch are at: http://www.opensource.apple.com/source/libdispatch/
+  Much like `dispatch_semaphore_t`, with native Swift typing, state information and associated data.
+  See libdispatch [here](http://www.opensource.apple.com/source/libdispatch/).
 */
 
 final public class ChannelSemaphore
 {
-  private var svalue: Int32
-  private var semp = semaphore_t()
-
-  private var currentState = ChannelSemaphoreState.Ready.rawValue
-  private var iptr: UnsafeMutablePointer<Void> = nil
-  private var seln: Selection? = nil
-
   // MARK: init/deinit
 
   init(value: Int)
@@ -148,23 +120,41 @@ final public class ChannelSemaphore
 
   // MARK: State Handling
 
-  var rawState: Int32 { return currentState }
-  var state: ChannelSemaphoreState { return ChannelSemaphoreState(rawValue: currentState)! }
+  enum State: Int32
+  {
+    case Ready
 
-  func setState(newState: ChannelSemaphoreState) -> Bool
+    // Unbuffered channel data
+    case Pointer
+
+    // Select() case
+    case WaitSelect
+    case Select
+    case DoubleSelect
+    case Invalidated
+    
+    // End state
+    case Done
+  }
+  
+  private var currentState = State.Ready.rawValue
+
+  var state: State { return State(rawValue: currentState)! }
+
+  func setState(newState: State) -> Bool
   {
     switch newState
     {
     case .Pointer, .WaitSelect:
-      return OSAtomicCompareAndSwap32Barrier(ChannelSemaphoreState.Ready.rawValue, newState.rawValue, &currentState)
+      return OSAtomicCompareAndSwap32Barrier(State.Ready.rawValue, newState.rawValue, &currentState)
 
     case .Select, .Invalidated, .DoubleSelect:
-      return OSAtomicCompareAndSwap32Barrier(ChannelSemaphoreState.WaitSelect.rawValue, newState.rawValue, &currentState)
+      return OSAtomicCompareAndSwap32Barrier(State.WaitSelect.rawValue, newState.rawValue, &currentState)
 
     case .Done:
-      // Ideally it would be: __sync_swap(&currentState, ChannelSemaphoreState.Done.rawValue)
-      // Or maybe: __c11_atomic_exchange(&currentState, ChannelSemaphoreState.Done.rawValue, __ATOMIC_SEQ_CST)
-      while OSAtomicCompareAndSwap32Barrier(currentState, ChannelSemaphoreState.Done.rawValue, &currentState) == false {}
+      // Ideally it would be: __sync_swap(&currentState, State.Done.rawValue)
+      // Or maybe: __c11_atomic_exchange(&currentState, State.Done.rawValue, __ATOMIC_SEQ_CST)
+      while OSAtomicCompareAndSwap32Barrier(currentState, State.Done.rawValue, &currentState) == false {}
       return true
 
     default:
@@ -173,6 +163,8 @@ final public class ChannelSemaphore
   }
 
   // MARK: Data handling
+
+  private var iptr: UnsafeMutablePointer<Void> = nil
 
   func setPointer<T>(p: UnsafeMutablePointer<T>)
   {
@@ -186,32 +178,35 @@ final public class ChannelSemaphore
 
   var pointer: UnsafeMutablePointer<Void> {
     get {
-      if currentState == ChannelSemaphoreState.Pointer.rawValue ||
-         currentState == ChannelSemaphoreState.DoubleSelect.rawValue
+      if currentState == State.Pointer.rawValue ||
+         currentState == State.DoubleSelect.rawValue
       { return iptr }
       else
       { return nil }
     }
     set {
-      if currentState == ChannelSemaphoreState.Pointer.rawValue ||
-         currentState == ChannelSemaphoreState.DoubleSelect.rawValue
+      if currentState == State.Pointer.rawValue ||
+         currentState == State.DoubleSelect.rawValue
       { iptr = newValue }
       else
       { iptr = nil }
     }
   }
 
+
+  private var seln: Selection? = nil
+
   var selection: Selection! {
     get {
-      if currentState == ChannelSemaphoreState.Select.rawValue ||
-         currentState == ChannelSemaphoreState.DoubleSelect.rawValue
+      if currentState == State.Select.rawValue ||
+         currentState == State.DoubleSelect.rawValue
       { return seln }
       else
       { return nil }
     }
     set {
-      if currentState == ChannelSemaphoreState.Select.rawValue ||
-         currentState == ChannelSemaphoreState.DoubleSelect.rawValue
+      if currentState == State.Select.rawValue ||
+         currentState == State.DoubleSelect.rawValue
       { seln = newValue }
       else
       { seln = nil }
@@ -219,6 +214,9 @@ final public class ChannelSemaphore
   }
 
   // MARK: Semaphore functionality
+
+  private var svalue: Int32
+  private var semp = semaphore_t()
 
   func signal() -> Bool
   {
