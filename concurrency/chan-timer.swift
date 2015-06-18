@@ -11,8 +11,8 @@ import Dispatch
 /**
   A timer class implemented as a `ReceiverType`.
 
-  The timer takes either a dispatch_time_t or a positive time offset in nanoseconds.
-  The `ReceiverType` will close after that amount of time has passed.
+  `Timer` takes either a `dispatch_time_t` or a positive time offset in nanoseconds.
+  The modeled channel will get closed after that amount of time has passed, but only through a receiving attempt.
   In the meantime, the channel has no capacity, therefore any attempt to receive from it will block.
   However, as soon as the channel closes receiving operations will unblock and return `nil`.
 */
@@ -35,7 +35,7 @@ public class Timer: ReceiverType, SelectableReceiverType
 
   public var isEmpty: Bool { return true }
 
-  public var isClosed: Bool { return closedState != 0 || closingTime <= dispatch_time(DISPATCH_TIME_NOW, 0) }
+  public var isClosed: Bool { return closedState != 0 }
 
   public func close()
   {
@@ -59,14 +59,17 @@ public class Timer: ReceiverType, SelectableReceiverType
   }
 
 
-  public var selectable: Bool { return closedState == 0 && closingTime > dispatch_time(DISPATCH_TIME_NOW, 0) }
+  public var selectable: Bool { return closedState == 0 }
 
   public func selectNotify(select: ChannelSemaphore, selection: Selection)
   {
     dispatch_after(closingTime, dispatch_get_global_queue(qos_class_self(), 0)) {
-      if select.setState(.Select)
+      [weak self] in
+      guard let this = self else { return }
+
+      this.close()
+      if select.setState(.Invalidated)
       {
-        select.selection = selection
         select.signal()
       }
     }
@@ -74,6 +77,7 @@ public class Timer: ReceiverType, SelectableReceiverType
 
   public func extract(selection: Selection) -> Void?
   {
+    assertionFailure("\(__FUNCTION__) shouldn't be getting called")
     return self.receive()
   }
 }
