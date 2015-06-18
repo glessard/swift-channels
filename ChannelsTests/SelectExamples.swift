@@ -97,7 +97,7 @@ class SelectExamples: XCTestCase
     let merged = merge(c0.rx, c1.rx)
     while let b = <-merged
     {
-      print("\(b ? 0:1)")
+      print("\(b ? 0:1)", appendNewline: false)
     }
     print("")
   }
