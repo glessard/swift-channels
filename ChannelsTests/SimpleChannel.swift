@@ -9,6 +9,8 @@
 import Darwin
 import Dispatch
 
+@testable import Channels
+
 /**
   The simplest single-element buffered channel that can
   fulfill the contract of ChannelType.
