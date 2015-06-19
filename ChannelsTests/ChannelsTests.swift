@@ -32,6 +32,7 @@ class ChannelsTests: XCTestCase
   func ChannelTestSendReceive()
   {
     let (tx, rx) = InstantiateTestChannel(UInt32)
+    XCTAssert(rx.isEmpty)
 
     let value = arc4random()
     tx <- value
@@ -57,6 +58,7 @@ class ChannelsTests: XCTestCase
     {
       tx <- v
     }
+    XCTAssert(tx.isFull)
 
     for i in 0..<buflen
     {

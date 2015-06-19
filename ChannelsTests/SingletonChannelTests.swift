@@ -36,11 +36,13 @@ class SingletonChannelTests: ChannelsTests
 
   func testSendReceiveTwice()
   {
-    let (tx,rx) = InstantiateTestChannel(UInt32)
-
     let value =  arc4random()
-    tx <- value
-    tx <- value
+    let (tx,rx) = Channel.Wrap(SingletonChan(value))
+    XCTAssert(rx.isEmpty == false)
+
+    tx <- arc4random()
+    tx <- arc4random()
+    XCTAssert(tx.isFull)
     let result1 = <-rx
     let result2 = <-rx
 
