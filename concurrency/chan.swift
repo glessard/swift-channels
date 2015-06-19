@@ -94,14 +94,26 @@ public class Chan<T>: ChannelType, SelectableChannelType
 
   // MARK: SelectableChannelType interface
 
-  func selectGet(select: ChannelSemaphore, selection: Selection) {}
+  func selectGet(select: ChannelSemaphore, selection: Selection)
+  {
+    if select.setState(.Invalidated)
+    {
+      select.signal()
+    }
+  }
 
   func extract(selection: Selection) -> T?
   {
     return nil
   }
 
-  func selectPut(select: ChannelSemaphore, selection: Selection) {}
+  func selectPut(select: ChannelSemaphore, selection: Selection)
+  {
+    if select.setState(.Invalidated)
+    {
+      select.signal()
+    }
+  }
 
   func insert(selection: Selection, newElement: T) -> Bool
   {
