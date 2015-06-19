@@ -11,13 +11,13 @@ import Dispatch
 /**
   A timer class implemented as a `ReceiverType`.
 
-  `Timer` takes either a `dispatch_time_t` or a positive time offset in nanoseconds.
+  `Timeout` takes either a `dispatch_time_t` or a positive time offset in nanoseconds.
   The modeled channel will get closed after that amount of time has passed, but only through a receiving attempt.
   In the meantime, the channel has no capacity, therefore any attempt to receive from it will block.
   However, as soon as the channel closes receiving operations will unblock and return `nil`.
 */
 
-public class Timer: ReceiverType, SelectableReceiverType
+public class Timeout: ReceiverType, SelectableReceiverType
 {
   private var closedState = 0
   private let closingTime: dispatch_time_t

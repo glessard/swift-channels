@@ -1,5 +1,5 @@
 //
-//  TimerTests.swift
+//  TimeoutTests.swift
 //  Channels
 //
 //  Created by Guillaume Lessard on 2015-06-13.
@@ -11,16 +11,16 @@ import XCTest
 
 @testable import Channels
 
-class TimerTests: XCTestCase
+class TimeoutTests: XCTestCase
 {
   let delay: Int64 = 50_000
 
-  func testTimer()
+  func testTimeout()
   {
     let start = mach_absolute_time()
 
     let time1 = dispatch_time(DISPATCH_TIME_NOW, delay)
-    let rx1 = Timer(time1)
+    let rx1 = Timeout(time1)
     XCTAssert(rx1.isClosed == false)
     <-rx1
     let time2 = dispatch_time(DISPATCH_TIME_NOW, 0)
@@ -29,12 +29,12 @@ class TimerTests: XCTestCase
 
     XCTAssert(rx1.isEmpty)
 
-    let rx2 = Timer(delay: delay)
+    let rx2 = Timeout(delay: delay)
     XCTAssert(rx2.isClosed == false)
     _ = rx2.receive()
     XCTAssert(rx2.isClosed)
 
-    let rx3 = Receiver.Wrap(Timer())
+    let rx3 = Receiver.Wrap(Timeout())
     <-rx3
     rx3.close()
     XCTAssert(rx3.isClosed)
@@ -43,7 +43,7 @@ class TimerTests: XCTestCase
     XCTAssert(dt > numericCast(2*delay))
   }
 
-  func testSelectTimer()
+  func testSelectTimeout()
   {
     let count = 10
     let channels = (0..<count).map { _ in Channel<Int>.Make() }
@@ -54,13 +54,13 @@ class TimerTests: XCTestCase
 
     for var i = 0, j = 0; i < 10; j++
     {
-      let timer = Timer(delay: delay)
+      let timer = Timeout(delay: delay)
       if let selection = select(selectables + [timer])
       {
         XCTAssert(j == i)
         switch selection.id
         {
-        case let s where s === timer: XCTFail("Timer never sets the selection")
+        case let s where s === timer: XCTFail("Timeout never sets the selection")
         case _ as Sender<Int>:        XCTFail("Incorrect selection")
         case _ as Receiver<Int>:      XCTFail("Incorrect selection")
         default: i++
