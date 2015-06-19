@@ -23,7 +23,7 @@ class SelectUnbufferedTests: XCTestCase
 
   func getIterations(sleepInterval: NSTimeInterval) -> Int
   {
-    return sleepInterval < 0 ? 10_000 : 100
+    return sleepInterval < 0 ? 60_000 : 100
   }
 
   func SelectReceiverTest(sleepInterval sleepInterval: NSTimeInterval = -1)

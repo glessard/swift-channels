@@ -15,7 +15,7 @@ import XCTest
 class MergeTests: XCTestCase
 {
   let outerloopcount = 10
-  let innerloopcount = 10_000
+  let innerloopcount = 6_000
 
   func testPerformanceMerge()
   {
