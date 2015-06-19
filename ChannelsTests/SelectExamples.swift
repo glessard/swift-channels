@@ -142,4 +142,39 @@ class SelectExamples: XCTestCase
     }
     print("")
   }
+
+  func testNonBlockingSends()
+  {
+    let c1 = Channel<UInt32>.Make()
+    let c2 = Channel<UInt32>.Make()
+
+    var attempts = 0
+    dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
+      while let selection = select([c1.tx,c2.tx], preventBlocking: true) where attempts < 1000
+      {
+        switch selection.id
+        {
+        case let s as Sender<UInt32> where s === c1.tx:
+          s.insert(selection, newElement: arc4random())
+        case let s as Sender<UInt32> where s === c2.tx:
+          s.insert(selection, newElement: arc4random())
+        default: usleep(1)
+        }
+        attempts += 1
+      }
+      c1.tx.close()
+      c2.tx.close()
+    }
+
+    let merged = mergeRR(c1.rx, c2.rx)
+
+    var messages = 0
+    while let _ = <-merged
+    {
+      messages += 1
+      usleep(100)
+    }
+
+    print("Sent \(messages) messages in \(attempts) attempts")
+  }
 }
