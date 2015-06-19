@@ -7,11 +7,11 @@
 //
 
 /**
-  `select()` gets notified of events by the first of a list of Selectable items.
+  `select()` gets notified of events by the first to be ready in a list of Selectable items.
   If no event is immediately available, `select()` will block until it gets notified.
 
-  - parameter `options`: a list of `Selectable` instances
-  - returns: a `Selection` that contains a `Selectable` along with possible parameters.
+  - parameter options: a list of `Selectable` instances
+  - returns: a Selection that contains a `Selectable` along with possible parameters.
 */
 
 public func select(options: Selectable...) -> Selection?
@@ -20,19 +20,19 @@ public func select(options: Selectable...) -> Selection?
 }
 
 /**
-  `select()` gets notified of events by the first of a list of Selectable items.
+  `select()` gets notified of events by the first to be ready in a list of Selectable items.
   If no event is immediately available, `select()` will block until it gets notified, unless `noBlocking` is `true`.
   In that case `select()`'s return value will not match any of the items in `options`.
 
-  - parameter `options`:    a list of `Selectable` instances
-  - parameter `noBlocking`: whether or not to allow blocking.
+  - parameter options: an array of `Selectable` instances
+  - parameter preventBlocking: whether or not to allow blocking.
 
   - returns: a `Selection` that contains a `Selectable` along with possible parameters.
 */
 
-public func select(options: [Selectable], noBlocking: Bool) -> Selection?
+public func select(options: [Selectable], preventBlocking: Bool) -> Selection?
 {
-  switch noBlocking
+  switch preventBlocking
   {
   case true:  return select(options, withDefault: voidReceiver)
   case false: return select(options, withDefault: nil)
@@ -40,12 +40,13 @@ public func select(options: [Selectable], noBlocking: Bool) -> Selection?
 }
 
 /**
-  `select()` gets notified of events by the first of a list of Selectable items.
+  `select()` gets notified of events by the first to be ready in a list of Selectable items.
   If no event is immediately available, `select()` will block until it gets notified.
-  If a default `Selectable` is set (i.e. not `nil`), `select()` will not block.
+  If the `withDefault` parameter is set (i.e. not `nil`), `select()` will not block, and will
+  select `withDefault` instead.
 
-  - parameter `options`: a list of `Selectable` instances
-  - parameter `withDefault`: a `Selectable` to return instead of waiting -- `nil` unless explicitly set.
+  - parameter options: an array of `Selectable` instances
+  - parameter withDefault: a `Selectable` that will be selected instead of blocking -- defaults to `nil`
 
   - returns: a `Selection` that contains a `Selectable` along with possible parameters.
 */
