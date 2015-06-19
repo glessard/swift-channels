@@ -34,7 +34,7 @@ public func select(options: [Selectable], preventBlocking: Bool) -> Selection?
 {
   switch preventBlocking
   {
-  case true:  return select(options, withDefault: voidReceiver)
+  case true:  return select(options, withDefault: sink)
   case false: return select(options, withDefault: nil)
   }
 }
@@ -89,7 +89,7 @@ public func select(options: [Selectable], withDefault: Selectable? = nil) -> Sel
     selection = semaphore.selection
 
   case .Invalidated, .Done:
-    selection = Selection(id: voidReceiver)
+    selection = Selection(id: sink)
 
   case let status: // default
     preconditionFailure("Unexpected ChannelSemaphore state (\(status)) in __FUNCTION__")
@@ -97,4 +97,4 @@ public func select(options: [Selectable], withDefault: Selectable? = nil) -> Sel
   return selection
 }
 
-private let voidReceiver = Receiver<()>()
+private let sink = Sink<()>()
