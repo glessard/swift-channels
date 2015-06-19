@@ -23,8 +23,6 @@ public class SimpleChannel: ChannelType
   private let filled = dispatch_semaphore_create(0)!
   private let empty =  dispatch_semaphore_create(1)!
 
-  // private var lock = OS_SPINLOCK_INIT
-
   private var closed = false
 
   deinit
@@ -36,16 +34,14 @@ public class SimpleChannel: ChannelType
   }
 
   public var isClosed: Bool { return closed }
-  public var isEmpty: Bool { return head >= tail }
-  public var isFull: Bool { return head < tail }
+  public var isEmpty: Bool { return tail &- head <= 0 }
+  public var isFull: Bool { return tail &- head >= 1 }
 
   public func close()
   {
     if closed { return }
 
-    // OSSpinLockLock(&lock)
     closed = true
-    // OSSpinLockUnlock(&lock)
 
     dispatch_semaphore_signal(empty)
     dispatch_semaphore_signal(filled)
@@ -56,19 +52,16 @@ public class SimpleChannel: ChannelType
     if closed { return false }
 
     dispatch_semaphore_wait(empty, DISPATCH_TIME_FOREVER)
-    // OSSpinLockLock(&lock)
 
     if closed
     {
-      // OSSpinLockUnlock(&lock)
       dispatch_semaphore_signal(empty)
       return false
     }
 
     element = newElement
-    tail++
+    tail = tail &+ 1
 
-    // OSSpinLockUnlock(&lock)
     dispatch_semaphore_signal(filled)
 
     return true
@@ -76,24 +69,21 @@ public class SimpleChannel: ChannelType
 
   public func get() -> Int?
   {
-    if closed && head >= tail { return nil }
+    if closed && tail &- head <= 0 { return nil }
 
     dispatch_semaphore_wait(filled, DISPATCH_TIME_FOREVER)
-    // OSSpinLockLock(&lock)
 
-    if head < tail
+    if tail &- head > 0
     {
       let e = element
-      head++
+      head = head &+ 1
 
-      // OSSpinLockUnlock(&lock)
       dispatch_semaphore_signal(empty)
       return e
     }
     else
     {
       assert(closed, __FUNCTION__)
-      // OSSpinLockUnlock(&lock)
       dispatch_semaphore_signal(filled)
       return nil
     }
