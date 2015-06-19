@@ -110,15 +110,11 @@ struct SChanSemaphore
 
     if semp == 0 { initSemaphorePort() }
 
-    while true
+    while case let kr = semaphore_wait(semp) where kr != KERN_SUCCESS
     {
-      switch semaphore_wait(semp)
-      {
-      case KERN_ABORTED: continue
-      case KERN_SUCCESS: return true
-      default: preconditionFailure("Bad reply from semaphore_wait() in \(__FUNCTION__)")
-      }
+      guard kr == KERN_ABORTED else { preconditionFailure("Bad response (\(kr)) from semaphore_wait() in \(__FUNCTION__)") }
     }
+    return true
   }
 
   mutating func notify(block: () -> ()) -> Bool
