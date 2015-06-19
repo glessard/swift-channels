@@ -29,6 +29,13 @@ class QBufferedChannelTests: BufferedChannelTests
 
   override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
   {
-    return Channel.Wrap(QBufferedChan(buflen))
+    if buflen > 1
+    {
+      return Channel.Wrap(QBufferedChan(buflen))
+    }
+    else
+    {
+      return Channel.Wrap(QBufferedChan())
+    }
   }
 }

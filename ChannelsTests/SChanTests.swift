@@ -19,6 +19,13 @@ class SBufferedChannelTests: BufferedChannelTests
 
   override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
   {
-    return Channel.Wrap(SBufferedChan(buflen))
+    if buflen > 1
+    {
+      return Channel.Wrap(SBufferedChan(buflen))
+    }
+    else
+    {
+      return Channel.Wrap(SBufferedChan())
+    }
   }
 }

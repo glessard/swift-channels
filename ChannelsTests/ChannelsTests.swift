@@ -22,7 +22,14 @@ class ChannelsTests: XCTestCase
 
   func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
   {
-    return Channel.Make(buflen)
+    if buflen > 0
+    {
+      return Channel.Make(buflen)
+    }
+    else
+    {
+      return Channel.Make()
+    }
   }
 
   /**
@@ -179,6 +186,7 @@ class ChannelsTests: XCTestCase
       {
         tx <- i
       }
+      XCTAssert(tx.isFull)
       valsent = Int(arc4random())
       tx <- valsent
       tx.close()
@@ -238,6 +246,7 @@ class ChannelsTests: XCTestCase
       {
         tx <- ()
       }
+      XCTAssert(tx.isFull)
       expectation.fulfill()
     }
 

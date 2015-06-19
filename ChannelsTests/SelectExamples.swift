@@ -110,7 +110,7 @@ class SelectExamples: XCTestCase
     var cap = 0
     var count = 0
 
-    while let selection = select(c.tx, c.rx)
+    while let selection = select([c.tx, c.rx], preventBlocking: false)
     {
       switch selection.id
       {
