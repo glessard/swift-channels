@@ -115,8 +115,13 @@ final class SingletonChan<T>: Chan<T>
     {
       dispatch_group_wait(barrier, DISPATCH_TIME_FOREVER)
     }
-    assert(writerCount != 0 || closedState != 0, __FUNCTION__)
 
+    return getElement()
+  }
+
+  private func getElement() -> T?
+  {
+    assert(writerCount != 0 || closedState != 0, __FUNCTION__)
     if readerCount == 0 && OSAtomicCompareAndSwap32Barrier(0, 1, &readerCount)
     { // Only one thread can get here.
       if let e = element
@@ -125,7 +130,6 @@ final class SingletonChan<T>: Chan<T>
         return e
       }
     }
-
     return nil
   }
 
@@ -147,16 +151,7 @@ final class SingletonChan<T>: Chan<T>
 
   override func extract(selection: Selection) -> T?
   {
-    assert(writerCount != 0 || closedState != 0, __FUNCTION__)
-    if readerCount == 0 && OSAtomicCompareAndSwap32Barrier(0, 1, &readerCount)
-    { // Only one thread can get here.
-      if let e = element
-      {
-        element = nil
-        return e
-      }
-    }
-    return nil
+    return getElement()
   }
 
   override func selectGet(select: ChannelSemaphore, selection: Selection)
