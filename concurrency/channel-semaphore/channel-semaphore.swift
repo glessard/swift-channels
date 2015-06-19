@@ -66,7 +66,7 @@ struct SemaphorePool
       cursor += 1
     }
     OSSpinLockUnlock(&lock)
-    return ChannelSemaphore(value: 0)
+    return ChannelSemaphore()
   }
 }
 
