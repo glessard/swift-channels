@@ -25,11 +25,29 @@ public final class Sender<T>: SenderType
     wrapped = c
   }
 
-  init()
+  convenience init()
   {
-    wrapped = Chan()
+    self.init(Chan())
   }
 
+  /**
+    Initialize a new `Sender` to act as the sending enpoint for a `ChannelType`
+
+    - parameter c: An object that implements `ChannelType`
+  */
+
+  convenience init<C: ChannelType where C.Element == T>(channelType c: C)
+  {
+    if let chan = c as? Chan<T>
+    {
+      self.init(chan)
+    }
+    else
+    {
+      self.init(ChannelTypeAsChan(c))
+    }
+  }
+  
   // MARK: SenderType implementation
 
   public var isClosed: Bool { return wrapped.isClosed }
@@ -89,35 +107,6 @@ public func <-<T>(s: Sender<T>, element: T)
 
 extension Sender
 {
-  /**
-    Return a new `Sender<T>` to act as the sending endpoint for a `Chan<T>` object.
-
-    - parameter c: A `Chan<T>` object
-    - returns:  A `Sender<T>` object that will send elements to `c`
-  */
-
-  public static func Wrap(c: Chan<T>) -> Sender<T>
-  {
-    return Sender(c)
-  }
-
-  /**
-    Return a new `Sender` to act as the sending enpoint for a `ChannelType`
-
-    - parameter c: An object that implements `ChannelType`
-    - returns:  A `Sender` object that will send elements to `c`
-  */
-
-  static func Wrap<C: ChannelType where C.Element == T>(c: C) -> Sender<T>
-  {
-    if let chan = c as? Chan<T>
-    {
-      return Sender(chan)
-    }
-
-    return Sender(ChannelTypeAsChan(c))
-  }
-
   /**
     Return a new `Sender` to stand in for another `SenderType`.
 

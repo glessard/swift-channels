@@ -51,7 +51,7 @@ public class Channel<T>
 
   public class func Wrap(c: Chan<T>) -> (tx: Sender<T>, rx: Receiver<T>)
   {
-    return (Sender.Wrap(c), Receiver.Wrap(c))
+    return (Sender(c), Receiver(c))
   }
 
   /**
@@ -63,6 +63,6 @@ public class Channel<T>
 
   class func Wrap<C: ChannelType where C.Element == T>(c: C) -> (tx: Sender<T>, rx: Receiver<T>)
   {
-    return (Sender.Wrap(c), Receiver.Wrap(c))
+    return (Sender(channelType: c), Receiver(channelType: c))
   }
 }

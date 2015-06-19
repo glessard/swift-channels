@@ -25,9 +25,27 @@ public final class Receiver<T>: ReceiverType
     wrapped = c
   }
 
-  init()
+  convenience init()
   {
-    wrapped = Chan()
+    self.init(Chan())
+  }
+
+  /**
+    Initialize a new `Receiver` to act as the receiving endpoint for a `ChannelType`.
+
+    - parameter c: An object that implements `ChannelType`
+  */
+
+  convenience init<C: ChannelType where C.Element == T>(channelType c: C)
+  {
+    if let c = c as? Chan<T>
+    {
+      self.init(c)
+    }
+    else
+    {
+      self.init(ChannelTypeAsChan(c))
+    }
   }
 
   // MARK: ReceiverType implementation
@@ -69,7 +87,7 @@ extension Receiver: SelectableReceiverType
   
   public func extract(selection: Selection) -> T?
   {
-    precondition(selection.id === self, __FUNCTION__)
+    assert(selection.id === self, __FUNCTION__)
     return wrapped.extract(selection)
   }
 }
@@ -96,35 +114,6 @@ public prefix func <-<T>(r: Receiver<T>) -> T?
 
 extension Receiver
 {
-  /**
-    Return a new `Receiver<T>` to act as the receiving endpoint for a `Chan<T>`.
-
-    - parameter c: A `Chan<T>` object
-    - returns:  A `Receiver<T>` that will receive elements from `c`
-  */
-
-  public static func Wrap(c: Chan<T>) -> Receiver<T>
-  {
-    return Receiver(c)
-  }
-
-  /**
-    Return a new `Receiver` to act as the receiving endpoint for a `ChannelType`.
-
-    - parameter c: An object that implements `ChannelType`
-    - returns:  A `Receiver` object that will receive elements from `c`
-  */
-
-  static func Wrap<C: ChannelType where C.Element == T>(c: C) -> Receiver<T>
-  {
-    if let chan = c as? Chan<T>
-    {
-      return Receiver(chan)
-    }
-
-    return Receiver(ChannelTypeAsChan(c))
-  }
-
   /**
     Return a new `Receiver` to stand in for another `ReceiverType`.
 
