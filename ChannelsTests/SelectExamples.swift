@@ -158,15 +158,16 @@ class SelectExamples: XCTestCase
           s.insert(selection, newElement: arc4random())
         case let s as Sender<UInt32> where s === c2.tx:
           s.insert(selection, newElement: arc4random())
-        default: usleep(1)
+        default: break
         }
         attempts += 1
+        usleep(1)
       }
       c1.tx.close()
       c2.tx.close()
     }
 
-    let merged = mergeRR(c1.rx, c2.rx)
+    let merged = merge(c1.rx, c2.rx)
 
     var messages = 0
     while let _ = <-merged
