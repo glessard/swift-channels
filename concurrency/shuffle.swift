@@ -9,15 +9,15 @@
 
 import Darwin
 
-/**
-  Get a sequence/generator of this collection's elements in a random order.
-  The collection is not modified.
-
-  - returns: A `PermutationGenerator` of self's elements, shuffled.
-*/
-
 extension CollectionType
 {
+  /**
+    Get a sequence/generator of this collection's elements in a random order.
+    The collection is not modified.
+
+    - returns: A `PermutationGenerator` of the elements of `self`, shuffled.
+  */
+
   func shuffle() -> PermutationGenerator<Self, IndexShuffler<Self.Index>>
   {
     return PermutationGenerator(elements: self, indices: IndexShuffler(self.indices))
@@ -27,8 +27,8 @@ extension CollectionType
 
 /**
   A stepwise (lazy-ish) implementation of the Knuth Shuffle (a.k.a. Fisher-Yates Shuffle),
-  using a sequence of indices for the input. Elements (indices) from
-  the input sequence are returned in a random order until exhaustion.
+  using an `Array` or `Range` of indices for the input. Elements (indices) from
+  the input collection are returned in a random order until exhaustion.
 */
 
 struct IndexShuffler<I: ForwardIndexType>: SequenceType, GeneratorType
@@ -36,11 +36,6 @@ struct IndexShuffler<I: ForwardIndexType>: SequenceType, GeneratorType
   private let count: Int
   private var step = -1
   private var i: [I]
-
-  init<S: SequenceType where S.Generator.Element == I>(_ input: S)
-  {
-    self.init(Array(input))
-  }
 
   init(_ input: Range<I>)
   {
