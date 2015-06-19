@@ -21,13 +21,12 @@ class TimeoutTests: XCTestCase
 
     let time1 = dispatch_time(DISPATCH_TIME_NOW, delay)
     let rx1 = Timeout(time1)
+    XCTAssert(rx1.isEmpty)
     XCTAssert(rx1.isClosed == false)
     <-rx1
     let time2 = dispatch_time(DISPATCH_TIME_NOW, 0)
     XCTAssert(rx1.isClosed)
     XCTAssert(time1 <= time2)
-
-    XCTAssert(rx1.isEmpty)
 
     let rx2 = Timeout(delay: delay)
     XCTAssert(rx2.isClosed == false)
@@ -35,6 +34,7 @@ class TimeoutTests: XCTestCase
     XCTAssert(rx2.isClosed)
 
     let rx3 = Receiver.Wrap(Timeout())
+    XCTAssert(rx3.isEmpty)
     <-rx3
     rx3.close()
     XCTAssert(rx3.isClosed)
