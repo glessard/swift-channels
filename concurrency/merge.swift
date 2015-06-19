@@ -89,29 +89,17 @@ public extension CollectionType where Self.Generator.Element: ReceiverType, Self
 
   public func mergeRR() -> Receiver<Generator.Element.ReceivedElement>
   {
-    if self.count == 0
-    { // Return a Receiver for a closed channel in this case
-      return Receiver()
-    }
-
     let mergeChannel = SBufferedChan<Generator.Element.ReceivedElement>.Make(self.count*2)
 
     dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
       // A non-clever, imperative-style round-robin merge.
       let count = self.count
-      for var i=0, last=0; true; i++
+      for var i=0, last=0; i-last < count; i++
       {
         if let element = self[i % count].receive()
         {
           mergeChannel.put(element)
           last = i
-        }
-        else
-        {
-          if (i-last >= count)
-          { // All channels are closed. Job done.
-            break
-          }
         }
       }
       mergeChannel.close()

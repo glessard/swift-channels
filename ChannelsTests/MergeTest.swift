@@ -39,7 +39,7 @@ class MergeTests: XCTestCase
         total += 1
       }
 
-      XCTAssert(total == self.outerloopcount*self.innerloopcount, "Incorrect merge in \(__FUNCTION__)")
+      XCTAssert(total == self.outerloopcount*self.innerloopcount, "Incorrect merge (\(total)) in \(__FUNCTION__)")
     }
   }
   
@@ -65,7 +65,7 @@ class MergeTests: XCTestCase
         total += 1
       }
 
-      XCTAssert(total == self.outerloopcount*self.innerloopcount, "Incorrect merge in \(__FUNCTION__)")
+      XCTAssert(total == self.outerloopcount*self.innerloopcount, "Incorrect merge (\(total)) in \(__FUNCTION__)")
     }
   }
   
@@ -91,7 +91,7 @@ class MergeTests: XCTestCase
         total += 1
       }
 
-      XCTAssert(total == self.outerloopcount*self.innerloopcount, "Incorrect merge in \(__FUNCTION__)")
+      XCTAssert(total == self.outerloopcount*self.innerloopcount, "Incorrect merge (\(total)) in \(__FUNCTION__)")
     }
   }
   
@@ -117,7 +117,7 @@ class MergeTests: XCTestCase
         total += 1
       }
 
-      XCTAssert(total == self.outerloopcount*self.innerloopcount, "Incorrect merge in \(__FUNCTION__)")
+      XCTAssert(total == self.outerloopcount*self.innerloopcount, "Incorrect merge (\(total)) in \(__FUNCTION__)")
     }
   }
 }
