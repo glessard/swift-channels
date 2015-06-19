@@ -38,10 +38,10 @@ class ChannelsTests: XCTestCase
 
   func ChannelTestSendReceive()
   {
-    let (tx, rx) = InstantiateTestChannel(UInt32)
+    let (tx, rx) = InstantiateTestChannel(Int)
     XCTAssert(rx.isEmpty)
 
-    let value = arc4random()
+    let value = Int(arc4random() & 0x7fffffff)
     tx <- value
     let result = <-rx
 
@@ -54,13 +54,13 @@ class ChannelsTests: XCTestCase
 
   func ChannelTestSendReceiveN()
   {
-    var values = Array<UInt32>()
+    var values = Array<Int>()
     for _ in 0..<buflen
     {
-      values.append(arc4random_uniform(UInt32.max/2))
+      values.append(Int(arc4random() & 0x7fffffff))
     }
 
-    let (tx, rx) = InstantiateTestChannel(UInt32)
+    let (tx, rx) = InstantiateTestChannel(Int)
     for v in values
     {
       tx <- v
@@ -112,10 +112,10 @@ class ChannelsTests: XCTestCase
 
   func ChannelTestBlockedReceive()
   {
-    let (tx, rx) = InstantiateTestChannel(UInt32)
+    let (tx, rx) = InstantiateTestChannel(Int)
     let expectations = 3
 
-    var valrecd = arc4random()
+    var valrecd = Int(arc4random() & 0x7fffffff)
     for i in 0..<expectations
     {
       let expectation = expectationWithDescription(id + " blocked Receive #\(i), verified reception")
@@ -129,11 +129,11 @@ class ChannelsTests: XCTestCase
       }
     }
 
-    var valsent = arc4random()
+    var valsent = Int(arc4random() & 0x7fffffff)
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
       XCTAssert(tx.isClosed == false, self.id + " should not be closed")
 
-      valsent = arc4random()
+      valsent = Int(arc4random() & 0x7fffffff)
       tx <- valsent
       tx.close()
     }
@@ -180,19 +180,19 @@ class ChannelsTests: XCTestCase
     let (tx, rx) = InstantiateTestChannel(Int)
     let expectation = expectationWithDescription(id + " blocked Send, verified reception")
 
-    var valsent = Int(arc4random())
+    var valsent = Int(arc4random() & 0x7fffffff)
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
       for i in 0..<self.buflen
       {
         tx <- i
       }
       XCTAssert(tx.isFull)
-      valsent = Int(arc4random())
+      valsent = Int(arc4random() & 0x7fffffff)
       tx <- valsent
       tx.close()
     }
 
-    var valrecd = Int(arc4random())
+    var valrecd = Int(arc4random() & 0x7fffffff)
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
       XCTAssert(tx.isClosed == false, self.id + " should not be closed")
 
