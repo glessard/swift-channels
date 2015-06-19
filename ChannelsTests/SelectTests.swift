@@ -223,6 +223,54 @@ class SelectUnbufferedTests: XCTestCase
   {
     DoubleSelectTest(sleeper: .Sender)
   }
+
+  func testSelectAndCloseReceivers()
+  {
+    let channels  = MakeChannels()
+    let senders   = channels.map { Sender(channelType: $0) }
+    let receivers = channels.map { Receiver(channelType: $0) }
+
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 10_000_000),
+                   dispatch_get_global_queue(qos_class_self(), 0)) {
+        _ in
+        for sender in senders { sender.close() }
+    }
+
+    let selectables = receivers.map { $0 as Selectable }
+    while let selection = select(selectables)
+    {
+      if selection.id is Receiver<Int>
+      {
+        XCTFail("Should not return one of our Receivers")
+      }
+    }
+  }
+
+  func testSelectAndCloseSenders()
+  {
+    let channels  = MakeChannels()
+    let senders   = channels.map { Sender(channelType: $0) }
+
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 10_000_000),
+                   dispatch_get_global_queue(qos_class_self(), 0)) {
+      _ in
+      for sender in senders { sender.close() }
+    }
+
+    for sender in senders
+    { // fill up the buffers so that the select() below will block
+      while sender.isFull == false { sender <- 0 }
+    }
+
+    let selectables = senders.map { $0 as Selectable }
+    while let selection = select(selectables)
+    {
+      if selection.id is Sender<Int>
+      {
+        XCTFail("Should not return one of our Senders")
+      }
+    }
+  }
 }
 
 class SelectQChanBufferedTests: SelectUnbufferedTests
