@@ -52,21 +52,20 @@ public func select(options: [Selectable], noBlocking: Bool) -> Selection?
 
 public func select(options: [Selectable], withDefault: Selectable? = nil) -> Selection?
 {
-  let selectables = options.filter { $0.selectable }
-
-  if selectables.count < 1
-  { // Nothing left to do
-    return nil
-  }
-
   let semaphore = SemaphorePool.Obtain()
   defer { SemaphorePool.Return(semaphore) }
   semaphore.setState(.WaitSelect)
 
-  for option in selectables.shuffle()
+  var selectables = 0
+  for option in options.shuffle() where option.selectable
   {
     option.selectNotify(semaphore, selection: Selection(id: option))
-    if semaphore.state != .WaitSelect { break }
+    selectables += 1
+    guard semaphore.state == .WaitSelect else { break }
+  }
+  if selectables == 0
+  { // nothing left to do
+    return nil
   }
 
   if let def = withDefault where semaphore.setState(.Invalidated)
