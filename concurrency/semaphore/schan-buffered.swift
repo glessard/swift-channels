@@ -162,7 +162,7 @@ final class SBufferedChan<T>: Chan<T>
     }
     else
     {
-      precondition(closed != 0, __FUNCTION__)
+      // assert(closed != 0, __FUNCTION__)
       OSAtomicDecrementLongBarrier(&head)
       filled.signal()
       return nil
@@ -183,7 +183,7 @@ final class SBufferedChan<T>: Chan<T>
       return true
     }
     else
-    {
+    { // This shouldn't happen, but it isn't an outright error.
       OSAtomicDecrementLongBarrier(&tail)
       empty.signal()
       return false
@@ -220,7 +220,7 @@ final class SBufferedChan<T>: Chan<T>
     }
     else
     {
-      precondition(closed != 0, __FUNCTION__)
+      // assert(closed != 0, __FUNCTION__)
       OSAtomicDecrementLongBarrier(&head)
       filled.signal()
       return nil
