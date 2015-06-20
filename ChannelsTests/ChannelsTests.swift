@@ -43,6 +43,8 @@ class ChannelsTests: XCTestCase
 
     let value = Int(arc4random() & 0x7fffffff)
     tx <- value
+
+    XCTAssert(rx.underestimateCount() >= 0)
     let result = <-rx
 
     XCTAssert(value == result, "Wrong value received from channel " + id)
@@ -213,7 +215,9 @@ class ChannelsTests: XCTestCase
 
   func ChannelTestNoSender()
   {
-    let (_, rx) = InstantiateTestChannel(Int)
+    var (_, rx) = InstantiateTestChannel(Int)
+    rx = Receiver.Wrap(rx) // because why not
+
     let expectation = expectationWithDescription(id + " Receive, no Sender")
 
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
@@ -238,7 +242,9 @@ class ChannelsTests: XCTestCase
 
   func ChannelTestNoReceiver()
   {
-    let (tx, _) = InstantiateTestChannel(Void)
+    var (tx, _) = InstantiateTestChannel(Void)
+    tx = Sender.Wrap(tx) // because why not
+
     let expectation = expectationWithDescription(id + " Send, no Receiver")
 
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
