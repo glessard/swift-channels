@@ -42,13 +42,25 @@ public func select(options: [Selectable], preventBlocking: Bool) -> Selection?
 /**
   `select()` gets notified of events by the first to be ready in a list of Selectable items.
   If no event is immediately available, `select()` will block until it gets notified.
+
   If the `withDefault` parameter is set (i.e. not `nil`), `select()` will not block, and will
   select `withDefault` instead.
+
+  `select()` operates thusly:
+  1. All the items in `options` are visited in a random order and passed a reference that will
+     enable them to notify the main thread that they are ready to be selected (that is, ready to send or receive.)
+  2. As soon as one of them is ready to proceed (the notification is thread-safe,) the appropriate reference is
+     stored in a new `Selection` struct, along with a `ChannelSemaphore` reference if it was set in the notification.
+  3. The `Selection` is returned.
+
+  The thread that runs `select()` must then flow-control on the `Selection`'s `id` field, and compare it to
+  the members of the `options` array. Finally, the operation can complete. A `Receiver` calls `extract()`,
+  a `Sender` calls `insert()`. Other types of `Selectable` are surely possible.
 
   - parameter options: an array of `Selectable` instances
   - parameter withDefault: a `Selectable` that will be selected instead of blocking -- defaults to `nil`
 
-  - returns: a `Selection` that contains a `Selectable` along with possible parameters.
+  - returns: a `Selection` that contains a `Selectable` along with a possible `ChannelSemaphore`.
 */
 
 public func select(options: [Selectable], withDefault: Selectable? = nil) -> Selection?
