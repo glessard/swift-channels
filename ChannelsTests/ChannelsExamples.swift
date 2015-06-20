@@ -30,10 +30,9 @@ class ChannelsExamples: XCTestCase
       sender.close()
     }
 
-    while let m = <-receiver
-    {
-      print(m)
-    }
+    print("Output: ", appendNewline: false)
+    while let m = <-receiver { print(m, appendNewline: false) }
+    print("")
   }
 
   func testExample2()
@@ -45,7 +44,9 @@ class ChannelsExamples: XCTestCase
       sender.close()
     }
 
-    while let m = <-receiver { print(m) }
+    print("Output: ", appendNewline: false)
+    while let m = <-receiver { print(m, appendNewline: false) }
+    print("")
   }
 
   func testExampleProcessingPipeline()
