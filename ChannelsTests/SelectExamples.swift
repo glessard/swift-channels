@@ -150,7 +150,7 @@ class SelectExamples: XCTestCase
 
     var attempts = 0
     dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
-      while let selection = select([c1.tx,c2.tx], preventBlocking: true) where attempts < 1000
+      while let selection = select([c1.tx,c2.tx], preventBlocking: true)
       {
         switch selection.id
         {
@@ -160,7 +160,9 @@ class SelectExamples: XCTestCase
           s.insert(selection, newElement: arc4random())
         default: break
         }
+
         attempts += 1
+        guard attempts < 1000 else { break }
         usleep(1)
       }
       c1.tx.close()
