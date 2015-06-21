@@ -196,15 +196,26 @@ final class SBufferedChan<T>: Chan<T>
     empty.notify { [weak self] in
       guard let this = self else { return }
 
-      if select.setState(.Select)
+      OSMemoryBarrier()
+      if this.closed == 0
       {
-        select.selection = selection
+        if select.setState(.Select)
+        {
+          select.selection = selection
+          select.signal()
+        }
+        else
+        {
+          this.empty.signal()
+        }
+        return
+      }
+
+      if select.setState(.Invalidated)
+      {
         select.signal()
       }
-      else
-      { // let another writer through
-        this.empty.signal()
-      }
+      this.empty.signal()
     }
   }
 
@@ -233,15 +244,27 @@ final class SBufferedChan<T>: Chan<T>
     filled.notify { [weak self] in
       guard let this = self else { return }
 
-      if select.setState(.Select)
+      OSMemoryBarrier()
+      if this.tail &- this.head > 0
       {
-        select.selection = selection
+        if select.setState(.Select)
+        {
+          select.selection = selection
+          select.signal()
+        }
+        else
+        {
+          this.filled.signal()
+        }
+        return
+      }
+
+      // assert(this.closed != 0, __FUNCTION__)
+      if select.setState(.Invalidated)
+      {
         select.signal()
       }
-      else
-      { // let another reader through
-        this.filled.signal()
-      }
+      this.filled.signal()
     }
   }
 }
