@@ -183,7 +183,8 @@ final class SBufferedChan<T>: Chan<T>
       return true
     }
     else
-    { // This shouldn't happen, but it isn't an outright error.
+    { // This should be very rare. The channel would have to have
+      // gotten closed in between the calls to selectPut() and insert().
       OSAtomicDecrementLongBarrier(&tail)
       empty.signal()
       return false
