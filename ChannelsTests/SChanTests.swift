@@ -29,3 +29,11 @@ class SBufferedChannelTests: BufferedChannelTests
     }
   }
 }
+
+class SelectSChanBufferedTests: SelectUnbufferedTests
+{
+  override func MakeChannels() -> [Chan<Int>]
+  {
+    return (0..<selectableCount).map { _ in SBufferedChan<Int>(1) }
+  }
+}

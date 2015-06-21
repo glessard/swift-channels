@@ -13,16 +13,6 @@ import XCTest
 
 @testable import Channels
 
-class QUnbufferedChannelTests: UnbufferedChannelTests
-{
-  override var id: String  { return "Queue Unbuffered" }
-
-  override func InstantiateTestChannel<T>(_: T.Type) -> (Sender<T>, Receiver<T>)
-  {
-    return Channel.Wrap(QUnbufferedChan())
-  }
-}
-
 class QBufferedChannelTests: BufferedChannelTests
 {
   override var id: String  { return "Queue Buffered(N)" }
@@ -37,5 +27,13 @@ class QBufferedChannelTests: BufferedChannelTests
     {
       return Channel.Wrap(QBufferedChan())
     }
+  }
+}
+
+class SelectQChanBufferedTests: SelectUnbufferedTests
+{
+  override func MakeChannels() -> [Chan<Int>]
+  {
+    return (0..<selectableCount).map { _ in QBufferedChan<Int>(1) }
   }
 }

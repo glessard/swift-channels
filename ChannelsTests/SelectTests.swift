@@ -18,7 +18,7 @@ class SelectUnbufferedTests: XCTestCase
 
   func MakeChannels() -> [Chan<Int>]
   {
-    return (0..<selectableCount).map { _ in QUnbufferedChan<Int>() }
+    return (0..<selectableCount).map { _ in Chan<Int>.Make() }
   }
 
   func getIterations(sleepInterval: NSTimeInterval) -> Int
@@ -273,18 +273,10 @@ class SelectUnbufferedTests: XCTestCase
   }
 }
 
-class SelectQChanBufferedTests: SelectUnbufferedTests
+class SelectBufferedTests: SelectUnbufferedTests
 {
   override func MakeChannels() -> [Chan<Int>]
   {
-    return (0..<selectableCount).map { _ in QBufferedChan<Int>(1) }
-  }
-}
-
-class SelectSChanBufferedTests: SelectUnbufferedTests
-{
-  override func MakeChannels() -> [Chan<Int>]
-  {
-    return (0..<selectableCount).map { _ in SBufferedChan<Int>(1) }
+    return (0..<selectableCount).map { _ in Chan<Int>.Make(1) }
   }
 }
