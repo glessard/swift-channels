@@ -37,11 +37,6 @@ public class Channel<T>
     return Wrap(Chan.Make(capacity))
   }
 
-  public class func Make(_: T.Type, _ capacity: Int = 0) -> (tx: Sender<T>, rx: Receiver<T>)
-  {
-    return Make(capacity)
-  }
-
   /**
     Wrap a `Chan<T>` in a new `Sender<T>` and `Receiver<T>` pair.
 
