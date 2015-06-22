@@ -89,13 +89,13 @@ class SinkTests: XCTestCase
 
   func testSelectSink()
   {
-    let s1 = Sink<Int>()
-    let sel = Array<Selectable>(arrayLiteral: s1)
+    let k = Sink<Int>()
+    let s = [k as Selectable]
 
-    let selection = select(sel)
-    if let selected = selection where selected.id === s1
+    if let selection = select(s) where selection.id === k
     {
-      s1.insert(selected, newElement: 0)
+      let success = k.insert(selection, newElement: 0)
+      XCTAssert(success)
     }
   }
 }
@@ -104,14 +104,21 @@ class EmptyChanTests: XCTestCase
 {
   func testEmptyReceiver()
   {
-    let r1 = Receiver<Int>()
-    XCTAssert(r1.isEmpty)
-    XCTAssert(r1.isClosed)
-    if let _ = <-r1
+    let r = Receiver<Int>()
+    XCTAssert(r.isEmpty)
+    XCTAssert(r.isClosed)
+    if let _ = <-r
     {
       XCTFail()
     }
-    r1.close()
+
+    let s = [r as Selectable]
+    if let selection = select(s) where selection.id === r
+    {
+      XCTFail()
+    }
+
+    r.close()
   }
 
   func testEmptySender()
@@ -120,6 +127,12 @@ class EmptyChanTests: XCTestCase
     XCTAssert(s1.isFull == false)
     XCTAssert(s1.isClosed)
     if s1.send(0)
+    {
+      XCTFail()
+    }
+
+    let s = [s1 as Selectable]
+    if let selection = select(s) where selection.id === s1
     {
       XCTFail()
     }
