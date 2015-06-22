@@ -69,3 +69,60 @@ class TimeoutTests: XCTestCase
     }
   }
 }
+
+class SinkTests: XCTestCase
+{
+  func testSink()
+  {
+    let s1 = Sink<Int>()
+    XCTAssert(s1.isFull == false)
+    XCTAssert(s1.isClosed == false)
+    s1 <- 0
+
+    let s2 = Sender.Wrap(s1)
+    XCTAssert(s2.isFull == false)
+    XCTAssert(s2.isClosed == false)
+    s2 <- 0
+
+    s1.close()
+  }
+
+  func testSelectSink()
+  {
+    let s1 = Sink<Int>()
+    let sel = Array<Selectable>(arrayLiteral: s1)
+
+    let selection = select(sel)
+    if let selected = selection where selected.id === s1
+    {
+      s1.insert(selected, newElement: 0)
+    }
+  }
+}
+
+class EmptyChanTests: XCTestCase
+{
+  func testEmptyReceiver()
+  {
+    let r1 = Receiver<Int>()
+    XCTAssert(r1.isEmpty)
+    XCTAssert(r1.isClosed)
+    if let _ = <-r1
+    {
+      XCTFail()
+    }
+    r1.close()
+  }
+
+  func testEmptySender()
+  {
+    let s1 = Sender<Int>()
+    XCTAssert(s1.isFull == false)
+    XCTAssert(s1.isClosed)
+    if s1.send(0)
+    {
+      XCTFail()
+    }
+    s1.close()
+  }
+}
