@@ -22,8 +22,7 @@ class ChannelTypeTests: XCTestCase
 
   func InstantiateTestChannel() -> (Sender<Int>, Receiver<Int>)
   {
-    let c = SimpleChannel()
-    return (Sender(channelType: c), Receiver(channelType: c))
+    return Channel.Wrap(SimpleChannel())
   }
 
   /**
@@ -121,7 +120,7 @@ class ChannelTypeTests: XCTestCase
 
   func testNoSender()
   {
-    let (_, rx) = InstantiateTestChannel()
+    let rx = Receiver(channelType: SimpleChannel())
     let expectation = expectationWithDescription(id + " Receive, no Sender")
 
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
@@ -146,7 +145,7 @@ class ChannelTypeTests: XCTestCase
 
   func testNoReceiver()
   {
-    let (tx, _) = InstantiateTestChannel()
+    let tx = Sender(channelType: SimpleChannel())
     let expectation = expectationWithDescription(id + " Send, no Receiver")
 
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
