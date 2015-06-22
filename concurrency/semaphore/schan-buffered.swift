@@ -231,7 +231,8 @@ final class SBufferedChan<T>: Chan<T>
       return element
     }
     else
-    {
+    { // This should be very rare. The channel would have to have
+      // gotten closed in between the calls to selectGet() and extract().
       // assert(closed != 0, __FUNCTION__)
       OSAtomicDecrementLongBarrier(&head)
       filled.signal()
