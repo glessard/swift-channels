@@ -56,7 +56,7 @@ public class Channel<T>
     - returns: newly-created, paired `Sender` and `Receiver`.
   */
 
-  class func Wrap<C: ChannelType where C.Element == T>(c: C) -> (tx: Sender<T>, rx: Receiver<T>)
+  class func Wrap<C: SelectableChannelType where C.Element == T>(c: C) -> (tx: Sender<T>, rx: Receiver<T>)
   {
     return (Sender(channelType: c), Receiver(channelType: c))
   }

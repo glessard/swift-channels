@@ -16,7 +16,7 @@ import Dispatch
   fulfill the contract of ChannelType.
 */
 
-public class SimpleChannel: ChannelType
+public class SimpleChannel: ChannelType, SelectableChannelType
 {
   private var element: Int = 0
   private var head = 0
@@ -89,5 +89,23 @@ public class SimpleChannel: ChannelType
       dispatch_semaphore_signal(filled)
       return nil
     }
+  }
+
+  public func selectGet(select: ChannelSemaphore, selection: Selection)
+  {
+  }
+
+  public func extract(selection: Selection) -> Int?
+  {
+    return nil
+  }
+
+  public func selectPut(select: ChannelSemaphore, selection: Selection)
+  {
+  }
+
+  public func insert(selection: Selection, newElement: Int) -> Bool
+  {
+    return false
   }
 }
