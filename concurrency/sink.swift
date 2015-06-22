@@ -28,8 +28,9 @@ public class Sink<T>: SenderType, SelectableSenderType
 
   public func selectNotify(select: ChannelSemaphore, selection: Selection)
   {
-    if select.setState(.Invalidated)
+    if select.setState(.Select)
     {
+      select.selection = selection
       select.signal()
     }
   }

@@ -43,7 +43,7 @@ public class Chan<T>: ChannelType, SelectableChannelType
     as the full state could go from false to true at any moment.
   */
 
-  public var isFull: Bool { return true }
+  public var isFull: Bool { return false }
 
   /**
     Determine whether the channel has been closed
