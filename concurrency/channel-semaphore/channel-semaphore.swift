@@ -12,6 +12,14 @@ import Darwin.Mach.mach_time
 import Darwin.libkern.OSAtomic
 import Dispatch.time
 
+/**
+  An object reuse pool for `ChannelSemaphore`.
+  A mach semaphore (obtained with `semaphore_create`) takes several microseconds to create.
+  Without a reuse pool, this cost would be incurred every time a thread needs to stop
+  in `QUnbufferedChan`, `QBufferedChan` and `select()`. Reusing reduces the cost to
+  much less than 1 microsecond.
+*/
+
 struct SemaphorePool
 {
   static private let capacity = 256
@@ -19,6 +27,11 @@ struct SemaphorePool
   static private var cursor = 0
 
   static private var lock = OS_SPINLOCK_INIT
+
+  /**
+    Return a `ChannelSemaphore` to the reuse pool.
+    - parameter s: A `ChannelSemaphore` to return to the reuse pool.
+  */
 
   static func Return(s: ChannelSemaphore)
   {
@@ -29,9 +42,16 @@ struct SemaphorePool
       cursor += 1
       assert(s.svalue == 0, "Non-zero user-space semaphore count of \(s.svalue) in \(__FUNCTION__)")
       assert(s.seln == nil || s.state == .DoubleSelect, "Unexpectedly non-nil Selection in \(__FUNCTION__)")
+      assert(s.iptr == nil || s.state == .DoubleSelect, "Non-nil pointer \(s.iptr) in \(__FUNCTION__)")
     }
     OSSpinLockUnlock(&lock)
   }
+
+  /**
+    Obtain a `ChannelSemaphore` from the object reuse pool.
+    The returned `ChannelSemaphore` will be uniquely referenced.
+    - returns: A uniquely-referenced `ChannelSemaphore`.
+  */
 
   static func Obtain() -> ChannelSemaphore
   {
@@ -39,26 +59,21 @@ struct SemaphorePool
     if cursor > 0
     {
       cursor -= 1
-      if isUniquelyReferencedNonObjC(&buffer[cursor])
-      {
-        let s = buffer.advancedBy(cursor).move()
-        OSSpinLockUnlock(&lock)
-        s.svalue = 0
-        s.iptr = nil
-        s.currentState = ChannelSemaphore.State.Ready.rawValue
-        return s
-      }
-
-      // for i in reverse(0..<cursor)
-      for var i=cursor-1; i>=0; i--
+      for var i=cursor; i>=0; i--
       {
         if isUniquelyReferencedNonObjC(&buffer[i])
         {
-          let s = buffer[i]
-          buffer[i] = buffer.advancedBy(cursor).move()
+          var s = buffer.advancedBy(cursor).move()
+          if i < cursor
+          {
+            swap(&s, &buffer[i])
+          }
           OSSpinLockUnlock(&lock)
-          s.svalue = 0
-          s.iptr = nil
+
+          // Expected state:
+          // s.svalue = 0
+          // s.seln = nil
+          // s.iptr = nil
           s.currentState = ChannelSemaphore.State.Ready.rawValue
           return s
         }
