@@ -179,19 +179,35 @@ final public class ChannelSemaphore
 
   // MARK: Data handling
 
+  /**
+    An associated pointer to pass data synchronously between threads.
+  */
+
   private var iptr: UnsafeMutablePointer<Void> = nil
 
-  func setPointer<T>(p: UnsafeMutablePointer<T>)
+  /**
+    Set this `ChannelSemaphore`'s associated pointer.
+
+    This accessor is necessary in order to be able to do the following:
+    ```
+    var element = T()
+    semaphore.setPointer(&element)
+    ```
+    This is due to the fact that typecasting the address of a variable to an `UnsafeMutablePointer<Void>` is not possible.
+  
+    - parameter p: The address of a variable or a pointer.
+  */
+
+  final func setPointer<T>(p: UnsafeMutablePointer<T>)
   {
-    pointer = UnsafeMutablePointer(p)
+    if currentState == State.Pointer.rawValue ||
+       currentState == State.DoubleSelect.rawValue
+    { iptr = UnsafeMutablePointer(p) }
+    else
+    { iptr = nil }
   }
 
-  func getPointer<T>() -> UnsafeMutablePointer<T>
-  {
-    return UnsafeMutablePointer<T>(pointer)
-  }
-
-  var pointer: UnsafeMutablePointer<Void> {
+  final var pointer: UnsafeMutablePointer<Void> {
     get {
       if currentState == State.Pointer.rawValue ||
          currentState == State.DoubleSelect.rawValue
@@ -208,10 +224,13 @@ final public class ChannelSemaphore
     }
   }
 
+  /**
+    Data structure to work with the `select()` function.
+  */
 
   private var seln: Selection? = nil
 
-  var selection: Selection! {
+  final var selection: Selection! {
     get {
       if currentState == State.Select.rawValue ||
          currentState == State.DoubleSelect.rawValue

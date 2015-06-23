@@ -126,7 +126,7 @@ final class QUnbufferedChan<T>: Chan<T>
       case .Pointer:
         OSSpinLockUnlock(&lock)
         // attach a new copy of our data to the reader's semaphore
-        reader.sem.getPointer().initialize(newElement)
+        UnsafeMutablePointer<T>(reader.sem.pointer).initialize(newElement)
         reader.sem.signal()
         return true
 
@@ -139,7 +139,7 @@ final class QUnbufferedChan<T>: Chan<T>
           // buffer will be cleaned up in the .DoubleSelect case of extract()
 
           reader.sem.selection = reader.sel.withSemaphore(reader.sem)
-          reader.sem.setPointer(buffer)
+          reader.sem.pointer = UnsafeMutablePointer(buffer)
           reader.sem.signal()
 
           // the data was passed on; we assume it was successful.
@@ -171,8 +171,9 @@ final class QUnbufferedChan<T>: Chan<T>
 
     // got awoken
     let state = threadLock.state
-    let match = threadLock.getPointer() == &newElement
+    let match = threadLock.pointer == &newElement
     threadLock.setState(.Done)
+    threadLock.pointer = nil
     SemaphorePool.Return(threadLock)
 
     switch state
@@ -211,7 +212,7 @@ final class QUnbufferedChan<T>: Chan<T>
       {
       case .Pointer:
         OSSpinLockUnlock(&lock)
-        let element: T = writer.sem.getPointer().memory
+        let element = UnsafeMutablePointer<T>(writer.sem.pointer).memory
         writer.sem.signal()
         return element
 
@@ -222,7 +223,7 @@ final class QUnbufferedChan<T>: Chan<T>
           let threadLock = SemaphorePool.Obtain()
           let buffer = UnsafeMutablePointer<T>.alloc(1)
           threadLock.setState(.Pointer)
-          threadLock.setPointer(buffer)
+          threadLock.pointer = UnsafeMutablePointer(buffer)
           writer.sem.selection = writer.sel.withSemaphore(threadLock)
           writer.sem.signal()
           threadLock.wait()
@@ -231,6 +232,7 @@ final class QUnbufferedChan<T>: Chan<T>
           assert(threadLock.state == .Pointer && threadLock.pointer == buffer,
                  "Unexpected Semaphore state \(threadLock.state) in \(__FUNCTION__)")
           threadLock.setState(.Done)
+          threadLock.pointer = nil
           SemaphorePool.Return(threadLock)
 
           let element = buffer.move()
@@ -257,15 +259,16 @@ final class QUnbufferedChan<T>: Chan<T>
     let buffer = UnsafeMutablePointer<T>.alloc(1)
     defer { buffer.dealloc(1) }
     threadLock.setState(.Pointer)
-    threadLock.setPointer(buffer)
+    threadLock.pointer = UnsafeMutablePointer(buffer)
     readerQueue.enqueue(QueuedSemaphore(threadLock))
     OSSpinLockUnlock(&lock)
     threadLock.wait()
 
     // got awoken
     let state = threadLock.state
-    let match = threadLock.getPointer() == buffer
+    let match = threadLock.pointer == buffer
     threadLock.setState(.Done)
+    threadLock.pointer = nil
     SemaphorePool.Return(threadLock)
 
     switch state
@@ -292,7 +295,7 @@ final class QUnbufferedChan<T>: Chan<T>
       {
       case .Pointer, .DoubleSelect:
         // attach a new copy of our data to the reader's semaphore
-        rs.getPointer().initialize(newElement)
+        UnsafeMutablePointer<T>(rs.pointer).initialize(newElement)
         rs.signal()
         return true
 
@@ -380,13 +383,13 @@ final class QUnbufferedChan<T>: Chan<T>
       switch ws.state
       {
       case .Pointer:
-        let element: T = ws.getPointer().memory
+        let element = UnsafeMutablePointer<T>(ws.pointer).memory
         ws.signal()
         return element
 
       case .DoubleSelect:
         let pointer = UnsafeMutablePointer<T>(ws.pointer)
-        let element: T = pointer.move()
+        let element = pointer.move()
         pointer.dealloc(1)
         ws.pointer = nil
         ws.selection = nil
