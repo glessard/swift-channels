@@ -7,7 +7,8 @@
 
 import Darwin.Mach.mach_time
 import Darwin.C.time
-import AppKit.AppKitDefines
+import Foundation.NSDate
+import QuartzCore
 
 /**
   A struct whose purpose is to pretty-print short durations of time.
@@ -15,7 +16,7 @@ import AppKit.AppKitDefines
 
 public struct Interval: CustomStringConvertible
 {
-  var ns: Int64
+  let ns: Int64
 
   init(_ nanoseconds: Int64)
   {
@@ -32,7 +33,7 @@ public struct Interval: CustomStringConvertible
     ns = Int64(nanoseconds)
   }
 
-  init(seconds: CFTimeInterval)
+  init(seconds: NSTimeInterval)
   {
     ns = Int64(seconds*1e9)
   }
@@ -59,7 +60,7 @@ public struct Interval: CustomStringConvertible
       return ns.description + " ns"
   }
   
-  public var interval: CFTimeInterval
+  public var interval: NSTimeInterval
   {
     return Double(ns)*1e-9
   }
@@ -72,6 +73,7 @@ func / (dt: Interval, n: Int) -> Interval
 
 /**
   Timing-related utility based on mach_absolute_time().
+  It seems correct on Mac OS X. It might not be on iOS.
 */
 
 public struct Time: CustomStringConvertible
@@ -88,7 +90,7 @@ public struct Time: CustomStringConvertible
     This is not a constant, strictly speaking. Probably close enough, though.
   */
 
-  private static var offset: CFTimeInterval = { CFAbsoluteTimeGetCurrent() - CACurrentMediaTime() }()
+  private static var offset: NSTimeInterval = { CFAbsoluteTimeGetCurrent() - CACurrentMediaTime() }()
 
   /**
     scale: how to scale from the mach timebase to nanoseconds. See Technical Q&A QA1398
@@ -109,8 +111,7 @@ public struct Time: CustomStringConvertible
 
   public var toc: Interval
   {
-    let dt = (Time().t - t) * Int64(Time.scale.numer)/Int64(Time.scale.denom)
-    return Interval(dt)
+    return Time() - self
   }
 
   public var nanoseconds: Int64
@@ -118,31 +119,36 @@ public struct Time: CustomStringConvertible
     return t * Int64(Time.scale.numer)/Int64(Time.scale.denom)
   }
 
-  public var absoluteTime: CFAbsoluteTime
+  public var absoluteTime: NSTimeInterval
   {
       return Double(self.nanoseconds)*1e-9 + Time.offset
   }
-  
+
   public var description: String
   {
     return NSDate(timeIntervalSinceReferenceDate: absoluteTime).description
   }
 }
 
+public func -(time1: Time, time2: Time) -> Interval
+{
+  return Interval((time1.t - time2.t) * Int64(Time.scale.numer)/Int64(Time.scale.denom))
+}
+
 extension Time
 {
-  public static func Now() -> Time { return Time() }
-
   /**
-    Time.Since(t: Time) returns an Interval.
+    Time.Since(t: Time) returns an `Interval`.
     example:
+    ```
     let starttime = Time()
-    println(Time.Since(starttime))
+    print(Time.Since(starttime))
+    ```
   */
 
-  public static func Since(tic: Time) -> Interval
+  public static func Since(startTime: Time) -> Interval
   {
-    return tic.toc
+    return Time() - startTime
   }
 }
 
@@ -150,9 +156,9 @@ extension Time
   Sleep the current thread for an interval of time.
 */
 
-extension Time
+public struct Thread
 {
-  public static func Wait(interval: Interval)
+  public static func Sleep(interval: Interval)
   {
     if interval.ns >= 0
     {
@@ -161,20 +167,20 @@ extension Time
     }
   }
 
-  public static func Wait(ms: Int)
+  public static func Sleep(ms: Int)
   {
     if ms >= 0
     {
-      Time.Wait(Double(ms)/1000)
+      Sleep(Double(ms)/1000)
     }
   }
 
-  public static func Wait(ms: UInt32)
+  public static func Sleep(ms: UInt32)
   {
-    Time.Wait(Int(ms))
+    Sleep(Int(ms))
   }
 
-  public static func Wait(seconds: CFTimeInterval)
+  public static func Sleep(seconds: NSTimeInterval)
   {
     if seconds > 0
     {
