@@ -9,7 +9,11 @@
 import Darwin
 import XCTest
 
-@testable import Channels
+#if os(OSX)
+  @testable import Channels
+#elseif os(iOS)
+  @testable import Channels_iOS
+#endif
 
 class UnbufferedChannelTests: ChannelsTests
 {

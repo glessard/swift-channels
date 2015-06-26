@@ -9,7 +9,11 @@
 import Darwin
 import Dispatch
 
-@testable import Channels
+#if os(OSX)
+  @testable import Channels
+#elseif os(iOS)
+  @testable import Channels_iOS
+#endif
 
 /**
   The simplest single-element buffered channel that can
