@@ -17,21 +17,21 @@ import Dispatch
 public protocol Selectable: class
 {
   /**
-    `select()` registers its notification semaphore by calling an implementation's selectNotify() method.
+    `select_chan()` registers its notification semaphore by calling an implementation's selectNotify() method.
 
-    A `Selectable` can attempt to send data back to select() by first changing the `ChannelSemaphore`'s
+    A `Selectable` can attempt to send data back to select_chan() by first changing the `ChannelSemaphore`'s
     state via its `setState()` method. If that succeeds (by returning `true`) the `ChannelSemaphore`'s
     `selection` property can be set to the `Selection` received as a parameter, which identifies
-    the current object to the `select()` function. After setting the `selection`, the `Selectable` should
+    the current object to the `select_chan()` function. After setting the `selection`, the `Selectable` should
     `ChannelSemaphore.signal()` method and return.
   
-    Failure to change the state should be followed by an immediate return, since `select()` needs to take
+    Failure to change the state should be followed by an immediate return, since `select_chan()` needs to take
     action -- and it is running in the same thread as this call. Note that if `setState()` returns `false`,
     it is a clear sign that another thread is likely to change the state of `select`. `select` can only
     be safely changed between a successful call to `setState()` and a subsequent `signal()`.
 
     ```
-      // there is data to transmit back to select()...
+      // there is data to transmit back to select_chan()...
       if select.setState(.Select)
       {
         select.selection = selection
@@ -40,15 +40,15 @@ public protocol Selectable: class
       return
     ```
 
-    - parameter `select`: a `ChannelSemaphore` to signal the `select()` function.
-    - parameter `selection`: a `Selection` instance that identifies this object to the `select()` function.
+    - parameter `select`: a `ChannelSemaphore` to signal the `select_chan()` function.
+    - parameter `selection`: a `Selection` instance that identifies this object to the `select_chan()` function.
   */
 
   func selectNotify(select: ChannelSemaphore, selection: Selection)
 
   /**
     If it makes no sense to invoke the `selectNotify()` method at this time, return `false`.
-    If every Selectable in the list returns `false`, `select()` will return `nil`.
+    If every Selectable in the list returns `false`, `select_chan()` will return `nil`.
   */
 
   var selectable: Bool { get }
@@ -81,7 +81,7 @@ public protocol SelectableSenderType: SenderType, Selectable
 
 
 /**
-  Selection is used to communicate references back to the select() function.
+  Selection is used to communicate references back to the select_chan() function.
 */
 
 public struct Selection

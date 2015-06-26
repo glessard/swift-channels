@@ -41,7 +41,7 @@ class SelectExamples: XCTestCase
 
     var messages = Array(count: channels.count, repeatedValue: 0)
     let selectables = channels.map { $0.rx as Selectable }
-    while let selection = select(selectables)
+    while let selection = select_chan(selectables)
     {
       switch selection.id
       {
@@ -80,7 +80,7 @@ class SelectExamples: XCTestCase
     dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
       for _ in 0..<8
       {
-        if let selection = select(c0.tx, c1.tx)
+        if let selection = select_chan(c0.tx, c1.tx)
         {
           switch selection.id
           {
@@ -114,7 +114,7 @@ class SelectExamples: XCTestCase
     var cap = 0
     var count = 0
 
-    while let selection = select([c.tx, c.rx], preventBlocking: false)
+    while let selection = select_chan([c.tx, c.rx], preventBlocking: false)
     {
       switch selection.id
       {
@@ -154,7 +154,7 @@ class SelectExamples: XCTestCase
 
     var attempts = 0
     dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
-      while let selection = select([c1.tx,c2.tx], preventBlocking: true)
+      while let selection = select_chan([c1.tx,c2.tx], preventBlocking: true)
       {
         switch selection.id
         {

@@ -35,7 +35,7 @@ class SelectSingletonTests: XCTestCase
       var i = 0
       // Currently required to avoid a runtime crash:
       let selectables = senders.map { $0 as Selectable }
-      while let selection = select(selectables)
+      while let selection = select_chan(selectables)
       {
         if let sender = selection.id as? Sender<Int>
         {
@@ -48,7 +48,7 @@ class SelectSingletonTests: XCTestCase
     var i = 0
     // Currently required to avoid a runtime crash:
     let selectables = receivers.map { $0 as Selectable }
-    while let selection = select(selectables)
+    while let selection = select_chan(selectables)
     {
       if let receiver = selection.id as? Receiver<Int>
       {
@@ -77,7 +77,7 @@ class SelectSingletonTests: XCTestCase
     var i = 0
     // Currently required to avoid a runtime crash:
     let selectables = receivers.map { $0 as Selectable }
-    while let selection = select(selectables)
+    while let selection = select_chan(selectables)
     {
       if let receiver = selection.id as? Receiver<Int>
       {
@@ -103,7 +103,7 @@ class SelectSingletonTests: XCTestCase
       var i = 0
       // Currently required to avoid a runtime crash:
       let selectables = senders.map { $0 as Selectable }
-      while let selection = select(selectables)
+      while let selection = select_chan(selectables)
       {
         if let sender = selection.id as? Sender<Int>
         {

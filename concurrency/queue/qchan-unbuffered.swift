@@ -143,7 +143,7 @@ final class QUnbufferedChan<T>: Chan<T>
           reader.sem.signal()
 
           // the data was passed on; we assume it was successful.
-          // if not, select() or extract() are likely to complain, or memory will leak.
+          // if not, select_chan() or extract() are likely to complain, or memory will leak.
           return true
         }
 

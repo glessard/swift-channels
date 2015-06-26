@@ -71,7 +71,7 @@ class SelectUnbufferedTests: XCTestCase
     var i = 0
     // Currently required to avoid a runtime crash:
     let selectables = receivers.map { $0 as Selectable }
-    while let selection = select(selectables)
+    while let selection = select_chan(selectables)
     {
       if let receiver = selection.id as? Receiver<Int>
       {
@@ -107,7 +107,7 @@ class SelectUnbufferedTests: XCTestCase
       var i = 0
       // Currently required to avoid a runtime crash:
       let selectables = senders.map { $0 as Selectable }
-      while i < iterations, let selection = select(selectables)
+      while i < iterations, let selection = select_chan(selectables)
       {
         if let sender = selection.id as? Sender<Int>
         {
@@ -178,7 +178,7 @@ class SelectUnbufferedTests: XCTestCase
       var i = 0
       // Currently required to avoid a runtime crash:
       let selectables = senders.map { $0 as Selectable }
-      while let selection = select(selectables)
+      while let selection = select_chan(selectables)
       {
         if let sender = selection.id as? Sender<Int>
         {
@@ -196,7 +196,7 @@ class SelectUnbufferedTests: XCTestCase
     var i = 0
     // Currently required to avoid a runtime crash:
     let selectables = receivers.map { $0 as Selectable }
-    while let selection = select(selectables)
+    while let selection = select_chan(selectables)
     {
       if let receiver = selection.id as? Receiver<Int>
       {
@@ -241,7 +241,7 @@ class SelectUnbufferedTests: XCTestCase
     }
 
     let selectables = receivers.map { $0 as Selectable }
-    while let selection = select(selectables)
+    while let selection = select_chan(selectables)
     {
       if selection.id is Receiver<Int>
       {
@@ -262,12 +262,12 @@ class SelectUnbufferedTests: XCTestCase
     }
 
     for sender in senders
-    { // fill up the buffers so that the select() below will block
+    { // fill up the buffers so that the select_chan() below will block
       while sender.isFull == false { sender <- 0 }
     }
 
     let selectables = senders.map { $0 as Selectable }
-    while let selection = select(selectables)
+    while let selection = select_chan(selectables)
     {
       if selection.id is Sender<Int>
       {

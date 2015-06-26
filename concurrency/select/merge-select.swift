@@ -12,7 +12,7 @@ import Dispatch
   Merge an array of Receivers into one `Receiver`.
   Every item from the input channels will be able to be received via the returned channel.
 
-  This function uses the `select()` function to merge channels; it will only block
+  This function uses the `select_chan()` function to merge channels; it will only block
   if all channels block. While this sounds good, it is much slower than the other merge functions.
   
   The output channel will close when all inputs are closed.
@@ -32,7 +32,7 @@ public func mergeSelect<R: ReceiverType where R: SelectableReceiverType>(channel
 
   dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
     let selectables = channels.map { $0 as Selectable }
-    while let selection = select(selectables)
+    while let selection = select_chan(selectables)
     {
       if let receiver = selection.id as? R,
          let element = receiver.extract(selection)

@@ -16,7 +16,7 @@ import Dispatch.time
   An object reuse pool for `ChannelSemaphore`.
   A mach semaphore (obtained with `semaphore_create`) takes several microseconds to create.
   Without a reuse pool, this cost would be incurred every time a thread needs to stop
-  in `QUnbufferedChan`, `QBufferedChan` and `select()`. Reusing reduces the cost to
+  in `QUnbufferedChan`, `QBufferedChan` and `select_chan()`. Reusing reduces the cost to
   much less than 1 microsecond.
 */
 
@@ -225,7 +225,7 @@ final public class ChannelSemaphore
   }
 
   /**
-    Data structure to work with the `select()` function.
+    Data structure to work with the `select_chan()` function.
   */
 
   private var seln: Selection? = nil

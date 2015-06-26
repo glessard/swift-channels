@@ -59,7 +59,7 @@ class TimeoutTests: XCTestCase
     for var i = 0, j = 0; i < 10; j++
     {
       let timer = Timeout(delay: delay)
-      if let selection = select(selectables + [timer])
+      if let selection = select_chan(selectables + [timer])
       {
         XCTAssert(j == i)
         switch selection.id
@@ -96,7 +96,7 @@ class SinkTests: XCTestCase
     let k = Sink<Int>()
     let s = [k as Selectable]
 
-    if let selection = select(s) where selection.id === k
+    if let selection = select_chan(s) where selection.id === k
     {
       let success = k.insert(selection, newElement: 0)
       XCTAssert(success)
@@ -117,7 +117,7 @@ class EmptyChanTests: XCTestCase
     }
 
     let s = [r as Selectable]
-    if let selection = select(s) where selection.id === r
+    if let selection = select_chan(s) where selection.id === r
     {
       XCTFail()
     }
@@ -136,7 +136,7 @@ class EmptyChanTests: XCTestCase
     }
 
     let s = [s1 as Selectable]
-    if let selection = select(s) where selection.id === s1
+    if let selection = select_chan(s) where selection.id === s1
     {
       XCTFail()
     }
