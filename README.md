@@ -34,7 +34,6 @@ around mach semaphores. The implementation is similar to
 
 #### Example:
 ```
-import Darwin
 import Dispatch
 
 let (sender, receiver) = Channel<Int>.Make()
@@ -67,13 +66,15 @@ This causes the while loop in the example to exit.
 Choosing from multiple channels can be done with the `select_chan()` function:
 
 ```
-let selection = select_chan(receiver1, receiver2, sender3)
-switch selection.id
+if let selection = select_chan(receiver1, receiver2, sender3)
 {
-case let s where s === receiver1: receiver1.extract(selection)
-case let s where s === receiver2: receiver2.extract(selection)
-case let s where s === sender3:   sender3.insert(selection, newElement)
-default: break // necessary to satisfy `switch`
+  switch selection.id
+  {
+  case let s where s === receiver1: receiver1.extract(selection)
+  case let s where s === receiver2: receiver2.extract(selection)
+  case let s where s === sender3:   sender3.insert(selection, newElement)
+  default: break // necessary to satisfy `switch`
+  }
 }
 ```
 
