@@ -64,69 +64,69 @@ public func async(queue: dispatch_queue_t, group: dispatch_group_t, task: () -> 
 
 public struct Result<T>
 {
-  let group: dispatch_group_t
-  let result: () -> T
+  internal let group: dispatch_group_t
+  internal let result: () -> T
 
-  public func get() -> T { return result() }
+  public var value: T { return result() }
 }
 
 // MARK: Asynchronous tasks with return values.
 
-//public func async<T>(task: () -> T) -> Result<T>
-//{
-//  return async(dispatch_get_global_queue(qos_class_self(), 0), task)
-//}
-//
-//public func async<T>(group group: dispatch_group_t, task: () -> T) -> Result<T>
-//{
-//  return async(dispatch_get_global_queue(qos_class_self(), 0), group: group, task: task)
-//}
-//
-//public func async<T>(qos: qos_class_t, task: () -> T) -> Result<T>
-//{
-//  return async(dispatch_get_global_queue(qos, 0), task)
-//}
-//
-//public func async<T>(qos: qos_class_t, group: dispatch_group_t, task: () -> T) -> Result<T>
-//{
-//  return async(dispatch_get_global_queue(qos, 0), group: group, task: task)
-//}
-//
-//public func async<T>(queue: dispatch_queue_t, task: () -> T) -> Result<T>
-//{
-//  let g = dispatch_group_create()!
-//  var result: T! = nil
-//
-//  dispatch_group_enter(g)
-//  dispatch_async(queue) {
-//    result = task()
-//    dispatch_group_leave(g)
-//  }
-//
-//  return Result(group: g) {
-//    () -> T in
-//    dispatch_group_wait(g, DISPATCH_TIME_FOREVER)
-//    return result
-//  }
-//}
-//
-//public func async<T>(queue: dispatch_queue_t, group: dispatch_group_t, task: () -> T) -> Result<T>
-//{
-//  let g = dispatch_group_create()!
-//  var result: T! = nil
-//
-//  dispatch_group_enter(g)
-//  dispatch_group_async(group, queue) {
-//    result = task()
-//    dispatch_group_leave(g)
-//  }
-//
-//  return Result(group: g) {
-//    () -> T in
-//    dispatch_group_wait(g, DISPATCH_TIME_FOREVER)
-//    return result
-//  }
-//}
+public func async<T>(task: () -> T) -> Result<T>
+{
+  return async(dispatch_get_global_queue(qos_class_self(), 0), task: task)
+}
+
+public func async<T>(group group: dispatch_group_t, task: () -> T) -> Result<T>
+{
+  return async(dispatch_get_global_queue(qos_class_self(), 0), group: group, task: task)
+}
+
+public func async<T>(qos: qos_class_t, task: () -> T) -> Result<T>
+{
+  return async(dispatch_get_global_queue(qos, 0), task: task)
+}
+
+public func async<T>(qos: qos_class_t, group: dispatch_group_t, task: () -> T) -> Result<T>
+{
+  return async(dispatch_get_global_queue(qos, 0), group: group, task: task)
+}
+
+public func async<T>(queue: dispatch_queue_t, task: () -> T) -> Result<T>
+{
+  let g = dispatch_group_create()!
+  var result: T! = nil
+
+  dispatch_group_enter(g)
+  dispatch_async(queue) {
+    result = task()
+    dispatch_group_leave(g)
+  }
+
+  return Result(group: g) {
+    () -> T in
+    dispatch_group_wait(g, DISPATCH_TIME_FOREVER)
+    return result
+  }
+}
+
+public func async<T>(queue: dispatch_queue_t, group: dispatch_group_t, task: () -> T) -> Result<T>
+{
+  let g = dispatch_group_create()!
+  var result: T! = nil
+
+  dispatch_group_enter(g)
+  dispatch_group_async(group, queue) {
+    result = task()
+    dispatch_group_leave(g)
+  }
+
+  return Result(group: g) {
+    () -> T in
+    dispatch_group_wait(g, DISPATCH_TIME_FOREVER)
+    return result
+  }
+}
 
 // MARK: Asynchronous tasks with input parameters and no return values.
 
