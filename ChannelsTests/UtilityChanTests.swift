@@ -18,10 +18,15 @@ import XCTest
 class TimeoutTests: XCTestCase
 {
   let delay: Int64 = 50_000
+  let scale = { _ -> mach_timebase_info_data_t in
+    var info = mach_timebase_info_data_t()
+    mach_timebase_info(&info)
+    return info
+  }()
 
   func testTimeout()
   {
-    let start = mach_absolute_time()
+    let start = mach_absolute_time()*UInt64(scale.numer)/UInt64(scale.denom)
 
     let time1 = dispatch_time(DISPATCH_TIME_NOW, delay)
     let rx1 = Timeout(time1)
@@ -43,7 +48,7 @@ class TimeoutTests: XCTestCase
     rx3.close()
     XCTAssert(rx3.isClosed)
 
-    let dt = mach_absolute_time() - start
+    let dt = mach_absolute_time()*UInt64(scale.numer)/UInt64(scale.denom) - start
     XCTAssert(dt > numericCast(2*delay))
   }
 
@@ -58,6 +63,7 @@ class TimeoutTests: XCTestCase
 
     for var i = 0, j = 0; i < 10; j++
     {
+      let start = mach_absolute_time()*UInt64(scale.numer)/UInt64(scale.denom)
       let timer = Timeout(delay: delay)
       if let selection = select_chan(selectables + [timer])
       {
@@ -67,7 +73,10 @@ class TimeoutTests: XCTestCase
         case let s where s === timer: XCTFail("Timeout never sets the selection")
         case _ as Sender<Int>:        XCTFail("Incorrect selection")
         case _ as Receiver<Int>:      XCTFail("Incorrect selection")
-        default: i++
+        default:
+          i++
+          let dt = mach_absolute_time()*UInt64(scale.numer)/UInt64(scale.denom) - start
+          XCTAssert(dt > numericCast(delay))
         }
       }
     }
