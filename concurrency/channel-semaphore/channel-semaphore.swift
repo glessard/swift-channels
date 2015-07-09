@@ -168,7 +168,7 @@ final public class ChannelSemaphore
 
     case .Done:
       // Ideally it would be: __sync_swap(&currentState, State.Done.rawValue)
-      // Or maybe: __c11_atomic_exchange(&currentState, State.Done.rawValue, __ATOMIC_SEQ_CST)
+      // Or maybe: __c11_atomic_store(&currentState, State.Done.rawValue, __ATOMIC_SEQ_CST)
       while OSAtomicCompareAndSwap32Barrier(currentState, State.Done.rawValue, &currentState) == false {}
       return true
 
