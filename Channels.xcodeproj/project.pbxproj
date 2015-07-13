@@ -9,6 +9,9 @@
 /* Begin PBXBuildFile section */
 		031DEDB31B1092CB00F4B44B /* fast2lockqueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 031DEDB21B1092CB00F4B44B /* fast2lockqueue.swift */; };
 		0334E13F1B540DBD00F4B44B /* semaphore-pool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0334E13E1B540DBD00F4B44B /* semaphore-pool.swift */; };
+		0334E1411B54313000F4B44B /* semaphore-pool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0334E13E1B540DBD00F4B44B /* semaphore-pool.swift */; };
+		0334E1421B54313100F4B44B /* semaphore-pool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0334E13E1B540DBD00F4B44B /* semaphore-pool.swift */; };
+		0334E1431B54313100F4B44B /* semaphore-pool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0334E13E1B540DBD00F4B44B /* semaphore-pool.swift */; };
 		0336B9B51ABB1BF700F4B44B /* async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0336B9B41ABB1BF700F4B44B /* async.swift */; };
 		0336B9B61ABB1BF700F4B44B /* async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0336B9B41ABB1BF700F4B44B /* async.swift */; };
 		0336B9B71ABB1BF700F4B44B /* async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0336B9B41ABB1BF700F4B44B /* async.swift */; };
@@ -931,6 +934,7 @@
 				036B08CC1B3D575500F4B44B /* timeout.swift in Sources */,
 				036B08C51B3D575500F4B44B /* schan-singleton.swift in Sources */,
 				036B08C41B3D575500F4B44B /* schan-semaphore.swift in Sources */,
+				0334E1431B54313100F4B44B /* semaphore-pool.swift in Sources */,
 				036B08BF1B3D575500F4B44B /* chan-sender.swift in Sources */,
 				036B08CB1B3D575500F4B44B /* sink.swift in Sources */,
 				036B08D01B3D575500F4B44B /* fast2lockqueue.swift in Sources */,
@@ -1022,6 +1026,7 @@
 				03AD476B1A68348C00F4B44B /* chan.swift in Sources */,
 				03AD47661A68348C00F4B44B /* chan-operators.swift in Sources */,
 				03F3FD6E1A6A4E7900F4B44B /* select-types.swift in Sources */,
+				0334E1411B54313000F4B44B /* semaphore-pool.swift in Sources */,
 				03AD47671A68348C00F4B44B /* chan-protocols.swift in Sources */,
 				03AD477E1A68354F00F4B44B /* atomicqueue.swift in Sources */,
 				036B08DC1B3D575C00F4B44B /* shuffle.swift in Sources */,
@@ -1058,6 +1063,7 @@
 				036B08D21B3D575B00F4B44B /* merge.swift in Sources */,
 				03AD47A61A6836B800F4B44B /* fastqueue.swift in Sources */,
 				03AD47911A68369C00F4B44B /* chan-receiver.swift in Sources */,
+				0334E1421B54313100F4B44B /* semaphore-pool.swift in Sources */,
 				036B08D61B3D575B00F4B44B /* sink.swift in Sources */,
 				03AD47941A68369C00F4B44B /* chan.swift in Sources */,
 			);
