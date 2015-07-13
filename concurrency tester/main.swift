@@ -27,7 +27,7 @@ func worker(inputChannel: Receiver<Int>, _ outputChannel: Sender<(Int,Int,Int)>)
   while let v = <-inputChannel
   {
     messageCount += 1
-    Time.Wait(10) //+arc4random_uniform(25))
+    Thread.Sleep(10) //+arc4random_uniform(25))
     // a "complex" calculation
     let s = (0...v).reduce(0, combine: +)
     outputChannel <- (messageCount, v, s)
@@ -45,7 +45,7 @@ let workerTimeInterval = 10
 for w in 1...workers
 {
   async {
-    Time.Wait(w*workerTimeInterval)
+    Thread.Sleep(w*workerTimeInterval)
     worker(workChan.rx, outChan.tx)
   }
 }
@@ -55,12 +55,12 @@ let workElementTimeInterval = 10
 for a in 0..<workElements
 {
   async {
-    Time.Wait(workElementTimeInterval*(a+1))
+    Thread.Sleep(workElementTimeInterval*(a+1))
     workChan.tx <- a
   }
 }
 // Uncomment the following to close the channel prematurely
-//async { Time.Wait(workElements*70); syncprint("closing work channel"); workChan.tx.close() }
+//async { Time.Sleep(workElements*70); syncprint("closing work channel"); workChan.tx.close() }
 
 var outputArray = [Int?](count: workElements, repeatedValue: nil)
 
@@ -75,6 +75,6 @@ for (i,(c,v,s)) in outChan.rx.enumerate()
 
 let errors = outputArray.filter { $0 == nil }
 
-Time.Wait(100)
+Thread.Sleep(100)
 syncprint("Dropped \(errors.count) elements")
 syncprintwait()
