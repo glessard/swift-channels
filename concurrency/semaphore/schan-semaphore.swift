@@ -37,28 +37,21 @@ struct SChanSemaphore
   {
     if semp != 0
     {
-      let kr = semaphore_destroy(mach_task_self_, semp)
-      assert(kr == KERN_SUCCESS, __FUNCTION__)
+      SemaphorePool.Return(semp)
     }
   }
 
   mutating private func initSemaphorePort()
   {
-    var port = semaphore_t()
-    let kr = semaphore_create(mach_task_self_, &port, SYNC_POLICY_FIFO, 0)
-    assert(kr == KERN_SUCCESS, __FUNCTION__)
+    let port = SemaphorePool.Obtain()
 
-    let success: Bool = { (ptr: UnsafeMutablePointer<UInt32>) -> Bool in
-      return OSAtomicCompareAndSwap32Barrier(0, unsafeBitCast(port, Int32.self), UnsafeMutablePointer<Int32>(ptr))
-      }(&semp)
-
-    if !success
-    {
-      let kr = semaphore_destroy(mach_task_self_, port)
-      assert(kr == KERN_SUCCESS, __FUNCTION__)
+    guard CAS(0, port, &semp) else
+    { // another initialization attempt succeeded concurrently. Don't leak the port; return it.
+      SemaphorePool.Return(port)
+      return
     }
   }
-  
+
   
   // MARK: Semaphore functionality
 
@@ -70,7 +63,7 @@ struct SChanSemaphore
       return false
 
     case Int32.min:
-      preconditionFailure("Semaphore signaled too many times")
+      fatalError("Semaphore signaled too many times")
 
     default: break
     }
@@ -112,7 +105,7 @@ struct SChanSemaphore
 
     while case let kr = semaphore_wait(semp) where kr != KERN_SUCCESS
     {
-      guard kr == KERN_ABORTED else { preconditionFailure("Bad response (\(kr)) from semaphore_wait() in \(__FUNCTION__)") }
+      guard kr == KERN_ABORTED else { fatalError("Bad response (\(kr)) from semaphore_wait() in \(__FUNCTION__)") }
     }
     return true
   }

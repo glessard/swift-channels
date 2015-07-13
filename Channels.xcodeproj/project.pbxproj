@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		031DEDB31B1092CB00F4B44B /* fast2lockqueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 031DEDB21B1092CB00F4B44B /* fast2lockqueue.swift */; };
+		0334E13F1B540DBD00F4B44B /* semaphore-pool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0334E13E1B540DBD00F4B44B /* semaphore-pool.swift */; };
 		0336B9B51ABB1BF700F4B44B /* async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0336B9B41ABB1BF700F4B44B /* async.swift */; };
 		0336B9B61ABB1BF700F4B44B /* async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0336B9B41ABB1BF700F4B44B /* async.swift */; };
 		0336B9B71ABB1BF700F4B44B /* async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0336B9B41ABB1BF700F4B44B /* async.swift */; };
@@ -230,6 +231,7 @@
 /* Begin PBXFileReference section */
 		031DEDB21B1092CB00F4B44B /* fast2lockqueue.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = fast2lockqueue.swift; sourceTree = "<group>"; };
 		032CCD3E1A79BE9400F4B44B /* merge-select.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "merge-select.swift"; path = "select/merge-select.swift"; sourceTree = "<group>"; };
+		0334E13E1B540DBD00F4B44B /* semaphore-pool.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "semaphore-pool.swift"; path = "channel-semaphore/semaphore-pool.swift"; sourceTree = "<group>"; };
 		0336B9B41ABB1BF700F4B44B /* async.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = async.swift; path = utilities/async.swift; sourceTree = "<group>"; };
 		033912021ABD3DC000F4B44B /* ChannelsExamples.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChannelsExamples.swift; sourceTree = "<group>"; };
 		03461DEF1B3A464200F4B44B /* ChannelBenchmark.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = ChannelBenchmark.swift; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
@@ -363,6 +365,7 @@
 			isa = PBXGroup;
 			children = (
 				03EDB5F01AD22B6F00F4B44B /* channel-semaphore.swift */,
+				0334E13E1B540DBD00F4B44B /* semaphore-pool.swift */,
 			);
 			name = "channel-semaphore";
 			sourceTree = "<group>";
@@ -872,6 +875,7 @@
 				03AD47471A67441A00F4B44B /* queuetype.swift in Sources */,
 				034392C21A7A065200F4B44B /* select.swift in Sources */,
 				031DEDB31B1092CB00F4B44B /* fast2lockqueue.swift in Sources */,
+				0334E13F1B540DBD00F4B44B /* semaphore-pool.swift in Sources */,
 				0370A7171A7C44BC00F4B44B /* merge-select.swift in Sources */,
 				035EAA611B28C59900F4B44B /* schan-singleton.swift in Sources */,
 				03AD471F1A6743E500F4B44B /* chan-operators.swift in Sources */,

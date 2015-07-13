@@ -65,8 +65,7 @@ public func select_chan(options: [Selectable], preventBlocking: Bool) -> Selecti
 
 public func select_chan(options: [Selectable], withDefault: Selectable? = nil) -> Selection?
 {
-  let semaphore = SemaphorePool.Obtain()
-  defer { SemaphorePool.Return(semaphore) }
+  let semaphore = ChannelSemaphore()
   semaphore.setState(.WaitSelect)
 
   var selectables = 0
@@ -104,7 +103,7 @@ public func select_chan(options: [Selectable], withDefault: Selectable? = nil) -
     selection = Selection(id: sink)
 
   case let status: // default
-    preconditionFailure("Unexpected ChannelSemaphore state (\(status)) in __FUNCTION__")
+    fatalError("Unexpected ChannelSemaphore state (\(status)) in __FUNCTION__")
   }
   return selection
 }
