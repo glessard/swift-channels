@@ -71,8 +71,8 @@ struct SemaphorePool
       OSSpinLockUnlock(&lock)
 
       var port = semaphore_t()
-      let kr = semaphore_create(mach_task_self_, &port, SYNC_POLICY_FIFO, 0)
-      assert(kr == KERN_SUCCESS, __FUNCTION__)
+      guard semaphore_create(mach_task_self_, &port, SYNC_POLICY_FIFO, 0) == KERN_SUCCESS
+      else { fatalError("Failed to create mach_semaphore port in \(__FUNCTION__)") }
       return port
     }
   }
