@@ -17,13 +17,14 @@ enum WaitType
 final class SChanSemaphore
 {
   var svalue: Int32
-  private var semp = semaphore_t()
+  private var semp: semaphore_t
 
   private let waiters = Fast2LockQueue()
 
   init(value: Int)
   {
     svalue = (value < 0) ? 0 : Int32(min(value, Int(Int32.max)))
+    semp = semaphore_t()
   }
 
   convenience init()
