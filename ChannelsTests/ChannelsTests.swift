@@ -16,11 +16,13 @@ import XCTest
   @testable import Channels_iOS
 #endif
 
+internal let TestIterations = 60_000
+
 class ChannelsTests: XCTestCase
 {
   var id: String { return "" }
 
-  var performanceTestIterations: Int { return 60_000 }
+  var performanceTestIterations: Int { return TestIterations }
 
   var buflen: Int { return 1 }
 
