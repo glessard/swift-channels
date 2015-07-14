@@ -24,15 +24,10 @@ final public class ChannelSemaphore
 {
   // MARK: init/deinit
 
-  init(value: Int)
+  init()
   {
-    svalue = (value < 0) ? 0 : Int32(min(value, Int(Int32.max)))
+    svalue = 0
     semp = semaphore_t()
-  }
-
-  convenience init()
-  {
-    self.init(value: 0)
   }
 
   deinit
