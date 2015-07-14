@@ -17,6 +17,7 @@
 		03461DF11B3A46A800F4B44B /* timing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47781A6834F500F4B44B /* timing.swift */; };
 		034C0BB21B548C2200F4B44B /* mach-semaphore-pool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0334E13E1B540DBD00F4B44B /* mach-semaphore-pool.swift */; };
 		034C0BB31B548EAF00F4B44B /* mach-semaphore-pool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0334E13E1B540DBD00F4B44B /* mach-semaphore-pool.swift */; };
+		034C0BB51B54BB4C00F4B44B /* channel-semaphore-pool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 034C0BB41B54BB4C00F4B44B /* channel-semaphore-pool.swift */; };
 		035B606A1A67433800F4B44B /* Channels.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 035B605E1A67433800F4B44B /* Channels.framework */; };
 		035B60711A67433800F4B44B /* ChannelsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035B60701A67433800F4B44B /* ChannelsTests.swift */; };
 		035EAA5F1B28C41700F4B44B /* schan-singleton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 034CABE21AC210BC00F4B44B /* schan-singleton.swift */; };
@@ -236,6 +237,7 @@
 		0336B9B41ABB1BF700F4B44B /* async.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = async.swift; path = utilities/async.swift; sourceTree = "<group>"; };
 		033912021ABD3DC000F4B44B /* ChannelsExamples.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChannelsExamples.swift; sourceTree = "<group>"; };
 		03461DEF1B3A464200F4B44B /* ChannelBenchmark.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = ChannelBenchmark.swift; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
+		034C0BB41B54BB4C00F4B44B /* channel-semaphore-pool.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "channel-semaphore-pool.swift"; sourceTree = "<group>"; };
 		034CABE21AC210BC00F4B44B /* schan-singleton.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "schan-singleton.swift"; sourceTree = "<group>"; };
 		035B605E1A67433800F4B44B /* Channels.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Channels.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		035B60621A67433800F4B44B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -366,6 +368,7 @@
 			isa = PBXGroup;
 			children = (
 				03EDB5F01AD22B6F00F4B44B /* channel-semaphore.swift */,
+				034C0BB41B54BB4C00F4B44B /* channel-semaphore-pool.swift */,
 				0334E13E1B540DBD00F4B44B /* mach-semaphore-pool.swift */,
 			);
 			name = "channel-semaphore";
@@ -878,6 +881,7 @@
 				031DEDB31B1092CB00F4B44B /* fast2lockqueue.swift in Sources */,
 				034C0BB21B548C2200F4B44B /* mach-semaphore-pool.swift in Sources */,
 				0370A7171A7C44BC00F4B44B /* merge-select.swift in Sources */,
+				034C0BB51B54BB4C00F4B44B /* channel-semaphore-pool.swift in Sources */,
 				035EAA611B28C59900F4B44B /* schan-singleton.swift in Sources */,
 				03AD471F1A6743E500F4B44B /* chan-operators.swift in Sources */,
 				03AD47321A6743E500F4B44B /* qchan-unbuffered.swift in Sources */,

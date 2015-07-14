@@ -78,6 +78,7 @@ public func select_chan(options: [Selectable], withDefault: Selectable? = nil) -
   }
   if selectables == 0
   { // nothing left to do
+    semaphore.setState(.Done)
     return nil
   }
 
@@ -100,11 +101,11 @@ public func select_chan(options: [Selectable], withDefault: Selectable? = nil) -
     // this is specific to the extract() side of a double select.
     selection = semaphore.selection
 
-  case .Invalidated, .Done:
+  case .Done:
     selection = Selection(id: sink)
 
-  case let status: // default
-    fatalError("Unexpected ChannelSemaphore state (\(status)) in __FUNCTION__")
+  case let state: // default
+    fatalError("Unexpected ChannelSemaphore state (\(state)) in __FUNCTION__")
   }
   return selection
 }
