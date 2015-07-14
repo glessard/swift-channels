@@ -27,6 +27,7 @@ final public class ChannelSemaphore
   init(value: Int)
   {
     svalue = (value < 0) ? 0 : Int32(min(value, Int(Int32.max)))
+    semp = semaphore_t()
   }
 
   convenience init()
@@ -179,7 +180,7 @@ final public class ChannelSemaphore
   // MARK: Semaphore functionality
 
   private var svalue: Int32
-  private var semp = semaphore_t()
+  private var semp: semaphore_t
 
   func signal() -> Bool
   {
