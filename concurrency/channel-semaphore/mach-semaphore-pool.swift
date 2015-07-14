@@ -33,12 +33,12 @@ struct MachSemaphorePool
 
   static func Return(s: semaphore_t)
   {
-    assert(s != 0, "Attempted to return an uninitialized semaphore_t in \(__FUNCTION__)")
+    precondition(s != 0, "Attempted to return a nonexistent semaphore_t in \(__FUNCTION__)")
     OSSpinLockLock(&lock)
     if cursor < capacity
     {
       buffer[cursor] = s
-      cursor += 1 
+      cursor += 1
       OSSpinLockUnlock(&lock)
     }
     else

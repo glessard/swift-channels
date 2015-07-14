@@ -25,8 +25,8 @@ struct SemaphorePool
   static private var lock = OS_SPINLOCK_INIT
 
   /**
-  Return a `ChannelSemaphore` to the reuse pool.
-  - parameter s: A `ChannelSemaphore` to return to the reuse pool.
+    Return a `ChannelSemaphore` to the reuse pool.
+    - parameter s: A `ChannelSemaphore` to return to the reuse pool.
   */
 
   static func Return(s: ChannelSemaphore)
@@ -45,9 +45,9 @@ struct SemaphorePool
   }
 
   /**
-  Obtain a `ChannelSemaphore` from the object reuse pool.
-  The returned `ChannelSemaphore` will be uniquely referenced.
-  - returns: A uniquely-referenced `ChannelSemaphore`.
+    Obtain a `ChannelSemaphore` from the object reuse pool.
+    The returned `ChannelSemaphore` will be uniquely referenced.
+    - returns: A uniquely-referenced `ChannelSemaphore`.
   */
 
   static func Obtain() -> ChannelSemaphore

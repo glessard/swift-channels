@@ -159,14 +159,13 @@ final class QBufferedChan<T>: Chan<T>
 
     if !closed && (nextput &- head) >= capacity
     {
-      let threadLock = SemaphorePool.Obtain()
+      let threadLock = ChannelSemaphore()
       repeat {
         writerQueue.enqueue(QueuedSemaphore(threadLock))
         OSSpinLockUnlock(&lock)
         threadLock.wait()
         OSSpinLockLock(&lock)
       } while !closed && (nextput &- head) >= capacity
-      SemaphorePool.Return(threadLock)
     }
 
     if !closed
@@ -294,14 +293,13 @@ final class QBufferedChan<T>: Chan<T>
 
     if !closed && (tail &- nextget) <= 0
     {
-      let threadLock = SemaphorePool.Obtain()
+      let threadLock = ChannelSemaphore()
       repeat {
         readerQueue.enqueue(QueuedSemaphore(threadLock))
         OSSpinLockUnlock(&lock)
         threadLock.wait()
         OSSpinLockLock(&lock)
       } while !closed && (tail &- nextget) <= 0
-      SemaphorePool.Return(threadLock)
     }
 
     if (tail &- nextget) > 0

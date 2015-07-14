@@ -32,24 +32,29 @@ final public class ChannelSemaphore
 
   deinit
   {
+    precondition(svalue == 0, "ChannelSemaphore abandoned with a non-zero svalue (\(svalue)) in \(__FUNCTION__)")
+
     if semp != 0
     {
-      let kr = semaphore_destroy(mach_task_self_, semp)
-      assert(kr == KERN_SUCCESS, __FUNCTION__)
+      while case let kr = semaphore_timedwait(semp, mach_timespec_t(tv_sec: 0,tv_nsec: 0))
+      where kr != KERN_OPERATION_TIMED_OUT
+      {
+        print(kr)
+        guard kr == KERN_SUCCESS || kr == KERN_ABORTED else
+        { fatalError("\(kr) in \(__FUNCTION__)") }
+      }
+      MachSemaphorePool.Return(semp)
     }
   }
 
   private func initSemaphorePort()
   {
-    var port = semaphore_t()
-    guard case let kr = semaphore_create(mach_task_self_, &port, SYNC_POLICY_FIFO, 0) where kr == KERN_SUCCESS
-    else { fatalError("Failed to create semaphore_t port in \(__FUNCTION__)") }
+    let port = MachSemaphorePool.Obtain()
 
-    guard CAS(0, port, &semp) else
+    if CAS(0, port, &semp) == false
     { // another initialization attempt succeeded concurrently. Don't leak the port: destroy it properly.
       let kr = semaphore_destroy(mach_task_self_, port)
       assert(kr == KERN_SUCCESS, __FUNCTION__)
-      return
     }
   }
 
@@ -207,7 +212,11 @@ final public class ChannelSemaphore
       return true
     }
 
-    if semp == 0 { initSemaphorePort() }
+    if semp == 0
+    {
+      initSemaphorePort()
+      OSMemoryBarrier()
+    }
 
     while case let kr = semaphore_wait(semp) where kr != KERN_SUCCESS
     {

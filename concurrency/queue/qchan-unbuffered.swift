@@ -162,7 +162,7 @@ final class QUnbufferedChan<T>: Chan<T>
     }
 
     // make our data available for a reader
-    let threadLock = SemaphorePool.Obtain()
+    let threadLock = ChannelSemaphore()
     threadLock.setState(.Pointer)
     threadLock.setPointer(&newElement)
     writerQueue.enqueue(QueuedSemaphore(threadLock))
@@ -170,12 +170,6 @@ final class QUnbufferedChan<T>: Chan<T>
     threadLock.wait()
 
     // got awoken
-    defer {
-      threadLock.setState(.Done)
-      threadLock.pointer = nil
-      SemaphorePool.Return(threadLock)
-    }
-
     switch threadLock.state
     {
     case .Done:
@@ -221,7 +215,7 @@ final class QUnbufferedChan<T>: Chan<T>
         if writer.sem.setState(.Select)
         { // get data from an insert()
           OSSpinLockUnlock(&lock)
-          let threadLock = SemaphorePool.Obtain()
+          let threadLock = ChannelSemaphore()
           let buffer = UnsafeMutablePointer<T>.alloc(1)
           defer { buffer.dealloc(1) }
           threadLock.setState(.Pointer)
@@ -233,11 +227,6 @@ final class QUnbufferedChan<T>: Chan<T>
           // got awoken by insert()
           assert(threadLock.state == .Pointer && threadLock.pointer == buffer,
                  "Unexpected Semaphore state \(threadLock.state) in \(__FUNCTION__)")
-          defer {
-            threadLock.setState(.Done)
-            threadLock.pointer = nil
-            SemaphorePool.Return(threadLock)
-          }
 
           return buffer.move()
         }
@@ -257,7 +246,7 @@ final class QUnbufferedChan<T>: Chan<T>
     }
 
     // wait for data from a writer
-    let threadLock = SemaphorePool.Obtain()
+    let threadLock = ChannelSemaphore()
     let buffer = UnsafeMutablePointer<T>.alloc(1)
     defer { buffer.dealloc(1) }
     threadLock.setState(.Pointer)
@@ -267,12 +256,6 @@ final class QUnbufferedChan<T>: Chan<T>
     threadLock.wait()
 
     // got awoken
-    defer {
-      threadLock.setState(.Done)
-      threadLock.pointer = nil
-      SemaphorePool.Return(threadLock)
-    }
-
     switch threadLock.state
     {
     case .Done:
