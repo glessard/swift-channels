@@ -170,23 +170,24 @@ final class QUnbufferedChan<T>: Chan<T>
     threadLock.wait()
 
     // got awoken
-    let state = threadLock.state
-    let match = threadLock.pointer == &newElement
-    threadLock.setState(.Done)
-    threadLock.pointer = nil
-    SemaphorePool.Return(threadLock)
+    defer {
+      threadLock.setState(.Done)
+      threadLock.pointer = nil
+      SemaphorePool.Return(threadLock)
+    }
 
-    switch state
+    switch threadLock.state
     {
     case .Done:
       // thread was awoken by close() and put() has failed
       return false
 
-    case .Pointer where match:
+    case .Pointer:
+      assert(threadLock.pointer == &newElement)
       // the message was succesfully passed.
-      return match
+      return threadLock.pointer == &newElement
 
-    default:
+    case let state: // default
       preconditionFailure("Unexpected Semaphore state \(state) after wait in \(__FUNCTION__)")
     }
   }
@@ -222,6 +223,7 @@ final class QUnbufferedChan<T>: Chan<T>
           OSSpinLockUnlock(&lock)
           let threadLock = SemaphorePool.Obtain()
           let buffer = UnsafeMutablePointer<T>.alloc(1)
+          defer { buffer.dealloc(1) }
           threadLock.setState(.Pointer)
           threadLock.pointer = UnsafeMutablePointer(buffer)
           writer.sem.selection = writer.sel.withSemaphore(threadLock)
@@ -231,13 +233,13 @@ final class QUnbufferedChan<T>: Chan<T>
           // got awoken by insert()
           assert(threadLock.state == .Pointer && threadLock.pointer == buffer,
                  "Unexpected Semaphore state \(threadLock.state) in \(__FUNCTION__)")
-          threadLock.setState(.Done)
-          threadLock.pointer = nil
-          SemaphorePool.Return(threadLock)
+          defer {
+            threadLock.setState(.Done)
+            threadLock.pointer = nil
+            SemaphorePool.Return(threadLock)
+          }
 
-          let element = buffer.move()
-          buffer.dealloc(1)
-          return element
+          return buffer.move()
         }
 
       case .Select, .DoubleSelect, .Invalidated, .Done:
@@ -265,19 +267,19 @@ final class QUnbufferedChan<T>: Chan<T>
     threadLock.wait()
 
     // got awoken
-    let state = threadLock.state
-    let match = threadLock.pointer == buffer
-    threadLock.setState(.Done)
-    threadLock.pointer = nil
-    SemaphorePool.Return(threadLock)
+    defer {
+      threadLock.setState(.Done)
+      threadLock.pointer = nil
+      SemaphorePool.Return(threadLock)
+    }
 
-    switch state
+    switch threadLock.state
     {
     case .Done:
       // thread was awoken by close(): no more data on the channel.
       return nil
 
-    case .Pointer where match:
+    case .Pointer where threadLock.pointer == buffer:
       return buffer.move()
 
     case let state: // default
