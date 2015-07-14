@@ -85,15 +85,11 @@ blocking, enabling non-blocking attempts to receive or send on one or more chann
 
 #### Performance
 
-On OS X, with Swift 2.0b1 and whole-module optimization,
+On OS X, with Swift 2.0 and whole-module optimization,
 message transmission with no thread contention about as fast as
-in Go 1.4. With thread contention, Go channels are *much* faster (about 10x),
-due to the context switching time involving threads. Go has a
-very lightweight concurrency system, while this library must pause and
-resume system threads.
-
-When under contention, message transmission through an unbuffered channel
+in Go 1.4. When under contention, message transmission through an unbuffered channel
 takes about the same time as two context switches, and that
-is about as good as can be expected.
+is about as good as can be expected. Go channels are faster under contention, as
+they benefit from a concurrency model that is much lighter-weight than system threads.
 
 I welcome questions and suggestions.
