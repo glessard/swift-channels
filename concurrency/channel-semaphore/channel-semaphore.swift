@@ -13,6 +13,79 @@ import Darwin.libkern.OSAtomic
 import Dispatch.time
 
 /**
+  An object reuse pool for `ChannelSemaphore`.
+  A mach semaphore (obtained with `semaphore_create`) takes several microseconds to create.
+  Without a reuse pool, this cost would be incurred every time a thread needs to stop
+  in `QUnbufferedChan`, `QBufferedChan` and `select_chan()`. Reusing reduces the cost to
+  much less than 1 microsecond.
+*/
+
+struct SemaphorePool
+{
+  static private let capacity = 256
+  static private let buffer = UnsafeMutablePointer<ChannelSemaphore>.alloc(capacity)
+  static private var cursor = 0
+
+  static private var lock = OS_SPINLOCK_INIT
+
+  /**
+    Return a `ChannelSemaphore` to the reuse pool.
+    - parameter s: A `ChannelSemaphore` to return to the reuse pool.
+  */
+
+  static func Return(s: ChannelSemaphore)
+  {
+    OSSpinLockLock(&lock)
+    if cursor < capacity
+    {
+      buffer.advancedBy(cursor).initialize(s)
+      cursor += 1
+      assert(s.svalue == 0, "Non-zero user-space semaphore count of \(s.svalue) in \(__FUNCTION__)")
+      assert(s.seln == nil || s.state == .DoubleSelect, "Unexpectedly non-nil Selection in \(__FUNCTION__)")
+      assert(s.iptr == nil || s.state == .DoubleSelect, "Non-nil pointer \(s.iptr) in \(__FUNCTION__)")
+    }
+    OSSpinLockUnlock(&lock)
+  }
+
+  /**
+    Obtain a `ChannelSemaphore` from the object reuse pool.
+    The returned `ChannelSemaphore` will be uniquely referenced.
+    - returns: A uniquely-referenced `ChannelSemaphore`.
+  */
+
+  static func Obtain() -> ChannelSemaphore
+  {
+    OSSpinLockLock(&lock)
+    if cursor > 0
+    {
+      cursor -= 1
+      for var i=cursor; i>=0; i--
+      {
+        if isUniquelyReferencedNonObjC(&buffer[i])
+        {
+          var s = buffer.advancedBy(cursor).move()
+          if i < cursor
+          {
+            swap(&s, &buffer[i])
+          }
+          OSSpinLockUnlock(&lock)
+
+          // Expected state:
+          // s.svalue = 0
+          // s.seln = nil
+          // s.iptr = nil
+          s.currentState = ChannelSemaphore.State.Ready.rawValue
+          return s
+        }
+      }
+      cursor += 1
+    }
+    OSSpinLockUnlock(&lock)
+    return ChannelSemaphore()
+  }
+}
+
+/**
   A [benaphore](http://www.haiku-os.org/legacy-docs/benewsletter/Issue1-26.html)
   (see also [this](http://preshing.com/20120226/roll-your-own-lightweight-mutex/)).
 
@@ -38,17 +111,21 @@ final public class ChannelSemaphore
   {
     if semp != 0
     {
-      SemaphorePool.Return(semp)
+      let kr = semaphore_destroy(mach_task_self_, semp)
+      assert(kr == KERN_SUCCESS, __FUNCTION__)
     }
   }
 
-  final private func initSemaphorePort()
+  private func initSemaphorePort()
   {
-    let port = SemaphorePool.Obtain()
+    var port = semaphore_t()
+    guard case let kr = semaphore_create(mach_task_self_, &port, SYNC_POLICY_FIFO, 0) where kr == KERN_SUCCESS
+    else { fatalError("Failed to create semaphore_t port in \(__FUNCTION__)") }
 
     guard CAS(0, port, &semp) else
-    { // another initialization attempt succeeded concurrently. Don't leak the port; return it.
-      SemaphorePool.Return(port)
+    { // another initialization attempt succeeded concurrently. Don't leak the port: destroy it properly.
+      let kr = semaphore_destroy(mach_task_self_, port)
+      assert(kr == KERN_SUCCESS, __FUNCTION__)
       return
     }
   }

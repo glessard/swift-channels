@@ -14,7 +14,7 @@ enum WaitType
   case Notify(()->Void)
 }
 
-struct SChanSemaphore
+final class SChanSemaphore
 {
   var svalue: Int32
   private var semp = semaphore_t()
@@ -26,36 +26,40 @@ struct SChanSemaphore
     svalue = (value < 0) ? 0 : Int32(min(value, Int(Int32.max)))
   }
 
-  init()
+  convenience init()
   {
     self.init(value: 0)
   }
 
   // MARK: Kernel port management
 
-  func destroy()
+  deinit
   {
     if semp != 0
     {
-      SemaphorePool.Return(semp)
+      let kr = semaphore_destroy(mach_task_self_, semp)
+      assert(kr == KERN_SUCCESS, __FUNCTION__)
     }
   }
 
-  mutating private func initSemaphorePort()
+  private func initSemaphorePort()
   {
-    let port = SemaphorePool.Obtain()
+    var port = semaphore_t()
+    guard case let kr = semaphore_create(mach_task_self_, &port, SYNC_POLICY_FIFO, 0) where kr == KERN_SUCCESS
+    else { fatalError("Failed to create semaphore_t port in \(__FUNCTION__)") }
 
     guard CAS(0, port, &semp) else
-    { // another initialization attempt succeeded concurrently. Don't leak the port; return it.
-      SemaphorePool.Return(port)
+    { // another initialization attempt succeeded concurrently. Don't leak the port: destroy it properly.
+      let kr = semaphore_destroy(mach_task_self_, port)
+      assert(kr == KERN_SUCCESS, __FUNCTION__)
       return
     }
   }
-
+  
   
   // MARK: Semaphore functionality
 
-  mutating func signal() -> Bool
+  func signal() -> Bool
   {
     switch OSAtomicIncrement32Barrier(&svalue)
     {
@@ -92,7 +96,7 @@ struct SChanSemaphore
     }
   }
 
-  mutating func wait() -> Bool
+  func wait() -> Bool
   {
     if OSAtomicDecrement32Barrier(&svalue) >= 0
     {
@@ -110,7 +114,7 @@ struct SChanSemaphore
     return true
   }
 
-  mutating func notify(block: () -> ()) -> Bool
+  func notify(block: () -> Void) -> Bool
   {
     if OSAtomicDecrement32Barrier(&svalue) >= 0
     {

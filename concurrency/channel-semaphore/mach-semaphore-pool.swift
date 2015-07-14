@@ -16,7 +16,7 @@ import Darwin
   much less than 1 microsecond.
 */
 
-struct SemaphorePool
+struct MachSemaphorePool
 {
   static private let capacity = 256
   static private let buffer = UnsafeMutablePointer<semaphore_t>.alloc(capacity)

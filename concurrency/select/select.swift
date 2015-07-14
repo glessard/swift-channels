@@ -65,7 +65,8 @@ public func select_chan(options: [Selectable], preventBlocking: Bool) -> Selecti
 
 public func select_chan(options: [Selectable], withDefault: Selectable? = nil) -> Selection?
 {
-  let semaphore = ChannelSemaphore()
+  let semaphore = SemaphorePool.Obtain()
+  defer { SemaphorePool.Return(semaphore) }
   semaphore.setState(.WaitSelect)
 
   var selectables = 0

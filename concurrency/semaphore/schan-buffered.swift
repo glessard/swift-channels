@@ -26,8 +26,8 @@ final class SBufferedChan<T>: Chan<T>
   private var head = 0
   private var tail = 0
 
-  private var filled: SChanSemaphore
-  private var empty:  SChanSemaphore
+  private let filled: SChanSemaphore
+  private let empty:  SChanSemaphore
 
   private var closed = 0
 
@@ -70,8 +70,6 @@ final class SBufferedChan<T>: Chan<T>
       empty.signal()
     }
     buffer.dealloc(mask+1)
-    empty.destroy()
-    filled.destroy()
   }
 
   // MARK: ChannelType properties

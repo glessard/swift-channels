@@ -162,7 +162,7 @@ final class QUnbufferedChan<T>: Chan<T>
     }
 
     // make our data available for a reader
-    let threadLock = ChannelSemaphore()
+    let threadLock = SemaphorePool.Obtain()
     threadLock.setState(.Pointer)
     threadLock.setPointer(&newElement)
     writerQueue.enqueue(QueuedSemaphore(threadLock))
@@ -170,20 +170,24 @@ final class QUnbufferedChan<T>: Chan<T>
     threadLock.wait()
 
     // got awoken
-    switch threadLock.state
+    let state = threadLock.state
+    let match = threadLock.pointer == &newElement
+    threadLock.setState(.Done)
+    threadLock.pointer = nil
+    SemaphorePool.Return(threadLock)
+
+    switch state
     {
     case .Done:
       // thread was awoken by close() and put() has failed
       return false
 
-    case .Pointer:
-      assert(threadLock.pointer == &newElement)
+    case .Pointer where match:
       // the message was succesfully passed.
-      threadLock.setState(.Done)
-      return true
+      return match
 
-    case let state: // default
-      fatalError("Unexpected Semaphore state \(state) after wait in \(__FUNCTION__)")
+    default:
+      preconditionFailure("Unexpected Semaphore state \(state) after wait in \(__FUNCTION__)")
     }
   }
 
@@ -216,9 +220,8 @@ final class QUnbufferedChan<T>: Chan<T>
         if writer.sem.setState(.Select)
         { // get data from an insert()
           OSSpinLockUnlock(&lock)
-          let threadLock = ChannelSemaphore()
+          let threadLock = SemaphorePool.Obtain()
           let buffer = UnsafeMutablePointer<T>.alloc(1)
-          defer { buffer.dealloc(1) }
           threadLock.setState(.Pointer)
           threadLock.pointer = UnsafeMutablePointer(buffer)
           writer.sem.selection = writer.sel.withSemaphore(threadLock)
@@ -229,14 +232,19 @@ final class QUnbufferedChan<T>: Chan<T>
           assert(threadLock.state == .Pointer && threadLock.pointer == buffer,
                  "Unexpected Semaphore state \(threadLock.state) in \(__FUNCTION__)")
           threadLock.setState(.Done)
-          return buffer.move()
+          threadLock.pointer = nil
+          SemaphorePool.Return(threadLock)
+
+          let element = buffer.move()
+          buffer.dealloc(1)
+          return element
         }
 
       case .Select, .DoubleSelect, .Invalidated, .Done:
          continue
 
       default:
-        fatalError("Unexpected Semaphore state \(writer.sem.state) in \(__FUNCTION__)")
+        preconditionFailure("Unexpected Semaphore state \(writer.sem.state) in \(__FUNCTION__)")
       }
     }
 
@@ -247,7 +255,7 @@ final class QUnbufferedChan<T>: Chan<T>
     }
 
     // wait for data from a writer
-    let threadLock = ChannelSemaphore()
+    let threadLock = SemaphorePool.Obtain()
     let buffer = UnsafeMutablePointer<T>.alloc(1)
     defer { buffer.dealloc(1) }
     threadLock.setState(.Pointer)
@@ -257,14 +265,19 @@ final class QUnbufferedChan<T>: Chan<T>
     threadLock.wait()
 
     // got awoken
-    switch threadLock.state
+    let state = threadLock.state
+    let match = threadLock.pointer == buffer
+    threadLock.setState(.Done)
+    threadLock.pointer = nil
+    SemaphorePool.Return(threadLock)
+
+    switch state
     {
     case .Done:
       // thread was awoken by close(): no more data on the channel.
       return nil
 
-    case .Pointer where threadLock.pointer == buffer:
-      threadLock.setState(.Done)
+    case .Pointer where match:
       return buffer.move()
 
     case let state: // default
