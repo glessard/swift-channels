@@ -27,28 +27,14 @@ final public class ChannelSemaphore
   init()
   {
     svalue = 0
-    semp = semaphore_t()
+    semp = MachSemaphorePool.Obtain()
   }
 
   deinit
   {
     precondition(svalue == 0, "ChannelSemaphore abandoned with a non-zero svalue (\(svalue)) in \(__FUNCTION__)")
 
-    if semp != 0
-    {
-      MachSemaphorePool.Return(semp)
-    }
-  }
-
-  private func initSemaphorePort()
-  {
-    let port = MachSemaphorePool.Obtain()
-
-    if CAS(0, port, &semp) == false
-    { // another initialization attempt succeeded concurrently. Don't leak the port: destroy it properly.
-      let kr = semaphore_destroy(mach_task_self_, port)
-      assert(kr == KERN_SUCCESS, __FUNCTION__)
-    }
+    MachSemaphorePool.Return(semp)
   }
 
   // MARK: State Handling
@@ -173,7 +159,7 @@ final public class ChannelSemaphore
   // MARK: Semaphore functionality
 
   private var svalue: Int32
-  private var semp: semaphore_t
+  private let semp: semaphore_t
 
   func signal()
   {
@@ -188,13 +174,6 @@ final public class ChannelSemaphore
     default: break
     }
 
-    while semp == 0
-    { // if svalue was previously less than zero, there must be a wait() call
-      // currently in the process of initializing semp.
-      usleep(1)
-      OSMemoryBarrier()
-    }
-
     let kr = semaphore_signal(semp)
     precondition(kr == KERN_SUCCESS)
   }
@@ -204,12 +183,6 @@ final public class ChannelSemaphore
     if OSAtomicDecrement32Barrier(&svalue) >= 0
     {
       return
-    }
-
-    if semp == 0
-    {
-      initSemaphorePort()
-      OSMemoryBarrier()
     }
 
     while case let kr = semaphore_wait(semp) where kr != KERN_SUCCESS
