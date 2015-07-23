@@ -49,11 +49,10 @@ final class SChanSemaphore
     guard case let kr = semaphore_create(mach_task_self_, &port, SYNC_POLICY_FIFO, 0) where kr == KERN_SUCCESS
     else { fatalError("Failed to create semaphore_t port in \(__FUNCTION__)") }
 
-    guard CAS(0, port, &semp) else
+    if CAS(0, port, &semp) == false
     { // another initialization attempt succeeded concurrently. Don't leak the port: destroy it properly.
       let kr = semaphore_destroy(mach_task_self_, port)
       assert(kr == KERN_SUCCESS, __FUNCTION__)
-      return
     }
   }
   
@@ -89,8 +88,8 @@ final class SChanSemaphore
           return semaphore_signal(semp) == KERN_SUCCESS
 
         case .Notify(let block):
-          dispatch_async(dispatch_get_global_queue(qos_class_self(), 0), block)
-          // block()
+          // dispatch_async(dispatch_get_global_queue(qos_class_self(), 0), block)
+          block()
           return true
         }
       }

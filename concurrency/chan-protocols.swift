@@ -66,39 +66,6 @@ public extension ReceiverType
   {
     return receive()
   }
-
-  /**
-    Return self as a `GeneratorType`.
-    This fulfills the `SequenceType` protocol.
-    
-    - Note: Iterating over a `ReceiverType` is destructive, in that it deletes element from the channel.
-    - Complexity: 0(1)
-
-    - Returns: an implementor of GeneratorType to iterate along the channel's elements.
-  */
-
-  public func generate() -> Self
-  {
-    return self
-  }
-
-  /**
-    Return a value less than or equal to the number of elements in self, nondestructively.
-    In other words: always return zero.
-  
-    Returning zero is the sensible thing here, because one cannot know whether another thread
-    is accessing the channel. If that were the case, returning anything other than zero could
-    be a lie.
-
-    - Note: Implements a `SequenceType` requirement.
-    - Complexity: 0(1)
-    - Returns: zero
-  */
-
-  public func underestimateCount() -> Int
-  {
-    return 0
-  }
 }
 
 /**
