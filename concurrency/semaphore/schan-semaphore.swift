@@ -56,12 +56,12 @@ final class SChanSemaphore
   
   // MARK: Semaphore functionality
 
-  func signal() -> Bool
+  func signal()
   {
     switch OSAtomicIncrement32Barrier(&svalue)
     {
     case let v where v > 0:
-      return false
+      return
 
     case Int32.min:
       fatalError("Semaphore signaled too many times")
@@ -82,22 +82,23 @@ final class SChanSemaphore
             usleep(1)
             OSMemoryBarrier()
           }
-          return semaphore_signal(semp) == KERN_SUCCESS
+          let kr = semaphore_signal(semp)
+          precondition(kr == KERN_SUCCESS)
+          return
 
         case .Notify(let block):
           // dispatch_async(dispatch_get_global_queue(qos_class_self(), 0), block)
-          block()
-          return true
+          return block()
         }
       }
     }
   }
 
-  func wait() -> Bool
+  func wait()
   {
     if OSAtomicDecrement32Barrier(&svalue) >= 0
     {
-      return true
+      return
     }
 
     waiters.enqueue(.Wait)
@@ -108,18 +109,16 @@ final class SChanSemaphore
     {
       guard kr == KERN_ABORTED else { fatalError("Bad response (\(kr)) from semaphore_wait() in \(__FUNCTION__)") }
     }
-    return true
+    return
   }
 
-  func notify(block: () -> Void) -> Bool
+  func notify(block: () -> Void)
   {
     if OSAtomicDecrement32Barrier(&svalue) >= 0
     {
-      block()
-      return true
+      return block()
     }
 
     waiters.enqueue(.Notify(block))
-    return false
   }
 }
