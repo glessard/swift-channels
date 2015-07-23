@@ -175,12 +175,12 @@ final public class ChannelSemaphore
   private var svalue: Int32
   private var semp: semaphore_t
 
-  func signal() -> Bool
+  func signal()
   {
     switch OSAtomicIncrement32Barrier(&svalue)
     {
     case let v where v > 0:
-      return false
+      return
 
     case Int32.min:
       fatalError("Semaphore signaled too many times")
@@ -195,14 +195,15 @@ final public class ChannelSemaphore
       OSMemoryBarrier()
     }
 
-    return (semaphore_signal(semp) == KERN_SUCCESS)
+    let kr = semaphore_signal(semp)
+    precondition(kr == KERN_SUCCESS)
   }
 
-  func wait() -> Bool
+  func wait()
   {
     if OSAtomicDecrement32Barrier(&svalue) >= 0
     {
-      return true
+      return
     }
 
     if semp == 0
@@ -215,6 +216,5 @@ final public class ChannelSemaphore
     {
       guard kr == KERN_ABORTED else { fatalError("Bad response (\(kr)) from semaphore_wait() in \(__FUNCTION__)") }
     }
-    return true
   }
 }
