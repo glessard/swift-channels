@@ -17,14 +17,14 @@ enum WaitType
 final class SChanSemaphore
 {
   var svalue: Int32
-  private var semp: semaphore_t
+  private let semp: semaphore_t
 
   private let waiters = Fast2LockQueue()
 
   init(value: Int)
   {
     svalue = (value < 0) ? 0 : Int32(min(value, Int(Int32.max)))
-    semp = semaphore_t()
+    semp = MachSemaphorePool.Obtain()
   }
 
   convenience init()
@@ -42,17 +42,6 @@ final class SChanSemaphore
     }
   }
 
-  private func initSemaphorePort()
-  {
-    let port = MachSemaphorePool.Obtain()
-
-    if CAS(0, port, &semp) == false
-    { // another initialization attempt succeeded concurrently. Don't leak the port: destroy it properly.
-      let kr = semaphore_destroy(mach_task_self_, port)
-      assert(kr == KERN_SUCCESS, __FUNCTION__)
-    }
-  }
-  
   
   // MARK: Semaphore functionality
 
@@ -76,18 +65,12 @@ final class SChanSemaphore
         switch waiter
         {
         case .Wait:
-          while semp == 0
-          { // if svalue was previously less than zero, there must be a wait() call
-            // currently in the process of initializing semp.
-            usleep(1)
-            OSMemoryBarrier()
-          }
           let kr = semaphore_signal(semp)
           precondition(kr == KERN_SUCCESS)
           return
 
         case .Notify(let block):
-          // dispatch_async(dispatch_get_global_queue(qos_class_self(), 0), block)
+          // return dispatch_async(dispatch_get_global_queue(qos_class_self(), 0), block)
           return block()
         }
       }
@@ -102,8 +85,6 @@ final class SChanSemaphore
     }
 
     waiters.enqueue(.Wait)
-
-    if semp == 0 { initSemaphorePort() }
 
     while case let kr = semaphore_wait(semp) where kr != KERN_SUCCESS
     {
