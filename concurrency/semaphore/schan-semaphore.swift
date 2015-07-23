@@ -38,16 +38,13 @@ final class SChanSemaphore
   {
     if semp != 0
     {
-      let kr = semaphore_destroy(mach_task_self_, semp)
-      assert(kr == KERN_SUCCESS, __FUNCTION__)
+      MachSemaphorePool.Return(semp)
     }
   }
 
   private func initSemaphorePort()
   {
-    var port = semaphore_t()
-    guard case let kr = semaphore_create(mach_task_self_, &port, SYNC_POLICY_FIFO, 0) where kr == KERN_SUCCESS
-    else { fatalError("Failed to create semaphore_t port in \(__FUNCTION__)") }
+    let port = MachSemaphorePool.Obtain()
 
     if CAS(0, port, &semp) == false
     { // another initialization attempt succeeded concurrently. Don't leak the port: destroy it properly.
