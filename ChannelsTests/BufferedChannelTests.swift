@@ -21,7 +21,7 @@ class BufferedChannelTests: UnbufferedChannelTests
 
   override var buflen: Int {
     if singleElementCase { return 1 }
-    else                 { return performanceTestIterations / 1000 }
+    else                 { return ChannelsTests.performanceTestIterations / 1000 }
   }
 
   /**

@@ -26,8 +26,8 @@ class ChannelSemaphoreTest: XCTestCase
     }
 
     usleep(100)
-    XCTAssert(s.signal())
-    XCTAssert(s.signal() == false)
+    s.signal()
+    s.signal()
     // return the count to zero
     s.wait()
   }

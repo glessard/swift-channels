@@ -16,13 +16,17 @@ import XCTest
   @testable import Channels_iOS
 #endif
 
-internal let TestIterations = 60_000
-
 class ChannelsTests: XCTestCase
 {
   var id: String { return "" }
 
-  var performanceTestIterations: Int { return TestIterations }
+  class var performanceTestIterations: Int {
+    #if os(OSX)
+      return 60_000
+    #elseif os(iOS)
+      return 10_000
+    #endif
+  }
 
   var buflen: Int { return 1 }
 
@@ -279,7 +283,7 @@ class ChannelsTests: XCTestCase
     self.measureBlock() {
       let (tx, rx) = self.InstantiateTestChannel(Int)
 
-      for i in 0..<self.performanceTestIterations
+      for i in 0..<ChannelsTests.performanceTestIterations
       {
         tx <- i
         _ = <-rx
@@ -298,7 +302,7 @@ class ChannelsTests: XCTestCase
     self.measureBlock() {
       let (tx, rx) = self.InstantiateTestChannel(Int)
 
-      for _ in 0..<(self.performanceTestIterations/self.buflen)
+      for _ in 0..<(ChannelsTests.performanceTestIterations/self.buflen)
       {
         for i in 0..<self.buflen { tx <- i }
         for _ in 0..<self.buflen { _ = <-rx }
@@ -320,7 +324,7 @@ class ChannelsTests: XCTestCase
       let (tx, rx) = self.InstantiateTestChannel(Int)
       
       async {
-        for i in 0..<self.performanceTestIterations
+        for i in 0..<ChannelsTests.performanceTestIterations
         {
           tx <- i
         }
@@ -331,7 +335,7 @@ class ChannelsTests: XCTestCase
       for _ in rx {
         i++
       }
-      XCTAssert(i == self.performanceTestIterations, "Too few (\(i)) iterations completed by " + self.id)
+      XCTAssert(i == ChannelsTests.performanceTestIterations, "Too few (\(i)) iterations completed by " + self.id)
     }
   }
 }
