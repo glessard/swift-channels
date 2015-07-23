@@ -36,13 +36,6 @@ final public class ChannelSemaphore
 
     if semp != 0
     {
-      while case let kr = semaphore_timedwait(semp, mach_timespec_t(tv_sec: 0,tv_nsec: 0))
-      where kr != KERN_OPERATION_TIMED_OUT
-      {
-        print(kr)
-        guard kr == KERN_SUCCESS || kr == KERN_ABORTED else
-        { fatalError("\(kr) in \(__FUNCTION__)") }
-      }
       MachSemaphorePool.Return(semp)
     }
   }

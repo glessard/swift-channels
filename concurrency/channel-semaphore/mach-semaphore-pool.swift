@@ -34,6 +34,15 @@ struct MachSemaphorePool
   static func Return(s: semaphore_t)
   {
     precondition(s != 0, "Attempted to return a nonexistent semaphore_t in \(__FUNCTION__)")
+
+    // reset the semaphore's count to zero if it is greater than zero.
+    while case let kr = semaphore_timedwait(s, mach_timespec_t(tv_sec: 0,tv_nsec: 0))
+    where kr != KERN_OPERATION_TIMED_OUT
+    {
+      guard kr == KERN_SUCCESS || kr == KERN_ABORTED else
+      { fatalError("\(kr) in \(__FUNCTION__)") }
+    }
+
     OSSpinLockLock(&lock)
     if cursor < capacity
     {
