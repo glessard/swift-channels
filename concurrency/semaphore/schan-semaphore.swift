@@ -87,8 +87,8 @@ final class SChanSemaphore
           return semaphore_signal(semp) == KERN_SUCCESS
 
         case .Notify(let block):
-          dispatch_async(dispatch_get_global_queue(qos_class_self(), 0), block)
-          // block()
+          // dispatch_async(dispatch_get_global_queue(qos_class_self(), 0), block)
+          block()
           return true
         }
       }
