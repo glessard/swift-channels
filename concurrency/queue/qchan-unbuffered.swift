@@ -225,7 +225,7 @@ final class QUnbufferedChan<T>: Chan<T>
           threadLock.wait()
 
           // got awoken by insert()
-          assert(threadLock.state == .Pointer && threadLock.pointer == buffer,
+          assert(threadLock.state == .Pointer && threadLock.pointer == UnsafeMutablePointer<Void>(buffer),
                  "Unexpected Semaphore state \(threadLock.state) in \(__FUNCTION__)")
 
           return buffer.move()
@@ -262,7 +262,7 @@ final class QUnbufferedChan<T>: Chan<T>
       // thread was awoken by close(): no more data on the channel.
       return nil
 
-    case .Pointer where threadLock.pointer == buffer:
+    case .Pointer where threadLock.pointer == UnsafeMutablePointer<Void>(buffer):
       return buffer.move()
 
     case let state: // default

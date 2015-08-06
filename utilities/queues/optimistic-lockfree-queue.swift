@@ -225,9 +225,9 @@ private extension Int64
 
   var pointer: UnsafeMutablePointer<Node> {
     #if arch(x86_64) || arch(arm64) // speculatively in the case of arm64
-      return UnsafeMutablePointer(bitPattern: UWord(self & 0x00ff_ffff_ffff_ffff))
+      return UnsafeMutablePointer(bitPattern: UInt(self & 0x00ff_ffff_ffff_ffff))
     #else // 32-bit architecture
-      return UnsafeMutablePointer(bitPattern: UWord(self & 0xffff_ffff))
+      return UnsafeMutablePointer(bitPattern: UInt(self & 0xffff_ffff))
     #endif
   }
 
