@@ -143,6 +143,8 @@
 		03AD47C01A689E0900F4B44B /* MergeTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD47BF1A689E0900F4B44B /* MergeTest.swift */; };
 		03CF82C91B2C6A2A00F4B44B /* timeout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03CF82C81B2C6A2A00F4B44B /* timeout.swift */; };
 		03CF82CC1B2C72FC00F4B44B /* UtilityChanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03CF82CB1B2C72FC00F4B44B /* UtilityChanTests.swift */; };
+		03D3876E1B7BE29900F4B44B /* queued-semaphore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D3876D1B7BE29900F4B44B /* queued-semaphore.swift */; };
+		03D3876F1B7BE29900F4B44B /* queued-semaphore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03D3876D1B7BE29900F4B44B /* queued-semaphore.swift */; };
 		03DE6C141AEE936900F4B44B /* schan-semaphore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03DE6C131AEE936900F4B44B /* schan-semaphore.swift */; };
 		03DE6C151AEE936900F4B44B /* schan-semaphore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03DE6C131AEE936900F4B44B /* schan-semaphore.swift */; };
 		03DE6C161AEE936900F4B44B /* schan-semaphore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03DE6C131AEE936900F4B44B /* schan-semaphore.swift */; };
@@ -289,6 +291,7 @@
 		03AD47BF1A689E0900F4B44B /* MergeTest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = MergeTest.swift; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
 		03CF82C81B2C6A2A00F4B44B /* timeout.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = timeout.swift; sourceTree = "<group>"; };
 		03CF82CB1B2C72FC00F4B44B /* UtilityChanTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = UtilityChanTests.swift; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
+		03D3876D1B7BE29900F4B44B /* queued-semaphore.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "queued-semaphore.swift"; path = "channel-semaphore/queued-semaphore.swift"; sourceTree = "<group>"; };
 		03DE6C131AEE936900F4B44B /* schan-semaphore.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "schan-semaphore.swift"; sourceTree = "<group>"; };
 		03E60E601AAC08CE00F4B44B /* SelectSingletonTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = SelectSingletonTests.swift; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
 		03EDB5F01AD22B6F00F4B44B /* channel-semaphore.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "channel-semaphore.swift"; path = "channel-semaphore/channel-semaphore.swift"; sourceTree = "<group>"; };
@@ -367,6 +370,7 @@
 				03EDB5F01AD22B6F00F4B44B /* channel-semaphore.swift */,
 				034C0BB41B54BB4C00F4B44B /* channel-semaphore-pool.swift */,
 				0334E13E1B540DBD00F4B44B /* mach-semaphore-pool.swift */,
+				03D3876D1B7BE29900F4B44B /* queued-semaphore.swift */,
 			);
 			name = "channel-semaphore";
 			sourceTree = "<group>";
@@ -876,6 +880,7 @@
 				03AD47471A67441A00F4B44B /* queuetype.swift in Sources */,
 				034392C21A7A065200F4B44B /* select.swift in Sources */,
 				031DEDB31B1092CB00F4B44B /* fast2lockqueue.swift in Sources */,
+				03D3876E1B7BE29900F4B44B /* queued-semaphore.swift in Sources */,
 				034C0BB21B548C2200F4B44B /* mach-semaphore-pool.swift in Sources */,
 				0370A7171A7C44BC00F4B44B /* merge-select.swift in Sources */,
 				035EAA611B28C59900F4B44B /* schan-singleton.swift in Sources */,
@@ -931,6 +936,7 @@
 				036B08C51B3D575500F4B44B /* schan-singleton.swift in Sources */,
 				036B08C41B3D575500F4B44B /* schan-semaphore.swift in Sources */,
 				036B08BF1B3D575500F4B44B /* chan-sender.swift in Sources */,
+				03D3876F1B7BE29900F4B44B /* queued-semaphore.swift in Sources */,
 				036B08CB1B3D575500F4B44B /* sink.swift in Sources */,
 				036B08D01B3D575500F4B44B /* fast2lockqueue.swift in Sources */,
 				036B08BC1B3D575500F4B44B /* chan-operators.swift in Sources */,

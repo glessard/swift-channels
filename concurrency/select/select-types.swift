@@ -106,21 +106,3 @@ public struct Selection
     return Selection(id: self.id, semaphore: semaphore)
   }
 }
-
-struct QueuedSemaphore
-{
-  let sem: ChannelSemaphore
-  let sel: Selection!
-
-  init(_ s: ChannelSemaphore)
-  {
-    sem = s
-    sel = nil
-  }
-
-  init(_ sem: ChannelSemaphore, _ sel: Selection)
-  {
-    self.sem = sem
-    self.sel = sel
-  }
-}
