@@ -68,12 +68,12 @@ Choosing from multiple channels can be done with the `select_chan()` function:
 ```
 if let selection = select_chan(receiver1, receiver2, sender3)
 {
-  switch selection.id
+  switch selection
   {
-  case let s where s === receiver1: receiver1.extract(selection)
-  case let s where s === receiver2: receiver2.extract(selection)
-  case let s where s === sender3:   sender3.insert(selection, newElement)
-  default: break // necessary to satisfy `switch`
+  case receiver1: receiver1.extract(selection)
+  case receiver2: receiver2.extract(selection)
+  case sender3:   sender3.insert(selection, newElement)
+  default:        break // necessary to satisfy `switch`
   }
 }
 ```

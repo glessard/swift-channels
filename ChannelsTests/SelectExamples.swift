@@ -43,21 +43,21 @@ class SelectExamples: XCTestCase
     let selectables = channels.map { $0.rx as Selectable }
     while let selection = select_chan(selectables)
     {
-      switch selection.id
+      switch selection
       {
-      case let s where s === a.rx:
+      case a.rx:
         if let p = a.rx.extract(selection) { messages[p] += 1 }
 
-      case let s where s === b.rx:
+      case b.rx:
         if let p = b.rx.extract(selection) { messages[p] += 1 }
 
-      case let s where s === c.rx:
+      case c.rx:
         if let p = c.rx.extract(selection) { messages[p] += 1 }
 
-      case let s where s === d.rx:
+      case d.rx:
         if let p = d.rx.extract(selection) { messages[p] += 1 }
 
-      case let s where s === e.rx:
+      case e.rx:
         if let p = e.rx.extract(selection) { messages[p] += 1 }
 
       default:
@@ -84,10 +84,10 @@ class SelectExamples: XCTestCase
         {
           switch selection.id
           {
-          case let s where s === c0.tx:
+          case c0.tx:
             c0.tx.insert(selection, newElement: false)
 
-          case let s where s === c1.tx:
+          case c1.tx:
             c1.tx.insert(selection, newElement: true)
 
           default: continue
@@ -118,7 +118,7 @@ class SelectExamples: XCTestCase
     {
       switch selection.id
       {
-      case let s where s === c.tx:
+      case c.tx:
         if c.tx.insert(selection, newElement: count)
         {
           print(++cap, appendNewline: false)
@@ -129,7 +129,7 @@ class SelectExamples: XCTestCase
           XCTFail("Attempted to insert into a full channel (probably)")
         }
 
-      case let s where s === c.rx:
+      case c.rx:
         if let _ = c.rx.extract(selection)
         {
           print(--cap, appendNewline: false)
@@ -156,12 +156,14 @@ class SelectExamples: XCTestCase
     dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
       while let selection = select_chan([c1.tx,c2.tx], preventBlocking: true)
       {
-        switch selection.id
+        switch selection
         {
-        case let s as Sender<UInt32> where s === c1.tx:
-          s.insert(selection, newElement: arc4random())
-        case let s as Sender<UInt32> where s === c2.tx:
-          s.insert(selection, newElement: arc4random())
+        case c1.tx:
+          c1.tx.insert(selection, newElement: arc4random())
+
+        case c2.tx:
+          c2.tx.insert(selection, newElement: arc4random())
+
         default: break
         }
 
