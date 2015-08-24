@@ -34,8 +34,8 @@ class ChannelsExamples: XCTestCase
       sender.close()
     }
 
-    print("Output: ", appendNewline: false)
-    while let m = <-receiver { print(m, appendNewline: false) }
+    print("Output: ", terminator: "")
+    while let m = <-receiver { print(m, terminator: "") }
     print("")
   }
 
@@ -48,8 +48,8 @@ class ChannelsExamples: XCTestCase
       sender.close()
     }
 
-    print("Output: ", appendNewline: false)
-    while let m = <-receiver { print(m, appendNewline: false) }
+    print("Output: ", terminator: "")
+    while let m = <-receiver { print(m, terminator: "") }
     print("")
   }
 

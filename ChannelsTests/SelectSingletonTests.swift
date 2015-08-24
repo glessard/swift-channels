@@ -54,7 +54,7 @@ class SelectSingletonTests: XCTestCase
       {
         if let message = receiver.extract(selection)
         {
-          print(message, appendNewline: false)
+          print(message, terminator: "")
           i++
         }
       }
@@ -83,7 +83,7 @@ class SelectSingletonTests: XCTestCase
       {
         if let message = receiver.extract(selection)
         {
-          print(message, appendNewline: false)
+          print(message, terminator: "")
           i++
         }
       }
@@ -118,7 +118,7 @@ class SelectSingletonTests: XCTestCase
     var i=0
     while let element = <-receiver
     {
-      print(element, appendNewline: false)
+      print(element, terminator: "")
       i++
     }
     print("")

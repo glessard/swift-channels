@@ -101,7 +101,7 @@ class SelectExamples: XCTestCase
     let merged = merge(c0.rx, c1.rx)
     while let b = <-merged
     {
-      print("\(b ? 0:1)", appendNewline: false)
+      print("\(b ? 0:1)", terminator: "")
     }
     print("")
   }
@@ -121,7 +121,7 @@ class SelectExamples: XCTestCase
       case c.tx:
         if c.tx.insert(selection, newElement: count)
         {
-          print(++cap, appendNewline: false)
+          print(++cap, terminator: "")
           if ++count > 30 { c.tx.close() }
         }
         else
@@ -132,7 +132,7 @@ class SelectExamples: XCTestCase
       case c.rx:
         if let _ = c.rx.extract(selection)
         {
-          print(--cap, appendNewline: false)
+          print(--cap, terminator: "")
         }
         else
         {

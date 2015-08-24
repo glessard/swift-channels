@@ -30,13 +30,13 @@ private var silenceOutput: Int32 = 0
 
 public func syncprint<T>(object: T)
 {
-  var message = NSThread.currentThread().isMainThread ? "[main] " : "[back] "
+  let message = NSThread.currentThread().isMainThread ? "[main] " : "[back] "
 
   dispatch_group_async(PrintGroup, PrintQueue) {
     // There is no particularly straightforward way to ensure an atomic read
     if OSAtomicAdd32(0, &silenceOutput) == 0
     {
-      print(object, &message, appendNewline: false); print(message)
+      print(message, object)
     }
   }
 }
