@@ -9,11 +9,7 @@
 import Darwin
 import XCTest
 
-#if os(OSX)
-  @testable import Channels
-#elseif os(iOS)
-  @testable import Channels_iOS
-#endif
+@testable import Channels
 
 class SingletonChannelTests: ChannelsTests
 {
