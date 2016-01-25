@@ -94,13 +94,15 @@ public extension CollectionType where Self.Generator.Element: ReceiverType, Self
     dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
       // A non-clever, imperative-style round-robin merge.
       let count = self.count
-      for var i=0, last=0; i-last < count; i += 1
+      var (i, last) = (0, 0)
+      while i-last < count
       {
         if let element = self[i % count].receive()
         {
           mergeChannel.put(element)
           last = i
         }
+        i += 1
       }
       mergeChannel.close()
     }
