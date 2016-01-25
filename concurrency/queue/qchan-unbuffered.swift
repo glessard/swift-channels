@@ -113,10 +113,11 @@ final class QUnbufferedChan<T>: Chan<T>
     - parameter element: the new element to be added to the channel.
   */
 
-  override func put(var newElement: T) -> Bool
+  override func put(newElement: T) -> Bool
   {
     if closed { return false }
 
+    var element = newElement
     OSSpinLockLock(&lock)
 
     while let reader = readerQueue.dequeue()
@@ -164,7 +165,7 @@ final class QUnbufferedChan<T>: Chan<T>
     // make our data available for a reader
     let threadLock = ChannelSemaphore()
     threadLock.setState(.Pointer)
-    threadLock.setPointer(&newElement)
+    threadLock.setPointer(&element)
     writerQueue.enqueue(QueuedSemaphore(threadLock))
     OSSpinLockUnlock(&lock)
     threadLock.wait()
@@ -177,9 +178,9 @@ final class QUnbufferedChan<T>: Chan<T>
       return false
 
     case .Pointer:
-      assert(threadLock.pointer == &newElement)
+      assert(threadLock.pointer == &element)
       // the message was succesfully passed.
-      return threadLock.pointer == &newElement
+      return threadLock.pointer == &element
 
     case let state: // default
       preconditionFailure("Unexpected Semaphore state \(state) after wait in \(__FUNCTION__)")
