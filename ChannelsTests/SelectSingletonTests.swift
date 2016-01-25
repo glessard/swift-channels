@@ -35,7 +35,7 @@ class SelectSingletonTests: XCTestCase
       {
         if let sender = selection.id as? Sender<Int>
         {
-          if sender.insert(selection, newElement: i) { i++ }
+          if sender.insert(selection, newElement: i) { i += 1 }
         }
       }
       for sender in senders { XCTAssert(sender.isClosed, __FUNCTION__) }
@@ -51,7 +51,7 @@ class SelectSingletonTests: XCTestCase
         if let message = receiver.extract(selection)
         {
           print(message, terminator: "")
-          i++
+          i += 1
         }
       }
     }
@@ -80,7 +80,7 @@ class SelectSingletonTests: XCTestCase
         if let message = receiver.extract(selection)
         {
           print(message, terminator: "")
-          i++
+          i += 1
         }
       }
     }
@@ -103,7 +103,7 @@ class SelectSingletonTests: XCTestCase
       {
         if let sender = selection.id as? Sender<Int>
         {
-          if sender.insert(selection, newElement: i) { i++ }
+          if sender.insert(selection, newElement: i) { i += 1 }
         }
       }
       for sender in senders { XCTAssert(sender.isClosed, __FUNCTION__) }
@@ -115,7 +115,7 @@ class SelectSingletonTests: XCTestCase
     while let element = <-receiver
     {
       print(element, terminator: "")
-      i++
+      i += 1
     }
     print("")
 

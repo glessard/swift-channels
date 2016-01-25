@@ -329,7 +329,7 @@ class ChannelsTests: XCTestCase
       
       var i = 0
       for _ in rx {
-        i++
+        i += 1
       }
       XCTAssert(i == ChannelsTests.performanceTestIterations, "Too few (\(i)) iterations completed by " + self.id)
     }

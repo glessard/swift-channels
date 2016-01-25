@@ -117,8 +117,10 @@ class SelectExamples: XCTestCase
       case c.tx:
         if c.tx.insert(selection, newElement: count)
         {
-          print(++cap, terminator: "")
-          if ++count > 30 { c.tx.close() }
+          cap += 1
+          print(cap, terminator: "")
+          count += 1
+          if count > 30 { c.tx.close() }
         }
         else
         {
@@ -128,7 +130,8 @@ class SelectExamples: XCTestCase
       case c.rx:
         if let _ = c.rx.extract(selection)
         {
-          print(--cap, terminator: "")
+          cap -= 1
+          print(cap, terminator: "")
         }
         else
         {

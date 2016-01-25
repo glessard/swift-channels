@@ -71,7 +71,7 @@ class SelectUnbufferedTests: XCTestCase
     {
       if let receiver = selection.id as? Receiver<Int>
       {
-         if let _ = receiver.extract(selection) { i++ }
+         if let _ = receiver.extract(selection) { i += 1 }
       }
     }
 
@@ -107,7 +107,7 @@ class SelectUnbufferedTests: XCTestCase
       {
         if let sender = selection.id as? Sender<Int>
         {
-          if sender.insert(selection, newElement: i) { i++ }
+          if sender.insert(selection, newElement: i) { i += 1 }
         }
       }
       for sender in senders { sender.close() }
@@ -120,7 +120,7 @@ class SelectUnbufferedTests: XCTestCase
 
       while let _ = receiver.receive()
       {
-        m++
+        m += 1
         NSThread.sleepForTimeInterval(sleepInterval)
       }
     }
@@ -135,7 +135,7 @@ class SelectUnbufferedTests: XCTestCase
         let receiver = receivers[i]
         dispatch_group_async(g, q) {
           var i = 0
-          while let _ = receiver.receive() { i++ }
+          while let _ = receiver.receive() { i += 1 }
           result.tx <- i
         }
       }
@@ -180,7 +180,7 @@ class SelectUnbufferedTests: XCTestCase
         {
           if sender.insert(selection, newElement: i)
           {
-            i++
+            i += 1
             if sleeper == .Sender { NSThread.sleepForTimeInterval(sleepInterval) }
             if i >= iterations { break }
           }
@@ -198,7 +198,7 @@ class SelectUnbufferedTests: XCTestCase
       {
         if let _ = receiver.extract(selection)
         {
-          i++
+          i += 1
           if sleeper == .Receiver { NSThread.sleepForTimeInterval(sleepInterval) }
         }
       }

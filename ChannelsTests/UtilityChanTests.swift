@@ -57,7 +57,7 @@ class TimeoutTests: XCTestCase
       return (random()&1 == 0) ? tx : rx
     }
 
-    for var i = 0, j = 0; i < 10; j++
+    for var i = 0, j = 0; i < 10; j += 1
     {
       let start = mach_absolute_time()*UInt64(scale.numer)/UInt64(scale.denom)
       let timer = Timeout(delay: delay)
@@ -70,7 +70,7 @@ class TimeoutTests: XCTestCase
         case _ as Sender<Int>:        XCTFail("Incorrect selection")
         case _ as Receiver<Int>:      XCTFail("Incorrect selection")
         default:
-          i++
+          i += 1
           let dt = mach_absolute_time()*UInt64(scale.numer)/UInt64(scale.denom) - start
           XCTAssert(dt > numericCast(delay))
         }
