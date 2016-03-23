@@ -10,7 +10,7 @@
 
 protocol QueueType
 {
-  typealias Element
+  associatedtype Element
 
   /**
     Initialize an empty queue

@@ -17,7 +17,7 @@
 
 public protocol ReceiverType: BasicChannelType, GeneratorType, SequenceType
 {
-  typealias ReceivedElement
+  associatedtype ReceivedElement
 
   /**
     Report whether the channel is empty (and therefore isn't ready to be received from)
@@ -76,7 +76,7 @@ public extension ReceiverType
 
 public protocol SenderType: BasicChannelType
 {
-  typealias SentElement
+  associatedtype SentElement
 
   /**
     Report whether the channel is full (and can't be sent to)
@@ -140,7 +140,7 @@ public protocol BasicChannelType
 
 protocol ChannelType: class, BasicChannelType
 {
-  typealias Element
+  associatedtype Element
 
   /**
     Determine whether the channel is empty (and can't be received from at the moment)
