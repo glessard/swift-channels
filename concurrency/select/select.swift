@@ -69,7 +69,7 @@ public func select_chan(options: [Selectable], withDefault: Selectable? = nil) -
   semaphore.setState(.WaitSelect)
 
   var selectables = 0
-  for option in options.shuffle() where option.selectable
+  for option in options.shuffled() where option.selectable
   {
     option.selectNotify(semaphore, selection: Selection(id: option))
     selectables += 1
