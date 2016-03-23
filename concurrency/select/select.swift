@@ -104,7 +104,7 @@ public func select_chan(options: [Selectable], withDefault: Selectable? = nil) -
     selection = Selection(id: sink)
 
   case let state: // default
-    fatalError("Unexpected ChannelSemaphore state (\(state)) in __FUNCTION__")
+    fatalError("Unexpected ChannelSemaphore state (\(state)) in #function")
   }
   return selection
 }

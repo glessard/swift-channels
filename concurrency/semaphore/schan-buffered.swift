@@ -160,7 +160,7 @@ final class SBufferedChan<T>: Chan<T>
     }
     else
     {
-      // assert(closed != 0, __FUNCTION__)
+      // assert(closed != 0, #function)
       OSAtomicDecrementLongBarrier(&head)
       filled.signal()
       return nil
@@ -231,7 +231,7 @@ final class SBufferedChan<T>: Chan<T>
     else
     { // This should be very rare. The channel would have to have
       // gotten closed in between the calls to selectGet() and extract().
-      // assert(closed != 0, __FUNCTION__)
+      // assert(closed != 0, #function)
       OSAtomicDecrementLongBarrier(&head)
       filled.signal()
       return nil
@@ -258,7 +258,7 @@ final class SBufferedChan<T>: Chan<T>
         return
       }
 
-      // assert(this.closed != 0, __FUNCTION__)
+      // assert(this.closed != 0, #function)
       if select.setState(.Invalidated)
       {
         select.signal()

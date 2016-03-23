@@ -87,7 +87,7 @@ extension Receiver: SelectableReceiverType
   
   public func extract(selection: Selection) -> T?
   {
-    assert(selection.id === self, __FUNCTION__)
+    assert(selection.id === self, #function)
     return wrapped.extract(selection)
   }
 }

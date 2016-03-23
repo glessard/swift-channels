@@ -32,7 +32,7 @@ final public class ChannelSemaphore
 
   deinit
   {
-    precondition(svalue == 0, "ChannelSemaphore abandoned with a non-zero svalue (\(svalue)) in \(__FUNCTION__)")
+    precondition(svalue == 0, "ChannelSemaphore abandoned with a non-zero svalue (\(svalue)) in \(#function)")
 
     MachSemaphorePool.Return(semp)
   }
@@ -187,7 +187,7 @@ final public class ChannelSemaphore
 
     while case let kr = semaphore_wait(semp) where kr != KERN_SUCCESS
     {
-      guard kr == KERN_ABORTED else { fatalError("Bad response (\(kr)) from semaphore_wait() in \(__FUNCTION__)") }
+      guard kr == KERN_ABORTED else { fatalError("Bad response (\(kr)) from semaphore_wait() in \(#function)") }
     }
   }
 }

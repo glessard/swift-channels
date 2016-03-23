@@ -88,7 +88,7 @@ final class SChanSemaphore
 
     while case let kr = semaphore_wait(semp) where kr != KERN_SUCCESS
     {
-      guard kr == KERN_ABORTED else { fatalError("Bad response (\(kr)) from semaphore_wait() in \(__FUNCTION__)") }
+      guard kr == KERN_ABORTED else { fatalError("Bad response (\(kr)) from semaphore_wait() in \(#function)") }
     }
     return
   }

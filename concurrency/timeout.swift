@@ -77,7 +77,7 @@ public class Timeout: ReceiverType, SelectableReceiverType
 
   public func extract(selection: Selection) -> Void?
   {
-    assertionFailure("\(__FUNCTION__) shouldn't be getting called")
+    assertionFailure("\(#function) shouldn't be getting called")
     return self.receive()
   }
 }

@@ -79,7 +79,7 @@ final class QUnbufferedChan<T>: Chan<T>
         continue
 
       default:
-        assertionFailure("Unexpected case \(reader.sem.state.rawValue) in \(__FUNCTION__)")
+        assertionFailure("Unexpected case \(reader.sem.state.rawValue) in \(#function)")
       }
     }
     while let writer = writerQueue.dequeue()
@@ -97,7 +97,7 @@ final class QUnbufferedChan<T>: Chan<T>
         continue
 
       default:
-        assertionFailure("Unexpected case \(writer.sem.state.rawValue) in \(__FUNCTION__)")
+        assertionFailure("Unexpected case \(writer.sem.state.rawValue) in \(#function)")
       }
     }
     OSSpinLockUnlock(&lock)
@@ -152,7 +152,7 @@ final class QUnbufferedChan<T>: Chan<T>
         continue
 
       default:
-        fatalError("Unexpected Semaphore state \(reader.sem.state) in \(__FUNCTION__)")
+        fatalError("Unexpected Semaphore state \(reader.sem.state) in \(#function)")
       }
     }
 
@@ -183,7 +183,7 @@ final class QUnbufferedChan<T>: Chan<T>
       return threadLock.pointer == &element
 
     case let state: // default
-      preconditionFailure("Unexpected Semaphore state \(state) after wait in \(__FUNCTION__)")
+      preconditionFailure("Unexpected Semaphore state \(state) after wait in \(#function)")
     }
   }
 
@@ -227,7 +227,7 @@ final class QUnbufferedChan<T>: Chan<T>
 
           // got awoken by insert()
           assert(threadLock.state == .Pointer && threadLock.pointer == UnsafeMutablePointer<Void>(buffer),
-                 "Unexpected Semaphore state \(threadLock.state) in \(__FUNCTION__)")
+                 "Unexpected Semaphore state \(threadLock.state) in \(#function)")
 
           return buffer.move()
         }
@@ -236,7 +236,7 @@ final class QUnbufferedChan<T>: Chan<T>
          continue
 
       default:
-        preconditionFailure("Unexpected Semaphore state \(writer.sem.state) in \(__FUNCTION__)")
+        preconditionFailure("Unexpected Semaphore state \(writer.sem.state) in \(#function)")
       }
     }
 
@@ -267,7 +267,7 @@ final class QUnbufferedChan<T>: Chan<T>
       return buffer.move()
 
     case let state: // default
-      fatalError("Unknown state (\(state)) after wait in \(__FUNCTION__)")
+      fatalError("Unknown state (\(state)) after wait in \(#function)")
     }
   }
 
@@ -286,10 +286,10 @@ final class QUnbufferedChan<T>: Chan<T>
         return true
 
       default:
-        fatalError("Unexpected state (\(rs.state)) in \(__FUNCTION__)")
+        fatalError("Unexpected state (\(rs.state)) in \(#function)")
       }
     }
-    assert(false, "Thread left hanging in \(__FUNCTION__), semaphore not found in \(selection)")
+    assert(false, "Thread left hanging in \(#function), semaphore not found in \(selection)")
     return false
   }
 
@@ -343,7 +343,7 @@ final class QUnbufferedChan<T>: Chan<T>
         continue
 
       default:
-        fatalError("Unexpected state (\(reader.sem.state)) after wait in \(__FUNCTION__)")
+        fatalError("Unexpected state (\(reader.sem.state)) after wait in \(#function)")
       }
     }
 
@@ -383,10 +383,10 @@ final class QUnbufferedChan<T>: Chan<T>
         return element
 
       case let state: // default
-        fatalError("Unexpected state (\(state)) in \(__FUNCTION__)")
+        fatalError("Unexpected state (\(state)) in \(#function)")
       }
     }
-    assert(false, "Thread left hanging in \(__FUNCTION__), semaphore not found in \(selection)")
+    assert(false, "Thread left hanging in \(#function), semaphore not found in \(selection)")
     return nil
   }
 
@@ -440,7 +440,7 @@ final class QUnbufferedChan<T>: Chan<T>
         continue
 
       default:
-        fatalError("Unexpected state (\(writer.sem.state)) after wait in \(__FUNCTION__)")
+        fatalError("Unexpected state (\(writer.sem.state)) after wait in \(#function)")
       }
     }
 

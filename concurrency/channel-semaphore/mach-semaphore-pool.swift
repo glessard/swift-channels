@@ -33,14 +33,14 @@ struct MachSemaphorePool
 
   static func Return(s: semaphore_t)
   {
-    precondition(s != 0, "Attempted to return a nonexistent semaphore_t in \(__FUNCTION__)")
+    precondition(s != 0, "Attempted to return a nonexistent semaphore_t in \(#function)")
 
     // reset the semaphore's count to zero if it is greater than zero.
     while case let kr = semaphore_timedwait(s, mach_timespec_t(tv_sec: 0,tv_nsec: 0))
     where kr != KERN_OPERATION_TIMED_OUT
     {
       guard kr == KERN_SUCCESS || kr == KERN_ABORTED else
-      { fatalError("\(kr) in \(__FUNCTION__)") }
+      { fatalError("\(kr) in \(#function)") }
     }
 
     OSSpinLockLock(&lock)
@@ -81,7 +81,7 @@ struct MachSemaphorePool
 
       var port = semaphore_t()
       guard semaphore_create(mach_task_self_, &port, SYNC_POLICY_FIFO, 0) == KERN_SUCCESS
-      else { fatalError("Failed to create mach_semaphore port in \(__FUNCTION__)") }
+      else { fatalError("Failed to create mach_semaphore port in \(#function)") }
       return port
     }
   }

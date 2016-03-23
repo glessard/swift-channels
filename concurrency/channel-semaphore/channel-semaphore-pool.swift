@@ -36,9 +36,9 @@ struct SemaphorePool
     {
       buffer.advancedBy(cursor).initialize(s)
       cursor += 1
-      // assert(s.svalue == 0, "Non-zero user-space semaphore count of \(s.svalue) in \(__FUNCTION__)")
-      // assert(s.seln == nil || s.state == .DoubleSelect, "Unexpectedly non-nil Selection in \(__FUNCTION__)")
-      // assert(s.iptr == nil || s.state == .DoubleSelect, "Non-nil pointer \(s.iptr) in \(__FUNCTION__)")
+      // assert(s.svalue == 0, "Non-zero user-space semaphore count of \(s.svalue) in \(#function)")
+      // assert(s.seln == nil || s.state == .DoubleSelect, "Unexpectedly non-nil Selection in \(#function)")
+      // assert(s.iptr == nil || s.state == .DoubleSelect, "Non-nil pointer \(s.iptr) in \(#function)")
       assert(s.state == .Done || s.state == .DoubleSelect || s.state == .Ready, "State \(s.state) is incorrect")
     }
     OSSpinLockUnlock(&lock)
@@ -72,7 +72,7 @@ struct SemaphorePool
           // s.seln = nil
           // s.iptr = nil
           // s.currentState = ChannelSemaphore.State.Ready.rawValue
-          guard s.setState(.Ready) else { fatalError("Bad state for a ChannelSemaphore in \(__FUNCTION__)") }
+          guard s.setState(.Ready) else { fatalError("Bad state for a ChannelSemaphore in \(#function)") }
           return s
         }
       }

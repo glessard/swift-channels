@@ -38,7 +38,7 @@ class SelectSingletonTests: XCTestCase
           if sender.insert(selection, newElement: i) { i += 1 }
         }
       }
-      for sender in senders { XCTAssert(sender.isClosed, __FUNCTION__) }
+      for sender in senders { XCTAssert(sender.isClosed, #function) }
     }
 
     var i = 0
@@ -67,7 +67,7 @@ class SelectSingletonTests: XCTestCase
 
     async {
       for (i,sender) in senders.enumerate() { sender <- i }
-      for sender in senders { XCTAssert(sender.isClosed, __FUNCTION__) }
+      for sender in senders { XCTAssert(sender.isClosed, #function) }
     }
 
     var i = 0
@@ -106,7 +106,7 @@ class SelectSingletonTests: XCTestCase
           if sender.insert(selection, newElement: i) { i += 1 }
         }
       }
-      for sender in senders { XCTAssert(sender.isClosed, __FUNCTION__) }
+      for sender in senders { XCTAssert(sender.isClosed, #function) }
     }
 
     let receiver = merge(receivers)

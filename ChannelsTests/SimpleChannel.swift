@@ -85,7 +85,7 @@ public class SimpleChannel: ChannelType, SelectableChannelType
     }
     else
     {
-      assert(closed, __FUNCTION__)
+      assert(closed, #function)
       dispatch_semaphore_signal(filled)
       return nil
     }

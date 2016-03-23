@@ -81,7 +81,7 @@ extension Sender: SelectableSenderType
 
   public func insert(selection: Selection, newElement: T) -> Bool
   {
-    precondition(selection.id === self, __FUNCTION__)
+    precondition(selection.id === self, #function)
     return wrapped.insert(selection, newElement: newElement)
   }
 }
