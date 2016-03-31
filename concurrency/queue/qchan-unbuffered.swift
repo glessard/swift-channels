@@ -183,7 +183,7 @@ final class QUnbufferedChan<T>: Chan<T>
       return threadLock.pointer == &element
 
     case let state: // default
-      preconditionFailure("Unexpected Semaphore state \(state) after wait in \(#function)")
+      fatalError("Unexpected Semaphore state \(state) after wait in \(#function)")
     }
   }
 
@@ -236,7 +236,7 @@ final class QUnbufferedChan<T>: Chan<T>
          continue
 
       default:
-        preconditionFailure("Unexpected Semaphore state \(writer.sem.state) in \(#function)")
+        fatalError("Unexpected Semaphore state \(writer.sem.state) in \(#function)")
       }
     }
 
