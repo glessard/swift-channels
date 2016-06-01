@@ -54,14 +54,14 @@ public protocol Selectable: class
   var selectable: Bool { get }
 }
 
-func ~= <S1: Selectable>(lhs: S1, rhs: Selectable) -> Bool
+func ~= <S1: Selectable>(pattern: S1, selection: Selectable) -> Bool
 {
-  return lhs === rhs
+  return pattern === selection
 }
 
-func ~= <S1: Selectable>(lhs: S1, selection: Selection) -> Bool
+func ~= <S1: Selectable>(pattern: S1, selection: Selection) -> Bool
 {
-  return lhs === selection.id
+  return pattern === selection.id
 }
 
 // MARK: SelectableChannelType
