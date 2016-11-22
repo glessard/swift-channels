@@ -25,7 +25,7 @@ final class SingletonChan<T>: Chan<T>
   private var writerCount: Int32 = 0
   private var readerCount: Int32 = 0
 
-  private var barrier = dispatch_group_create()!
+  private var barrier = dispatch_group_create()
 
   private var closedState: Int32 = 0
 

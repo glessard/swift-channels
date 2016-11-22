@@ -22,8 +22,8 @@ public class SimpleChannel: ChannelType, SelectableChannelType
   private var head = 0
   private var tail = 0
 
-  private let filled = dispatch_semaphore_create(0)!
-  private let empty =  dispatch_semaphore_create(1)!
+  private let filled = dispatch_semaphore_create(0)
+  private let empty =  dispatch_semaphore_create(1)
 
   private var closed = false
 

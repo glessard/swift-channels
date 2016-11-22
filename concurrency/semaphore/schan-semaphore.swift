@@ -70,8 +70,11 @@ final class SChanSemaphore
           return
 
         case .Notify(let block):
-          // return dispatch_async(dispatch_get_global_queue(qos_class_self(), 0), block)
-          return block()
+          #if os(OSX)
+            return block()
+          #else
+            return dispatch_async(dispatch_get_global_queue(qos_class_self(), 0), block)
+          #endif
         }
       }
     }

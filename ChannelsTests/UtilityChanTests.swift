@@ -54,7 +54,7 @@ class TimeoutTests: XCTestCase
     let channels = (0..<count).map { _ in Channel<Int>.Make() }
     let selectables = channels.map {
       (tx: Sender<Int>, rx: Receiver<Int>) -> Selectable in
-      return (random()&1 == 0) ? tx : rx
+      return (arc4random()&1 == 0) ? tx : rx
     }
 
     var (i,j) = (0,0)

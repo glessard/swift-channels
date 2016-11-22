@@ -94,7 +94,7 @@ public func async<T>(qos: qos_class_t, group: dispatch_group_t, task: () -> T) -
 
 public func async<T>(queue: dispatch_queue_t, task: () -> T) -> Result<T>
 {
-  let g = dispatch_group_create()!
+  let g = dispatch_group_create()
   var result: T! = nil
 
   dispatch_group_enter(g)
@@ -112,7 +112,7 @@ public func async<T>(queue: dispatch_queue_t, task: () -> T) -> Result<T>
 
 public func async<T>(queue: dispatch_queue_t, group: dispatch_group_t, task: () -> T) -> Result<T>
 {
-  let g = dispatch_group_create()!
+  let g = dispatch_group_create()
   var result: T! = nil
 
   dispatch_group_enter(g)
@@ -195,7 +195,7 @@ extension Result
 
   public func notify<U>(queue: dispatch_queue_t, task: (T) -> U) -> Result<U>
   {
-    let g = dispatch_group_create()!
+    let g = dispatch_group_create()
     var result: U! = nil
 
     dispatch_group_enter(g)
@@ -213,7 +213,7 @@ extension Result
 
   public func notify<U>(queue: dispatch_queue_t, group: dispatch_group_t, task: (T) -> U) -> Result<U>
   {
-    let g = dispatch_group_create()!
+    let g = dispatch_group_create()
     var result: U! = nil
 
     dispatch_group_enter(group)

@@ -128,7 +128,7 @@ class SelectUnbufferedTests: XCTestCase
     {
       let result = Channel<Int>.Make(channels.count)
 
-      let g = dispatch_group_create()!
+      let g = dispatch_group_create()
       let q = dispatch_get_global_queue(qos_class_self(), 0)
       for i in 0..<channels.count
       {
