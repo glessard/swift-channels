@@ -15,7 +15,7 @@ import XCTest
 
 class ChannelsExamples: XCTestCase
 {
-  fileprivate let q = DispatchQueue.global(qos: qos_class_self())
+  fileprivate let q = DispatchQueue.global(qos: DispatchQoS.QoSClass(rawValue: qos_class_self())!)
 
   func testExample1()
   {

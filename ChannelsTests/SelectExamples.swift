@@ -73,7 +73,7 @@ class SelectExamples: XCTestCase
     let c0: (tx: Sender<Bool>, rx: Receiver<Bool>) = Channel<Bool>.Make(8)
     let c1: (tx: Sender<Bool>, rx: Receiver<Bool>) = Channel<Bool>.Make(8)
 
-    DispatchQueue.global(qos: qos_class_self()).async {
+    DispatchQueue.global(qos: DispatchQoS.QoSClass(rawValue: qos_class_self())!).async {
       for _ in 0..<8
       {
         if let selection = select_chan(c0.tx, c1.tx)
@@ -152,7 +152,7 @@ class SelectExamples: XCTestCase
     let c2 = Channel<UInt32>.Make()
 
     var attempts = 0
-    DispatchQueue.global(qos: qos_class_self()).async {
+    DispatchQueue.global(qos: DispatchQoS.QoSClass(rawValue: qos_class_self())!).async {
       while let selection = select_chan([c1.tx,c2.tx], preventBlocking: true)
       {
         switch selection

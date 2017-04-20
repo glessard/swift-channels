@@ -53,7 +53,7 @@ class SelectUnbufferedTests: XCTestCase
           let sender = senders[i]
           let messages = iterations/senders.count + ((i < iterations%senders.count) ? 1:0)
 
-          DispatchQueue.global(qos: qos_class_self()).async {
+          DispatchQueue.global(qos: DispatchQoS.QoSClass(rawValue: qos_class_self())!).async {
             for m in 0..<messages
             {
               sender.send(m)
@@ -129,7 +129,7 @@ class SelectUnbufferedTests: XCTestCase
       let result = Channel<Int>.Make(channels.count)
 
       let g = DispatchGroup()
-      let q = DispatchQueue.global(qos: qos_class_self())
+      let q = DispatchQueue.global(qos: DispatchQoS.QoSClass(rawValue: qos_class_self())!)
       for i in 0..<channels.count
       {
         let receiver = receivers[i]
@@ -230,7 +230,8 @@ class SelectUnbufferedTests: XCTestCase
     let senders   = channels.map { Sender(channelType: $0) }
     let receivers = channels.map { Receiver(channelType: $0) }
 
-    DispatchQueue.global(qos: qos_class_self()).asyncAfter(deadline: DispatchTime.now() + Double(10_000_000) / Double(NSEC_PER_SEC)) {
+    let q = DispatchQueue.global(qos: DispatchQoS.QoSClass(rawValue: qos_class_self())!)
+    q.asyncAfter(deadline: DispatchTime.now() + Double(10_000_000) / Double(NSEC_PER_SEC)) {
         _ in
         for sender in senders { sender.close() }
     }
@@ -250,7 +251,8 @@ class SelectUnbufferedTests: XCTestCase
     let channels  = MakeChannels()
     let senders   = channels.map { Sender(channelType: $0) }
 
-    DispatchQueue.global(qos: qos_class_self()).asyncAfter(deadline: DispatchTime.now() + Double(10_000_000) / Double(NSEC_PER_SEC)) {
+    let q = DispatchQueue.global(qos: DispatchQoS.QoSClass(rawValue: qos_class_self())!)
+    q.asyncAfter(deadline: DispatchTime.now() + Double(10_000_000) / Double(NSEC_PER_SEC)) {
       _ in
       for sender in senders { sender.close() }
     }

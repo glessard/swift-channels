@@ -53,7 +53,7 @@ open class SimpleChannel: ChannelType, SelectableChannelType
   {
     if closed { return false }
 
-    empty.wait(timeout: DispatchTime.distantFuture)
+    _ = empty.wait(timeout: DispatchTime.distantFuture)
 
     if closed
     {
@@ -73,7 +73,7 @@ open class SimpleChannel: ChannelType, SelectableChannelType
   {
     if closed && tail &- head <= 0 { return nil }
 
-    filled.wait(timeout: DispatchTime.distantFuture)
+    _ = filled.wait(timeout: DispatchTime.distantFuture)
 
     if tail &- head > 0
     {
