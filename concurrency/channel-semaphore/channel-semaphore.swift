@@ -41,47 +41,48 @@ final public class ChannelSemaphore
 
   enum State: Int32
   {
-    case Ready
+    case ready
 
     // Unbuffered channel data
-    case Pointer
+    case pointer
 
     // Select() case
-    case WaitSelect
-    case Select
-    case DoubleSelect
-    case Invalidated
+    case waitSelect
+    case select
+    case doubleSelect
+    case invalidated
     
     // End state
-    case Done
+    case done
   }
   
-  private var currentState = State.Ready.rawValue
+  fileprivate var currentState = State.ready.rawValue
 
   var state: State { return State(rawValue: currentState)! }
 
-  func setState(newState: State) -> Bool
+  @discardableResult
+  func setState(_ newState: State) -> Bool
   {
     switch newState
     {
-    case .Ready:
-      return currentState == State.Ready.rawValue ||
-             OSAtomicCompareAndSwap32Barrier(State.Done.rawValue, State.Ready.rawValue, &currentState)
+    case .ready:
+      return currentState == State.ready.rawValue ||
+             OSAtomicCompareAndSwap32Barrier(State.done.rawValue, State.ready.rawValue, &currentState)
 
-    case .Pointer, .WaitSelect:
-      return OSAtomicCompareAndSwap32Barrier(State.Ready.rawValue, newState.rawValue, &currentState)
+    case .pointer, .waitSelect:
+      return OSAtomicCompareAndSwap32Barrier(State.ready.rawValue, newState.rawValue, &currentState)
 
-    case .Select, .DoubleSelect:
-      return OSAtomicCompareAndSwap32Barrier(State.WaitSelect.rawValue, newState.rawValue, &currentState)
+    case .select, .doubleSelect:
+      return OSAtomicCompareAndSwap32Barrier(State.waitSelect.rawValue, newState.rawValue, &currentState)
 
-    case .Invalidated:
+    case .invalidated:
       // shift directly to the .Done state
-      return OSAtomicCompareAndSwap32Barrier(State.WaitSelect.rawValue, State.Done.rawValue, &currentState)
+      return OSAtomicCompareAndSwap32Barrier(State.waitSelect.rawValue, State.done.rawValue, &currentState)
 
-    case .Done:
+    case .done:
       // Ideally it would be: __sync_swap(&currentState, State.Done.rawValue)
       // Or maybe: __c11_atomic_store(&currentState, State.Done.rawValue, __ATOMIC_SEQ_CST)
-      repeat {} while OSAtomicCompareAndSwap32Barrier(currentState, State.Done.rawValue, &currentState) == false
+      repeat {} while OSAtomicCompareAndSwap32Barrier(currentState, State.done.rawValue, &currentState) == false
       return true
     }
   }
@@ -92,7 +93,7 @@ final public class ChannelSemaphore
     An associated pointer to pass data synchronously between threads.
   */
 
-  private var iptr: UnsafeMutablePointer<Void> = nil
+  fileprivate var iptr: UnsafeMutableRawPointer? = nil
 
   /**
     Set this `ChannelSemaphore`'s associated pointer.
@@ -107,26 +108,26 @@ final public class ChannelSemaphore
     - parameter p: The address of a variable or a pointer.
   */
 
-  final func setPointer<T>(p: UnsafeMutablePointer<T>)
+  final func setPointer<T>(_ p: UnsafeMutablePointer<T>)
   {
-    if currentState == State.Pointer.rawValue ||
-       currentState == State.DoubleSelect.rawValue
-    { iptr = UnsafeMutablePointer(p) }
+    if currentState == State.pointer.rawValue ||
+       currentState == State.doubleSelect.rawValue
+    { iptr = UnsafeMutableRawPointer(p) }
     else
     { iptr = nil }
   }
 
-  final var pointer: UnsafeMutablePointer<Void> {
+  final var pointer: UnsafeMutableRawPointer? {
     get {
-      if currentState == State.Pointer.rawValue ||
-         currentState == State.DoubleSelect.rawValue
+      if currentState == State.pointer.rawValue ||
+         currentState == State.doubleSelect.rawValue
       { return iptr }
       else
       { return nil }
     }
     set {
-      if currentState == State.Pointer.rawValue ||
-         currentState == State.DoubleSelect.rawValue
+      if currentState == State.pointer.rawValue ||
+         currentState == State.doubleSelect.rawValue
       { iptr = newValue }
       else
       { iptr = nil }
@@ -137,19 +138,19 @@ final public class ChannelSemaphore
     Data structure to work with the `select_chan()` function.
   */
 
-  private var seln: Selection? = nil
+  fileprivate var seln: Selection? = nil
 
   final var selection: Selection! {
     get {
-      if currentState == State.Select.rawValue ||
-         currentState == State.DoubleSelect.rawValue
+      if currentState == State.select.rawValue ||
+         currentState == State.doubleSelect.rawValue
       { return seln }
       else
       { return nil }
     }
     set {
-      if currentState == State.Select.rawValue ||
-         currentState == State.DoubleSelect.rawValue
+      if currentState == State.select.rawValue ||
+         currentState == State.doubleSelect.rawValue
       { seln = newValue }
       else
       { seln = nil }
@@ -158,8 +159,8 @@ final public class ChannelSemaphore
 
   // MARK: Semaphore functionality
 
-  private var svalue: Int32
-  private let semp: semaphore_t
+  fileprivate var svalue: Int32
+  fileprivate let semp: semaphore_t
 
   func signal()
   {
@@ -185,7 +186,7 @@ final public class ChannelSemaphore
       return
     }
 
-    while case let kr = semaphore_wait(semp) where kr != KERN_SUCCESS
+    while case let kr = semaphore_wait(semp), kr != KERN_SUCCESS
     {
       guard kr == KERN_ABORTED else { fatalError("Bad response (\(kr)) from semaphore_wait() in \(#function)") }
     }

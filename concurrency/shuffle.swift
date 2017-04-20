@@ -14,13 +14,8 @@
   import func Darwin.C.stdlib.arc4random_uniform
 #endif
 
-/// Get a sequence/generator that will return a collection's elements in a random order.
-/// The input collection is not modified.
-///
-/// - parameter c: The collection to be shuffled
-/// - returns: A sequence of of `c`'s elements, lazily shuffled.
 
-public extension CollectionType
+public extension Collection where Self.Indices.Iterator.Element == Self.Index
 {
   /// Get a sequence/generator that will return a collection's elements in a random order.
   /// The input collection is not modified.
@@ -38,46 +33,29 @@ public extension CollectionType
 /// The input collection is not modified: the shuffling itself is done
 /// using an adjunct array of indices.
 
-public struct ShuffledSequence<C: CollectionType>: SequenceType, GeneratorType
+public struct ShuffledSequence<C: Collection>: Sequence, IteratorProtocol
+  where C.Indices.Iterator.Element == C.Index
 {
   public let collection: C
-  public let count: Int
-
-  public private(set) var step = -1
-  private var i: [C.Index]
+  private var shuffler: IndexShuffler<C.Index>
 
   public init(_ input: C)
   {
     collection = input
-    i = Array(input.indices)
-    count = i.count
+    shuffler = IndexShuffler(input.indices)
   }
 
-  public mutating func next() -> C.Generator.Element?
+  public mutating func next() -> C.Iterator.Element?
   {
-    // current position in the array
-    step += 1
-
-    if step < count
+    if let index = shuffler.next()
     {
-      // select a random Index from the rest of the array
-      #if os(Linux)
-        let j = step + Int(random() % (count-step)) // with slight modulo bias
-      #else
-        let j = step + Int(arc4random_uniform(UInt32(count-step)))
-      #endif
-
-      // swap that Index with the Index present at the current step in the array
-      if j != step // swap 2beta6 calls `fatalError` if the two items are identical.
-      {
-        swap(&i[j], &i[step])
-      }
-
-      // return the new random Element.
-      return collection[i[step]]
+      return collection[index]
     }
-
     return nil
+  }
+
+  public var underestimatedCount: Int {
+    return shuffler.underestimatedCount
   }
 }
 
@@ -86,47 +64,52 @@ public struct ShuffledSequence<C: CollectionType>: SequenceType, GeneratorType
 /// using a sequence of indices for the input. Elements (indices) from
 /// the input sequence are returned in a random order until exhaustion.
 
-public struct IndexShuffler<I: ForwardIndexType>: SequenceType, GeneratorType
+public struct IndexShuffler<Index>: Sequence, IteratorProtocol
 {
-  public let count: Int
-  public private(set) var step = -1
-  private var i: [I]
+  public let last: Int
+  public private(set) var step: Int
+  private var i: [Index]
 
-  public init<S: SequenceType where S.Generator.Element == I>(_ input: S)
+  public init<S: Sequence>(_ input: S)
+    where S.Iterator.Element == Index
   {
     self.init(Array(input))
   }
 
-  public init(_ input: Array<I>)
+  public init(_ input: Array<Index>)
   {
     i = input
-    count = input.count
+    step = i.startIndex
+    last = i.endIndex
   }
 
-  public mutating func next() -> I?
+  public mutating func next() -> Index?
   {
-    // current position in the array
-    step += 1
-
-    if step < count
+    if step < last
     {
       // select a random Index from the rest of the array
       #if os(Linux)
-        let j = step + Int(random() % (count-step)) // with slight modulo bias
+        let offset = random() % i.distance(from: step, to: last) // with slight modulo bias
       #else
-        let j = step + Int(arc4random_uniform(UInt32(count-step)))
+        let offset = arc4random_uniform(UInt32(i.distance(from: step, to: last)))
       #endif
+      let j = i.index(step, offsetBy: Int(offset))
 
       // swap that Index with the Index present at the current step in the array
-      if j != step // swap 2beta6 calls `fatalError` if the two items are identical.
+      if j != step
       {
         swap(&i[j], &i[step])
       }
-      
+
+      defer { step = i.index(after: step) }
       // return the new random Index.
       return i[step]
     }
-    
+
     return nil
+  }
+
+  public var underestimatedCount: Int {
+    return (last - step)
   }
 }

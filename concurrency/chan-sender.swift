@@ -12,7 +12,7 @@
 
 public final class Sender<T>: SenderType
 {
-  private let wrapped: Chan<T>
+  fileprivate let wrapped: Chan<T>
 
   /**
     Initialize new `Sender<T>` to act as the sending endpoint for a `Chan<T>`.
@@ -36,7 +36,8 @@ public final class Sender<T>: SenderType
     - parameter c: An object that implements `ChannelType`
   */
 
-  convenience init<C: SelectableChannelType where C.Element == T>(channelType c: C)
+  convenience init<C: SelectableChannelType>(channelType c: C)
+    where C.Element == T
   {
     if let chan = c as? Chan<T>
     {
@@ -54,7 +55,8 @@ public final class Sender<T>: SenderType
   public var isFull:   Bool { return wrapped.isFull }
   public func close()  { wrapped.close() }
 
-  public func send(newElement: T) -> Bool { return wrapped.put(newElement) }
+  @discardableResult
+  public func send(_ newElement: T) -> Bool { return wrapped.put(newElement) }
 }
 
 extension Sender: Selectable
@@ -69,7 +71,7 @@ extension Sender: Selectable
 
   public var selectable: Bool { return !wrapped.isClosed }
 
-  public func selectNotify(select: ChannelSemaphore, selection: Selection)
+  public func selectNotify(_ select: ChannelSemaphore, selection: Selection)
   {
     wrapped.selectPut(select, selection: selection)
   }
@@ -79,7 +81,8 @@ extension Sender: SelectableSenderType
 {
   // MARK: SelectableSenderType implementation
 
-  public func insert(selection: Selection, newElement: T) -> Bool
+  @discardableResult
+  public func insert(_ selection: Selection, newElement: T) -> Bool
   {
     precondition(selection.id === self, #function)
     return wrapped.insert(selection, newElement: newElement)
@@ -117,7 +120,8 @@ extension Sender
     - returns:  A Sender object that will pass along elements to `c`.
   */
 
-  public static func Wrap<S: SelectableSenderType where S.SentElement == T>(s: S) -> Sender<T>
+  public static func Wrap<S: SelectableSenderType>(_ s: S) -> Sender<T>
+    where S.SentElement == T
   {
     if let s = s as? Sender<T>
     {
@@ -132,9 +136,10 @@ extension Sender
   ChannelTypeAsChan<T,C> disguises any ChannelType as a Chan<T>, for use by Sender<T>
 */
 
-private class ChannelTypeAsChan<T, C: SelectableChannelType where C.Element == T>: Chan<T>
+private class ChannelTypeAsChan<T, C: SelectableChannelType>: Chan<T>
+  where C.Element == T
 {
-  private var wrapped: C
+  fileprivate var wrapped: C
 
   init(_ c: C)
   {
@@ -145,19 +150,22 @@ private class ChannelTypeAsChan<T, C: SelectableChannelType where C.Element == T
   override var isFull:   Bool { return wrapped.isFull }
   override func close()  { wrapped.close() }
 
-  override func put(newElement: T) -> Bool { return wrapped.put(newElement) }
+  override func put(_ newElement: T) -> Bool { return wrapped.put(newElement) }
 
-  override func selectPut(select: ChannelSemaphore, selection: Selection) { wrapped.selectPut(select, selection: selection) }
-  override func insert(selection: Selection, newElement: T) -> Bool { return wrapped.insert(selection, newElement: newElement) }
+  override func selectPut(_ select: ChannelSemaphore, selection: Selection) { wrapped.selectPut(select, selection: selection) }
+
+  @discardableResult
+  override func insert(_ selection: Selection, newElement: T) -> Bool { return wrapped.insert(selection, newElement: newElement) }
 }
 
 /**
   SenderTypeAsChan<T,C> disguises any SenderType as a Chan<T>, for use by Sender<T>
 */
 
-private class SenderTypeAsChan<T, S: SelectableSenderType where S.SentElement == T>: Chan<T>
+private class SenderTypeAsChan<T, S: SelectableSenderType>: Chan<T>
+  where S.SentElement == T
 {
-  private var wrapped: S
+  fileprivate var wrapped: S
 
   init(_ sender: S)
   {
@@ -168,8 +176,10 @@ private class SenderTypeAsChan<T, S: SelectableSenderType where S.SentElement ==
   override var isFull:   Bool { return wrapped.isFull }
   override func close()  { wrapped.close() }
 
-  override func put(newElement: T) -> Bool { return wrapped.send(newElement) }
+  override func put(_ newElement: T) -> Bool { return wrapped.send(newElement) }
 
-  override func selectPut(select: ChannelSemaphore, selection: Selection) { wrapped.selectNotify(select, selection: selection) }
-  override func insert(selection: Selection, newElement: T) -> Bool { return wrapped.insert(selection, newElement: newElement) }
+  override func selectPut(_ select: ChannelSemaphore, selection: Selection) { wrapped.selectNotify(select, selection: selection) }
+
+  @discardableResult
+  override func insert(_ selection: Selection, newElement: T) -> Bool { return wrapped.insert(selection, newElement: newElement) }
 }

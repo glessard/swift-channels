@@ -17,12 +17,12 @@ import Dispatch
   However, as soon as the channel closes receiving operations will unblock and return `nil`.
 */
 
-public class Timeout: ReceiverType, SelectableReceiverType
+open class Timeout: ReceiverType, SelectableReceiverType
 {
-  private var closedState = 0
-  private let closingTime: dispatch_time_t
+  fileprivate var closedState = 0
+  fileprivate let closingTime: DispatchTime
 
-  public init(_ time: dispatch_time_t)
+  public init(_ time: DispatchTime)
   {
     closingTime = time
   }
@@ -30,26 +30,26 @@ public class Timeout: ReceiverType, SelectableReceiverType
   public convenience init(delay: Int64 = 0)
   {
     let offset = delay > 0 ? delay : 0
-    self.init(dispatch_time(DISPATCH_TIME_NOW, offset))
+    self.init(DispatchTime.now() + Double(offset) / Double(NSEC_PER_SEC))
   }
 
-  public var isEmpty: Bool { return true }
+  open var isEmpty: Bool { return true }
 
-  public var isClosed: Bool { return closedState != 0 }
+  open var isClosed: Bool { return closedState != 0 }
 
-  public func close()
+  open func close()
   {
     closedState = 1
   }
 
-  public func receive() -> Void?
+  open func receive() -> Void?
   {
     if closedState == 0
     {
-      let now = dispatch_time(DISPATCH_TIME_NOW, 0)
+      let now = DispatchTime.now()
       if closingTime > now
       {
-        let delay = (closingTime - now)
+        let delay = closingTime.rawValue - now.rawValue
         var timeRequested = timespec(tv_sec: Int(delay/NSEC_PER_SEC), tv_nsec: Int(delay%NSEC_PER_SEC))
         while nanosleep(&timeRequested, &timeRequested) == -1 {}
       }
@@ -59,23 +59,23 @@ public class Timeout: ReceiverType, SelectableReceiverType
   }
 
 
-  public var selectable: Bool { return closedState == 0 }
+  open var selectable: Bool { return closedState == 0 }
 
-  public func selectNotify(select: ChannelSemaphore, selection: Selection)
+  open func selectNotify(_ select: ChannelSemaphore, selection: Selection)
   {
-    dispatch_after(closingTime, dispatch_get_global_queue(qos_class_self(), 0)) {
+    DispatchQueue.global(qos: DispatchQoS.current().qosClass).asyncAfter(deadline: closingTime) {
       [weak self] in
       guard let this = self else { return }
 
       this.close()
-      if select.setState(.Invalidated)
+      if select.setState(.invalidated)
       {
         select.signal()
       }
     }
   }
 
-  public func extract(selection: Selection) -> Void?
+  open func extract(_ selection: Selection) -> Void?
   {
     assertionFailure("\(#function) shouldn't be getting called")
     return self.receive()

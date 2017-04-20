@@ -12,7 +12,7 @@
 
 public final class Receiver<T>: ReceiverType
 {
-  private let wrapped: Chan<T>
+  fileprivate let wrapped: Chan<T>
 
   /**
     Initialize a new `Receiver<T>` to act as the receiving endpoint for a `Chan<T>`.
@@ -36,7 +36,8 @@ public final class Receiver<T>: ReceiverType
     - parameter c: An object that implements `ChannelType`
   */
 
-  convenience init<C: SelectableChannelType where C.Element == T>(channelType c: C)
+  convenience init<C: SelectableChannelType>(channelType c: C)
+    where C.Element == T
   {
     if let c = c as? Chan<T>
     {
@@ -64,7 +65,7 @@ extension Receiver: Selectable
 {
   // MARK: Selectable implementation
   
-  public func selectNotify(select: ChannelSemaphore, selection: Selection)
+  public func selectNotify(_ select: ChannelSemaphore, selection: Selection)
   {
     wrapped.selectGet(select, selection: selection)
   }
@@ -85,7 +86,7 @@ extension Receiver: SelectableReceiverType
 {
   // MARK: SelectableReceiverType implementation
   
-  public func extract(selection: Selection) -> T?
+  public func extract(_ selection: Selection) -> T?
   {
     assert(selection.id === self, #function)
     return wrapped.extract(selection)
@@ -124,7 +125,8 @@ extension Receiver
     - returns:  A `Receiver` object that will pass along the elements from `r`.
   */
 
-  public static func Wrap<R: SelectableReceiverType where R.ReceivedElement == T>(r: R) -> Receiver<T>
+  public static func Wrap<R: SelectableReceiverType>(_ r: R) -> Receiver<T>
+    where R.ReceivedElement == T
   {
     if let r = r as? Receiver<T>
     {
@@ -140,9 +142,10 @@ extension Receiver
   for use by Receiver<T>
 */
 
-private class ChannelTypeAsChan<T, C: SelectableChannelType where C.Element == T>: Chan<T>
+private class ChannelTypeAsChan<T, C: SelectableChannelType>: Chan<T>
+  where C.Element == T
 {
-  private var wrapped: C
+  fileprivate var wrapped: C
 
   init(_ c: C)
   {
@@ -155,8 +158,8 @@ private class ChannelTypeAsChan<T, C: SelectableChannelType where C.Element == T
 
   override func get() -> T? { return wrapped.get() }
 
-  override func selectGet(select: ChannelSemaphore, selection: Selection) { wrapped.selectGet(select, selection: selection) }
-  override func extract(selection: Selection) -> T? { return wrapped.extract(selection) }
+  override func selectGet(_ select: ChannelSemaphore, selection: Selection) { wrapped.selectGet(select, selection: selection) }
+  override func extract(_ selection: Selection) -> T? { return wrapped.extract(selection) }
 }
 
 /**
@@ -164,9 +167,10 @@ private class ChannelTypeAsChan<T, C: SelectableChannelType where C.Element == T
   for use by Receiver<T>
 */
 
-private class ReceiverTypeAsChan<T, R: SelectableReceiverType where R.ReceivedElement == T>: Chan<T>
+private class ReceiverTypeAsChan<T, R: SelectableReceiverType>: Chan<T>
+  where R.ReceivedElement == T
 {
-  private var wrapped: R
+  fileprivate var wrapped: R
 
   init(_ receiver: R)
   {
@@ -179,6 +183,6 @@ private class ReceiverTypeAsChan<T, R: SelectableReceiverType where R.ReceivedEl
 
   override func get() -> T? { return wrapped.receive() }
 
-  override func selectGet(select: ChannelSemaphore, selection: Selection) { wrapped.selectNotify(select, selection: selection) }
-  override func extract(selection: Selection) -> T? { return wrapped.extract(selection) }
+  override func selectGet(_ select: ChannelSemaphore, selection: Selection) { wrapped.selectNotify(select, selection: selection) }
+  override func extract(_ selection: Selection) -> T? { return wrapped.extract(selection) }
 }

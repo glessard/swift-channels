@@ -66,7 +66,7 @@ class SelectSingletonTests: XCTestCase
     let receivers = channels.map { $0.rx }
 
     async {
-      for (i,sender) in senders.enumerate() { sender <- i }
+      for (i,sender) in senders.enumerated() { sender <- i }
       for sender in senders { XCTAssert(sender.isClosed, #function) }
     }
 

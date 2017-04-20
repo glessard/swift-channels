@@ -16,12 +16,12 @@ final class QUnbufferedChan<T>: Chan<T>
 {
   // MARK: private housekeeping
 
-  private let readerQueue = FastQueue<QueuedSemaphore>()
-  private let writerQueue = FastQueue<QueuedSemaphore>()
+  fileprivate let readerQueue = FastQueue<QueuedSemaphore>()
+  fileprivate let writerQueue = FastQueue<QueuedSemaphore>()
 
-  private var lock = OS_SPINLOCK_INIT
+  fileprivate var lock = OS_SPINLOCK_INIT
 
-  private var closed = false
+  fileprivate var closed = false
 
   // Used to elucidate/troubleshoot message arrival order
   // private var readerCount: Int32 = -1
@@ -68,14 +68,14 @@ final class QUnbufferedChan<T>: Chan<T>
     {
       switch reader.sem.state
       {
-      case .Pointer:
-        reader.sem.setState(.Done)
+      case .pointer:
+        reader.sem.setState(.done)
         reader.sem.signal()
 
-      case .WaitSelect:
-        if reader.sem.setState(.Invalidated) { reader.sem.signal() }
+      case .waitSelect:
+        if reader.sem.setState(.invalidated) { reader.sem.signal() }
 
-      case .Select, .DoubleSelect, .Invalidated, .Done:
+      case .select, .doubleSelect, .invalidated, .done:
         continue
 
       default:
@@ -86,14 +86,14 @@ final class QUnbufferedChan<T>: Chan<T>
     {
       switch writer.sem.state
       {
-      case .Pointer:
-        writer.sem.setState(.Done)
+      case .pointer:
+        writer.sem.setState(.done)
         writer.sem.signal()
 
-      case .WaitSelect:
-        if writer.sem.setState(.Invalidated) { writer.sem.signal() }
+      case .waitSelect:
+        if writer.sem.setState(.invalidated) { writer.sem.signal() }
 
-      case .Select, .DoubleSelect, .Invalidated, .Done:
+      case .select, .doubleSelect, .invalidated, .done:
         continue
 
       default:
@@ -113,7 +113,8 @@ final class QUnbufferedChan<T>: Chan<T>
     - parameter element: the new element to be added to the channel.
   */
 
-  override func put(newElement: T) -> Bool
+  @discardableResult
+  override func put(_ newElement: T) -> Bool
   {
     if closed { return false }
 
@@ -124,23 +125,23 @@ final class QUnbufferedChan<T>: Chan<T>
     { // there is already an interested reader
       switch reader.sem.state
       {
-      case .Pointer:
+      case .pointer:
         OSSpinLockUnlock(&lock)
         // attach a new copy of our data to the reader's semaphore
-        UnsafeMutablePointer<T>(reader.sem.pointer).initialize(newElement)
+        reader.sem.pointer!.assumingMemoryBound(to: T.self).initialize(to: newElement)
         reader.sem.signal()
         return true
 
-      case .WaitSelect:
-        if reader.sem.setState(.DoubleSelect)
+      case .waitSelect:
+        if reader.sem.setState(.doubleSelect)
         { // pass the data on to an extract()
           OSSpinLockUnlock(&lock)
-          let buffer = UnsafeMutablePointer<T>.alloc(1)
-          buffer.initialize(newElement)
+          let buffer = UnsafeMutablePointer<T>.allocate(capacity: 1)
+          buffer.initialize(to: newElement)
           // buffer will be cleaned up in the .DoubleSelect case of extract()
 
           reader.sem.selection = reader.sel.withSemaphore(reader.sem)
-          reader.sem.pointer = UnsafeMutablePointer(buffer)
+          reader.sem.pointer = UnsafeMutableRawPointer(buffer)
           reader.sem.signal()
 
           // the data was passed on; we assume it was successful.
@@ -148,7 +149,7 @@ final class QUnbufferedChan<T>: Chan<T>
           return true
         }
 
-      case .Select, .DoubleSelect, .Invalidated, .Done:
+      case .select, .doubleSelect, .invalidated, .done:
         continue
 
       default:
@@ -164,7 +165,7 @@ final class QUnbufferedChan<T>: Chan<T>
 
     // make our data available for a reader
     let threadLock = ChannelSemaphore()
-    threadLock.setState(.Pointer)
+    threadLock.setState(.pointer)
     threadLock.setPointer(&element)
     writerQueue.enqueue(QueuedSemaphore(threadLock))
     OSSpinLockUnlock(&lock)
@@ -173,11 +174,11 @@ final class QUnbufferedChan<T>: Chan<T>
     // got awoken
     switch threadLock.state
     {
-    case .Done:
+    case .done:
       // thread was awoken by close() and put() has failed
       return false
 
-    case .Pointer:
+    case .pointer:
       assert(threadLock.pointer == &element)
       // the message was succesfully passed.
       return threadLock.pointer == &element
@@ -206,33 +207,33 @@ final class QUnbufferedChan<T>: Chan<T>
     { // data is already available
       switch writer.sem.state
       {
-      case .Pointer:
+      case .pointer:
         OSSpinLockUnlock(&lock)
-        let element = UnsafeMutablePointer<T>(writer.sem.pointer).memory
+        let element = writer.sem.pointer!.assumingMemoryBound(to: T.self).pointee
         writer.sem.signal()
         return element
 
-      case .WaitSelect:
-        if writer.sem.setState(.Select)
+      case .waitSelect:
+        if writer.sem.setState(.select)
         { // get data from an insert()
           OSSpinLockUnlock(&lock)
           let threadLock = ChannelSemaphore()
-          let buffer = UnsafeMutablePointer<T>.alloc(1)
-          defer { buffer.dealloc(1) }
-          threadLock.setState(.Pointer)
-          threadLock.pointer = UnsafeMutablePointer(buffer)
+          let buffer = UnsafeMutablePointer<T>.allocate(capacity: 1)
+          defer { buffer.deallocate(capacity: 1) }
+          threadLock.setState(.pointer)
+          threadLock.pointer = UnsafeMutableRawPointer(buffer)
           writer.sem.selection = writer.sel.withSemaphore(threadLock)
           writer.sem.signal()
           threadLock.wait()
 
           // got awoken by insert()
-          assert(threadLock.state == .Pointer && threadLock.pointer == UnsafeMutablePointer<Void>(buffer),
+          assert(threadLock.state == .pointer && threadLock.pointer == UnsafeMutableRawPointer(buffer),
                  "Unexpected Semaphore state \(threadLock.state) in \(#function)")
 
           return buffer.move()
         }
 
-      case .Select, .DoubleSelect, .Invalidated, .Done:
+      case .select, .doubleSelect, .invalidated, .done:
          continue
 
       default:
@@ -248,10 +249,10 @@ final class QUnbufferedChan<T>: Chan<T>
 
     // wait for data from a writer
     let threadLock = ChannelSemaphore()
-    let buffer = UnsafeMutablePointer<T>.alloc(1)
-    defer { buffer.dealloc(1) }
-    threadLock.setState(.Pointer)
-    threadLock.pointer = UnsafeMutablePointer(buffer)
+    let buffer = UnsafeMutablePointer<T>.allocate(capacity: 1)
+    defer { buffer.deallocate(capacity: 1) }
+    threadLock.setState(.pointer)
+    threadLock.pointer = UnsafeMutableRawPointer(buffer)
     readerQueue.enqueue(QueuedSemaphore(threadLock))
     OSSpinLockUnlock(&lock)
     threadLock.wait()
@@ -259,11 +260,11 @@ final class QUnbufferedChan<T>: Chan<T>
     // got awoken
     switch threadLock.state
     {
-    case .Done:
+    case .done:
       // thread was awoken by close(): no more data on the channel.
       return nil
 
-    case .Pointer where threadLock.pointer == UnsafeMutablePointer<Void>(buffer):
+    case .pointer where threadLock.pointer == UnsafeMutableRawPointer(buffer):
       return buffer.move()
 
     case let state: // default
@@ -273,15 +274,15 @@ final class QUnbufferedChan<T>: Chan<T>
 
   // MARK: SelectableChannelType methods
 
-  override func insert(selection: Selection, newElement: T) -> Bool
+  override func insert(_ selection: Selection, newElement: T) -> Bool
   {
     if let rs = selection.semaphore
     {
       switch rs.state
       {
-      case .Pointer, .DoubleSelect:
+      case .pointer, .doubleSelect:
         // attach a new copy of our data to the reader's semaphore
-        UnsafeMutablePointer<T>(rs.pointer).initialize(newElement)
+        rs.pointer!.assumingMemoryBound(to: T.self).initialize(to: newElement)
         rs.signal()
         return true
 
@@ -293,15 +294,15 @@ final class QUnbufferedChan<T>: Chan<T>
     return false
   }
 
-  override func selectPut(select: ChannelSemaphore, selection: Selection)
+  override func selectPut(_ select: ChannelSemaphore, selection: Selection)
   {
     OSSpinLockLock(&lock)
     while let reader = readerQueue.dequeue()
     {
       switch reader.sem.state
       {
-      case .Pointer:
-        if select.setState(.Select)
+      case .pointer:
+        if select.setState(.select)
         {
           OSSpinLockUnlock(&lock)
           select.selection = selection.withSemaphore(reader.sem)
@@ -314,21 +315,21 @@ final class QUnbufferedChan<T>: Chan<T>
         }
         return
 
-      case .WaitSelect:
-        if select.setState(.Select)
+      case .waitSelect:
+        if select.setState(.select)
         {
           OSSpinLockUnlock(&lock)
-          if reader.sem.setState(.DoubleSelect)
+          if reader.sem.setState(.doubleSelect)
           {
             reader.sem.selection = reader.sel.withSemaphore(reader.sem)
-            reader.sem.setPointer(UnsafeMutablePointer<T>.alloc(1))
+            reader.sem.setPointer(UnsafeMutablePointer<T>.allocate(capacity: 1))
 
             select.selection = selection.withSemaphore(reader.sem)
             select.signal()
           }
           else
           { // failed to get both semaphores in the appropriate state at the same time
-            select.setState(.Done)
+            select.setState(.done)
             select.signal()
           }
         }
@@ -339,7 +340,7 @@ final class QUnbufferedChan<T>: Chan<T>
         }
         return
 
-      case .Select, .DoubleSelect, .Invalidated, .Done:
+      case .select, .doubleSelect, .invalidated, .done:
         continue
 
       default:
@@ -350,7 +351,7 @@ final class QUnbufferedChan<T>: Chan<T>
     if closed
     {
       OSSpinLockUnlock(&lock)
-      if select.setState(.Invalidated)
+      if select.setState(.invalidated)
       {
         select.signal()
       }
@@ -362,24 +363,24 @@ final class QUnbufferedChan<T>: Chan<T>
     OSSpinLockUnlock(&lock)
   }
 
-  override func extract(selection: Selection) -> T?
+  override func extract(_ selection: Selection) -> T?
   {
     if let ws = selection.semaphore
     {
       switch ws.state
       {
-      case .Pointer:
-        let element = UnsafeMutablePointer<T>(ws.pointer).memory
+      case .pointer:
+        let element = ws.pointer!.assumingMemoryBound(to: T.self).pointee
         ws.signal()
         return element
 
-      case .DoubleSelect:
-        let pointer = UnsafeMutablePointer<T>(ws.pointer)
+      case .doubleSelect:
+        let pointer = ws.pointer!.assumingMemoryBound(to: T.self)
         let element = pointer.move()
-        pointer.dealloc(1)
+        pointer.deallocate(capacity: 1)
         ws.pointer = nil
         ws.selection = nil
-        ws.setState(.Done)
+        ws.setState(.done)
         return element
 
       case let state: // default
@@ -390,15 +391,15 @@ final class QUnbufferedChan<T>: Chan<T>
     return nil
   }
 
-  override func selectGet(select: ChannelSemaphore, selection: Selection)
+  override func selectGet(_ select: ChannelSemaphore, selection: Selection)
   {
     OSSpinLockLock(&lock)
     while let writer = writerQueue.dequeue()
     {
       switch writer.sem.state
       {
-      case .Pointer:
-        if select.setState(.Select)
+      case .pointer:
+        if select.setState(.select)
         {
           OSSpinLockUnlock(&lock)
           select.selection = selection.withSemaphore(writer.sem)
@@ -411,21 +412,21 @@ final class QUnbufferedChan<T>: Chan<T>
         }
         return
 
-      case .WaitSelect:
-        if select.setState(.DoubleSelect)
+      case .waitSelect:
+        if select.setState(.doubleSelect)
         {
           OSSpinLockUnlock(&lock)
-          if writer.sem.setState(.Select)
+          if writer.sem.setState(.select)
           { // prepare select
             select.selection = selection.withSemaphore(select)
-            select.setPointer(UnsafeMutablePointer<T>.alloc(1))
+            select.setPointer(UnsafeMutablePointer<T>.allocate(capacity: 1))
 
             writer.sem.selection = writer.sel.withSemaphore(select)
             writer.sem.signal()
           }
           else
           { // failed to get both semaphores in the right state at the same time
-            select.setState(.Done)
+            select.setState(.done)
             select.signal()
           }
         }
@@ -436,7 +437,7 @@ final class QUnbufferedChan<T>: Chan<T>
         }
         return
 
-      case .Select, .DoubleSelect, .Invalidated, .Done:
+      case .select, .doubleSelect, .invalidated, .done:
         continue
 
       default:
@@ -447,7 +448,7 @@ final class QUnbufferedChan<T>: Chan<T>
     if closed
     {
       OSSpinLockUnlock(&lock)
-      if select.setState(.Invalidated)
+      if select.setState(.invalidated)
       {
         select.signal()
       }

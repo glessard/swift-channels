@@ -18,11 +18,11 @@ import Darwin
 
 struct MachSemaphorePool
 {
-  static private let capacity = 256
-  static private let buffer = UnsafeMutablePointer<semaphore_t>.alloc(capacity)
-  static private var cursor = 0
+  static fileprivate let capacity = 256
+  static fileprivate let buffer = UnsafeMutablePointer<semaphore_t>.allocate(capacity: capacity)
+  static fileprivate var cursor = 0
 
-  static private var lock = OS_SPINLOCK_INIT
+  static fileprivate var lock = OS_SPINLOCK_INIT
 
   /**
     Return a `semaphore_t` to the reuse pool.
@@ -31,13 +31,12 @@ struct MachSemaphorePool
     - parameter s: A `semaphore_t` to return to the reuse pool.
   */
 
-  static func Return(s: semaphore_t)
+  static func Return(_ s: semaphore_t)
   {
     precondition(s != 0, "Attempted to return a nonexistent semaphore_t in \(#function)")
 
     // reset the semaphore's count to zero if it is greater than zero.
-    while case let kr = semaphore_timedwait(s, mach_timespec_t(tv_sec: 0,tv_nsec: 0))
-    where kr != KERN_OPERATION_TIMED_OUT
+    while case let kr = semaphore_timedwait(s, mach_timespec_t(tv_sec: 0,tv_nsec: 0)), kr != KERN_OPERATION_TIMED_OUT
     {
       guard kr == KERN_SUCCESS || kr == KERN_ABORTED else
       { fatalError("\(kr) in \(#function)") }
@@ -87,7 +86,9 @@ struct MachSemaphorePool
   }
 }
 
-@inline(__always) func CAS(o: UInt32, _ n: UInt32, _ p: UnsafeMutablePointer<UInt32>) -> Bool
+@inline(__always) func CAS(_ o: UInt32, _ n: UInt32, _ p: UnsafeMutablePointer<UInt32>) -> Bool
 {
-  return OSAtomicCompareAndSwap32Barrier(unsafeBitCast(o, Int32.self), unsafeBitCast(n, Int32.self), UnsafeMutablePointer(p))
+  return p.withMemoryRebound(to: Int32.self, capacity: 1) {
+    OSAtomicCompareAndSwap32Barrier(Int32(bitPattern: o), Int32(bitPattern: n), $0)
+  }
 }

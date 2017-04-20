@@ -44,7 +44,7 @@ public protocol Selectable: class
     - parameter `selection`: a `Selection` instance that identifies this object to the `select_chan()` function.
   */
 
-  func selectNotify(select: ChannelSemaphore, selection: Selection)
+  func selectNotify(_ select: ChannelSemaphore, selection: Selection)
 
   /**
     If it makes no sense to invoke the `selectNotify()` method at this time, return `false`.
@@ -68,25 +68,25 @@ func ~= <S1: Selectable>(pattern: S1, selection: Selection) -> Bool
 
 protocol SelectableChannelType: ChannelType
 {
-  func selectGet(select: ChannelSemaphore, selection: Selection)
-  func extract(selection: Selection) -> Element?
+  func selectGet(_ select: ChannelSemaphore, selection: Selection)
+  func extract(_ selection: Selection) -> Element?
 
-  func selectPut(select: ChannelSemaphore, selection: Selection)
-  func insert(selection: Selection, newElement: Element) -> Bool
+  func selectPut(_ select: ChannelSemaphore, selection: Selection)
+  @discardableResult func insert(_ selection: Selection, newElement: Element) -> Bool
 }
 
 // MARK: SelectableReceiverType
 
 public protocol SelectableReceiverType: ReceiverType, Selectable
 {
-  func extract(selection: Selection) -> ReceivedElement?
+  func extract(_ selection: Selection) -> ReceivedElement?
 }
 
 // MARK: SelectableSenderType
 
 public protocol SelectableSenderType: SenderType, Selectable
 {
-  func insert(selection: Selection, newElement: SentElement) -> Bool
+  @discardableResult func insert(_ selection: Selection, newElement: SentElement) -> Bool
 }
 
 
@@ -111,7 +111,7 @@ public struct Selection
     semaphore = nil
   }
 
-  public func withSemaphore(semaphore: ChannelSemaphore) -> Selection
+  public func withSemaphore(_ semaphore: ChannelSemaphore) -> Selection
   {
     return Selection(id: self.id, semaphore: semaphore)
   }

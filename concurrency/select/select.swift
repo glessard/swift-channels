@@ -14,7 +14,7 @@
   - returns: a Selection that contains a `Selectable` along with possible parameters.
 */
 
-public func select_chan(options: Selectable...) -> Selection?
+public func select_chan(_ options: Selectable...) -> Selection?
 {
   return select_chan(options, withDefault: nil)
 }
@@ -30,7 +30,7 @@ public func select_chan(options: Selectable...) -> Selection?
   - returns: a `Selection` that contains a `Selectable` along with possible parameters.
 */
 
-public func select_chan(options: [Selectable], preventBlocking: Bool) -> Selection?
+public func select_chan(_ options: [Selectable], preventBlocking: Bool) -> Selection?
 {
   switch preventBlocking
   {
@@ -63,25 +63,25 @@ public func select_chan(options: [Selectable], preventBlocking: Bool) -> Selecti
   - returns: a `Selection` that contains a `Selectable` along with a possible `ChannelSemaphore`.
 */
 
-public func select_chan(options: [Selectable], withDefault: Selectable? = nil) -> Selection?
+public func select_chan(_ options: [Selectable], withDefault: Selectable? = nil) -> Selection?
 {
   let semaphore = ChannelSemaphore()
-  semaphore.setState(.WaitSelect)
+  semaphore.setState(.waitSelect)
 
   var selectables = 0
   for option in options.shuffled() where option.selectable
   {
     option.selectNotify(semaphore, selection: Selection(id: option))
     selectables += 1
-    guard semaphore.state == .WaitSelect else { break }
+    guard semaphore.state == .waitSelect else { break }
   }
   if selectables == 0
   { // nothing left to do
-    semaphore.setState(.Done)
+    semaphore.setState(.done)
     return nil
   }
 
-  if let def = withDefault where semaphore.setState(.Invalidated)
+  if let def = withDefault, semaphore.setState(.invalidated)
   {
     return Selection(id: def)
   }
@@ -91,16 +91,16 @@ public func select_chan(options: [Selectable], withDefault: Selectable? = nil) -
   let selection: Selection
   switch semaphore.state
   {
-  case .Select:
+  case .select:
     selection = semaphore.selection
     semaphore.selection = nil
-    semaphore.setState(.Done)
+    semaphore.setState(.done)
 
-  case .DoubleSelect:
+  case .doubleSelect:
     // this is specific to the extract() side of a double select.
     selection = semaphore.selection
 
-  case .Done:
+  case .done:
     selection = Selection(id: sink)
 
   case let state: // default

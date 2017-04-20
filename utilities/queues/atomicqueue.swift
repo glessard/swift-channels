@@ -14,7 +14,7 @@
 
 #if os(OSX)
 
-typealias QueueHead = COpaquePointer
+typealias QueueHead = OpaquePointer
 
 func AtomicQueueInit() -> QueueHead
 {
@@ -29,18 +29,18 @@ func AtomicQueueInit() -> QueueHead
   //    int	 opaque3;
   //  } __attribute__ ((aligned (16))) OSFifoQueueHead;
 
-  let h = UnsafeMutablePointer<Int>.alloc(4)
+  let h = UnsafeMutablePointer<Int>.allocate(capacity: 4)
   for i in 0..<4
   {
-    h.advancedBy(i).memory = 0
+    h.advanced(by: i).pointee = 0
   }
 
-  return COpaquePointer(h)
+  return OpaquePointer(h)
 }
 
-func AtomicQueueRelease(h: QueueHead)
+func AtomicQueueRelease(_ h: QueueHead)
 {
-  UnsafeMutablePointer<Int>(h).dealloc(4)
+  UnsafeMutablePointer<Int>(h).deallocate(capacity: 4)
 }
 
 #endif
@@ -50,7 +50,7 @@ func AtomicQueueRelease(h: QueueHead)
   have its definition from Swift. See libkern/OSAtomic.h
 */
 
-typealias StackHead = COpaquePointer
+typealias StackHead = OpaquePointer
 
 func AtomicStackInit() -> StackHead
 {
@@ -60,16 +60,16 @@ func AtomicStackInit() -> StackHead
   //    long	 opaque2;
   //  } __attribute__ ((aligned (16))) OSQueueHead;
 
-  let h = UnsafeMutablePointer<Int>.alloc(2)
+  let h = UnsafeMutablePointer<Int>.allocate(capacity: 2)
   for i in 0..<2
   {
-    h.advancedBy(i).memory = 0
+    h.advanced(by: i).pointee = 0
   }
 
-  return COpaquePointer(h)
+  return OpaquePointer(h)
 }
 
-func AtomicStackRelease(h: StackHead)
+func AtomicStackRelease(_ h: StackHead)
 {
-  UnsafeMutablePointer<Int>(h).dealloc(2)
+  UnsafeMutablePointer<Int>(h).deallocate(capacity: 2)
 }

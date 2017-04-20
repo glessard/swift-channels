@@ -15,17 +15,17 @@ import XCTest
 
 class ChannelsExamples: XCTestCase
 {
-  private let q = dispatch_get_global_queue(qos_class_self(), 0)
+  fileprivate let q = DispatchQueue.global(qos: DispatchQoS.QoSClass(rawValue: qos_class_self())!)
 
   func testExample1()
   {
     let (sender, receiver) = Channel<Int>.Make()
 
-    dispatch_async(q) {
+    q.async {
       for i in 1...5
       {
         sender <- i
-        NSThread.sleepForTimeInterval(0.1)
+        Foundation.Thread.sleep(forTimeInterval: 0.1)
       }
       sender.close()
     }
@@ -39,8 +39,8 @@ class ChannelsExamples: XCTestCase
   {
     let (sender, receiver) = Channel<Int>.Make()
 
-    dispatch_async(q) {
-      dispatch_apply(5, self.q) { sender <- $0+1 }
+    q.async {
+      DispatchQueue.concurrentPerform(iterations: 5) { sender <- $0+1 }
       sender.close()
     }
 
@@ -54,10 +54,10 @@ class ChannelsExamples: XCTestCase
     let intReceiver = {
       (limit: Int) -> Receiver<Int> in
       let (tx, rx) = Channel<Int>.Make()
-      dispatch_async(self.q) {
+      self.q.async {
         for i in 0..<limit
         {
-          NSThread.sleepForTimeInterval(0.01)
+          Foundation.Thread.sleep(forTimeInterval: 0.01)
           tx <- i
         }
         print("Closing Int sender")
@@ -69,7 +69,7 @@ class ChannelsExamples: XCTestCase
     let doubleReceiver = {
       (r: Receiver<Int>) -> Receiver<Double> in
       let (tx, rx) = Channel<Double>.Make()
-      dispatch_async(self.q) {
+      self.q.async {
         while let i = <-r
         {
           if i % 7 == 0 { tx <- sin(Double(i)/100) }
@@ -82,7 +82,7 @@ class ChannelsExamples: XCTestCase
     let stringReceiver = {
       (r: Receiver<Double>) -> Receiver<String> in
       let (tx, rx) = Channel<String>.Make()
-      dispatch_async(self.q) {
+      self.q.async {
         while let d = <-r
         {
           tx <- d.description

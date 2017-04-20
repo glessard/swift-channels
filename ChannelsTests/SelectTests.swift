@@ -21,12 +21,12 @@ class SelectUnbufferedTests: XCTestCase
     return (0..<selectableCount).map { _ in Chan<Int>.Make() }
   }
 
-  func getIterations(sleepInterval: NSTimeInterval) -> Int
+  func getIterations(_ sleepInterval: TimeInterval) -> Int
   {
     return sleepInterval < 0 ? ChannelsTests.performanceTestIterations : 100
   }
 
-  func SelectReceiverTest(sleepInterval sleepInterval: NSTimeInterval = -1)
+  func SelectReceiverTest(sleepInterval: TimeInterval = -1)
   {
     let iterations = getIterations(sleepInterval)
 
@@ -39,11 +39,11 @@ class SelectUnbufferedTests: XCTestCase
       {
         for i in 0..<iterations
         {
-          NSThread.sleepForTimeInterval(sleepInterval)
+          Foundation.Thread.sleep(forTimeInterval: sleepInterval)
           let index = Int(arc4random_uniform(UInt32(senders.count)))
           senders[index] <- i
         }
-        NSThread.sleepForTimeInterval(sleepInterval > 0 ? sleepInterval : 1e-6)
+        Foundation.Thread.sleep(forTimeInterval: sleepInterval > 0 ? sleepInterval : 1e-6)
         for sender in senders { sender.close() }
       }
       else
@@ -53,7 +53,7 @@ class SelectUnbufferedTests: XCTestCase
           let sender = senders[i]
           let messages = iterations/senders.count + ((i < iterations%senders.count) ? 1:0)
 
-          dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
+          DispatchQueue.global(qos: DispatchQoS.QoSClass(rawValue: qos_class_self())!).async {
             for m in 0..<messages
             {
               sender.send(m)
@@ -80,7 +80,7 @@ class SelectUnbufferedTests: XCTestCase
 
   func testPerformanceSelectReceiver()
   {
-    self.measureBlock {
+    self.measure {
       self.SelectReceiverTest()
     }
   }
@@ -91,7 +91,7 @@ class SelectUnbufferedTests: XCTestCase
   }
 
 
-  func SelectSenderTest(sleepInterval sleepInterval: NSTimeInterval = -1)
+  func SelectSenderTest(sleepInterval: TimeInterval = -1)
   {
     let iterations = getIterations(sleepInterval)
 
@@ -121,25 +121,25 @@ class SelectUnbufferedTests: XCTestCase
       while let _ = receiver.receive()
       {
         m += 1
-        NSThread.sleepForTimeInterval(sleepInterval)
+        Foundation.Thread.sleep(forTimeInterval: sleepInterval)
       }
     }
     else
     {
       let result = Channel<Int>.Make(channels.count)
 
-      let g = dispatch_group_create()
-      let q = dispatch_get_global_queue(qos_class_self(), 0)
+      let g = DispatchGroup()
+      let q = DispatchQueue.global(qos: DispatchQoS.QoSClass(rawValue: qos_class_self())!)
       for i in 0..<channels.count
       {
         let receiver = receivers[i]
-        dispatch_group_async(g, q) {
+        q.async(group: g) {
           var i = 0
           while let _ = receiver.receive() { i += 1 }
           result.tx <- i
         }
       }
-      dispatch_group_notify(g, q) { result.tx.close() }
+      g.notify(queue: q) { result.tx.close() }
 
       while let count = <-result.rx { m += count }
     }
@@ -149,7 +149,7 @@ class SelectUnbufferedTests: XCTestCase
 
   func testPerformanceSelectSender()
   {
-    self.measureBlock {
+    self.measure {
       self.SelectSenderTest()
     }
   }
@@ -159,11 +159,11 @@ class SelectUnbufferedTests: XCTestCase
     SelectSenderTest(sleepInterval: 0.01)
   }
 
-  private enum Sleeper { case Receiver; case Sender; case None }
+  fileprivate enum Sleeper { case receiver; case sender; case none }
 
-  private func DoubleSelectTest(sleeper sleeper: Sleeper)
+  fileprivate func DoubleSelectTest(sleeper: Sleeper)
   {
-    let sleepInterval = (sleeper == .None) ? -1.0 : 0.01
+    let sleepInterval = (sleeper == .none) ? -1.0 : 0.01
     let iterations = getIterations(sleepInterval)
 
     let channels  = MakeChannels()
@@ -181,7 +181,7 @@ class SelectUnbufferedTests: XCTestCase
           if sender.insert(selection, newElement: i)
           {
             i += 1
-            if sleeper == .Sender { NSThread.sleepForTimeInterval(sleepInterval) }
+            if sleeper == .sender { Foundation.Thread.sleep(forTimeInterval: sleepInterval) }
             if i >= iterations { break }
           }
         }
@@ -199,7 +199,7 @@ class SelectUnbufferedTests: XCTestCase
         if let _ = receiver.extract(selection)
         {
           i += 1
-          if sleeper == .Receiver { NSThread.sleepForTimeInterval(sleepInterval) }
+          if sleeper == .receiver { Foundation.Thread.sleep(forTimeInterval: sleepInterval) }
         }
       }
     }
@@ -209,19 +209,19 @@ class SelectUnbufferedTests: XCTestCase
 
   func testPerformanceDoubleSelect()
   {
-    self.measureBlock {
-      self.DoubleSelectTest(sleeper: .None)
+    self.measure {
+      self.DoubleSelectTest(sleeper: .none)
     }
   }
 
   func testDoubleSelectSlowGet()
   {
-    DoubleSelectTest(sleeper: .Receiver)
+    DoubleSelectTest(sleeper: .receiver)
   }
 
   func testDoubleSelectSlowPut()
   {
-    DoubleSelectTest(sleeper: .Sender)
+    DoubleSelectTest(sleeper: .sender)
   }
 
   func testSelectAndCloseReceivers()
@@ -230,8 +230,8 @@ class SelectUnbufferedTests: XCTestCase
     let senders   = channels.map { Sender(channelType: $0) }
     let receivers = channels.map { Receiver(channelType: $0) }
 
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 10_000_000),
-                   dispatch_get_global_queue(qos_class_self(), 0)) {
+    let q = DispatchQueue.global(qos: DispatchQoS.QoSClass(rawValue: qos_class_self())!)
+    q.asyncAfter(deadline: DispatchTime.now() + Double(10_000_000) / Double(NSEC_PER_SEC)) {
         _ in
         for sender in senders { sender.close() }
     }
@@ -251,8 +251,8 @@ class SelectUnbufferedTests: XCTestCase
     let channels  = MakeChannels()
     let senders   = channels.map { Sender(channelType: $0) }
 
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 10_000_000),
-                   dispatch_get_global_queue(qos_class_self(), 0)) {
+    let q = DispatchQueue.global(qos: DispatchQoS.QoSClass(rawValue: qos_class_self())!)
+    q.asyncAfter(deadline: DispatchTime.now() + Double(10_000_000) / Double(NSEC_PER_SEC)) {
       _ in
       for sender in senders { sender.close() }
     }

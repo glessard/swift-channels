@@ -10,7 +10,7 @@
   Factory functions to create Sender and Receiver pairs linked by a channel.
 */
 
-public class Channel<T>
+open class Channel<T>
 {
   /**
     Factory function to obtain a new, unbuffered `Chan<T>` object (channel capacity = 0),
@@ -19,7 +19,7 @@ public class Channel<T>
     - returns: newly-created, paired `Sender<T>` and `Receiver<T>`.
   */
 
-  public class func Make() -> (tx: Sender<T>, rx: Receiver<T>)
+  open class func Make() -> (tx: Sender<T>, rx: Receiver<T>)
   {
     return Make(0)
   }
@@ -32,7 +32,7 @@ public class Channel<T>
     - returns: newly-created, paired `Sender<T>` and `Receiver<T>`.
   */
 
-  public class func Make(capacity: Int) -> (tx: Sender<T>, rx: Receiver<T>)
+  open class func Make(_ capacity: Int) -> (tx: Sender<T>, rx: Receiver<T>)
   {
     return Wrap(Chan.Make(capacity))
   }
@@ -44,7 +44,7 @@ public class Channel<T>
     - returns: newly-created, paired `Sender<T>` and `Receiver<T>`.
   */
 
-  public class func Wrap(c: Chan<T>) -> (tx: Sender<T>, rx: Receiver<T>)
+  open class func Wrap(_ c: Chan<T>) -> (tx: Sender<T>, rx: Receiver<T>)
   {
     return (Sender(c), Receiver(c))
   }
@@ -56,7 +56,8 @@ public class Channel<T>
     - returns: newly-created, paired `Sender` and `Receiver`.
   */
 
-  class func Wrap<C: SelectableChannelType where C.Element == T>(c: C) -> (tx: Sender<T>, rx: Receiver<T>)
+  class func Wrap<C: SelectableChannelType>(_ c: C) -> (tx: Sender<T>, rx: Receiver<T>)
+    where C.Element == T
   {
     return (Sender(channelType: c), Receiver(channelType: c))
   }

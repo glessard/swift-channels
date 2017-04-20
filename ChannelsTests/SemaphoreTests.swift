@@ -17,7 +17,8 @@ class ChannelSemaphoreTest: XCTestCase
   {
     let s = ChannelSemaphore()
 
-    dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
+    let q = DispatchQueue.global(qos: DispatchQoS.QoSClass(rawValue: qos_class_self())!)
+    q.async {
       s.wait()
     }
 

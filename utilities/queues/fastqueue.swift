@@ -6,69 +6,51 @@
 //  Copyright (c) 2014 Guillaume Lessard. All rights reserved.
 //
 
-import Darwin
-
 final class FastQueue<T>: QueueType
 {
-  private var head: UnsafeMutablePointer<Node<T>> = nil
-  private var tail: UnsafeMutablePointer<Node<T>> = nil
+  private var head: QueueNode<T>? = nil
+  private var tail: QueueNode<T>! = nil
 
-  private let pool = AtomicStackInit()
-
-  // MARK: init/deinit
+  private let pool = AtomicStack<QueueNode<T>>()
 
   init() { }
-
-  convenience init(_ newElement: T)
-  {
-    self.init()
-    enqueue(newElement)
-  }
 
   deinit
   {
     // empty the queue
-    while head != nil
+    while let node = head
     {
-      let node = head
-      head = node.memory.next
-      node.destroy()
-      node.dealloc(1)
+      head = node.next
+      node.deinitialize()
+      node.deallocate()
     }
 
     // drain the pool
-    while UnsafePointer<COpaquePointer>(pool).memory != nil
+    while let node = pool.pop()
     {
-      UnsafeMutablePointer<Node<T>>(OSAtomicDequeue(pool, 0)).dealloc(1)
+      node.deallocate()
     }
     // release the pool stack structure
-    AtomicStackRelease(pool)
+    pool.release()
   }
-
-  // MARK: QueueType interface
 
   var isEmpty: Bool { return head == nil }
 
   var count: Int {
-    // Not thread safe.
     var i = 0
     var node = head
-    while node != nil
+    while let current = node
     { // Iterate along the linked nodes while counting
-      node = node.memory.next
+      node = current.next
       i += 1
     }
     return i
   }
 
-  func enqueue(newElement: T)
+  func enqueue(_ newElement: T)
   {
-    var node = UnsafeMutablePointer<Node<T>>(OSAtomicDequeue(pool, 0))
-    if node == nil
-    {
-      node = UnsafeMutablePointer<Node<T>>.alloc(1)
-    }
-    node.initialize(Node(newElement))
+    let node = pool.pop() ?? QueueNode()
+    node.initialize(to: newElement)
 
     if head == nil
     {
@@ -77,19 +59,15 @@ final class FastQueue<T>: QueueType
     }
     else
     {
-      tail.memory.next = node
+      tail.next = node
       tail = node
     }
   }
 
-  func undequeue(oldElement: T)
+  func undequeue(_ oldElement: T)
   {
-    var node = UnsafeMutablePointer<Node<T>>(OSAtomicDequeue(pool, 0))
-    if node == nil
-    {
-      node = UnsafeMutablePointer<Node<T>>.alloc(1)
-    }
-    node.initialize(Node(oldElement))
+    let node = pool.pop() ?? QueueNode()
+    node.initialize(to: oldElement)
 
     if head == nil
     {
@@ -98,39 +76,23 @@ final class FastQueue<T>: QueueType
     }
     else
     {
-      node.memory.next = head
+      node.next = head
       head = node
     }
   }
 
   func dequeue() -> T?
   {
-    let node = head
-    if node != nil
+    if let node = head
     { // Promote the 2nd item to 1st
-      head = node.memory.next
+      head = node.next
 
-      let element = node.memory.elem
-      node.destroy()
-      OSAtomicEnqueue(pool, node, 0)
+      let element = node.move()
+      pool.push(node)
       return element
     }
+
+    // queue is empty
     return nil
-  }
-}
-
-private struct Node<T>
-{
-  var nptr: UnsafeMutablePointer<Void> = nil
-  let elem: T
-
-  init(_ e: T)
-  {
-    elem = e
-  }
-
-  var next: UnsafeMutablePointer<Node<T>> {
-    get { return UnsafeMutablePointer(nptr) }
-    set { nptr = UnsafeMutablePointer(newValue) }
   }
 }

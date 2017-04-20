@@ -24,12 +24,12 @@ class TimeoutTests: XCTestCase
   {
     let start = mach_absolute_time()*UInt64(scale.numer)/UInt64(scale.denom)
 
-    let time1 = dispatch_time(DISPATCH_TIME_NOW, delay)
+    let time1 = DispatchTime.now() + Double(delay) / Double(NSEC_PER_SEC)
     let rx1 = Timeout(time1)
     XCTAssert(rx1.isEmpty)
     XCTAssert(rx1.isClosed == false)
     <-rx1
-    let time2 = dispatch_time(DISPATCH_TIME_NOW, 0)
+    let time2 = DispatchTime.now() + Double(0) / Double(NSEC_PER_SEC)
     XCTAssert(rx1.isClosed)
     XCTAssert(time1 <= time2)
 
@@ -103,7 +103,7 @@ class SinkTests: XCTestCase
     let k = Sink<Int>()
     let s = [k as Selectable]
 
-    if let selection = select_chan(s) where selection.id === k
+    if let selection = select_chan(s), selection.id === k
     {
       let success = k.insert(selection, newElement: 0)
       XCTAssert(success)
@@ -124,7 +124,7 @@ class EmptyChanTests: XCTestCase
     }
 
     let s = [r as Selectable]
-    if let selection = select_chan(s) where selection.id === r
+    if let selection = select_chan(s), selection.id === r
     {
       XCTFail()
     }
@@ -143,7 +143,7 @@ class EmptyChanTests: XCTestCase
     }
 
     let s = [s1 as Selectable]
-    if let selection = select_chan(s) where selection.id === s1
+    if let selection = select_chan(s), selection.id === s1
     {
       XCTFail()
     }

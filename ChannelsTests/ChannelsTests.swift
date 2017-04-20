@@ -44,13 +44,13 @@ class ChannelsTests: XCTestCase
 
   func ChannelTestSendReceive()
   {
-    let (tx, rx) = InstantiateTestChannel(Int)
+    let (tx, rx) = InstantiateTestChannel(Int.self)
     XCTAssert(rx.isEmpty)
 
     let value = Int(arc4random() & 0x7fffffff)
     tx <- value
 
-    XCTAssert(rx.underestimateCount() >= 0)
+    XCTAssert(rx.underestimatedCount >= 0)
     let result = <-rx
 
     XCTAssert(value == result, "Wrong value received from channel " + id)
@@ -68,7 +68,7 @@ class ChannelsTests: XCTestCase
       values.append(Int(arc4random() & 0x7fffffff))
     }
 
-    let (tx, rx) = InstantiateTestChannel(Int)
+    let (tx, rx) = InstantiateTestChannel(Int.self)
     for v in values
     {
       tx <- v
@@ -91,10 +91,10 @@ class ChannelsTests: XCTestCase
 
   func ChannelTestReceiveFirst()
   {
-    let (tx, rx) = InstantiateTestChannel(XCTestExpectation)
-    let expectation = expectationWithDescription(id + " Receive then Send")
+    let (tx, rx) = InstantiateTestChannel(XCTestExpectation.self)
+    let expectation = self.expectation(description: id + " Receive then Send")
 
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+    DispatchQueue.global().async {
       if let x = <-rx
       {
         x.fulfill()
@@ -105,12 +105,12 @@ class ChannelsTests: XCTestCase
       }
     }
 
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+    DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + Double(100_000_000) / Double(NSEC_PER_SEC)) {
       tx <- expectation
       tx.close()
     }
 
-    waitForExpectationsWithTimeout(2.0) { _ in tx.close() }
+    waitForExpectations(timeout: 2.0) { _ in tx.close() }
   }
 
   /**
@@ -120,15 +120,14 @@ class ChannelsTests: XCTestCase
 
   func ChannelTestBlockedReceive()
   {
-    let (tx, rx) = InstantiateTestChannel(Int)
+    let (tx, rx) = InstantiateTestChannel(Int.self)
     let expectations = 3
 
     var valrecd = Int(arc4random() & 0x7fffffff)
     for i in 0..<expectations
     {
-      let expectation = expectationWithDescription(id + " blocked Receive #\(i), verified reception")
-      dispatch_after(dispatch_time(DISPATCH_TIME_NOW, Int64(arc4random_uniform(50_000))),
-        dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+      let expectation = self.expectation(description: id + " blocked Receive #\(i), verified reception")
+      DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + Double(Int64(arc4random_uniform(50_000))) / Double(NSEC_PER_SEC)) {
           while let v = <-rx
           {
             valrecd = v
@@ -138,7 +137,7 @@ class ChannelsTests: XCTestCase
     }
 
     var valsent = Int(arc4random() & 0x7fffffff)
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+    DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + Double(100_000_000) / Double(NSEC_PER_SEC)) {
       XCTAssert(tx.isClosed == false, self.id + " should not be closed")
 
       valsent = Int(arc4random() & 0x7fffffff)
@@ -146,7 +145,7 @@ class ChannelsTests: XCTestCase
       tx.close()
     }
 
-    waitForExpectationsWithTimeout(2.0) { _ in tx.close() }
+    waitForExpectations(timeout: 2.0) { _ in tx.close() }
     XCTAssert(valsent == valrecd, "\(valsent) ≠ \(valrecd) in " + id)
   }
 
@@ -157,15 +156,15 @@ class ChannelsTests: XCTestCase
 
   func ChannelTestSendFirst()
   {
-    let (tx, rx) = InstantiateTestChannel(XCTestExpectation)
-    let expectation = expectationWithDescription(id + " Send then Receive")
+    let (tx, rx) = InstantiateTestChannel(XCTestExpectation.self)
+    let expectation = self.expectation(description: id + " Send then Receive")
 
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+    DispatchQueue.global().async {
       tx <- expectation
       tx.close()
     }
 
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+    DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + Double(100_000_000) / Double(NSEC_PER_SEC)) {
       if let x = <-rx
       {
         x.fulfill()
@@ -176,7 +175,7 @@ class ChannelsTests: XCTestCase
       }
     }
 
-    waitForExpectationsWithTimeout(2.0) { _ in tx.close() }
+    waitForExpectations(timeout: 2.0) { _ in tx.close() }
   }
 
   /**
@@ -185,11 +184,11 @@ class ChannelsTests: XCTestCase
 
   func ChannelTestBlockedSend()
   {
-    let (tx, rx) = InstantiateTestChannel(Int)
-    let expectation = expectationWithDescription(id + " blocked Send, verified reception")
+    let (tx, rx) = InstantiateTestChannel(Int.self)
+    let expectation = self.expectation(description: id + " blocked Send, verified reception")
 
     var valsent = Int(arc4random() & 0x7fffffff)
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+    DispatchQueue.global().async {
       for i in 0..<self.buflen
       {
         tx <- i
@@ -201,17 +200,17 @@ class ChannelsTests: XCTestCase
     }
 
     var valrecd = Int(arc4random() & 0x7fffffff)
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+    DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + Double(100_000_000) / Double(NSEC_PER_SEC)) {
       XCTAssert(tx.isClosed == false, self.id + " should not be closed")
 
-      for (_,v) in rx.enumerate()
+      for (_,v) in rx.enumerated()
       {
         valrecd = v
       }
       expectation.fulfill()
     }
 
-    waitForExpectationsWithTimeout(2.0) { _ in tx.close() }
+    waitForExpectations(timeout: 2.0) { _ in tx.close() }
     XCTAssert(valsent == valrecd, "\(valsent) ≠ \(valrecd) in " + id)
   }
 
@@ -221,12 +220,12 @@ class ChannelsTests: XCTestCase
 
   func ChannelTestNoSender()
   {
-    var (_, rx) = InstantiateTestChannel(Int)
+    var (_, rx) = InstantiateTestChannel(Int.self)
     rx = Receiver.Wrap(rx) // because why not
 
-    let expectation = expectationWithDescription(id + " Receive, no Sender")
+    let expectation = self.expectation(description: id + " Receive, no Sender")
 
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+    DispatchQueue.global().async {
       while let _ = <-rx
       {
         XCTFail(self.id + " should not receive anything")
@@ -234,12 +233,12 @@ class ChannelsTests: XCTestCase
       expectation.fulfill()
     }
 
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+    DispatchQueue.global().asyncAfter(deadline: DispatchTime.now() + Double(100_000_000) / Double(NSEC_PER_SEC)) {
       XCTAssert(rx.isClosed == false, self.id + " channel should be open")
       rx.close()
     }
 
-    waitForExpectationsWithTimeout(2.0) { _ in rx.close() }
+    waitForExpectations(timeout: 2.0) { _ in rx.close() }
   }
 
   /**
@@ -248,12 +247,12 @@ class ChannelsTests: XCTestCase
 
   func ChannelTestNoReceiver()
   {
-    var (tx, _) = InstantiateTestChannel(Void)
+    var (tx, _) = InstantiateTestChannel(Void.self)
     tx = Sender.Wrap(tx) // because why not
 
-    let expectation = expectationWithDescription(id + " Send, no Receiver")
+    let expectation = self.expectation(description: id + " Send, no Receiver")
 
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+    DispatchQueue.global().async {
       for _ in 0...self.buflen
       {
         tx <- ()
@@ -262,12 +261,13 @@ class ChannelsTests: XCTestCase
       expectation.fulfill()
     }
 
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+    DispatchQueue.global(
+      ).asyncAfter(deadline: DispatchTime.now() + Double(100_000_000) / Double(NSEC_PER_SEC)) {
       XCTAssert(tx.isClosed == false, self.id + " channel should be open")
       tx.close()
     }
 
-    waitForExpectationsWithTimeout(2.0) { _ in tx.close() }
+    waitForExpectations(timeout: 2.0) { _ in tx.close() }
   }
 
   /**
@@ -276,8 +276,8 @@ class ChannelsTests: XCTestCase
 
   func ChannelPerformanceNoContention()
   {
-    self.measureBlock() {
-      let (tx, rx) = self.InstantiateTestChannel(Int)
+    self.measure() {
+      let (tx, rx) = self.InstantiateTestChannel(Int.self)
 
       for i in 0..<ChannelsTests.performanceTestIterations
       {
@@ -295,8 +295,8 @@ class ChannelsTests: XCTestCase
 
   func ChannelPerformanceLoopNoContention()
   {
-    self.measureBlock() {
-      let (tx, rx) = self.InstantiateTestChannel(Int)
+    self.measure() {
+      let (tx, rx) = self.InstantiateTestChannel(Int.self)
 
       for _ in 0..<(ChannelsTests.performanceTestIterations/self.buflen)
       {
@@ -316,8 +316,8 @@ class ChannelsTests: XCTestCase
   
   func ChannelPerformanceWithContention()
   {
-    self.measureBlock() {
-      let (tx, rx) = self.InstantiateTestChannel(Int)
+    self.measure() {
+      let (tx, rx) = self.InstantiateTestChannel(Int.self)
       
       async {
         for i in 0..<ChannelsTests.performanceTestIterations
