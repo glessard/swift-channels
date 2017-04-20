@@ -20,20 +20,20 @@ final class SingletonChan<T>: Chan<T>
 {
   // MARK: Private instance variables
 
-  private var element: T? = nil
+  fileprivate var element: T? = nil
 
-  private var writerCount: Int32 = 0
-  private var readerCount: Int32 = 0
+  fileprivate var writerCount: Int32 = 0
+  fileprivate var readerCount: Int32 = 0
 
-  private var barrier = dispatch_group_create()
+  fileprivate var barrier = DispatchGroup()
 
-  private var closedState: Int32 = 0
+  fileprivate var closedState: Int32 = 0
 
   // MARK: Initialization
 
   override init()
   {
-    dispatch_group_enter(barrier)
+    barrier.enter()
   }
 
   convenience init(_ element: T)
@@ -71,7 +71,7 @@ final class SingletonChan<T>: Chan<T>
   {
     if closedState == 0 && OSAtomicCompareAndSwap32Barrier(0, 1, &closedState)
     { // Only one thread can get here
-      dispatch_group_leave(barrier)
+      barrier.leave()
     }
   }
 
@@ -87,7 +87,8 @@ final class SingletonChan<T>: Chan<T>
     - parameter element: the new element to be added to the channel.
   */
 
-  override func put(newElement: T) -> Bool
+  @discardableResult
+  override func put(_ newElement: T) -> Bool
   {
     if writerCount == 0 && closedState == 0 && OSAtomicCompareAndSwap32Barrier(0, 1, &writerCount)
     { // Only one thread can get here
@@ -113,13 +114,13 @@ final class SingletonChan<T>: Chan<T>
   {
     if closedState == 0 && writerCount == 0
     {
-      dispatch_group_wait(barrier, DISPATCH_TIME_FOREVER)
+      _ = barrier.wait(timeout: DispatchTime.distantFuture)
     }
 
     return getElement()
   }
 
-  private func getElement() -> T?
+  fileprivate func getElement() -> T?
   {
     assert(writerCount != 0 || closedState != 0, #function)
     if readerCount == 0 && OSAtomicCompareAndSwap32Barrier(0, 1, &readerCount)
@@ -135,37 +136,37 @@ final class SingletonChan<T>: Chan<T>
 
   // MARK: SelectableChannelType methods
 
-  override func insert(selection: Selection, newElement: T) -> Bool
+  override func insert(_ selection: Selection, newElement: T) -> Bool
   {
     return self.put(newElement)
   }
 
-  override func selectPut(select: ChannelSemaphore, selection: Selection)
+  override func selectPut(_ select: ChannelSemaphore, selection: Selection)
   {
-    if closedState == 0 && writerCount == 0 && select.setState(.Select)
+    if closedState == 0 && writerCount == 0 && select.setState(.select)
     {
       select.selection = selection
       select.signal()
     }
   }
 
-  override func extract(selection: Selection) -> T?
+  override func extract(_ selection: Selection) -> T?
   {
     return getElement()
   }
 
-  override func selectGet(select: ChannelSemaphore, selection: Selection)
+  override func selectGet(_ select: ChannelSemaphore, selection: Selection)
   {
-    if closedState != 0 && select.setState(.Select)
+    if closedState != 0 && select.setState(.select)
     {
       select.selection = selection
       select.signal()
       return
     }
 
-    dispatch_group_notify(barrier, dispatch_get_global_queue(qos_class_self(), 0)) {
+    barrier.notify(queue: DispatchQueue.global(qos: DispatchQoS.current().qosClass)) {
       _ in
-      if select.setState(.Select)
+      if select.setState(.select)
       {
         select.selection = selection
         select.signal()

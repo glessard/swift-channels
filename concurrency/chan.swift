@@ -15,7 +15,7 @@
   of the factory function returns an unbuffered channel.
 */
 
-public class Chan<T>: ChannelType, SelectableChannelType
+open class Chan<T>: ChannelType, SelectableChannelType
 {
   /**
     Initialize a Chan<T>. Explicitly internal, not public.
@@ -33,7 +33,7 @@ public class Chan<T>: ChannelType, SelectableChannelType
     as the empty state could go from false to true at any moment.
   */
 
-  public var isEmpty: Bool { return true }
+  open var isEmpty: Bool { return true }
 
   /**
     Determine whether the channel is full (and can't be written to)
@@ -43,13 +43,13 @@ public class Chan<T>: ChannelType, SelectableChannelType
     as the full state could go from false to true at any moment.
   */
 
-  public var isFull: Bool { return false }
+  open var isFull: Bool { return false }
 
   /**
     Determine whether the channel has been closed
   */
 
-  public var isClosed: Bool { return true }
+  open var isClosed: Bool { return true }
 
   /**
     Close the channel
@@ -61,7 +61,7 @@ public class Chan<T>: ChannelType, SelectableChannelType
     The actual reaction shall be implementation-dependent.
   */
 
-  public func close() { }
+  open func close() { }
 
   /**
     Put a new element in the channel
@@ -73,7 +73,8 @@ public class Chan<T>: ChannelType, SelectableChannelType
     - returns: whether or not the operation was successful.
   */
 
-  public func put(newElement: T) -> Bool
+  @discardableResult
+  open func put(_ newElement: T) -> Bool
   {
     return false
   }
@@ -87,35 +88,36 @@ public class Chan<T>: ChannelType, SelectableChannelType
     - returns: the oldest element from the channel.
   */
 
-  public func get() -> T?
+  open func get() -> T?
   {
     return nil
   }
 
   // MARK: SelectableChannelType interface
 
-  func selectGet(select: ChannelSemaphore, selection: Selection)
+  func selectGet(_ select: ChannelSemaphore, selection: Selection)
   {
-    if select.setState(.Invalidated)
+    if select.setState(.invalidated)
     {
       select.signal()
     }
   }
 
-  func extract(selection: Selection) -> T?
+  func extract(_ selection: Selection) -> T?
   {
     return nil
   }
 
-  func selectPut(select: ChannelSemaphore, selection: Selection)
+  func selectPut(_ select: ChannelSemaphore, selection: Selection)
   {
-    if select.setState(.Invalidated)
+    if select.setState(.invalidated)
     {
       select.signal()
     }
   }
 
-  func insert(selection: Selection, newElement: T) -> Bool
+  @discardableResult
+  func insert(_ selection: Selection, newElement: T) -> Bool
   {
     return false
   }
@@ -130,7 +132,7 @@ public class Chan<T>: ChannelType, SelectableChannelType
     - returns: a newly-created, empty `Chan<T>`
   */
 
-  public static func Make(capacity: Int) -> Chan<T>
+  open static func Make(_ capacity: Int) -> Chan<T>
   {
     switch capacity < 1
     {
@@ -148,7 +150,7 @@ public class Chan<T>: ChannelType, SelectableChannelType
     - returns: a newly-created, empty `Chan<T>`
   */
 
-  public static func Make() -> Chan<T>
+  open static func Make() -> Chan<T>
   {
     return Make(0)
   }
@@ -160,7 +162,7 @@ public class Chan<T>: ChannelType, SelectableChannelType
     - returns: a new single-message `Chan<T>`
   */
 
-  public static func MakeSingleton() -> Chan<T>
+  open static func MakeSingleton() -> Chan<T>
   {
     return SingletonChan()
   }

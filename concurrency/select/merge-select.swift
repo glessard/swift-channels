@@ -21,7 +21,8 @@ import Dispatch
   - returns: a single `Receiver` provide access to get every message received .
 */
 
-public func mergeSelect<R: ReceiverType where R: SelectableReceiverType>(channels: [R]) -> Receiver<R.ReceivedElement>
+public func mergeSelect<R: ReceiverType>(_ channels: [R]) -> Receiver<R.ReceivedElement>
+  where R: SelectableReceiverType
 {
   if channels.count == 0
   { // Not likely to happen, but return a closed channel.
@@ -30,7 +31,7 @@ public func mergeSelect<R: ReceiverType where R: SelectableReceiverType>(channel
 
   let (tx, rx) = Channel<R.ReceivedElement>.Make(channels.count*2)
 
-  dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
+  DispatchQueue.global(qos: DispatchQoS.current().qosClass).async {
     let selectables = channels.map { $0 as Selectable }
     while let selection = select_chan(selectables)
     {

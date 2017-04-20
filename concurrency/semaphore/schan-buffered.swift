@@ -16,20 +16,20 @@ import Dispatch
 
 final class SBufferedChan<T>: Chan<T>
 {
-  private let buffer: UnsafeMutablePointer<T>
+  fileprivate let buffer: UnsafeMutablePointer<T>
 
   // MARK: private housekeeping
 
-  private let capacity: Int
-  private let mask: Int
+  fileprivate let capacity: Int
+  fileprivate let mask: Int
 
-  private var head = 0
-  private var tail = 0
+  fileprivate var head = 0
+  fileprivate var tail = 0
 
-  private let filled: SChanSemaphore
-  private let empty:  SChanSemaphore
+  fileprivate let filled: SChanSemaphore
+  fileprivate let empty:  SChanSemaphore
 
-  private var closed = 0
+  fileprivate var closed = 0
 
   // Used to elucidate/troubleshoot message arrival order
   // private var readerCount: Int32 = -1
@@ -51,7 +51,7 @@ final class SBufferedChan<T>: Chan<T>
     v |= v >> 8
 
     mask = v // buffer size -1
-    buffer = UnsafeMutablePointer.alloc(mask+1)
+    buffer = UnsafeMutablePointer.allocate(capacity: mask+1)
 
     super.init()
   }
@@ -66,10 +66,10 @@ final class SBufferedChan<T>: Chan<T>
     while (tail &- head) > 0
     {
       head += 1
-      buffer.advancedBy(head&mask).destroy()
+      buffer.advanced(by: head&mask).deinitialize()
       empty.signal()
     }
-    buffer.dealloc(mask+1)
+    buffer.deallocate(capacity: mask+1)
   }
 
   // MARK: ChannelType properties
@@ -114,7 +114,8 @@ final class SBufferedChan<T>: Chan<T>
     - parameter element: the new element to be added to the channel.
   */
 
-  final override func put(newElement: T) -> Bool
+  @discardableResult
+  final override func put(_ newElement: T) -> Bool
   {
     if closed != 0 { return false }
 
@@ -123,7 +124,7 @@ final class SBufferedChan<T>: Chan<T>
     if closed == 0
     {
       let newtail = OSAtomicIncrementLongBarrier(&tail)
-      buffer.advancedBy(newtail&mask).initialize(newElement)
+      buffer.advanced(by: newtail&mask).initialize(to: newElement)
 
       filled.signal()
       return true
@@ -153,7 +154,7 @@ final class SBufferedChan<T>: Chan<T>
     let newhead = OSAtomicIncrementLongBarrier(&head)
     if (tail &- newhead) >= 0
     {
-      let element = buffer.advancedBy(newhead&mask).move()
+      let element = buffer.advanced(by: newhead&mask).move()
 
       empty.signal()
       return element
@@ -161,7 +162,7 @@ final class SBufferedChan<T>: Chan<T>
     else
     {
       // assert(closed != 0, #function)
-      OSAtomicDecrementLongBarrier(&head)
+      _ = OSAtomicDecrementLongBarrier(&head)
       filled.signal()
       return nil
     }
@@ -169,13 +170,13 @@ final class SBufferedChan<T>: Chan<T>
 
   // MARK: SelectableChannelType methods
 
-  override func insert(selection: Selection, newElement: T) -> Bool
+  override func insert(_ selection: Selection, newElement: T) -> Bool
   {
     // the `empty` semaphore has already been decremented for this operation.
     let newtail = OSAtomicIncrementLongBarrier(&tail)
     if closed == 0 && newtail &- head <= capacity
     {
-      buffer.advancedBy(newtail&mask).initialize(newElement)
+      buffer.advanced(by: newtail&mask).initialize(to: newElement)
 
       filled.signal()
       return true
@@ -183,13 +184,13 @@ final class SBufferedChan<T>: Chan<T>
     else
     { // This should be very rare. The channel would have to have
       // gotten closed in between the calls to selectPut() and insert().
-      OSAtomicDecrementLongBarrier(&tail)
+      _ = OSAtomicDecrementLongBarrier(&tail)
       empty.signal()
       return false
     }
   }
 
-  override func selectPut(select: ChannelSemaphore, selection: Selection)
+  override func selectPut(_ select: ChannelSemaphore, selection: Selection)
   {
     empty.notify { [weak self] in
       guard let this = self else { return }
@@ -197,7 +198,7 @@ final class SBufferedChan<T>: Chan<T>
       OSMemoryBarrier()
       if this.closed == 0
       {
-        if select.setState(.Select)
+        if select.setState(.select)
         {
           select.selection = selection
           select.signal()
@@ -209,7 +210,7 @@ final class SBufferedChan<T>: Chan<T>
         return
       }
 
-      if select.setState(.Invalidated)
+      if select.setState(.invalidated)
       {
         select.signal()
       }
@@ -217,13 +218,13 @@ final class SBufferedChan<T>: Chan<T>
     }
   }
 
-  override func extract(selection: Selection) -> T?
+  override func extract(_ selection: Selection) -> T?
   {
     // the `filled` semaphore has already been decremented for this operation.
     let newhead = OSAtomicIncrementLongBarrier(&head)
     if (tail &- newhead) >= 0
     {
-      let element = buffer.advancedBy(newhead&mask).move()
+      let element = buffer.advanced(by: newhead&mask).move()
 
       empty.signal()
       return element
@@ -232,13 +233,13 @@ final class SBufferedChan<T>: Chan<T>
     { // This should be very rare. The channel would have to have
       // gotten closed in between the calls to selectGet() and extract().
       // assert(closed != 0, #function)
-      OSAtomicDecrementLongBarrier(&head)
+      _ = OSAtomicDecrementLongBarrier(&head)
       filled.signal()
       return nil
     }
   }
 
-  override func selectGet(select: ChannelSemaphore, selection: Selection)
+  override func selectGet(_ select: ChannelSemaphore, selection: Selection)
   {
     filled.notify { [weak self] in
       guard let this = self else { return }
@@ -246,7 +247,7 @@ final class SBufferedChan<T>: Chan<T>
       OSMemoryBarrier()
       if this.tail &- this.head > 0
       {
-        if select.setState(.Select)
+        if select.setState(.select)
         {
           select.selection = selection
           select.signal()
@@ -259,7 +260,7 @@ final class SBufferedChan<T>: Chan<T>
       }
 
       // assert(this.closed != 0, #function)
-      if select.setState(.Invalidated)
+      if select.setState(.invalidated)
       {
         select.signal()
       }
@@ -268,19 +269,19 @@ final class SBufferedChan<T>: Chan<T>
   }
 }
 
-@inline(__always) private func OSAtomicIncrementLongBarrier(pointer: UnsafeMutablePointer<Int>) -> Int
+@inline(__always) private func OSAtomicIncrementLongBarrier(_ pointer: UnsafeMutablePointer<Int>) -> Int
 {
   #if arch(x86_64) || arch(arm64) // 64-bit architecture
-    return Int(OSAtomicIncrement64Barrier(UnsafeMutablePointer<Int64>(pointer)))
+    return Int(OSAtomicIncrement64Barrier(pointer.withMemoryRebound(to: Int64.self, capacity: 1, { $0 })))
   #else // 32-bit architecture
     return Int(OSAtomicIncrement32Barrier(UnsafeMutablePointer<Int32>(pointer)))
   #endif
 }
 
-@inline(__always) private func OSAtomicDecrementLongBarrier(pointer: UnsafeMutablePointer<Int>) -> Int
+@inline(__always) private func OSAtomicDecrementLongBarrier(_ pointer: UnsafeMutablePointer<Int>) -> Int
 {
   #if arch(x86_64) || arch(arm64) // 64-bit architecture
-    return Int(OSAtomicDecrement64Barrier(UnsafeMutablePointer<Int64>(pointer)))
+    return Int(OSAtomicDecrement64Barrier(pointer.withMemoryRebound(to: Int64.self, capacity: 1, { $0 })))
   #else // 32-bit architecture
     return Int(OSAtomicDecrement32Barrier(UnsafeMutablePointer<Int32>(pointer)))
   #endif

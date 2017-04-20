@@ -12,30 +12,30 @@
   Might not be useful either.
 */
 
-public class Sink<T>: SenderType, SelectableSenderType
+open class Sink<T>: SenderType, SelectableSenderType
 {
-  public var isFull: Bool { return false }
-  public var isClosed: Bool { return false }
+  open var isFull: Bool { return false }
+  open var isClosed: Bool { return false }
 
-  public func close() {}
+  open func close() {}
 
-  public func send(newElement: T) -> Bool
+  open func send(_ newElement: T) -> Bool
   {
     return true
   }
 
-  public var selectable: Bool { return true }
+  open var selectable: Bool { return true }
 
-  public func selectNotify(select: ChannelSemaphore, selection: Selection)
+  open func selectNotify(_ select: ChannelSemaphore, selection: Selection)
   {
-    if select.setState(.Select)
+    if select.setState(.select)
     {
       select.selection = selection
       select.signal()
     }
   }
 
-  public func insert(selection: Selection, newElement: T) -> Bool
+  open func insert(_ selection: Selection, newElement: T) -> Bool
   {
     return true
   }

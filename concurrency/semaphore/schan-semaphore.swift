@@ -10,16 +10,16 @@ import Dispatch
 
 enum WaitType
 {
-  case Wait
-  case Notify(()->Void)
+  case wait
+  case notify(()->Void)
 }
 
 final class SChanSemaphore
 {
   var svalue: Int32
-  private let semp: semaphore_t
+  fileprivate let semp: semaphore_t
 
-  private let waiters = Fast2LockQueue()
+  fileprivate let waiters = Fast2LockQueue<WaitType>()
 
   init(value: Int)
   {
@@ -64,16 +64,16 @@ final class SChanSemaphore
       {
         switch waiter
         {
-        case .Wait:
+        case .wait:
           let kr = semaphore_signal(semp)
           precondition(kr == KERN_SUCCESS)
           return
 
-        case .Notify(let block):
+        case .notify(let block):
           #if false // os(OSX)
             return block()
           #else
-            return dispatch_async(dispatch_get_global_queue(qos_class_self(), 0), block)
+            return DispatchQueue.global(qos: DispatchQoS.current().qosClass).async(execute: block)
           #endif
         }
       }
@@ -87,22 +87,22 @@ final class SChanSemaphore
       return
     }
 
-    waiters.enqueue(.Wait)
+    waiters.enqueue(.wait)
 
-    while case let kr = semaphore_wait(semp) where kr != KERN_SUCCESS
+    while case let kr = semaphore_wait(semp), kr != KERN_SUCCESS
     {
       guard kr == KERN_ABORTED else { fatalError("Bad response (\(kr)) from semaphore_wait() in \(#function)") }
     }
     return
   }
 
-  func notify(block: () -> Void)
+  func notify(_ block: @escaping () -> Void)
   {
     if OSAtomicDecrement32Barrier(&svalue) >= 0
     {
       return block()
     }
 
-    waiters.enqueue(.Notify(block))
+    waiters.enqueue(.notify(block))
   }
 }

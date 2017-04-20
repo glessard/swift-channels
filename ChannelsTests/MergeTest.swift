@@ -19,7 +19,7 @@ class MergeTests: XCTestCase
 
   func testPerformanceMerge()
   {
-    self.measureBlock() {
+    self.measure() {
       var chans = [Receiver<Int>]()
       for _ in 0..<self.outerloopcount
       {
@@ -45,7 +45,7 @@ class MergeTests: XCTestCase
   
   func testPerformanceMergeUnbuffered()
   {
-    self.measureBlock() {
+    self.measure() {
       var chans = [Receiver<Int>]()
       for _ in 0..<self.outerloopcount
       {
@@ -71,7 +71,7 @@ class MergeTests: XCTestCase
   
   func testPerformanceRoundRobinMerge()
   {
-    self.measureBlock() {
+    self.measure() {
       var chans = [Receiver<Int>]()
       for _ in 0..<self.outerloopcount
       {
@@ -97,7 +97,7 @@ class MergeTests: XCTestCase
   
   func testPerformanceRoundRobinMergeUnbuffered()
   {
-    self.measureBlock() {
+    self.measure() {
       var chans = [Receiver<Int>]()
       for _ in 0..<self.outerloopcount
       {

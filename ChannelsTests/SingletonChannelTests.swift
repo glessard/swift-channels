@@ -58,10 +58,10 @@ class SingletonChannelTests: ChannelsTests
   {
     let (tx, rx) = InstantiateTestChannel(Int)
 
-    let delay = dispatch_time(DISPATCH_TIME_NOW, 1_000_000)
+    let delay = DispatchTime.now() + Double(1_000_000) / Double(NSEC_PER_SEC)
     for i in 1...10
     {
-      dispatch_after(delay, dispatch_get_global_queue(qos_class_self(), 0)) { tx <- i }
+      DispatchQueue.global(qos: qos_class_self()).asyncAfter(deadline: delay) { tx <- i }
     }
 
     var last = 0
@@ -107,10 +107,10 @@ class SingletonChannelTests: ChannelsTests
 
   func testNoReceiver()
   {
-    let expectation = expectationWithDescription(id + " Channel Send, no Receiver")
+    let expectation = self.expectation(withDescription: id + " Channel Send, no Receiver")
     let (tx, _) = InstantiateTestChannel(Void)
 
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+    DispatchQueue.global(priority: DispatchQueue.GlobalQueuePriority.default).async {
       XCTAssert(tx.isClosed == false, self.id + " channel should be open")
 
       tx <- ()
@@ -119,12 +119,12 @@ class SingletonChannelTests: ChannelsTests
       XCTAssert(tx.isClosed, self.id + " channel should be closed")
     }
 
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 100_000_000), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+    DispatchQueue.global(priority: DispatchQueue.GlobalQueuePriority.default).asyncAfter(deadline: DispatchTime.now() + Double(100_000_000) / Double(NSEC_PER_SEC)) {
       XCTAssert(tx.isClosed, self.id + " channel should be closed")
       expectation.fulfill()
     }
 
-    waitForExpectationsWithTimeout(2.0) { _ in tx.close() }
+    waitForExpectations(withTimeout: 2.0) { _ in tx.close() }
   }
 
   /**

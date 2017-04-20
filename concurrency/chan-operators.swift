@@ -11,7 +11,7 @@
   The precedence value chosen matches the assigment operators.
 */
 
-infix operator <- { associativity left precedence 90}
+infix operator <-: AssignmentPrecedence
 
 /**
   Channel send operator: send a new element to a channel
@@ -35,7 +35,7 @@ public func <-<C: SenderType>(s: C, element: C.SentElement)
   Channel receive operator, global definition
 */
 
-prefix operator <- {}
+prefix operator <-
 
 /**
   Channel receive operator: receive the oldest element from a channel.

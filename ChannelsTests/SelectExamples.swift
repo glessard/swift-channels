@@ -35,7 +35,7 @@ class SelectExamples: XCTestCase
       for sender in senders { sender.close() }
     }
 
-    var messages = Array(count: channels.count, repeatedValue: 0)
+    var messages = Array(repeating: 0, count: channels.count)
     let selectables = channels.map { $0.rx as Selectable }
     while let selection = select_chan(selectables)
     {
@@ -61,7 +61,7 @@ class SelectExamples: XCTestCase
       }
     }
 
-    let i = messages.reduce(0, combine: +)
+    let i = messages.reduce(0, +)
     syncprint("\(messages), \(i) total messages.")
     syncprintwait()
     
@@ -73,7 +73,7 @@ class SelectExamples: XCTestCase
     let c0: (tx: Sender<Bool>, rx: Receiver<Bool>) = Channel<Bool>.Make(8)
     let c1: (tx: Sender<Bool>, rx: Receiver<Bool>) = Channel<Bool>.Make(8)
 
-    dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
+    DispatchQueue.global(qos: qos_class_self()).async {
       for _ in 0..<8
       {
         if let selection = select_chan(c0.tx, c1.tx)
@@ -152,7 +152,7 @@ class SelectExamples: XCTestCase
     let c2 = Channel<UInt32>.Make()
 
     var attempts = 0
-    dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
+    DispatchQueue.global(qos: qos_class_self()).async {
       while let selection = select_chan([c1.tx,c2.tx], preventBlocking: true)
       {
         switch selection

@@ -15,7 +15,7 @@
 
 // MARK: ReceiverType
 
-public protocol ReceiverType: BasicChannelType, GeneratorType, SequenceType
+public protocol ReceiverType: BasicChannelType, IteratorProtocol, Sequence
 {
   associatedtype ReceivedElement
 
@@ -100,7 +100,8 @@ public protocol SenderType: BasicChannelType
     - returns: whether newElement was succesfully sent to the channel.
   */
 
-  func send(newElement: SentElement) -> Bool
+  @discardableResult
+  func send(_ newElement: SentElement) -> Bool
 }
 
 /**
@@ -177,7 +178,8 @@ protocol ChannelType: class, BasicChannelType
     - returns: whether newElement was succesfully inserted in the channel
   */
 
-  func put(newElement: Element) -> Bool
+  @discardableResult
+  func put(_ newElement: Element) -> Bool
 
   /**
     Obtain the oldest element from the channel.

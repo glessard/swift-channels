@@ -8,7 +8,7 @@
 
 import Dispatch
 
-public extension CollectionType where Self.Generator.Element: ReceiverType, Self.Index == Int
+public extension Collection where Iterator.Element: ReceiverType, Index == Int, IndexDistance == Int
 {
   /**
     Merge an array of channel receivers into one Receiver.
@@ -20,13 +20,13 @@ public extension CollectionType where Self.Generator.Element: ReceiverType, Self
     - returns: a single Receiver provide access to get every message received by the input Receivers.
   */
 
-  public func merge() -> Receiver<Generator.Element.ReceivedElement>
+  public func merge() -> Receiver<Iterator.Element.ReceivedElement>
   {
-    let mergeChannel = SBufferedChan<Generator.Element.ReceivedElement>(self.count*2)
-    let q = dispatch_get_global_queue(qos_class_self(), 0)
+    let mergeChannel = SBufferedChan<Iterator.Element.ReceivedElement>(Int(self.count)*2)
+    let q = DispatchQueue.global(qos: DispatchQoS.current().qosClass)
 
-    dispatch_async(q) {
-      dispatch_apply(self.count, q) { i in
+    q.async {
+      DispatchQueue.concurrentPerform(iterations: self.count) { i in
         let chan = self[i]
         while let element = chan.receive()
         {
@@ -51,7 +51,7 @@ public extension CollectionType where Self.Generator.Element: ReceiverType, Self
   - returns: a single Receiver provide access to get every message received by the input Receivers.
 */
 
-public func merge<R: ReceiverType>(channels: [R]) -> Receiver<R.ReceivedElement>
+public func merge<R: ReceiverType>(_ channels: [R]) -> Receiver<R.ReceivedElement>
 {
   return channels.merge()
 }
@@ -67,12 +67,12 @@ public func merge<R: ReceiverType>(channels: [R]) -> Receiver<R.ReceivedElement>
   - returns: a single Receiver provide access to get every message received by the input Receivers.
 */
 
-public func merge<R: ReceiverType>(channels: R...) -> Receiver<R.ReceivedElement>
+public func merge<R: ReceiverType>(_ channels: R...) -> Receiver<R.ReceivedElement>
 {
   return channels.merge()
 }
 
-public extension CollectionType where Self.Generator.Element: ReceiverType, Self.Index == Int
+public extension Collection where Iterator.Element: ReceiverType, Index == Int, IndexDistance == Int
 {
   /**
     Merge an array of channel receivers into one Receiver.
@@ -87,11 +87,11 @@ public extension CollectionType where Self.Generator.Element: ReceiverType, Self
     - returns: a single Receiver provide access to get every message received by the input Receivers.
   */
 
-  public func mergeRR() -> Receiver<Generator.Element.ReceivedElement>
+  public func mergeRR() -> Receiver<Iterator.Element.ReceivedElement>
   {
-    let mergeChannel = SBufferedChan<Generator.Element.ReceivedElement>.Make(self.count*2)
+    let mergeChannel = SBufferedChan<Iterator.Element.ReceivedElement>.Make(self.count*2)
 
-    dispatch_async(dispatch_get_global_queue(qos_class_self(), 0)) {
+    DispatchQueue.global(qos: DispatchQoS.current().qosClass).async {
       // A non-clever, imperative-style round-robin merge.
       let count = self.count
       var (i, last) = (0, 0)
@@ -125,7 +125,7 @@ public extension CollectionType where Self.Generator.Element: ReceiverType, Self
   - returns: a single Receiver provide access to get every message received by the input Receivers.
 */
 
-public func mergeRR<R: ReceiverType>(channels: [R]) -> Receiver<R.ReceivedElement>
+public func mergeRR<R: ReceiverType>(_ channels: [R]) -> Receiver<R.ReceivedElement>
 {
   return channels.mergeRR()
 }
@@ -144,7 +144,7 @@ public func mergeRR<R: ReceiverType>(channels: [R]) -> Receiver<R.ReceivedElemen
   - returns: a single Receiver provide access to get every message received by the input Receivers.
 */
 
-public func mergeRR<R: ReceiverType>(channels: R...) -> Receiver<R.ReceivedElement>
+public func mergeRR<R: ReceiverType>(_ channels: R...) -> Receiver<R.ReceivedElement>
 {
   return channels.mergeRR()
 }

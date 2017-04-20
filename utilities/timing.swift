@@ -33,7 +33,7 @@ public struct Interval: CustomStringConvertible
     ns = Int64(nanoseconds)
   }
 
-  init(seconds: NSTimeInterval)
+  init(seconds: TimeInterval)
   {
     ns = Int64(seconds*1e9)
   }
@@ -60,7 +60,7 @@ public struct Interval: CustomStringConvertible
       return ns.description + " ns"
   }
   
-  public var interval: NSTimeInterval
+  public var interval: TimeInterval
   {
     return Double(ns)*1e-9
   }
@@ -78,7 +78,7 @@ func / (dt: Interval, n: Int) -> Interval
 
 public struct Time: CustomStringConvertible
 {
-  private let t: Int64
+  fileprivate let t: Int64
 
   public init()
   {
@@ -90,13 +90,13 @@ public struct Time: CustomStringConvertible
     This is not a constant, strictly speaking. Probably close enough, though.
   */
 
-  private static var offset: NSTimeInterval = { CFAbsoluteTimeGetCurrent() - CACurrentMediaTime() }()
+  fileprivate static var offset: TimeInterval = { CFAbsoluteTimeGetCurrent() - CACurrentMediaTime() }()
 
   /**
     scale: how to scale from the mach timebase to nanoseconds. See Technical Q&A QA1398
   */
 
-  private static var scale: mach_timebase_info = {
+  fileprivate static var scale: mach_timebase_info = {
     var info = mach_timebase_info(numer: 0, denom: 0)
     mach_timebase_info(&info)
     return info
@@ -119,14 +119,14 @@ public struct Time: CustomStringConvertible
     return t * Int64(Time.scale.numer)/Int64(Time.scale.denom)
   }
 
-  public var absoluteTime: NSTimeInterval
+  public var absoluteTime: TimeInterval
   {
       return Double(self.nanoseconds)*1e-9 + Time.offset
   }
 
   public var description: String
   {
-    return NSDate(timeIntervalSinceReferenceDate: absoluteTime).description
+    return Date(timeIntervalSinceReferenceDate: absoluteTime).description
   }
 }
 
@@ -146,7 +146,7 @@ extension Time
     ```
   */
 
-  public static func Since(startTime: Time) -> Interval
+  public static func Since(_ startTime: Time) -> Interval
   {
     return Time() - startTime
   }
@@ -158,7 +158,7 @@ extension Time
 
 public struct Thread
 {
-  public static func Sleep(interval: Interval)
+  public static func Sleep(_ interval: Interval)
   {
     if interval.ns >= 0
     {
@@ -167,7 +167,7 @@ public struct Thread
     }
   }
 
-  public static func Sleep(ms: Int)
+  public static func Sleep(_ ms: Int)
   {
     if ms >= 0
     {
@@ -175,12 +175,12 @@ public struct Thread
     }
   }
 
-  public static func Sleep(ms: UInt32)
+  public static func Sleep(_ ms: UInt32)
   {
     Sleep(Int(ms))
   }
 
-  public static func Sleep(seconds: NSTimeInterval)
+  public static func Sleep(_ seconds: TimeInterval)
   {
     if seconds > 0
     {

@@ -2,128 +2,101 @@
 //  fast2lockqueue.swift
 //  QQ
 //
+//  Created by Guillaume Lessard on 2014-08-16.
+//  Copyright (c) 2014 Guillaume Lessard. All rights reserved.
+//
 
-import Darwin.libkern.OSAtomic
+import let  Darwin.libkern.OSAtomic.OS_SPINLOCK_INIT
+import func Darwin.libkern.OSAtomic.OSSpinLockLock
+import func Darwin.libkern.OSAtomic.OSSpinLockUnlock
 
-/**
-  Two-lock queue algorithm adapted from Maged M. Michael and Michael L. Scott.,
-  "Simple, Fast, and Practical Non-Blocking and Blocking Concurrent Queue Algorithms",
-  in Principles of Distributed Computing '96 (PODC96)
-  See also: http://www.cs.rochester.edu/research/synchronization/pseudocode/queues.html
-*/
+/// Double-lock queue with node recycling
+///
+/// Two-lock queue algorithm adapted from Maged M. Michael and Michael L. Scott.,
+/// "Simple, Fast, and Practical Non-Blocking and Blocking Concurrent Queue Algorithms",
+/// in Principles of Distributed Computing '96 (PODC96)
+/// See also: http://www.cs.rochester.edu/research/synchronization/pseudocode/queues.html
 
-final class Fast2LockQueue: QueueType
+final public class Fast2LockQueue<T>: QueueType
 {
-  private var head: UnsafeMutablePointer<Node> = nil
-  private var tail: UnsafeMutablePointer<Node> = nil
+  private var head: QueueNode<T>? = nil
+  private var tail: QueueNode<T>! = nil
 
   private var hlock = OS_SPINLOCK_INIT
   private var tlock = OS_SPINLOCK_INIT
 
-  private let pool = AtomicStackInit()
+  private let pool = AtomicStack<QueueNode<T>>()
 
-  // MARK: init/deinit
-
-  init()
-  {
-    head = UnsafeMutablePointer<Node>.alloc(1)
-    head.initialize(Node(.Wait))
-    tail = head
-  }
-
-  convenience init(_ newElement: WaitType)
-  {
-    self.init()
-    enqueue(newElement)
-  }
+  public init() { }
 
   deinit
   {
-    while head != nil
+    // empty the queue
+    while let node = head
     {
-      let node = head
-      head = node.memory.next
-      switch node.memory.elem
-      {
-      case .Wait: break
-      case .Notify(let block): block()
-      }
-      node.destroy()
-      node.dealloc(1)
+      node.next?.deinitialize()
+      head = node.next
+      node.deallocate()
     }
 
     // drain the pool
-    while UnsafePointer<COpaquePointer>(pool).memory != nil
+    while let node = pool.pop()
     {
-      let node = UnsafeMutablePointer<Node>(OSAtomicDequeue(pool, 0))
-      node.destroy()
-      node.dealloc(1)
+      node.deallocate()
     }
     // release the pool stack structure
-    AtomicStackRelease(pool)
+    pool.release()
   }
 
-  var count: Int {
+  public var isEmpty: Bool { return head?.storage == tail.storage }
+
+  public var count: Int {
     var i = 0
-    var node = head.memory.next
-    while node != nil
+    var node = head?.next
+    while let current = node
     { // Iterate along the linked nodes while counting
-      node = node.memory.next
+      node = current.next
       i += 1
     }
     return i
   }
 
-  // MARK: QueueType interface
-
-  var isEmpty: Bool { return head == tail }
-
-  func enqueue(newElement: WaitType)
+  public func enqueue(_ newElement: T)
   {
-    var node = UnsafeMutablePointer<Node>(OSAtomicDequeue(pool, 0))
-    if node == nil
-    {
-      node = UnsafeMutablePointer<Node>.alloc(1)
-    }
-    node.initialize(Node(newElement))
+    let node = pool.pop() ?? QueueNode()
+    node.initialize(to: newElement)
 
     OSSpinLockLock(&tlock)
-    // hopefully tail.memory.next is stored atomically
-    // this is the one possible collision between dequeue() and enqueue()
-    tail.memory.next = node
-    tail = node
+    if head == nil
+    { // This is the initial element
+      tail = node
+      head = QueueNode()
+      head!.next = tail
+    }
+    else
+    {
+      tail.next = node
+      tail = node
+    }
     OSSpinLockUnlock(&tlock)
   }
 
-  func dequeue() -> WaitType?
+  public func dequeue() -> T?
   {
     OSSpinLockLock(&hlock)
-    // hopefully head.memory.next is read atomically.
-    // this is the one possible collision between dequeue() and enqueue()
-    let next = head.memory.next
-    if next != nil
+    if let oldhead = head,
+      let next = oldhead.next
     {
-      let oldhead = head
       head = next
-      let element = next.memory.elem
-      next.memory.elem = .Wait
+      let element = next.move()
       OSSpinLockUnlock(&hlock)
 
-      OSAtomicEnqueue(pool, oldhead, 0)
+      pool.push(oldhead)
       return element
     }
+
+    // queue is empty
     OSSpinLockUnlock(&hlock)
     return nil
-  }
-}
-
-private struct Node
-{
-  var next: UnsafeMutablePointer<Node> = nil
-  var elem: WaitType
-
-  init(_ w: WaitType)
-  {
-    elem = w
   }
 }
