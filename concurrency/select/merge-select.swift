@@ -21,8 +21,8 @@ import Dispatch
   - returns: a single `Receiver` provide access to get every message received .
 */
 
-public func mergeSelect<R: ReceiverType>(_ channels: [R]) -> Receiver<R.ReceivedElement>
-  where R: SelectableReceiverType
+public func mergeSelect<R>(_ channels: [R]) -> Receiver<R.ReceivedElement>
+  where R: ReceiverType & SelectableReceiverType
 {
   if channels.count == 0
   { // Not likely to happen, but return a closed channel.

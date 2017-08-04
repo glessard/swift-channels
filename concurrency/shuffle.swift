@@ -15,7 +15,7 @@
 #endif
 
 
-public extension Collection where Self.Indices.Iterator.Element == Self.Index
+public extension Collection
 {
   /// Get a sequence/generator that will return a collection's elements in a random order.
   /// The input collection is not modified.
@@ -34,7 +34,6 @@ public extension Collection where Self.Indices.Iterator.Element == Self.Index
 /// using an adjunct array of indices.
 
 public struct ShuffledSequence<C: Collection>: Sequence, IteratorProtocol
-  where C.Indices.Iterator.Element == C.Index
 {
   public let collection: C
   private var shuffler: IndexShuffler<C.Index>
