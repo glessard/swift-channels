@@ -165,7 +165,6 @@ final class SingletonChan<T>: Chan<T>
     }
 
     barrier.notify(queue: DispatchQueue.global(qos: DispatchQoS.QoSClass.current ?? .default)) {
-      _ in
       if select.setState(.select)
       {
         select.selection = selection

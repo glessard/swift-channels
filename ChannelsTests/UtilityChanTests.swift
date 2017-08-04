@@ -14,7 +14,7 @@ import XCTest
 class TimeoutTests: XCTestCase
 {
   let delay: Int64 = 50_000
-  let scale = { _ -> mach_timebase_info_data_t in
+  let scale = { () -> mach_timebase_info_data_t in
     var info = mach_timebase_info_data_t()
     mach_timebase_info(&info)
     return info

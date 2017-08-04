@@ -232,7 +232,6 @@ class SelectUnbufferedTests: XCTestCase
 
     let q = DispatchQueue.global(qos: DispatchQoS.QoSClass(rawValue: qos_class_self())!)
     q.asyncAfter(deadline: DispatchTime.now() + Double(10_000_000) / Double(NSEC_PER_SEC)) {
-        _ in
         for sender in senders { sender.close() }
     }
 
@@ -253,7 +252,6 @@ class SelectUnbufferedTests: XCTestCase
 
     let q = DispatchQueue.global(qos: DispatchQoS.QoSClass(rawValue: qos_class_self())!)
     q.asyncAfter(deadline: DispatchTime.now() + Double(10_000_000) / Double(NSEC_PER_SEC)) {
-      _ in
       for sender in senders { sender.close() }
     }
 
