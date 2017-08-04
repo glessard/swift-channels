@@ -274,7 +274,7 @@ final class SBufferedChan<T>: Chan<T>
   #if arch(x86_64) || arch(arm64) // 64-bit architecture
     return Int(OSAtomicIncrement64Barrier(pointer.withMemoryRebound(to: Int64.self, capacity: 1, { $0 })))
   #else // 32-bit architecture
-    return Int(OSAtomicIncrement32Barrier(UnsafeMutablePointer<Int32>(pointer)))
+    return Int(OSAtomicIncrement32Barrier(pointer.withMemoryRebound(to: Int32.self, capacity: 1, { $0 })))
   #endif
 }
 
@@ -283,6 +283,6 @@ final class SBufferedChan<T>: Chan<T>
   #if arch(x86_64) || arch(arm64) // 64-bit architecture
     return Int(OSAtomicDecrement64Barrier(pointer.withMemoryRebound(to: Int64.self, capacity: 1, { $0 })))
   #else // 32-bit architecture
-    return Int(OSAtomicDecrement32Barrier(UnsafeMutablePointer<Int32>(pointer)))
+    return Int(OSAtomicDecrement32Barrier(pointer.withMemoryRebound(to: Int32.self, capacity: 1, { $0 })))
   #endif
 }
