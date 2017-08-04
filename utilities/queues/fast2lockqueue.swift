@@ -19,6 +19,8 @@ import func Darwin.libkern.OSAtomic.OSSpinLockUnlock
 
 final public class Fast2LockQueue<T>: QueueType
 {
+  public typealias Element = T
+
   private var head: QueueNode<T>? = nil
   private var tail: QueueNode<T>! = nil
 

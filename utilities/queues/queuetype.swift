@@ -10,8 +10,6 @@
 
 public protocol QueueType: Sequence, IteratorProtocol, ExpressibleByArrayLiteral
 {
-  associatedtype Element
-
   /**
    Initialize an empty queue
    */
