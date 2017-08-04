@@ -98,7 +98,7 @@ public struct IndexShuffler<Index>: Sequence, IteratorProtocol
       // swap that Index with the Index present at the current step in the array
       if j != step
       {
-        swap(&i[j], &i[step])
+        i.swapAt(j, step)
       }
 
       defer { step = i.index(after: step) }
