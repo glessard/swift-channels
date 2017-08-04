@@ -10,7 +10,6 @@ import Darwin.Mach.task
 import Darwin.Mach.semaphore
 import Darwin.Mach.mach_time
 import Darwin.libkern.OSAtomic
-import Dispatch.time
 
 /**
   A [benaphore](http://www.haiku-os.org/legacy-docs/benewsletter/Issue1-26.html)
