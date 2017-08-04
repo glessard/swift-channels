@@ -51,7 +51,12 @@ open class Timeout: ReceiverType, SelectableReceiverType
       {
         let delay = closingTime.rawValue - now.rawValue
         var timeRequested = timespec(tv_sec: Int(delay/NSEC_PER_SEC), tv_nsec: Int(delay%NSEC_PER_SEC))
-        while nanosleep(&timeRequested, &timeRequested) == -1 {}
+        var timeRemaining = timespec()
+        while nanosleep(&timeRequested, &timeRemaining) == -1,
+              errno == EINTR
+        {
+          timeRequested = timeRemaining
+        }
       }
       close()
     }

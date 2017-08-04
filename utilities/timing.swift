@@ -163,7 +163,12 @@ public struct Thread
     if interval.ns >= 0
     {
       var timeRequested = timespec(tv_sec: Int(interval.ns/1_000_000_000), tv_nsec: Int(interval.ns%1_000_000_000))
-      while nanosleep(&timeRequested, &timeRequested) == -1 {}
+      var timeRemaining = timespec()
+      while nanosleep(&timeRequested, &timeRemaining) == -1,
+            errno == EINTR
+      {
+        timeRequested = timeRemaining
+      }
     }
   }
 
@@ -186,7 +191,12 @@ public struct Thread
     {
       let wholeseconds = floor(seconds)
       var timeRequested = timespec(tv_sec: Int(wholeseconds), tv_nsec: Int((seconds-wholeseconds)*1_000_000_000))
-      while nanosleep(&timeRequested, &timeRequested) == -1 {}
+      var timeRemaining = timespec()
+      while nanosleep(&timeRequested, &timeRemaining) == -1,
+            errno == EINTR
+      {
+        timeRequested = timeRemaining
+      }
     }
   }
 }
