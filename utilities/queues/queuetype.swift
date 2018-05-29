@@ -27,14 +27,6 @@ public protocol QueueType: Sequence, IteratorProtocol, ExpressibleByArrayLiteral
   init(_ newElement: Element)
 
   /**
-   Initialize a queue from a collection
-
-   - parameter elements: a collection of initial elements
-   */
-
-  init<C: Collection>(collection: C) where C.Iterator.Element == Element
-
-  /**
    Return whether the queue is empty
    For some implementations, it might be faster to check for queue emptiness
    rather than attempting a dequeue on an empty queue. For those cases,

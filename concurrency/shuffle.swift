@@ -34,7 +34,6 @@ public extension Collection where Self.Indices.Iterator.Element == Self.Index
 /// using an adjunct array of indices.
 
 public struct ShuffledSequence<C: Collection>: Sequence, IteratorProtocol
-  where C.Indices.Iterator.Element == C.Index
 {
   public let collection: C
   private var shuffler: IndexShuffler<C.Index>
@@ -95,11 +94,7 @@ public struct IndexShuffler<Index>: Sequence, IteratorProtocol
       #endif
       let j = i.index(step, offsetBy: Int(offset))
 
-      // swap that Index with the Index present at the current step in the array
-      if j != step
-      {
-        swap(&i[j], &i[step])
-      }
+      i.swapAt(j, step)
 
       defer { step = i.index(after: step) }
       // return the new random Index.
