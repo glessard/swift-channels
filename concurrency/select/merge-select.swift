@@ -22,7 +22,7 @@ import Dispatch
 */
 
 public func mergeSelect<R>(_ channels: [R]) -> Receiver<R.ReceivedElement>
-  where R: SelectableReceiverType
+  where R: ReceiverType & SelectableReceiverType
 {
   if channels.count == 0
   { // Not likely to happen, but return a closed channel.
@@ -31,7 +31,7 @@ public func mergeSelect<R>(_ channels: [R]) -> Receiver<R.ReceivedElement>
 
   let (tx, rx) = Channel<R.ReceivedElement>.Make(channels.count*2)
 
-  DispatchQueue.global(qos: DispatchQoS.current().qosClass).async {
+  DispatchQueue.global(qos: DispatchQoS.QoSClass.current ?? .default).async {
     let selectables = channels.map { $0 as Selectable }
     while let selection = select_chan(selectables)
     {

@@ -15,7 +15,7 @@
 #endif
 
 
-public extension Collection where Self.Indices.Iterator.Element == Self.Index
+public extension Collection
 {
   /// Get a sequence/generator that will return a collection's elements in a random order.
   /// The input collection is not modified.

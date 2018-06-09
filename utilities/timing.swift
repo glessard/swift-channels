@@ -40,16 +40,16 @@ public struct Interval: CustomStringConvertible
 
   public var description: String
     {
-      if abs(ns) > 5_000_000_000
+      if abs(ns) > Int(Int32.max)
       { // over 5 seconds: round to milliseconds, display as seconds
         return (Double(ns/1_000_000)/1e3).description + " s"
       }
-      if abs(ns) >= 1_000_000_000
-      { // over 1 second: round to 10s of µs, display as milliseconds
+      if abs(ns) >= 900_000_000
+      { // 0.9 second and up: round to 10s of µs, display as milliseconds
         return (Double(ns/10_000)/1e2).description + " ms"
       }
       if abs(ns) >= 100_000
-      { // round to microseconds, display as milliseconds
+      { // 100µs and up: round to microseconds, display as milliseconds
         return (Double(ns/1000)/1e3).description + " ms"
       }
       if abs(ns) >= 1_000
@@ -163,7 +163,12 @@ public struct Thread
     if interval.ns >= 0
     {
       var timeRequested = timespec(tv_sec: Int(interval.ns/1_000_000_000), tv_nsec: Int(interval.ns%1_000_000_000))
-      while nanosleep(&timeRequested, &timeRequested) == -1 {}
+      var timeRemaining = timespec()
+      while nanosleep(&timeRequested, &timeRemaining) == -1,
+            errno == EINTR
+      {
+        timeRequested = timeRemaining
+      }
     }
   }
 
@@ -186,7 +191,12 @@ public struct Thread
     {
       let wholeseconds = floor(seconds)
       var timeRequested = timespec(tv_sec: Int(wholeseconds), tv_nsec: Int((seconds-wholeseconds)*1_000_000_000))
-      while nanosleep(&timeRequested, &timeRequested) == -1 {}
+      var timeRemaining = timespec()
+      while nanosleep(&timeRequested, &timeRemaining) == -1,
+            errno == EINTR
+      {
+        timeRequested = timeRemaining
+      }
     }
   }
 }

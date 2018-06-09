@@ -8,7 +8,7 @@
 
 import Dispatch
 
-public extension Collection where Iterator.Element: ReceiverType, Index == Int, IndexDistance == Int
+public extension Collection where Iterator.Element: ReceiverType, Index == Int
 {
   /**
     Merge an array of channel receivers into one Receiver.
@@ -23,7 +23,7 @@ public extension Collection where Iterator.Element: ReceiverType, Index == Int, 
   public func merge() -> Receiver<Iterator.Element.ReceivedElement>
   {
     let mergeChannel = SBufferedChan<Iterator.Element.ReceivedElement>(Int(self.count)*2)
-    let q = DispatchQueue.global(qos: DispatchQoS.current().qosClass)
+    let q = DispatchQueue.global(qos: DispatchQoS.QoSClass.current ?? .default)
 
     q.async {
       DispatchQueue.concurrentPerform(iterations: self.count) { i in
@@ -72,7 +72,7 @@ public func merge<R: ReceiverType>(_ channels: R...) -> Receiver<R.ReceivedEleme
   return channels.merge()
 }
 
-public extension Collection where Iterator.Element: ReceiverType, Index == Int, IndexDistance == Int
+public extension Collection where Iterator.Element: ReceiverType, Index == Int
 {
   /**
     Merge an array of channel receivers into one Receiver.
@@ -91,7 +91,7 @@ public extension Collection where Iterator.Element: ReceiverType, Index == Int, 
   {
     let mergeChannel = SBufferedChan<Iterator.Element.ReceivedElement>.Make(self.count*2)
 
-    DispatchQueue.global(qos: DispatchQoS.current().qosClass).async {
+    DispatchQueue.global(qos: DispatchQoS.QoSClass.current ?? .default).async {
       // A non-clever, imperative-style round-robin merge.
       let count = self.count
       var (i, last) = (0, 0)

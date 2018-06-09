@@ -51,7 +51,12 @@ open class Timeout: ReceiverType, SelectableReceiverType
       {
         let delay = closingTime.rawValue - now.rawValue
         var timeRequested = timespec(tv_sec: Int(delay/NSEC_PER_SEC), tv_nsec: Int(delay%NSEC_PER_SEC))
-        while nanosleep(&timeRequested, &timeRequested) == -1 {}
+        var timeRemaining = timespec()
+        while nanosleep(&timeRequested, &timeRemaining) == -1,
+              errno == EINTR
+        {
+          timeRequested = timeRemaining
+        }
       }
       close()
     }
@@ -63,7 +68,7 @@ open class Timeout: ReceiverType, SelectableReceiverType
 
   open func selectNotify(_ select: ChannelSemaphore, selection: Selection)
   {
-    DispatchQueue.global(qos: DispatchQoS.current().qosClass).asyncAfter(deadline: closingTime) {
+    DispatchQueue.global(qos: DispatchQoS.QoSClass.current ?? .default).asyncAfter(deadline: closingTime) {
       [weak self] in
       guard let this = self else { return }
 
