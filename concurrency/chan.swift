@@ -132,7 +132,7 @@ open class Chan<T>: ChannelType, SelectableChannelType
     - returns: a newly-created, empty `Chan<T>`
   */
 
-  open static func Make(_ capacity: Int) -> Chan<T>
+  static public func Make(_ capacity: Int) -> Chan<T>
   {
     switch capacity < 1
     {
@@ -150,7 +150,7 @@ open class Chan<T>: ChannelType, SelectableChannelType
     - returns: a newly-created, empty `Chan<T>`
   */
 
-  open static func Make() -> Chan<T>
+  static public func Make() -> Chan<T>
   {
     return Make(0)
   }
@@ -162,7 +162,7 @@ open class Chan<T>: ChannelType, SelectableChannelType
     - returns: a new single-message `Chan<T>`
   */
 
-  open static func MakeSingleton() -> Chan<T>
+  static public func MakeSingleton() -> Chan<T>
   {
     return SingletonChan()
   }

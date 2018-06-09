@@ -65,10 +65,10 @@ final class QBufferedChan<T>: Chan<T>
   {
     while (tail &- head) > 0
     {
-      buffer.advanced(by: head&mask).deinitialize()
+      buffer.advanced(by: head&mask).deinitialize(count: 1)
       head = head &+ 1
     }
-    buffer.deallocate(capacity: mask+1)
+    buffer.deallocate()
   }
 
   // MARK: ChannelType properties

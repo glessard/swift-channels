@@ -19,7 +19,7 @@
 import Darwin
 //import Channels
 
-func worker(inputChannel: Receiver<Int>, _ outputChannel: Sender<(Int,Int,Int)>)
+func worker(_ inputChannel: Receiver<Int>, _ outputChannel: Sender<(Int,Int,Int)>)
 {
   var messageCount = 0
 
@@ -29,7 +29,7 @@ func worker(inputChannel: Receiver<Int>, _ outputChannel: Sender<(Int,Int,Int)>)
     messageCount += 1
     Thread.Sleep(10) //+arc4random_uniform(25))
     // a "complex" calculation
-    let s = (0...v).reduce(0, combine: +)
+    let s = (0...v).reduce(0, +)
     outputChannel <- (messageCount, v, s)
   }
 
@@ -62,10 +62,10 @@ for a in 0..<workElements
 // Uncomment the following to close the channel prematurely
 //async { Time.Sleep(workElements*70); syncprint("closing work channel"); workChan.tx.close() }
 
-var outputArray = [Int?](count: workElements, repeatedValue: nil)
+var outputArray = [Int?](repeating: nil, count: workElements)
 
 // receive data from channel until it is closed
-for (i,(c,v,s)) in outChan.rx.enumerate()
+for (i,(c,v,s)) in outChan.rx.enumerated()
 {
   outputArray[v] = s
   syncprint(String(format: "%02d: (%02d) %02d %ld", i, c, v, s))

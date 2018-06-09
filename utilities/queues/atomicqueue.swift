@@ -40,7 +40,7 @@ func AtomicQueueInit() -> QueueHead
 
 func AtomicQueueRelease(_ h: QueueHead)
 {
-  UnsafeMutablePointer<Int>(h).deallocate(capacity: 4)
+  UnsafeMutablePointer<Int>(h).deallocate()
 }
 
 #endif
@@ -71,5 +71,5 @@ func AtomicStackInit() -> StackHead
 
 func AtomicStackRelease(_ h: StackHead)
 {
-  UnsafeMutablePointer<Int>(h).deallocate(capacity: 2)
+  UnsafeMutablePointer<Int>(h).deallocate()
 }

@@ -62,12 +62,12 @@ public func async(qos: DispatchQoS, group: DispatchGroup, task: @escaping () -> 
 extension DispatchQoS.QoSClass
 {
   #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
-  fileprivate static var current: DispatchQoS.QoSClass {
+  static var current: DispatchQoS.QoSClass {
     return DispatchQoS.QoSClass(rawValue: qos_class_self()) ?? .default
   }
   #else
-  fileprivate static var current: DispatchQoS.QoSClass {
-  return .default
+  static var current: DispatchQoS.QoSClass {
+    return .default
   }
   #endif
 }

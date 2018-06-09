@@ -66,10 +66,10 @@ final class SBufferedChan<T>: Chan<T>
     while (tail &- head) > 0
     {
       head += 1
-      buffer.advanced(by: head&mask).deinitialize()
+      buffer.advanced(by: head&mask).deinitialize(count: 1)
       empty.signal()
     }
-    buffer.deallocate(capacity: mask+1)
+    buffer.deallocate()
   }
 
   // MARK: ChannelType properties

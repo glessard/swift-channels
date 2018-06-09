@@ -73,7 +73,7 @@ final class SChanSemaphore
           #if false // os(OSX)
             return block()
           #else
-            return DispatchQueue.global(qos: DispatchQoS.QoSClass.current ?? .default).async(execute: block)
+            return DispatchQueue.global(qos: DispatchQoS.QoSClass.current).async(execute: block)
           #endif
         }
       }

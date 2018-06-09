@@ -219,7 +219,7 @@ final class QUnbufferedChan<T>: Chan<T>
           OSSpinLockUnlock(&lock)
           let threadLock = ChannelSemaphore()
           let buffer = UnsafeMutablePointer<T>.allocate(capacity: 1)
-          defer { buffer.deallocate(capacity: 1) }
+          defer { buffer.deallocate() }
           threadLock.setState(.pointer)
           threadLock.pointer = UnsafeMutableRawPointer(buffer)
           writer.sem.selection = writer.sel.withSemaphore(threadLock)
@@ -250,7 +250,7 @@ final class QUnbufferedChan<T>: Chan<T>
     // wait for data from a writer
     let threadLock = ChannelSemaphore()
     let buffer = UnsafeMutablePointer<T>.allocate(capacity: 1)
-    defer { buffer.deallocate(capacity: 1) }
+    defer { buffer.deallocate() }
     threadLock.setState(.pointer)
     threadLock.pointer = UnsafeMutableRawPointer(buffer)
     readerQueue.enqueue(QueuedSemaphore(threadLock))
@@ -377,7 +377,7 @@ final class QUnbufferedChan<T>: Chan<T>
       case .doubleSelect:
         let pointer = ws.pointer!.assumingMemoryBound(to: T.self)
         let element = pointer.move()
-        pointer.deallocate(capacity: 1)
+        pointer.deallocate()
         ws.pointer = nil
         ws.selection = nil
         ws.setState(.done)
