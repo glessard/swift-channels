@@ -39,7 +39,7 @@ extension DispatchTimeInterval
 
 extension DispatchQoS
 {
-  @_versioned static var current: DispatchQoS?
+  @usableFromInline static var current: DispatchQoS?
   {
     if let qosClass = DispatchQoS.QoSClass.current
     {
@@ -51,7 +51,7 @@ extension DispatchQoS
 
 extension DispatchQoS.QoSClass
 {
-  @_versioned static var current: DispatchQoS.QoSClass?
+  @usableFromInline static var current: DispatchQoS.QoSClass?
   {
 #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
     return DispatchQoS.QoSClass(rawValue: qos_class_self())

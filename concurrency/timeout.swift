@@ -68,7 +68,7 @@ open class Timeout: ReceiverType, SelectableReceiverType
 
   open func selectNotify(_ select: ChannelSemaphore, selection: Selection)
   {
-    DispatchQueue.global(qos: DispatchQoS.QoSClass.current ?? .default).asyncAfter(deadline: closingTime) {
+    DispatchQueue.global(qos: DispatchQoS.QoSClass.current).asyncAfter(deadline: closingTime) {
       [weak self] in
       guard let this = self else { return }
 

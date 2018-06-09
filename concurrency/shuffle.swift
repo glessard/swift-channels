@@ -15,20 +15,6 @@
 #endif
 
 
-public extension Collection
-{
-  /// Get a sequence/generator that will return a collection's elements in a random order.
-  /// The input collection is not modified.
-  ///
-  /// - returns: A sequence of of `self`'s elements, lazily shuffled.
-
-  public func shuffled() -> ShuffledSequence<Self>
-  {
-    return ShuffledSequence(self)
-  }
-}
-
-
 /// A stepwise implementation of the Knuth Shuffle (a.k.a. Fisher-Yates Shuffle).
 /// The input collection is not modified: the shuffling itself is done
 /// using an adjunct array of indices.
