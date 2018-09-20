@@ -33,7 +33,7 @@ around mach semaphores. The implementation is similar to
 `dispatch_semaphore_t`, but allows better type safety with equal speed.
 
 #### Example:
-```
+```swift
 import Dispatch
 
 let (sender, receiver) = Channel<Int>.Make()
@@ -65,7 +65,7 @@ This causes the while loop in the example to exit.
 
 Choosing from multiple channels can be done with the `select_chan()` function:
 
-```
+```swift
 if let selection = select_chan(receiver1, receiver2, sender3)
 {
   switch selection
