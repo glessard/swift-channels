@@ -39,13 +39,13 @@ extension DispatchTimeInterval
 
 extension DispatchQoS
 {
-  @usableFromInline static var current: DispatchQoS?
+  @usableFromInline static var current: DispatchQoS
   {
     if let qosClass = DispatchQoS.QoSClass.current
     {
       return DispatchQoS(qosClass: qosClass, relativePriority: 0)
     }
-    return nil
+    return .default
   }
 }
 

@@ -23,7 +23,7 @@ public extension Collection where Iterator.Element: ReceiverType, Index == Int
   public func merge() -> Receiver<Iterator.Element.ReceivedElement>
   {
     let mergeChannel = SBufferedChan<Iterator.Element.ReceivedElement>(Int(self.count)*2)
-    let q = DispatchQueue.global(qos: DispatchQoS.QoSClass.current)
+    let q = DispatchQueue.global(qos: DispatchQoS.current.qosClass)
 
     q.async {
       DispatchQueue.concurrentPerform(iterations: self.count) { i in
@@ -91,7 +91,7 @@ public extension Collection where Iterator.Element: ReceiverType, Index == Int
   {
     let mergeChannel = SBufferedChan<Iterator.Element.ReceivedElement>.Make(self.count*2)
 
-    DispatchQueue.global(qos: DispatchQoS.QoSClass.current).async {
+    DispatchQueue.global(qos: DispatchQoS.current.qosClass).async {
       // A non-clever, imperative-style round-robin merge.
       let count = self.count
       var (i, last) = (0, 0)
