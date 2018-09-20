@@ -93,7 +93,6 @@
 		0370A7171A7C44BC00F4B44B /* merge-select.swift in Sources */ = {isa = PBXBuildFile; fileRef = 032CCD3E1A79BE9400F4B44B /* merge-select.swift */; };
 		03814B051B38732200F4B44B /* SemaphoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03814B041B38732200F4B44B /* SemaphoreTests.swift */; };
 		039DC6F91B3482C700F4B44B /* SimpleChannel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 039DC6F81B3482C700F4B44B /* SimpleChannel.swift */; };
-		039DC6FA1B3482C700F4B44B /* SimpleChannel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 039DC6F81B3482C700F4B44B /* SimpleChannel.swift */; };
 		039DC6FC1B3486AC00F4B44B /* sink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 039DC6FB1B3486AC00F4B44B /* sink.swift */; };
 		039DC6FE1B3490F700F4B44B /* ChannelTypeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 039DC6FD1B3490F700F4B44B /* ChannelTypeTests.swift */; };
 		03A21E3A1AB16E7900F4B44B /* SelectExamples.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03A21E391AB16E7900F4B44B /* SelectExamples.swift */; };
@@ -988,7 +987,6 @@
 				03AD47741A68348C00F4B44B /* qchan-unbuffered.swift in Sources */,
 				03AD475F1A68346300F4B44B /* main.swift in Sources */,
 				034D8FD51C0542A600F4B44B /* queued-semaphore.swift in Sources */,
-				039DC6FA1B3482C700F4B44B /* SimpleChannel.swift in Sources */,
 				036B08DA1B3D575C00F4B44B /* select.swift in Sources */,
 				03AD476B1A68348C00F4B44B /* chan.swift in Sources */,
 				03AD47661A68348C00F4B44B /* chan-operators.swift in Sources */,
