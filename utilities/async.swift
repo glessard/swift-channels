@@ -24,7 +24,7 @@ import Dispatch
 
 public func async(task: @escaping () -> Void)
 {
-  DispatchQueue.global(qos: .current).async(execute: task)
+  DispatchQueue.global(qos: .currentClass).async(execute: task)
 }
 
 /// Utility shortcut for Grand Central Dispatch
@@ -34,7 +34,7 @@ public func async(task: @escaping () -> Void)
 
 public func async(group: DispatchGroup, task: @escaping () -> Void)
 {
-  DispatchQueue.global(qos: .current).async(group: group, execute: task)
+  DispatchQueue.global(qos: .currentClass).async(group: group, execute: task)
 }
 
 /// Utility shortcut for Grand Central Dispatch
@@ -62,11 +62,11 @@ public func async(qos: DispatchQoS, group: DispatchGroup, task: @escaping () -> 
 extension DispatchQoS.QoSClass
 {
   #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
-  static var current: DispatchQoS.QoSClass {
+  static var currentClass: DispatchQoS.QoSClass {
     return DispatchQoS.QoSClass(rawValue: qos_class_self()) ?? .default
   }
   #else
-  static var current: DispatchQoS.QoSClass {
+  static var currentClass: DispatchQoS.QoSClass {
     return .default
   }
   #endif

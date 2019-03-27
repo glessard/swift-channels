@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		0310F4291DE4162000F4B44B /* shuffle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03F614C71B28FD6400F4B44B /* shuffle.swift */; };
 		031DEDB31B1092CB00F4B44B /* fast2lockqueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 031DEDB21B1092CB00F4B44B /* fast2lockqueue.swift */; };
+		0332B6F3224BD3E800F4B44B /* dispatch-utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03FE12D61EA859A500F4B44B /* dispatch-utilities.swift */; };
 		0336B9B51ABB1BF700F4B44B /* async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0336B9B41ABB1BF700F4B44B /* async.swift */; };
 		0336B9B61ABB1BF700F4B44B /* async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0336B9B41ABB1BF700F4B44B /* async.swift */; };
 		0336B9B71ABB1BF700F4B44B /* async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0336B9B41ABB1BF700F4B44B /* async.swift */; };
@@ -971,6 +972,7 @@
 				036B08DE1B3D575C00F4B44B /* timeout.swift in Sources */,
 				035EAA5F1B28C41700F4B44B /* schan-singleton.swift in Sources */,
 				03AD477F1A68354F00F4B44B /* fastqueue.swift in Sources */,
+				0332B6F3224BD3E800F4B44B /* dispatch-utilities.swift in Sources */,
 				0336B9B61ABB1BF700F4B44B /* async.swift in Sources */,
 				036B08D91B3D575C00F4B44B /* merge.swift in Sources */,
 				03AD47791A6834F500F4B44B /* timing.swift in Sources */,
