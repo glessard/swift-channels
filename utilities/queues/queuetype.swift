@@ -63,7 +63,7 @@ public protocol QueueType: Sequence, IteratorProtocol, ExpressibleByArrayLiteral
 
 // MARK: GeneratorType for QueueType
 
-public extension QueueType
+extension QueueType
 {
   public func next() -> Element?
   {
@@ -77,7 +77,7 @@ public extension QueueType
 
 // MARK: Convenience Initializers
 
-public extension QueueType
+extension QueueType
 {
   /**
    Initialize a queue with an initial element

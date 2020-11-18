@@ -8,7 +8,7 @@
 
 import Dispatch
 
-public extension Collection where Iterator.Element: ReceiverType, Index == Int
+extension Collection where Iterator.Element: ReceiverType, Index == Int
 {
   /**
     Merge an array of channel receivers into one Receiver.
@@ -72,7 +72,7 @@ public func merge<R: ReceiverType>(_ channels: R...) -> Receiver<R.ReceivedEleme
   return channels.merge()
 }
 
-public extension Collection where Iterator.Element: ReceiverType, Index == Int
+extension Collection where Iterator.Element: ReceiverType, Index == Int
 {
   /**
     Merge an array of channel receivers into one Receiver.

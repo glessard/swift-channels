@@ -47,7 +47,7 @@ public protocol ReceiverType: BasicChannelType, IteratorProtocol, Sequence
 
 // MARK: GeneratorType and SequenceType default implementations
 
-public extension ReceiverType
+extension ReceiverType
 {
   /**
     Return the next element from the channel.
